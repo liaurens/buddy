@@ -7,10 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Life Tracker</title>
   <script>
-    // Comprehensive Polyfills for Dexie Cloud coverage
-    window.global = window;
-    window.process = { env: { NODE_ENV: 'development' } };
-    window.Buffer = window.Buffer || [];
+    // Basic polyfills (Buffer loaded in main.tsx)
+    window.global = globalThis;
+    window.process = { env: { NODE_ENV: 'production' } };
   </script>
 
   <!-- PWA Meta Tags -->

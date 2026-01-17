@@ -29,7 +29,15 @@ export default defineConfig({
     })
   ],
   define: {
-    global: 'window',
+    global: 'globalThis',
+  },
+  resolve: {
+    alias: {
+      buffer: 'buffer/',
+    },
+  },
+  optimizeDeps: {
+    include: ['buffer'],
   },
   cacheDir: 'node_modules/.vite_custom',
 })

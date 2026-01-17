@@ -1,3 +1,7 @@
+// Buffer polyfill for Dexie Cloud (must be first!)
+import { Buffer } from 'buffer';
+(window as any).Buffer = Buffer;
+
 import { StrictMode, Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
