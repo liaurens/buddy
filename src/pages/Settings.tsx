@@ -2,14 +2,55 @@ import React, { useState } from 'react';
 import { useTracker } from '../context/TrackerContext';
 import { db } from '../services/db';
 import type { TrackerDefinition, TrackerType } from '../types';
-import { Plus, Trash2, Download, Upload, Save, X } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, Save, X, Cloud, LogIn, LogOut, RefreshCw } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { useObservable } from 'dexie-react-hooks';
 
 const Settings: React.FC = () => {
     const { trackers, addTracker, deleteTracker, exportData, importData } = useTracker();
     const [isAdding, setIsAdding] = useState(false);
     const [importText, setImportText] = useState('');
     const [showImport, setShowImport] = useState(false);
+
+    // Cloud Sync State
+    const currentUser = useObservable(db.cloud.currentUser);
+    const syncState = useObservable(db.cloud.syncState);
+    const [loginEmail, setLoginEmail] = useState('');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [awaitingOtp, setAwaitingOtp] = useState(false);
+
+    const handleLogin = async () => {
+        if (!loginEmail) return;
+        setIsLoggingIn(true);
+        try {
+            // Trigger OTP email
+            await db.cloud.login({ email: loginEmail });
+            setAwaitingOtp(true);
+        } catch (error) {
+            console.error('Login failed:', error);
+            alert('Failed to send login email. Please try again.');
+        } finally {
+            setIsLoggingIn(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await db.cloud.logout();
+            setLoginEmail('');
+            setAwaitingOtp(false);
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    };
+
+    const handleSync = async () => {
+        try {
+            await db.cloud.sync();
+        } catch (error) {
+            console.error('Sync failed:', error);
+        }
+    };
 
     // New Tracker State
     const [newName, setNewName] = useState('');
@@ -96,6 +137,68 @@ const Settings: React.FC = () => {
 
     return (
         <div className="space-y-6">
+            {/* Cloud Sync Section */}
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl shadow-sm text-white">
+                <div className="flex items-center gap-3 mb-4">
+                    <Cloud size={24} />
+                    <h2 className="text-xl font-semibold">Cloud Sync</h2>
+                </div>
+
+                {currentUser?.isLoggedIn ? (
+                    <div className="space-y-4">
+                        <div className="bg-white/20 rounded-lg p-4">
+                            <p className="text-sm opacity-90">Logged in as:</p>
+                            <p className="font-semibold text-lg">{currentUser.email || currentUser.userId}</p>
+                            <p className="text-xs opacity-75 mt-1">
+                                Sync status: {syncState?.phase || 'Ready'}
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleSync}
+                                className="flex-1 flex items-center justify-center gap-2 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors"
+                            >
+                                <RefreshCw size={18} /> Sync Now
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="flex-1 flex items-center justify-center gap-2 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors"
+                            >
+                                <LogOut size={18} /> Log Out
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        <p className="text-sm opacity-90">
+                            Log in with the same email on all your devices to sync data automatically.
+                        </p>
+                        <div className="space-y-3">
+                            <input
+                                type="email"
+                                value={loginEmail}
+                                onChange={(e) => setLoginEmail(e.target.value)}
+                                placeholder="Enter your email"
+                                className="w-full px-4 py-3 rounded-lg bg-white/20 placeholder-white/60 text-white border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+                            />
+                            <button
+                                onClick={handleLogin}
+                                disabled={isLoggingIn || !loginEmail}
+                                className="w-full flex items-center justify-center gap-2 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-white/90 transition-colors disabled:opacity-50"
+                            >
+                                <LogIn size={18} />
+                                {isLoggingIn ? 'Sending...' : 'Log In with Email'}
+                            </button>
+                        </div>
+                        {awaitingOtp && (
+                            <p className="text-sm bg-white/20 p-3 rounded-lg">
+                                Check your email for a login link or code!
+                            </p>
+                        )}
+                    </div>
+                )}
+            </div>
+
             {/* Tracker Management */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
                 <div className="flex justify-between items-center mb-4">
