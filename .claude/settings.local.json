@@ -10,7 +10,8 @@
       "Bash(npx tsc:*)",
       "Bash(node -e:*)",
       "Bash(npm install:*)",
-      "Bash(npx netlify-cli:*)"
+      "Bash(npx netlify-cli:*)",
+      "Bash(npm run test:run:*)"
     ]
   }
 }

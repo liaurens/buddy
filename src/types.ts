@@ -34,6 +34,7 @@ export interface Entry {
     id: string;
     trackerId: string;
     value: number;
+    textValue?: string; // For text type trackers
     timestamp: string;
     notes?: string;
     metadata?: Record<string, any>;
@@ -169,11 +170,5 @@ export interface Strategy {
     isFavorite?: boolean;
 }
 
-export interface Todo {
-    id: string;
-    title: string;
-    isCompleted: boolean;
-    dueDate?: string;
-    priority?: 'low' | 'medium' | 'high';
-    createdAt: string;
-}
+// Todo is an alias for Task - used by database for backward compatibility
+export type Todo = Task;

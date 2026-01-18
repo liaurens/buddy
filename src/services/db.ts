@@ -42,10 +42,15 @@ export class TrackerDatabase extends Dexie {
         });
 
         // Configure Dexie Cloud - must be called before any DB operations
-        this.cloud.configure({
-            databaseUrl: 'https://z9f4qhswc.dexie.cloud',
-            requireAuth: false // Allow anonymous users initially
-        });
+        const cloudUrl = import.meta.env.VITE_DEXIE_CLOUD_URL;
+        if (!cloudUrl) {
+            console.warn('VITE_DEXIE_CLOUD_URL not set - cloud sync disabled');
+        } else {
+            this.cloud.configure({
+                databaseUrl: cloudUrl,
+                requireAuth: false // Allow anonymous users initially
+            });
+        }
     }
 }
 

@@ -5,9 +5,10 @@ import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon } from 'luc
 import { format, isPast, isToday } from 'date-fns';
 
 const TodoPage: React.FC = () => {
-    // Queries
-    const activeTodos = useLiveQuery(() => db.todos.where('isCompleted').equals(0).reverse().toArray()) || [];
-    const completedTodos = useLiveQuery(() => db.todos.where('isCompleted').equals(1).limit(10).reverse().toArray()) || [];
+    // Queries - filter in memory since 'completed' is not indexed
+    const allTodos = useLiveQuery(() => db.todos.orderBy('createdAt').reverse().toArray()) || [];
+    const activeTodos = allTodos.filter(t => !t.completed);
+    const completedTodos = allTodos.filter(t => t.completed).slice(0, 10);
 
     const [newTask, setNewTask] = useState('');
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
@@ -20,7 +21,7 @@ const TodoPage: React.FC = () => {
         await db.todos.add({
             id: window.crypto.randomUUID(),
             title: newTask,
-            isCompleted: false,
+            completed: false,
             priority: priority,
             dueDate: dueDate || undefined,
             createdAt: new Date().toISOString()
@@ -31,7 +32,7 @@ const TodoPage: React.FC = () => {
     };
 
     const toggleComplete = async (todo: any) => {
-        await db.todos.update(todo.id, { isCompleted: !todo.isCompleted });
+        await db.todos.update(todo.id, { completed: !todo.completed });
     };
 
     const handleDelete = async (id: string) => {

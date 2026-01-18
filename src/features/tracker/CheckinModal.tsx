@@ -64,20 +64,14 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
 
             // 2. Log Trackers
             const promises = Object.entries(trackerValues).map(([trackerId, value]) => {
-                // Ensure number types are actually numbers
                 const tracker = trackers.find(t => t.id === trackerId);
-                const finalValue = tracker?.type === 'number' || tracker?.type === 'rating' ? Number(value) : value;
+                const isTextType = tracker?.type === 'text';
 
                 return addEntry({
                     trackerId,
-                    value: typeof finalValue === 'number' ? finalValue : 0, // Value is 0 for text? Or should we support text value field? Entry interface needs update or separate generic value
-                    // Types.ts Entry has 'value: number'. For text we usually use 'notes' or need to update Entry. 
-                    // For now, let's assume text trackers put content in 'notes' if value is number-only.
-                    // Actually, 'journal_notes' is usually special.
-                    // If it's a text tracker, we might handle it differently.
-                    // HACK: for 'text' type trackers, we store 1 as value and the text as notes? 
-                    // Or let's just assume for now we only support number/rating for the main 'value' field and explicit Notes for 'journal_notes'.
-                    notes: tracker?.type === 'text' ? String(value) : 'Daily Check-in',
+                    value: isTextType ? 0 : Number(value),
+                    textValue: isTextType ? String(value) : undefined,
+                    notes: 'Daily Check-in',
                     timestamp
                 });
             });

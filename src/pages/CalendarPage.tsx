@@ -74,9 +74,9 @@ const CalendarPage: React.FC = () => {
 
                                 <div className="mt-1 space-y-1">
                                     {dayTodos.slice(0, 3).map(todo => (
-                                        <div key={todo.id} className={`text-[10px] truncate px-1 rounded flex items-center gap-1 ${todo.isCompleted ? 'bg-slate-100 text-slate-400 line-through' : 'bg-indigo-100 text-indigo-700'
+                                        <div key={todo.id} className={`text-[10px] truncate px-1 rounded flex items-center gap-1 ${todo.completed ? 'bg-slate-100 text-slate-400 line-through' : 'bg-indigo-100 text-indigo-700'
                                             }`}>
-                                            <div className={`w-1 h-1 rounded-full ${todo.isCompleted ? 'bg-slate-400' : 'bg-indigo-500'}`} />
+                                            <div className={`w-1 h-1 rounded-full ${todo.completed ? 'bg-slate-400' : 'bg-indigo-500'}`} />
                                             {todo.title}
                                         </div>
                                     ))}
@@ -103,12 +103,12 @@ const CalendarPage: React.FC = () => {
                         <div className="space-y-2">
                             {getTodosForDay(selectedDay).map(todo => (
                                 <div key={todo.id} className="flex items-center gap-3">
-                                    {todo.isCompleted ? (
+                                    {todo.completed ? (
                                         <CheckCircle size={18} className="text-emerald-500" />
                                     ) : (
                                         <Circle size={18} className="text-slate-300" />
                                     )}
-                                    <span className={todo.isCompleted ? 'line-through text-slate-400' : 'text-slate-700'}>
+                                    <span className={todo.completed ? 'line-through text-slate-400' : 'text-slate-700'}>
                                         {todo.title}
                                     </span>
                                 </div>
