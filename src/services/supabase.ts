@@ -5,11 +5,15 @@ import type { TrackerDefinition, Entry, Protocol, Cycle, Dose, Experiment, Corre
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+console.log('Supabase URL configured:', !!supabaseUrl);
+console.log('Supabase Key configured:', !!supabaseAnonKey);
+
 if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
 }
 
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+export const isSupabaseConfigured = !!supabaseUrl && !!supabaseAnonKey;
 
 // Database types matching Supabase schema (snake_case)
 export interface DbTracker {
