@@ -34,23 +34,7 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         enabled: !!userId,
     });
 
-    // Set up realtime subscription
-    useEffect(() => {
-        if (!userId) return;
-
-        const todosChannel = supabase
-            .channel('todos-changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'todos', filter: `user_id=eq.${userId}` },
-                () => queryClient.invalidateQueries({ queryKey: ['todos', userId] })
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(todosChannel);
-        };
-    }, [userId, queryClient]);
+    // Realtime subscriptions disabled temporarily for debugging
 
     const addTask = useCallback(async (title: string, priority?: Task['priority'], estimatedTime?: number) => {
         if (!userId) return;

@@ -55,47 +55,8 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
         enabled: !!userId,
     });
 
-    // Set up realtime subscriptions
-    useEffect(() => {
-        if (!userId) return;
-
-        const entriesChannel = supabase
-            .channel('entries-changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'entries',
-                    filter: `user_id=eq.${userId}`,
-                },
-                () => {
-                    queryClient.invalidateQueries({ queryKey: ['entries', userId] });
-                }
-            )
-            .subscribe();
-
-        const trackersChannel = supabase
-            .channel('trackers-changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'trackers',
-                    filter: `user_id=eq.${userId}`,
-                },
-                () => {
-                    queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(entriesChannel);
-            supabase.removeChannel(trackersChannel);
-        };
-    }, [userId, queryClient]);
+    // Realtime subscriptions disabled temporarily for debugging
+    // TODO: Re-enable once basic functionality works
 
     const addEntry = useCallback(async (entry: Omit<Entry, 'id'>) => {
         if (!userId) return;

@@ -100,43 +100,7 @@ export const ProtocolProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         enabled: !!userId,
     });
 
-    // Set up realtime subscriptions
-    useEffect(() => {
-        if (!userId) return;
-
-        const protocolsChannel = supabase
-            .channel('protocols-changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'protocols', filter: `user_id=eq.${userId}` },
-                () => queryClient.invalidateQueries({ queryKey: ['protocols', userId] })
-            )
-            .subscribe();
-
-        const cyclesChannel = supabase
-            .channel('cycles-changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'cycles', filter: `user_id=eq.${userId}` },
-                () => queryClient.invalidateQueries({ queryKey: ['cycles', userId] })
-            )
-            .subscribe();
-
-        const dosesChannel = supabase
-            .channel('doses-changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'doses', filter: `user_id=eq.${userId}` },
-                () => queryClient.invalidateQueries({ queryKey: ['doses', userId] })
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(protocolsChannel);
-            supabase.removeChannel(cyclesChannel);
-            supabase.removeChannel(dosesChannel);
-        };
-    }, [userId, queryClient]);
+    // Realtime subscriptions disabled temporarily for debugging
 
     // Protocol CRUD
     const addProtocol = useCallback(async (protocol: Omit<Protocol, 'id' | 'createdAt'>): Promise<string> => {

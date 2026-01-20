@@ -41,23 +41,7 @@ export const ExperimentProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         enabled: !!userId,
     });
 
-    // Set up realtime subscription
-    useEffect(() => {
-        if (!userId) return;
-
-        const experimentsChannel = supabase
-            .channel('experiments-changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'experiments', filter: `user_id=eq.${userId}` },
-                () => queryClient.invalidateQueries({ queryKey: ['experiments', userId] })
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(experimentsChannel);
-        };
-    }, [userId, queryClient]);
+    // Realtime subscriptions disabled temporarily for debugging
 
     const addExperiment = useCallback(async (experiment: Omit<Experiment, 'id' | 'active'>) => {
         if (!userId) throw new Error('Not authenticated');
