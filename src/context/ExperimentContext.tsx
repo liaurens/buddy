@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Experiment } from '../types';
 import { useAuth } from '../hooks/useAuth';
