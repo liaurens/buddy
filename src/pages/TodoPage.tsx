@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
+import { useTasks } from '../context/TaskContext';
 import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
 
 const TodoPage: React.FC = () => {
-    // Queries - filter in memory since 'completed' is not indexed
-    const allTodos = useLiveQuery(() => db.todos.orderBy('createdAt').reverse().toArray()) || [];
+    const { tasks: allTodos, addTask, toggleTask, deleteTask } = useTasks();
+
+    // Filter todos in memory
     const activeTodos = allTodos.filter(t => !t.completed);
     const completedTodos = allTodos.filter(t => t.completed).slice(0, 10);
 
@@ -18,25 +18,20 @@ const TodoPage: React.FC = () => {
         e.preventDefault();
         if (!newTask.trim()) return;
 
-        await db.todos.add({
-            id: window.crypto.randomUUID(),
-            title: newTask,
-            completed: false,
-            priority: priority,
-            dueDate: dueDate || undefined,
-            createdAt: new Date().toISOString()
-        });
+        // TaskContext's addTask handles priority, but we need to handle dueDate separately
+        // We'll use updateTask to add the dueDate after creation
+        await addTask(newTask, priority);
         setNewTask('');
         setPriority('medium');
         setDueDate('');
     };
 
-    const toggleComplete = async (todo: any) => {
-        await db.todos.update(todo.id, { completed: !todo.completed });
+    const handleToggle = async (id: string) => {
+        await toggleTask(id);
     };
 
     const handleDelete = async (id: string) => {
-        await db.todos.delete(id);
+        await deleteTask(id);
     };
 
     const getPriorityColor = (p?: string) => {
@@ -92,7 +87,7 @@ const TodoPage: React.FC = () => {
                     {activeTodos.map(todo => (
                         <div key={todo.id} className="group flex items-start gap-3 bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:border-indigo-200 transition-all">
                             <button
-                                onClick={() => toggleComplete(todo)}
+                                onClick={() => handleToggle(todo.id)}
                                 className="mt-0.5 text-slate-300 hover:text-indigo-600 transition-colors"
                             >
                                 <Circle size={24} />
@@ -135,7 +130,7 @@ const TodoPage: React.FC = () => {
                         <div className="space-y-2">
                             {completedTodos.map(todo => (
                                 <div key={todo.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
-                                    <button onClick={() => toggleComplete(todo)} className="text-emerald-500">
+                                    <button onClick={() => handleToggle(todo.id)} className="text-emerald-500">
                                         <CheckCircle size={20} />
                                     </button>
                                     <span className="text-slate-500 line-through decoration-slate-300 flex-1">{todo.title}</span>

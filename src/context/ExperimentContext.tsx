@@ -1,8 +1,14 @@
-import React, { createContext, useContext, useCallback } from 'react';
+import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Experiment } from '../types';
-import { db } from '../services/db';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useAuth } from '../hooks/useAuth';
 import { v4 as uuidv4 } from 'uuid';
+import {
+    supabase,
+    dbToExperiment,
+    experimentToDb,
+    type DbExperiment,
+} from '../services/supabase';
 
 interface ExperimentContextType {
     experiments: Experiment[];
@@ -15,36 +21,107 @@ interface ExperimentContextType {
 const ExperimentContext = createContext<ExperimentContextType | undefined>(undefined);
 
 export const ExperimentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+    const userId = user?.id;
 
-    const experiments = useLiveQuery(() => db.experiments.toArray(), [], []);
+    // Fetch experiments
+    const { data: experiments = [] } = useQuery({
+        queryKey: ['experiments', userId],
+        queryFn: async () => {
+            if (!userId) return [];
+            const { data, error } = await supabase
+                .from('experiments')
+                .select('*')
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            return (data as DbExperiment[]).map(dbToExperiment);
+        },
+        enabled: !!userId,
+    });
+
+    // Set up realtime subscription
+    useEffect(() => {
+        if (!userId) return;
+
+        const experimentsChannel = supabase
+            .channel('experiments-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'experiments', filter: `user_id=eq.${userId}` },
+                () => queryClient.invalidateQueries({ queryKey: ['experiments', userId] })
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(experimentsChannel);
+        };
+    }, [userId, queryClient]);
 
     const addExperiment = useCallback(async (experiment: Omit<Experiment, 'id' | 'active'>) => {
+        if (!userId) throw new Error('Not authenticated');
+
         const id = uuidv4();
-        const newExperiment: Experiment = {
+        const newExperiment = {
             ...experiment,
             id,
-            active: true
+            active: true,
         };
-        await db.experiments.add(newExperiment);
+
+        const dbExperiment = experimentToDb(newExperiment, userId);
+        const { error } = await supabase.from('experiments').insert(dbExperiment);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['experiments', userId] });
         return id;
-    }, []);
+    }, [userId, queryClient]);
 
     const updateExperiment = useCallback(async (experiment: Experiment) => {
+        if (!userId) return;
+
         const { id, ...updates } = experiment;
-        await db.experiments.update(id, updates);
-    }, []);
+        const dbUpdates = {
+            name: updates.name,
+            description: updates.description || null,
+            tracker1_id: updates.tracker1Id || null,
+            tracker2_id: updates.tracker2Id || null,
+            start_date: updates.startDate || null,
+            end_date: updates.endDate || null,
+            active: updates.active,
+            frequency: updates.frequency || null,
+        };
+
+        const { error } = await supabase
+            .from('experiments')
+            .update(dbUpdates)
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['experiments', userId] });
+    }, [userId, queryClient]);
 
     const deleteExperiment = useCallback(async (id: string) => {
-        await db.experiments.delete(id);
-    }, []);
+        if (!userId) return;
+
+        const { error } = await supabase
+            .from('experiments')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['experiments', userId] });
+    }, [userId, queryClient]);
 
     const getActiveExperiments = useCallback(() => {
-        return experiments?.filter(e => e.active) || [];
+        return experiments.filter(e => e.active);
     }, [experiments]);
 
     return (
         <ExperimentContext.Provider value={{
-            experiments: experiments || [],
+            experiments,
             addExperiment,
             updateExperiment,
             deleteExperiment,

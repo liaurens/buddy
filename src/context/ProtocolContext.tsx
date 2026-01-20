@@ -1,8 +1,21 @@
-import React, { createContext, useContext, useCallback } from 'react';
+import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Protocol, Cycle, Dose } from '../types';
-import { db } from '../services/db';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useAuth } from '../hooks/useAuth';
 import { v4 as uuidv4 } from 'uuid';
+import {
+    supabase,
+    dbToProtocol,
+    protocolToDb,
+    dbToCycle,
+    cycleToDb,
+    dbToDose,
+    doseToDb,
+    entryToDb,
+    type DbProtocol,
+    type DbCycle,
+    type DbDose,
+} from '../services/supabase';
 
 interface ProtocolContextType {
     protocols: Protocol[];
@@ -33,41 +46,166 @@ interface ProtocolContextType {
 const ProtocolContext = createContext<ProtocolContextType | undefined>(undefined);
 
 export const ProtocolProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // Live queries
-    const protocols = useLiveQuery(() => db.protocols.toArray(), [], []);
-    const cycles = useLiveQuery(() => db.cycles.orderBy('startDate').reverse().toArray(), [], []);
-    const doses = useLiveQuery(() => db.doses.orderBy('takenAt').reverse().toArray(), [], []);
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+    const userId = user?.id;
+
+    // Fetch protocols
+    const { data: protocols = [] } = useQuery({
+        queryKey: ['protocols', userId],
+        queryFn: async () => {
+            if (!userId) return [];
+            const { data, error } = await supabase
+                .from('protocols')
+                .select('*')
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            return (data as DbProtocol[]).map(dbToProtocol);
+        },
+        enabled: !!userId,
+    });
+
+    // Fetch cycles
+    const { data: cycles = [] } = useQuery({
+        queryKey: ['cycles', userId],
+        queryFn: async () => {
+            if (!userId) return [];
+            const { data, error } = await supabase
+                .from('cycles')
+                .select('*')
+                .eq('user_id', userId)
+                .order('start_date', { ascending: false });
+
+            if (error) throw error;
+            return (data as DbCycle[]).map(dbToCycle);
+        },
+        enabled: !!userId,
+    });
+
+    // Fetch doses
+    const { data: doses = [] } = useQuery({
+        queryKey: ['doses', userId],
+        queryFn: async () => {
+            if (!userId) return [];
+            const { data, error } = await supabase
+                .from('doses')
+                .select('*')
+                .eq('user_id', userId)
+                .order('taken_at', { ascending: false });
+
+            if (error) throw error;
+            return (data as DbDose[]).map(dbToDose);
+        },
+        enabled: !!userId,
+    });
+
+    // Set up realtime subscriptions
+    useEffect(() => {
+        if (!userId) return;
+
+        const protocolsChannel = supabase
+            .channel('protocols-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'protocols', filter: `user_id=eq.${userId}` },
+                () => queryClient.invalidateQueries({ queryKey: ['protocols', userId] })
+            )
+            .subscribe();
+
+        const cyclesChannel = supabase
+            .channel('cycles-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'cycles', filter: `user_id=eq.${userId}` },
+                () => queryClient.invalidateQueries({ queryKey: ['cycles', userId] })
+            )
+            .subscribe();
+
+        const dosesChannel = supabase
+            .channel('doses-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'doses', filter: `user_id=eq.${userId}` },
+                () => queryClient.invalidateQueries({ queryKey: ['doses', userId] })
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(protocolsChannel);
+            supabase.removeChannel(cyclesChannel);
+            supabase.removeChannel(dosesChannel);
+        };
+    }, [userId, queryClient]);
 
     // Protocol CRUD
     const addProtocol = useCallback(async (protocol: Omit<Protocol, 'id' | 'createdAt'>): Promise<string> => {
+        if (!userId) throw new Error('Not authenticated');
+
         const id = uuidv4();
-        const newProtocol: Protocol = {
+        const newProtocol = {
             ...protocol,
             id,
-            createdAt: new Date().toISOString(),
         };
-        await db.protocols.add(newProtocol);
+
+        const dbProtocol = protocolToDb(newProtocol, userId);
+        const { error } = await supabase.from('protocols').insert(dbProtocol);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['protocols', userId] });
         return id;
-    }, []);
+    }, [userId, queryClient]);
 
     const updateProtocol = useCallback(async (protocol: Protocol) => {
-        const { id, ...updates } = protocol;
-        await db.protocols.update(id, updates);
-    }, []);
+        if (!userId) return;
+
+        const { id, createdAt: _createdAt, ...updates } = protocol;
+        const dbUpdates = {
+            name: updates.name,
+            category: updates.category,
+            dose_amount: updates.doseAmount,
+            dose_unit: updates.doseUnit,
+            frequency: updates.frequency,
+            route: updates.route || null,
+            timing_notes: updates.timingNotes || null,
+            half_life_hours: updates.halfLifeHours || null,
+            active: updates.active,
+            expected_outcomes: updates.expectedOutcomes || null,
+            linked_tracker_id: updates.linkedTrackerId || null,
+            default_tracker_type: updates.defaultTrackerType || null,
+        };
+
+        const { error } = await supabase
+            .from('protocols')
+            .update(dbUpdates)
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['protocols', userId] });
+    }, [userId, queryClient]);
 
     const deleteProtocol = useCallback(async (id: string) => {
-        // Delete protocol and related data
-        await db.transaction('rw', [db.protocols, db.cycles, db.doses], async () => {
-            await db.protocols.delete(id);
-            const relatedCycles = await db.cycles.where('protocolId').equals(id).toArray();
-            const cycleIds = relatedCycles.map(c => c.id);
-            await db.cycles.where('protocolId').equals(id).delete();
-            if (cycleIds.length > 0) {
-                await db.doses.where('cycleId').anyOf(cycleIds).delete();
-            }
-            await db.doses.where('protocolId').equals(id).delete();
-        });
-    }, []);
+        if (!userId) return;
+
+        // Delete related doses first
+        await supabase.from('doses').delete().eq('protocol_id', id).eq('user_id', userId);
+
+        // Delete related cycles
+        await supabase.from('cycles').delete().eq('protocol_id', id).eq('user_id', userId);
+
+        // Delete the protocol
+        const { error } = await supabase
+            .from('protocols')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['protocols', userId] });
+        queryClient.invalidateQueries({ queryKey: ['cycles', userId] });
+        queryClient.invalidateQueries({ queryKey: ['doses', userId] });
+    }, [userId, queryClient]);
 
     // Cycle management
     const startCycle = useCallback(async (
@@ -75,16 +213,14 @@ export const ProtocolProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         plannedEndDate?: string,
         offCycleDays?: number
     ): Promise<string> => {
-        // Get existing cycles for this protocol to determine cycle number
-        const existingCycles = await db.cycles
-            .where('protocolId')
-            .equals(protocolId)
-            .toArray();
+        if (!userId) throw new Error('Not authenticated');
 
+        // Get existing cycles to determine cycle number
+        const existingCycles = cycles.filter(c => c.protocolId === protocolId);
         const cycleNumber = existingCycles.length + 1;
         const id = uuidv4();
 
-        const newCycle: Cycle = {
+        const newCycle: Omit<Cycle, 'id'> & { id: string } = {
             id,
             protocolId,
             cycleNumber,
@@ -94,24 +230,46 @@ export const ProtocolProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             status: 'active',
         };
 
-        await db.cycles.add(newCycle);
+        const dbCycle = cycleToDb(newCycle, userId);
+        const { error } = await supabase.from('cycles').insert(dbCycle);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['cycles', userId] });
         return id;
-    }, []);
+    }, [userId, cycles, queryClient]);
 
     const completeCycle = useCallback(async (cycleId: string) => {
-        await db.cycles.update(cycleId, {
-            status: 'completed',
-            actualEndDate: new Date().toISOString().split('T')[0],
-        });
-    }, []);
+        if (!userId) return;
+
+        const { error } = await supabase
+            .from('cycles')
+            .update({
+                status: 'completed',
+                actual_end_date: new Date().toISOString().split('T')[0],
+            })
+            .eq('id', cycleId)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['cycles', userId] });
+    }, [userId, queryClient]);
 
     const abortCycle = useCallback(async (cycleId: string, notes?: string) => {
-        await db.cycles.update(cycleId, {
-            status: 'aborted',
-            actualEndDate: new Date().toISOString().split('T')[0],
-            notes,
-        });
-    }, []);
+        if (!userId) return;
+
+        const { error } = await supabase
+            .from('cycles')
+            .update({
+                status: 'aborted',
+                actual_end_date: new Date().toISOString().split('T')[0],
+                notes,
+            })
+            .eq('id', cycleId)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['cycles', userId] });
+    }, [userId, queryClient]);
 
     // Dose logging
     const logDose = useCallback(async (
@@ -119,8 +277,10 @@ export const ProtocolProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         cycleId?: string,
         actualAmount?: number
     ) => {
+        if (!userId) return;
+
         const timestamp = new Date().toISOString();
-        const newDose: Dose = {
+        const newDose: Omit<Dose, 'id'> & { id: string } = {
             id: uuidv4(),
             protocolId,
             cycleId,
@@ -129,13 +289,14 @@ export const ProtocolProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             skipped: false,
         };
 
-        await db.doses.add(newDose);
+        const dbDose = doseToDb(newDose, userId);
+        const { error } = await supabase.from('doses').insert(dbDose);
+
+        if (error) throw error;
 
         // Check for linked tracker
         const protocol = protocols.find(p => p.id === protocolId);
         if (protocol && protocol.linkedTrackerId) {
-            // Determine value based on tracker type or amount
-            // If actualAmount is provided, use it. active defaults for boolean can be 1.
             let value = 1;
             if (actualAmount !== undefined) {
                 value = actualAmount;
@@ -143,23 +304,29 @@ export const ProtocolProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 value = protocol.doseAmount;
             }
 
-            // Create tracker entry
-            await db.entries.add({
+            const entryData = entryToDb({
                 id: uuidv4(),
                 trackerId: protocol.linkedTrackerId,
                 value: value,
                 timestamp: timestamp,
                 notes: `Protocol dose: ${protocol.name}`,
-            });
+            }, userId);
+
+            await supabase.from('entries').insert(entryData);
+            queryClient.invalidateQueries({ queryKey: ['entries', userId] });
         }
-    }, [protocols]);
+
+        queryClient.invalidateQueries({ queryKey: ['doses', userId] });
+    }, [userId, protocols, queryClient]);
 
     const skipDose = useCallback(async (
         protocolId: string,
         cycleId?: string,
         reason?: string
     ) => {
-        const newDose: Dose = {
+        if (!userId) return;
+
+        const newDose: Omit<Dose, 'id'> & { id: string } = {
             id: uuidv4(),
             protocolId,
             cycleId,
@@ -167,12 +334,26 @@ export const ProtocolProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             skipped: true,
             skipReason: reason,
         };
-        await db.doses.add(newDose);
-    }, []);
+
+        const dbDose = doseToDb(newDose, userId);
+        const { error } = await supabase.from('doses').insert(dbDose);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['doses', userId] });
+    }, [userId, queryClient]);
 
     const deleteDose = useCallback(async (doseId: string) => {
-        await db.doses.delete(doseId);
-    }, []);
+        if (!userId) return;
+
+        const { error } = await supabase
+            .from('doses')
+            .delete()
+            .eq('id', doseId)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['doses', userId] });
+    }, [userId, queryClient]);
 
     // Helpers
     const getActiveProtocols = useCallback(() => {

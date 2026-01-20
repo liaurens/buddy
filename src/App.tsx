@@ -14,16 +14,14 @@ import ToolboxPage from './pages/ToolboxPage';
 import TodoPage from './pages/TodoPage';
 import CalendarPage from './pages/CalendarPage';
 import LoginScreen from './components/LoginScreen';
-import { db } from './services/db';
-import { useObservable } from 'dexie-react-hooks';
+import { useAuth } from './hooks/useAuth';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments'>('home');
   const [navParams, setNavParams] = useState<any>(null);
 
   // Check if user is logged in
-  const currentUser = useObservable(db.cloud.currentUser);
-  const isLoggedIn = currentUser?.isLoggedIn;
+  const { isLoggedIn, isLoading } = useAuth();
 
   const handleNavigate = (tab: typeof activeTab, params?: any) => {
     setActiveTab(tab);
@@ -54,6 +52,15 @@ const App: React.FC = () => {
         return <HomePage onNavigate={handleNavigate} />;
     }
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-white text-lg">Loading...</div>
+      </div>
+    );
+  }
 
   // Show login screen if not logged in
   if (!isLoggedIn) {

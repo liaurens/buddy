@@ -1,57 +1,60 @@
-import React, { createContext, useContext, useCallback, useEffect, useState } from 'react';
+import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
+import { useAuth } from '../hooks/useAuth';
 import type { Task, TaskState } from '../types';
+import {
+    supabase,
+    dbToTodo,
+    todoToDb,
+    type DbTodo,
+} from '../services/supabase';
 
 const TaskContext = createContext<TaskState | undefined>(undefined);
 
-// Key for tracking migration from localStorage
-const MIGRATION_KEY = 'buddy-tasks-migrated-to-dexie';
-const OLD_STORAGE_KEY = 'buddy-app-tasks';
-
 export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [isInitialized, setIsInitialized] = useState(false);
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+    const userId = user?.id;
 
-    // Migrate from localStorage to Dexie on first load
+    // Fetch tasks (todos)
+    const { data: tasks = [] } = useQuery({
+        queryKey: ['todos', userId],
+        queryFn: async () => {
+            if (!userId) return [];
+            const { data, error } = await supabase
+                .from('todos')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            return (data as DbTodo[]).map(dbToTodo);
+        },
+        enabled: !!userId,
+    });
+
+    // Set up realtime subscription
     useEffect(() => {
-        const migrateFromLocalStorage = async () => {
-            const alreadyMigrated = localStorage.getItem(MIGRATION_KEY);
-            if (alreadyMigrated) {
-                setIsInitialized(true);
-                return;
-            }
+        if (!userId) return;
 
-            const stored = localStorage.getItem(OLD_STORAGE_KEY);
-            if (stored) {
-                try {
-                    const oldTasks: Task[] = JSON.parse(stored);
-                    if (oldTasks.length > 0) {
-                        // Migrate tasks to Dexie
-                        await db.todos.bulkPut(oldTasks);
-                        console.log(`Migrated ${oldTasks.length} tasks from localStorage to Dexie`);
-                    }
-                } catch (e) {
-                    console.error('Failed to migrate tasks from localStorage:', e);
-                }
-            }
+        const todosChannel = supabase
+            .channel('todos-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'todos', filter: `user_id=eq.${userId}` },
+                () => queryClient.invalidateQueries({ queryKey: ['todos', userId] })
+            )
+            .subscribe();
 
-            // Mark as migrated
-            localStorage.setItem(MIGRATION_KEY, 'true');
-            setIsInitialized(true);
+        return () => {
+            supabase.removeChannel(todosChannel);
         };
-
-        migrateFromLocalStorage();
-    }, []);
-
-    // Use Dexie live query for reactive updates
-    const tasks = useLiveQuery(
-        () => db.todos.orderBy('createdAt').reverse().toArray(),
-        [],
-        []
-    ) as Task[];
+    }, [userId, queryClient]);
 
     const addTask = useCallback(async (title: string, priority?: Task['priority'], estimatedTime?: number) => {
+        if (!userId) return;
+
         const newTask: Task = {
             id: uuidv4(),
             title,
@@ -61,32 +64,68 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
             estimatedTime,
             subtasks: []
         };
-        await db.todos.add(newTask);
-    }, []);
+
+        const dbTask = todoToDb(newTask, userId);
+        const { error } = await supabase.from('todos').insert(dbTask);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+    }, [userId, queryClient]);
 
     const toggleTask = useCallback(async (id: string) => {
-        const task = await db.todos.get(id);
-        if (task) {
-            await db.todos.update(id, { completed: !task.completed });
-        }
-    }, []);
+        if (!userId) return;
+
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
+        const { error } = await supabase
+            .from('todos')
+            .update({ completed: !task.completed })
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+    }, [userId, tasks, queryClient]);
 
     const deleteTask = useCallback(async (id: string) => {
-        await db.todos.delete(id);
-    }, []);
+        if (!userId) return;
+
+        const { error } = await supabase
+            .from('todos')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+    }, [userId, queryClient]);
 
     const updateTask = useCallback(async (updatedTask: Task) => {
-        const { id, ...updates } = updatedTask;
-        await db.todos.update(id, updates);
-    }, []);
+        if (!userId) return;
 
-    // Show loading state while initializing
-    if (!isInitialized) {
-        return null;
-    }
+        const { id, ...updates } = updatedTask;
+        const dbUpdates = {
+            title: updates.title,
+            completed: updates.completed,
+            due_date: updates.dueDate || null,
+            priority: updates.priority || null,
+            estimated_time: updates.estimatedTime || null,
+            subtasks: updates.subtasks || null,
+        };
+
+        const { error } = await supabase
+            .from('todos')
+            .update(dbUpdates)
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+    }, [userId, queryClient]);
 
     return (
-        <TaskContext.Provider value={{ tasks: tasks || [], addTask, toggleTask, deleteTask, updateTask }}>
+        <TaskContext.Provider value={{ tasks, addTask, toggleTask, deleteTask, updateTask }}>
             {children}
         </TaskContext.Provider>
     );

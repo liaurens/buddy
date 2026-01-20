@@ -1,94 +1,229 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 import type { Entry, TrackerState, TrackerDefinition } from '../types';
-import { db, initializeDatabase, exportAllData, importAllData } from '../services/db';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useAuth } from '../hooks/useAuth';
+import {
+    supabase,
+    dbToTracker,
+    trackerToDb,
+    dbToEntry,
+    entryToDb,
+    exportAllData,
+    importAllData,
+    type DbTracker,
+    type DbEntry,
+} from '../services/supabase';
 
 const TrackerContext = createContext<TrackerState | undefined>(undefined);
 
 export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [isInitialized, setIsInitialized] = useState(false);
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+    const userId = user?.id;
 
-    // Initialize database on mount
+    // Fetch entries
+    const { data: entries = [] } = useQuery({
+        queryKey: ['entries', userId],
+        queryFn: async () => {
+            if (!userId) return [];
+            const { data, error } = await supabase
+                .from('entries')
+                .select('*')
+                .eq('user_id', userId)
+                .order('timestamp', { ascending: false });
+
+            if (error) throw error;
+            return (data as DbEntry[]).map(dbToEntry);
+        },
+        enabled: !!userId,
+    });
+
+    // Fetch trackers
+    const { data: trackers = [] } = useQuery({
+        queryKey: ['trackers', userId],
+        queryFn: async () => {
+            if (!userId) return [];
+            const { data, error } = await supabase
+                .from('trackers')
+                .select('*')
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            return (data as DbTracker[]).map(dbToTracker);
+        },
+        enabled: !!userId,
+    });
+
+    // Set up realtime subscriptions
     useEffect(() => {
-        const init = async () => {
-            try {
-                await initializeDatabase();
-            } catch (error) {
-                console.error('Database initialization failed:', error);
-            } finally {
-                setIsInitialized(true);
-            }
-        };
-        init();
-    }, []);
-    const entries = useLiveQuery(
-        () => db.entries.orderBy('timestamp').reverse().toArray(),
-        [],
-        []
-    );
+        if (!userId) return;
 
-    const trackers = useLiveQuery(
-        () => db.trackers.toArray(),
-        [],
-        []
-    );
+        const entriesChannel = supabase
+            .channel('entries-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'entries',
+                    filter: `user_id=eq.${userId}`,
+                },
+                () => {
+                    queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+                }
+            )
+            .subscribe();
+
+        const trackersChannel = supabase
+            .channel('trackers-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'trackers',
+                    filter: `user_id=eq.${userId}`,
+                },
+                () => {
+                    queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(entriesChannel);
+            supabase.removeChannel(trackersChannel);
+        };
+    }, [userId, queryClient]);
 
     const addEntry = useCallback(async (entry: Omit<Entry, 'id'>) => {
+        if (!userId) return;
+
         const newEntry: Entry = {
             ...entry,
             id: uuidv4(),
             timestamp: entry.timestamp || new Date().toISOString(),
         };
-        await db.entries.add(newEntry);
-    }, []);
+
+        const dbEntry = entryToDb(newEntry, userId);
+        const { error } = await supabase.from('entries').insert(dbEntry);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+    }, [userId, queryClient]);
 
     const updateEntry = useCallback(async (updatedEntry: Entry) => {
+        if (!userId) return;
+
         const { id, ...updates } = updatedEntry;
-        await db.entries.update(id, updates);
-    }, []);
+        const dbUpdates = {
+            tracker_id: updates.trackerId,
+            value: updates.value,
+            text_value: updates.textValue || null,
+            timestamp: updates.timestamp,
+            notes: updates.notes || null,
+            metadata: updates.metadata || null,
+        };
+
+        const { error } = await supabase
+            .from('entries')
+            .update(dbUpdates)
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+    }, [userId, queryClient]);
 
     const deleteEntry = useCallback(async (id: string) => {
-        await db.entries.delete(id);
-    }, []);
+        if (!userId) return;
+
+        const { error } = await supabase
+            .from('entries')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+    }, [userId, queryClient]);
 
     const addTracker = useCallback(async (tracker: TrackerDefinition) => {
-        await db.trackers.add(tracker);
-    }, []);
+        if (!userId) return;
+
+        const dbTracker = trackerToDb(tracker, userId);
+        const { error } = await supabase.from('trackers').insert(dbTracker);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
+    }, [userId, queryClient]);
 
     const updateTracker = useCallback(async (tracker: TrackerDefinition) => {
+        if (!userId) return;
+
         const { id, ...updates } = tracker;
-        await db.trackers.update(id, updates);
-    }, []);
+        const dbUpdates = {
+            name: updates.name,
+            emoji: updates.emoji || null,
+            type: updates.type,
+            unit: updates.unit || null,
+            group: updates.group || null,
+            goal: updates.goal || null,
+            checkin_config: updates.checkinConfig || null,
+        };
+
+        const { error } = await supabase
+            .from('trackers')
+            .update(dbUpdates)
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
+    }, [userId, queryClient]);
 
     const deleteTracker = useCallback(async (id: string) => {
-        await db.trackers.delete(id);
-        // Also delete related entries
-        await db.entries.where('trackerId').equals(id).delete();
-    }, []);
+        if (!userId) return;
+
+        // Delete related entries first
+        await supabase
+            .from('entries')
+            .delete()
+            .eq('tracker_id', id)
+            .eq('user_id', userId);
+
+        // Delete the tracker
+        const { error } = await supabase
+            .from('trackers')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
+        queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+    }, [userId, queryClient]);
 
     const exportData = useCallback(async () => {
-        return await exportAllData();
-    }, []);
+        if (!userId) return '{}';
+        return await exportAllData(userId);
+    }, [userId]);
 
     const importData = useCallback(async (jsonData: string): Promise<boolean> => {
-        const success = await importAllData(jsonData);
+        if (!userId) return false;
+        const success = await importAllData(jsonData, userId);
+        if (success) {
+            queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
+            queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+        }
         return success;
-    }, []);
-
-    // Show loading state while initializing
-    if (!isInitialized) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-slate-900">
-                <div className="text-white text-lg">Loading...</div>
-            </div>
-        );
-    }
+    }, [userId, queryClient]);
 
     return (
         <TrackerContext.Provider value={{
-            entries: entries || [],
-            trackers: trackers || [],
+            entries,
+            trackers,
             addEntry,
             updateEntry,
             deleteEntry,

@@ -1,12 +1,21 @@
-// Buffer polyfill for Dexie Cloud (must be first!)
-import { Buffer } from 'buffer';
-(window as any).Buffer = Buffer;
-
 import { StrictMode, Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from './hooks/useAuth'
 import './index.css'
 import App from './App.tsx'
+
+// Create a client with default options
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60, // 1 minute
+      refetchOnWindowFocus: true,
+      retry: 1,
+    },
+  },
+})
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -45,9 +54,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
-console.log("🚀 App initializing...");
+console.log("App initializing...");
 
-// Catch unhandled promise rejections (important for Dexie Cloud)
+// Catch unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled promise rejection:', event.reason);
 });
@@ -60,7 +69,11 @@ window.addEventListener('error', (event) => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   </StrictMode>,
 )

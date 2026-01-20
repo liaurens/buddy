@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
+import { useTasks } from '../context/TaskContext';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle, Circle } from 'lucide-react';
 
 const CalendarPage: React.FC = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
-
-    // Fetch all active todos (simple approach for now: fetch all and filter in memory since dataset likely small)
-    // Ideally use a range query index on dueDate, but Dexie requires configured index.
-    const allTodos = useLiveQuery(() => db.todos.toArray()) || [];
+    const { tasks: allTodos } = useTasks();
 
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);

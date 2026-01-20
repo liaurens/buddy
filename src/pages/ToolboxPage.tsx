@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../services/db';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Search, BookOpen, Lightbulb, Star, ChevronRight, X } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Strategy } from '../types';
+import { useAuth } from '../hooks/useAuth';
+import { supabase, dbToStrategy, strategyToDb, type DbStrategy } from '../services/supabase';
 
 const PRESET_TAGS = [
     { label: 'Strength', color: 'bg-emerald-100 text-emerald-700' },
@@ -16,7 +17,26 @@ const PRESET_TAGS = [
 ];
 
 const ToolboxPage: React.FC = () => {
-    const strategies = useLiveQuery(() => db.strategies.toArray()) || [];
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+    const userId = user?.id;
+
+    // Fetch strategies
+    const { data: strategies = [] } = useQuery({
+        queryKey: ['strategies', userId],
+        queryFn: async () => {
+            if (!userId) return [];
+            const { data, error } = await supabase
+                .from('strategies')
+                .select('*')
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            return (data as DbStrategy[]).map(dbToStrategy);
+        },
+        enabled: !!userId,
+    });
+
     const [isAdding, setIsAdding] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
@@ -34,15 +54,21 @@ const ToolboxPage: React.FC = () => {
     const [newFindingRating, setNewFindingRating] = useState(3);
 
     const handleAdd = async () => {
-        if (!newTitle.trim()) return;
-        await db.strategies.add({
+        if (!newTitle.trim() || !userId) return;
+
+        const newStrategy = {
             id: window.crypto.randomUUID(),
             title: newTitle,
             description: newDesc,
-            category: 'General', // Deprecated in favor of tags, keeping for schema compat
+            category: 'General',
             tags: newTags,
             findings: []
-        });
+        };
+
+        const dbStrategy = strategyToDb(newStrategy, userId);
+        await supabase.from('strategies').insert(dbStrategy);
+        queryClient.invalidateQueries({ queryKey: ['strategies', userId] });
+
         setNewTitle('');
         setNewDesc('');
         setNewTags([]);
@@ -50,8 +76,10 @@ const ToolboxPage: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
+        if (!userId) return;
         if (window.confirm('Delete this strategy?')) {
-            await db.strategies.delete(id);
+            await supabase.from('strategies').delete().eq('id', id).eq('user_id', userId);
+            queryClient.invalidateQueries({ queryKey: ['strategies', userId] });
             if (selectedStrategy?.id === id) setSelectedStrategy(null);
         }
     };
@@ -65,7 +93,7 @@ const ToolboxPage: React.FC = () => {
     };
 
     const addFinding = async () => {
-        if (!selectedStrategy) return;
+        if (!selectedStrategy || !userId) return;
         const finding = {
             id: window.crypto.randomUUID(),
             date: new Date().toISOString(),
@@ -75,9 +103,13 @@ const ToolboxPage: React.FC = () => {
 
         const updatedFindings = [finding, ...(selectedStrategy.findings || [])];
 
-        await db.strategies.update(selectedStrategy.id, {
-            findings: updatedFindings
-        });
+        await supabase
+            .from('strategies')
+            .update({ findings: updatedFindings })
+            .eq('id', selectedStrategy.id)
+            .eq('user_id', userId);
+
+        queryClient.invalidateQueries({ queryKey: ['strategies', userId] });
 
         // Optimistic update for local state interaction
         setSelectedStrategy({ ...selectedStrategy, findings: updatedFindings });

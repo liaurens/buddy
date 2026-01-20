@@ -1,5 +1,11 @@
-import { getSetting, setSetting } from './db';
+import { supabase, getSetting, setSetting } from './supabase';
 import type { Entry, TrackerDefinition, CorrelationResult } from '../types';
+
+// Helper to get current user ID
+async function getCurrentUserId(): Promise<string | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id ?? null;
+}
 
 // AI Provider types
 export type AIProvider = 'openai' | 'anthropic' | 'custom';
@@ -34,10 +40,13 @@ const CONFIG_KEY_BASE_URL = 'ai_base_url';
  * Get AI configuration from storage
  */
 export async function getAIConfig(): Promise<AIConfig | null> {
-    const provider = await getSetting(CONFIG_KEY_PROVIDER);
-    const apiKey = await getSetting(CONFIG_KEY_API_KEY);
-    const model = await getSetting(CONFIG_KEY_MODEL);
-    const baseUrl = await getSetting(CONFIG_KEY_BASE_URL);
+    const userId = await getCurrentUserId();
+    if (!userId) return null;
+
+    const provider = await getSetting(userId, CONFIG_KEY_PROVIDER);
+    const apiKey = await getSetting(userId, CONFIG_KEY_API_KEY);
+    const model = await getSetting(userId, CONFIG_KEY_MODEL);
+    const baseUrl = await getSetting(userId, CONFIG_KEY_BASE_URL);
 
     if (!provider || !apiKey) {
         return null;
@@ -55,11 +64,14 @@ export async function getAIConfig(): Promise<AIConfig | null> {
  * Save AI configuration
  */
 export async function saveAIConfig(config: AIConfig): Promise<void> {
-    await setSetting(CONFIG_KEY_PROVIDER, config.provider);
-    await setSetting(CONFIG_KEY_API_KEY, config.apiKey);
-    await setSetting(CONFIG_KEY_MODEL, config.model);
+    const userId = await getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+
+    await setSetting(userId, CONFIG_KEY_PROVIDER, config.provider);
+    await setSetting(userId, CONFIG_KEY_API_KEY, config.apiKey);
+    await setSetting(userId, CONFIG_KEY_MODEL, config.model);
     if (config.baseUrl) {
-        await setSetting(CONFIG_KEY_BASE_URL, config.baseUrl);
+        await setSetting(userId, CONFIG_KEY_BASE_URL, config.baseUrl);
     }
 }
 
@@ -67,9 +79,11 @@ export async function saveAIConfig(config: AIConfig): Promise<void> {
  * Clear AI configuration
  */
 export async function clearAIConfig(): Promise<void> {
-    // Note: We'd need to implement deleteSetting in db.ts
-    // For now, just set to empty
-    await setSetting(CONFIG_KEY_API_KEY, '');
+    const userId = await getCurrentUserId();
+    if (!userId) throw new Error('Not authenticated');
+
+    // Set to empty string to clear
+    await setSetting(userId, CONFIG_KEY_API_KEY, '');
 }
 
 /**
