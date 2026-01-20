@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase, initializeUserData } from '../services/supabase';
 
@@ -18,35 +18,77 @@ export function useAuthProvider(): AuthState {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const initialized = useRef(false);
 
     useEffect(() => {
+        // Prevent double initialization in StrictMode
+        if (initialized.current) return;
+        initialized.current = true;
+
+        let mounted = true;
+
         // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
+        const initAuth = async () => {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
 
-            // Initialize user data if logged in
-            if (session?.user) {
-                initializeUserData(session.user.id);
+                if (error) {
+                    console.error('Error getting session:', error);
+                }
+
+                if (mounted) {
+                    setSession(session);
+                    setUser(session?.user ?? null);
+
+                    // Initialize user data if logged in
+                    if (session?.user) {
+                        initializeUserData(session.user.id).catch(err => {
+                            // Ignore abort errors
+                            if (err?.name !== 'AbortError') {
+                                console.error('Init user data error:', err);
+                            }
+                        });
+                    }
+
+                    setIsLoading(false);
+                }
+            } catch (err: any) {
+                // Ignore abort errors
+                if (err?.name === 'AbortError') return;
+
+                console.error('Auth initialization error:', err);
+                if (mounted) {
+                    setIsLoading(false);
+                }
             }
+        };
 
-            setIsLoading(false);
-        });
+        initAuth();
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                setSession(session);
-                setUser(session?.user ?? null);
+                if (mounted) {
+                    setSession(session);
+                    setUser(session?.user ?? null);
+                    setIsLoading(false);
 
-                // Initialize user data on sign in
-                if (event === 'SIGNED_IN' && session?.user) {
-                    await initializeUserData(session.user.id);
+                    // Initialize user data on sign in
+                    if (event === 'SIGNED_IN' && session?.user) {
+                        initializeUserData(session.user.id).catch(err => {
+                            if (err?.name !== 'AbortError') {
+                                console.error('Init user data error:', err);
+                            }
+                        });
+                    }
                 }
             }
         );
 
-        return () => subscription.unsubscribe();
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
     const signIn = useCallback(async (email: string, password: string) => {
