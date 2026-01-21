@@ -332,7 +332,7 @@ export function experimentToDb(exp: Omit<Experiment, 'id' | 'active'> & { id?: s
         name: exp.name,
         description: exp.description || null,
 
-        tracker1_id: exp.tracker1Id || null, // Keep populating for now
+        tracker1_id: null, // Stop populating to avoid FK violation (protocols have no tracker ID)
         independent_ids: exp.independentIds || (exp.tracker1Id ? [exp.tracker1Id] : null),
         tracker2_id: exp.tracker2Id || null,
         start_date: exp.startDate || null,
