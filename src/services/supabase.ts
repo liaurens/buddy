@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { TrackerDefinition, Entry, Protocol, Cycle, Dose, Experiment, CorrelationResult, Strategy, Task } from '../types';
+import type { TrackerDefinition, Entry, Protocol, Cycle, Dose, Experiment, CorrelationResult, Strategy, Task, NoteCategory, SmartNote } from '../types';
 
 // Supabase client initialization
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -157,6 +157,27 @@ export interface DbExperimentLog {
     content: string;
     mood_rating: number | null;
     created_at: string;
+}
+
+export interface DbNoteCategory {
+    id: string;
+    user_id: string;
+    name: string;
+    flag: string;
+    emoji: string | null;
+    color: string | null;
+    created_at: string;
+}
+
+export interface DbSmartNote {
+    id: string;
+    user_id: string;
+    content: string;
+    category_id: string | null;
+    flag: string | null;
+    processed: boolean;
+    created_at: string;
+    updated_at: string | null;
 }
 
 // Conversion functions: DB (snake_case) <-> App (camelCase)
@@ -467,6 +488,43 @@ export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: strin
         priority: todo.priority || null,
         estimated_time: todo.estimatedTime || null,
         subtasks: todo.subtasks || null,
+    };
+}
+
+// Smart Notes conversion functions
+
+export function dbToNoteCategory(db: DbNoteCategory): NoteCategory {
+    return {
+        id: db.id,
+        name: db.name,
+        flag: db.flag,
+        emoji: db.emoji || undefined,
+        color: db.color || undefined,
+        createdAt: db.created_at,
+    };
+}
+
+export function dbToSmartNote(db: DbSmartNote): SmartNote {
+    return {
+        id: db.id,
+        content: db.content,
+        categoryId: db.category_id || undefined,
+        flag: db.flag || undefined,
+        processed: db.processed,
+        createdAt: db.created_at,
+        updatedAt: db.updated_at || undefined,
+    };
+}
+
+export function smartNoteToDb(note: Omit<SmartNote, 'id' | 'createdAt'> & { id?: string }, userId: string): Omit<DbSmartNote, 'id' | 'created_at'> & { id?: string } {
+    return {
+        id: note.id,
+        user_id: userId,
+        content: note.content,
+        category_id: note.categoryId || null,
+        flag: note.flag || null,
+        processed: note.processed,
+        updated_at: note.updatedAt || null,
     };
 }
 

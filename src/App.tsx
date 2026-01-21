@@ -3,6 +3,7 @@ import { TrackerProvider } from './context/TrackerContext';
 import { TaskProvider } from './context/TaskContext';
 import { ProtocolProvider } from './context/ProtocolContext';
 import { ExperimentProvider } from './context/ExperimentContext';
+import { SmartNotesProvider } from './context/SmartNotesContext';
 import MainLayout from './layouts/MainLayout';
 import Settings from './pages/Settings';
 import TrackerPage from './pages/TrackerPage';
@@ -13,12 +14,13 @@ import HomePage from './pages/HomePage';
 import ToolboxPage from './pages/ToolboxPage';
 import TodoPage from './pages/TodoPage';
 import CalendarPage from './pages/CalendarPage';
+import SmartNotesPage from './pages/SmartNotesPage';
 import LoginScreen from './components/LoginScreen';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured } from './services/supabase';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes'>('home');
   const [navParams, setNavParams] = useState<any>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
@@ -60,6 +62,8 @@ const App: React.FC = () => {
         return <ExperimentsPage onNavigate={handleNavigate} />;
       case 'journal':
         return <DailyReportPage />;
+      case 'notes':
+        return <SmartNotesPage />;
       default:
         return <HomePage onNavigate={handleNavigate} />;
     }
@@ -109,9 +113,11 @@ const App: React.FC = () => {
       <ProtocolProvider>
         <ExperimentProvider>
           <TaskProvider>
-            <MainLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-              {renderContent()}
-            </MainLayout>
+            <SmartNotesProvider>
+              <MainLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+                {renderContent()}
+              </MainLayout>
+            </SmartNotesProvider>
           </TaskProvider>
         </ExperimentProvider>
       </ProtocolProvider>

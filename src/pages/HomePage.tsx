@@ -80,6 +80,14 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             action: () => onNavigate('todos')
         },
         {
+            id: 'notes',
+            title: 'Quick Notes',
+            description: 'Capture & Sort',
+            icon: <Zap size={24} className="text-cyan-600" />,
+            color: 'bg-cyan-50 text-cyan-900 border-cyan-100',
+            action: () => onNavigate('notes')
+        },
+        {
             id: 'calendar',
             title: 'Calendar',
             description: 'Schedule & Planning',

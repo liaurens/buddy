@@ -184,3 +184,39 @@ export interface Strategy {
 
 // Todo is an alias for Task - used by database for backward compatibility
 export type Todo = Task;
+
+// Smart Notes Types (QuickSort Notes)
+
+export interface NoteCategory {
+    id: string;
+    name: string;
+    flag: string;
+    emoji?: string;
+    color?: string;
+    createdAt: string;
+}
+
+export interface SmartNote {
+    id: string;
+    content: string;
+    categoryId?: string;
+    flag?: string;
+    processed: boolean;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface SmartNotesState {
+    notes: SmartNote[];
+    categories: NoteCategory[];
+
+    addNote: (content: string) => Promise<void>;
+    updateNote: (note: SmartNote) => Promise<void>;
+    deleteNote: (id: string) => Promise<void>;
+    moveToCategory: (noteId: string, categoryId: string | null) => Promise<void>;
+    markProcessed: (noteId: string) => Promise<void>;
+
+    addCategory: (category: Omit<NoteCategory, 'id' | 'createdAt'>) => Promise<void>;
+    updateCategory: (category: NoteCategory) => Promise<void>;
+    deleteCategory: (id: string) => Promise<void>;
+}

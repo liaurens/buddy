@@ -21,10 +21,6 @@ export function useAuthProvider(): AuthState {
     const initialized = useRef(false);
 
     useEffect(() => {
-        // Prevent double initialization in StrictMode
-        if (initialized.current) return;
-        initialized.current = true;
-
         let mounted = true;
 
         // Get initial session
@@ -40,10 +36,10 @@ export function useAuthProvider(): AuthState {
                     setSession(session);
                     setUser(session?.user ?? null);
 
-                    // Initialize user data if logged in
-                    if (session?.user) {
+                    // Initialize user data if logged in (only once)
+                    if (session?.user && !initialized.current) {
+                        initialized.current = true;
                         initializeUserData(session.user.id).catch(err => {
-                            // Ignore abort errors
                             if (err?.name !== 'AbortError') {
                                 console.error('Init user data error:', err);
                             }
