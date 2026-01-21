@@ -8,9 +8,10 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface ExperimentListProps {
     onRunAnalysis: (experiment: Experiment) => void;
+    onViewDetails: (experiment: Experiment) => void;
 }
 
-const ExperimentList: React.FC<ExperimentListProps> = ({ onRunAnalysis }) => {
+const ExperimentList: React.FC<ExperimentListProps> = ({ onRunAnalysis, onViewDetails }) => {
     const { trackers } = useTracker();
     const { experiments, deleteExperiment } = useExperiment();
 
@@ -46,8 +47,10 @@ const ExperimentList: React.FC<ExperimentListProps> = ({ onRunAnalysis }) => {
     return (
         <div className="space-y-4">
             {experiments.map(ex => {
-                const v1 = getVariableInfo(ex.tracker1Id);
-                const v2 = getVariableInfo(ex.tracker2Id);
+                const independentIds = ex.independentIds || (ex.tracker1Id ? [ex.tracker1Id] : []);
+                const independentVars = independentIds.map(id => getVariableInfo(id));
+                const dependentVar = getVariableInfo(ex.tracker2Id);
+
                 const startDate = new Date(ex.startDate);
                 const daysActive = Math.floor((new Date().getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -89,17 +92,24 @@ const ExperimentList: React.FC<ExperimentListProps> = ({ onRunAnalysis }) => {
                         </div>
 
                         {/* Visual Flow: Input -> Output */}
-                        <div className="flex items-center gap-3 mb-5 px-2">
-                            <div className="flex-1 bg-slate-50 p-3 rounded-lg text-center border border-slate-100">
-                                <span className="text-xl block mb-1">{v1.emoji}</span>
-                                <span className="text-sm font-medium text-slate-700 block truncate">{v1.name}</span>
-                                <span className="text-xs text-slate-400">{v1.type}</span>
+                        <div className="flex items-center gap-3 mb-5 px-2 cursor-pointer" onClick={() => onViewDetails(ex)}>
+                            <div className="flex-1 bg-slate-50 p-3 rounded-lg text-center border border-slate-100 flex flex-col items-center justify-center gap-2">
+                                {independentVars.map((v, i) => (
+                                    <div key={i} className="flex items-center gap-2 w-full justify-center">
+                                        <span className="text-xl">{v.emoji}</span>
+                                        <span className="text-sm font-medium text-slate-700 truncate max-w-[100px]">{v.name}</span>
+                                        {i < independentVars.length - 1 && <span className="text-slate-300 mx-1">+</span>}
+                                    </div>
+                                ))}
+                                <span className="text-xs text-slate-400 mt-1">Independent Variables</span>
                             </div>
+
                             <ArrowRight size={20} className="text-slate-300 shrink-0" />
-                            <div className="flex-1 bg-slate-50 p-3 rounded-lg text-center border border-slate-100">
-                                <span className="text-xl block mb-1">{v2.emoji}</span>
-                                <span className="text-sm font-medium text-slate-700 block truncate">{v2.name}</span>
-                                <span className="text-xs text-slate-400">{v2.type} (Outcome)</span>
+
+                            <div className="flex-1 bg-slate-50 p-3 rounded-lg text-center border border-slate-100 flex flex-col items-center justify-center h-full">
+                                <span className="text-xl block mb-1">{dependentVar.emoji}</span>
+                                <span className="text-sm font-medium text-slate-700 block truncate">{dependentVar.name}</span>
+                                <span className="text-xs text-slate-400">Outcome</span>
                             </div>
                         </div>
 
@@ -110,6 +120,12 @@ const ExperimentList: React.FC<ExperimentListProps> = ({ onRunAnalysis }) => {
                             >
                                 <TrendingUp size={16} />
                                 Analyze Results
+                            </button>
+                            <button
+                                onClick={() => onViewDetails(ex)}
+                                className="ml-2 flex items-center gap-2 text-sm font-medium text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-100 transition-all border border-slate-200"
+                            >
+                                Details & Notes
                             </button>
                         </div>
                     </div>

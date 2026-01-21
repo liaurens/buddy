@@ -16,7 +16,7 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
     const [step, setStep] = useState(1);
 
     // Form State
-    const [tracker1Id, setTracker1Id] = useState('');
+    const [independentIds, setIndependentIds] = useState<string[]>([]);
     const [tracker2Id, setTracker2Id] = useState('');
     const [name, setName] = useState('');
     const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -24,12 +24,18 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
 
     // Auto-generate name based on trackers or protocols
     useEffect(() => {
-        const t1 = trackers.find(t => t.id === tracker1Id) || protocols.find(p => p.id === tracker1Id);
-        const t2 = trackers.find(t => t.id === tracker2Id); // Dependent is always tracker for now?
-        if (t1 && t2) {
-            setName(`Effect of ${t1.name} on ${t2.name}`);
+        // Auto-generate name based on selected variables
+        const t1s = independentIds.map(id =>
+            trackers.find(t => t.id === id)?.name ||
+            protocols.find(p => p.id === id)?.name
+        ).filter(Boolean);
+
+        const t2 = trackers.find(t => t.id === tracker2Id);
+
+        if (t1s.length > 0 && t2) {
+            setName(`Effect of ${t1s.join(' + ')} on ${t2.name}`);
         }
-    }, [tracker1Id, tracker2Id, trackers, protocols]);
+    }, [independentIds, tracker2Id, trackers, protocols]);
 
     const handleNext = () => setStep(prev => prev + 1);
     const handleBack = () => setStep(prev => prev - 1);
@@ -37,7 +43,8 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
     const handleSubmit = async () => {
         await addExperiment({
             name,
-            tracker1Id,
+            tracker1Id: independentIds[0] || '', // Backward compat
+            independentIds,
             tracker2Id,
             startDate: new Date(startDate).toISOString(),
             // Store duration/goal in description or metadata for now as Experiment interface might need update for specific duration field
@@ -46,7 +53,7 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
         onClose();
     };
 
-    const isStep1Valid = tracker1Id && tracker2Id && tracker1Id !== tracker2Id;
+    const isStep1Valid = independentIds.length > 0 && tracker2Id && !independentIds.includes(tracker2Id);
     const isStep2Valid = startDate && durationWeeks > 0;
 
     return (
@@ -81,24 +88,48 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Independent Variable (The Cause)</label>
-                                    <select
-                                        value={tracker1Id}
-                                        onChange={e => setTracker1Id(e.target.value)}
-                                        className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 bg-slate-50"
-                                    >
-                                        <option value="">Select a variable...</option>
-                                        <optgroup label="Trackers">
-                                            {trackers.map(t => (
-                                                <option key={t.id} value={t.id}>{t.emoji} {t.name}</option>
-                                            ))}
-                                        </optgroup>
-                                        <optgroup label="Protocols">
-                                            {protocols.filter(p => p.active).map(p => (
-                                                <option key={p.id} value={p.id}>💊 {p.name}</option>
-                                            ))}
-                                        </optgroup>
-                                    </select>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">Independent Variable(s) (The Cause)</label>
+                                    <p className="text-xs text-slate-500 mb-2">Select one or more items to test together.</p>
+
+                                    <div className="border border-slate-200 rounded-xl bg-slate-50 max-h-60 overflow-y-auto p-2 space-y-2">
+                                        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 py-1">Trackers</div>
+                                        {trackers.map(t => (
+                                            <label key={t.id} className="flex items-center gap-2 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={independentIds.includes(t.id)}
+                                                    onChange={e => {
+                                                        if (e.target.checked) {
+                                                            setIndependentIds(prev => [...prev, t.id]);
+                                                        } else {
+                                                            setIndependentIds(prev => prev.filter(id => id !== t.id));
+                                                        }
+                                                    }}
+                                                    className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                                                />
+                                                <span>{t.emoji} {t.name}</span>
+                                            </label>
+                                        ))}
+
+                                        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 py-1 mt-2">Protocols</div>
+                                        {protocols.filter(p => p.active).map(p => (
+                                            <label key={p.id} className="flex items-center gap-2 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={independentIds.includes(p.id)}
+                                                    onChange={e => {
+                                                        if (e.target.checked) {
+                                                            setIndependentIds(prev => [...prev, p.id]);
+                                                        } else {
+                                                            setIndependentIds(prev => prev.filter(id => id !== p.id));
+                                                        }
+                                                    }}
+                                                    className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                                                />
+                                                <span>💊 {p.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="flex justify-center text-slate-400">

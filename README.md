@@ -1,73 +1,41 @@
-# React + TypeScript + Vite
+# Student Buddy App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**A personal companion for executive function, self-regulation, and holistic life tracking.**
 
-Currently, two official plugins are available:
+The Student Buddy App is designed to help you manage your daily life, understand your habits through data, and stay focused on your goals. It combines task management, Pomodoro-style focus tools, and detailed life tracking with correlation analysis.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 📚 Documentation
 
-## React Compiler
+Here is everything you need to get started, whether you are a user or a developer:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **[User Manual](./docs/USER_MANUAL.md)**: A complete guide on how to use the app's features.
+- **[Quickstart Guide](./docs/QUICKSTART.md)**: Instructions for developers to set up and run the project locally.
+- **[Testing Guide](./docs/TESTING_GUIDE.md)**: How to run tests and check code coverage.
+- **[Architecture](./docs/ARCHITECTURE.md)**: Overview of the codebase structure and design patterns.
+- **[Project Vision](./docs/project_vision.md)**: The philosophy and future goals of the project.
+- **[Tracker Logic](./docs/tracker_logic.md)**: Explanation of the mathematical models used for correlation analysis.
+- **[Roadmap](./docs/ROADMAP.md)**: Upcoming features and improvements.
+- **[Technical Assessment](./docs/TECHNICAL_ASSESSMENT.md)**: A recent audit of the codebase with scalability and security recommendations.
 
-## Expanding the ESLint configuration
+## 🚀 Key Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+-   **Smart Task Management**: Chunking, prioritization, and time estimation.
+-   **Focus Timer**: Built-in Pomodoro timer to manage work/break cycles.
+-   **Correlation Tracker**: Log sleep, mood, caffeine, and more to find hidden patterns in your life.
+-   **Daily Journal**: Reflection and intention setting.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠️ Technology Stack
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+-   **Frontend**: React 19, TypeScript, Vite
+-   **Styling**: Tailwind CSS
+-   **State Management**: React Context
+-   **Database**: Dexie.js (IndexedDB) with Dexie Cloud sync
+-   **Testing**: Vitest, React Testing Library
+-   **PWA**: Offline-capable Progressive Web App
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🤝 Contributing
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+We welcome contributions! Please see the [Quickstart Guide](./docs/QUICKSTART.md) to set up your environment, and check the [Roadmap](./docs/ROADMAP.md) for tasks to work on.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Legacy Documentation
+*Note: The `docs/` folder may contain older design documents (PDFs, Docx) which serve as historical reference.*

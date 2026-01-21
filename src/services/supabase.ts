@@ -96,7 +96,9 @@ export interface DbExperiment {
     user_id: string;
     name: string;
     description: string | null;
-    tracker1_id: string | null;
+    description: string | null;
+    tracker1_id: string | null; // deprecated in favor of independent_ids but keeping for backward compat
+    independent_ids: string[] | null;
     tracker2_id: string | null;
     start_date: string | null;
     end_date: string | null;
@@ -145,6 +147,16 @@ export interface DbTodo {
     priority: string | null;
     estimated_time: number | null;
     subtasks: Array<{ id: string; title: string; completed: boolean }> | null;
+}
+
+export interface DbExperimentLog {
+    id: string;
+    user_id: string;
+    experiment_id: string;
+    date: string;
+    content: string;
+    mood_rating: number | null;
+    created_at: string;
 }
 
 // Conversion functions: DB (snake_case) <-> App (camelCase)
@@ -302,7 +314,10 @@ export function dbToExperiment(db: DbExperiment): Experiment {
         id: db.id,
         name: db.name,
         description: db.description || undefined,
-        tracker1Id: db.tracker1_id || '',
+        name: db.name,
+        description: db.description || undefined,
+        tracker1Id: db.tracker1_id || '', // Maintain for backward compat
+        independentIds: db.independent_ids || (db.tracker1_id ? [db.tracker1_id] : []),
         tracker2Id: db.tracker2_id || '',
         startDate: db.start_date || '',
         endDate: db.end_date || undefined,
@@ -317,12 +332,38 @@ export function experimentToDb(exp: Omit<Experiment, 'id' | 'active'> & { id?: s
         user_id: userId,
         name: exp.name,
         description: exp.description || null,
-        tracker1_id: exp.tracker1Id || null,
+        name: exp.name,
+        description: exp.description || null,
+        tracker1_id: exp.tracker1Id || null, // Keep populating for now
+        independent_ids: exp.independentIds || (exp.tracker1Id ? [exp.tracker1Id] : null),
         tracker2_id: exp.tracker2Id || null,
         start_date: exp.startDate || null,
         end_date: exp.endDate || null,
         active: exp.active ?? true,
         frequency: exp.frequency || null,
+    };
+}
+
+export function dbToExperimentLog(db: DbExperimentLog): import('../types').ExperimentLog {
+    return {
+        id: db.id,
+        experimentId: db.experiment_id,
+        date: db.date,
+        content: db.content,
+        moodRating: db.mood_rating || undefined,
+        createdAt: db.created_at,
+    };
+}
+
+export function experimentLogToDb(log: Omit<import('../types').ExperimentLog, 'id'> & { id?: string }, userId: string): Omit<DbExperimentLog, 'id'> & { id?: string } {
+    return {
+        id: log.id,
+        user_id: userId,
+        experiment_id: log.experimentId,
+        date: log.date,
+        content: log.content,
+        mood_rating: log.moodRating || null,
+        created_at: log.createdAt,
     };
 }
 
@@ -366,6 +407,45 @@ export function strategyToDb(strategy: Omit<Strategy, 'id'> & { id?: string }, u
         findings: strategy.findings || null,
         is_favorite: strategy.isFavorite || false,
     };
+}
+
+    };
+}
+
+export async function getExperimentLogs(experimentId: string): Promise<import('../types').ExperimentLog[]> {
+    const { data, error } = await supabase
+        .from('experiment_logs')
+        .select('*')
+        .eq('experiment_id', experimentId)
+        .order('date', { ascending: false });
+
+    if (error) throw error;
+    return (data as DbExperimentLog[]).map(dbToExperimentLog);
+}
+
+export async function addExperimentLog(log: Omit<import('../types').ExperimentLog, 'id' | 'createdAt'>): Promise<import('../types').ExperimentLog> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const dbLog = {
+        user_id: user.id,
+        experiment_id: log.experimentId,
+        date: log.date,
+        content: log.content,
+        mood_rating: log.moodRating || null,
+        created_at: new Date().toISOString(), // DB default is now(), but we can send it or let DB handle. 
+        // Note: DB conversion `experimentLogToDb` expects `id` and `created_at` usually. 
+        // Let's rely on supabase returning the row.
+    };
+
+    const { data, error } = await supabase
+        .from('experiment_logs')
+        .insert(dbLog)
+        .select()
+        .single();
+
+    if (error) throw error;
+    return dbToExperimentLog(data as DbExperimentLog);
 }
 
 export function dbToTodo(db: DbTodo): Task {
@@ -469,6 +549,7 @@ export async function exportAllData(userId: string): Promise<string> {
         { data: correlations },
         { data: strategies },
         { data: todos },
+        { data: logs },
     ] = await Promise.all([
         supabase.from('trackers').select('*').eq('user_id', userId),
         supabase.from('entries').select('*').eq('user_id', userId),
@@ -479,10 +560,11 @@ export async function exportAllData(userId: string): Promise<string> {
         supabase.from('correlations').select('*').eq('user_id', userId),
         supabase.from('strategies').select('*').eq('user_id', userId),
         supabase.from('todos').select('*').eq('user_id', userId),
+        supabase.from('experiment_logs').select('*').eq('user_id', userId),
     ]);
 
     return JSON.stringify({
-        version: 2,
+        version: 3,
         exportedAt: new Date().toISOString(),
         trackers: trackers?.map(dbToTracker) || [],
         entries: entries?.map(dbToEntry) || [],
@@ -490,6 +572,7 @@ export async function exportAllData(userId: string): Promise<string> {
         cycles: cycles?.map(dbToCycle) || [],
         doses: doses?.map(dbToDose) || [],
         experiments: experiments?.map(dbToExperiment) || [],
+        logs: logs?.map(dbToExperimentLog) || [],
         correlations: correlations?.map(dbToCorrelation) || [],
         strategies: strategies?.map(dbToStrategy) || [],
         todos: todos?.map(dbToTodo) || [],
@@ -507,6 +590,7 @@ export async function importAllData(jsonData: string, userId: string): Promise<b
             supabase.from('doses').delete().eq('user_id', userId),
             supabase.from('cycles').delete().eq('user_id', userId),
             supabase.from('correlations').delete().eq('user_id', userId),
+            supabase.from('experiment_logs').delete().eq('user_id', userId),
         ]);
 
         // Delete in order due to foreign key constraints
@@ -545,6 +629,11 @@ export async function importAllData(jsonData: string, userId: string): Promise<b
         if (data.experiments?.length > 0) {
             await supabase.from('experiments').insert(
                 data.experiments.map((e: Experiment) => experimentToDb(e, userId))
+            );
+        }
+        if (data.logs?.length > 0) {
+            await supabase.from('experiment_logs').insert(
+                data.logs.map((l: import('../types').ExperimentLog) => experimentLogToDb(l, userId))
             );
         }
         if (data.strategies?.length > 0) {

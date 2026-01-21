@@ -3,11 +3,22 @@ export interface Experiment {
     name: string;
     description?: string;
     tracker1Id: string;
-    tracker2Id: string;
+    description?: string;
+    independentIds?: string[]; // Array of tracker/protocol IDs being tested (Causes)
+    tracker2Id: string; // The dependent variable (Effect)
     startDate: string;
     endDate?: string;
     active: boolean;
     frequency?: 'daily' | 'weekly'; // Reminder frequency
+}
+
+export interface ExperimentLog {
+    id: string;
+    experimentId: string;
+    date: string;
+    content: string;
+    moodRating?: number;
+    createdAt: string;
 }
 
 export type TrackerType = 'number' | 'rating' | 'boolean' | 'text';

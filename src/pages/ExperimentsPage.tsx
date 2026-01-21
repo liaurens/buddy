@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ExperimentList from '../features/experiments/ExperimentList';
 import ExperimentWizard from '../features/experiments/ExperimentWizard';
+import ExperimentDetails from '../features/experiments/ExperimentDetails';
 import type { Experiment } from '../types';
 import { Plus, FlaskConical } from 'lucide-react';
 
@@ -10,6 +11,7 @@ interface ExperimentsPageProps {
 
 const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
     const [isWizardOpen, setIsWizardOpen] = useState(false);
+    const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null);
 
     const handleRunAnalysis = (experiment: Experiment) => {
         if (onNavigate) {
@@ -20,6 +22,15 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
             });
         }
     };
+
+    if (selectedExperiment) {
+        return (
+            <ExperimentDetails
+                experiment={selectedExperiment}
+                onBack={() => setSelectedExperiment(null)}
+            />
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -40,7 +51,10 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
                 </button>
             </div>
 
-            <ExperimentList onRunAnalysis={handleRunAnalysis} />
+            <ExperimentList
+                onRunAnalysis={handleRunAnalysis}
+                onViewDetails={setSelectedExperiment}
+            />
 
             {isWizardOpen && (
                 <ExperimentWizard onClose={() => setIsWizardOpen(false)} />
