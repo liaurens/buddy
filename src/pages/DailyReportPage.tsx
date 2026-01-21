@@ -1,18 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTracker } from '../context/TrackerContext';
+import { useProtocol } from '../context/ProtocolContext';
 import { format, subDays, isSameDay } from 'date-fns';
 import { CheckCircle, CheckSquare } from 'lucide-react';
 import CheckinModal from '../features/tracker/CheckinModal';
-// import type { Protocol, TrackerDefinition } from '../types';
 
 const DailyReportPage: React.FC = () => {
     const { trackers, entries } = useTracker();
-
-    // NOTE: 'addEntry' and 'logDose' are inside CheckinModal now.
+    const { doses } = useProtocol();
 
     const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [isCheckinOpen, setIsCheckinOpen] = useState(false);
-    const todaysEntries = entries.filter(e => isSameDay(new Date(e.timestamp), new Date(selectedDate)));
+
+    const todaysEntries = useMemo(() =>
+        entries.filter(e => isSameDay(new Date(e.timestamp), new Date(selectedDate))),
+        [entries, selectedDate]
+    );
+
+    const todaysDoses = useMemo(() =>
+        doses.filter(d => d.takenAt && isSameDay(new Date(d.takenAt), new Date(selectedDate))),
+        [doses, selectedDate]
+    );
 
     const isTodayComplete = todaysEntries.some(e =>
         e.notes === 'Daily Check-in' || e.trackerId === 'journal_notes' || e.trackerId === 'mood'
@@ -118,6 +126,8 @@ const DailyReportPage: React.FC = () => {
                 onClose={() => setIsCheckinOpen(false)}
                 onComplete={() => setIsCheckinOpen(false)}
                 date={new Date(selectedDate)}
+                existingEntries={todaysEntries}
+                existingDoses={todaysDoses}
             />
         </div>
     );

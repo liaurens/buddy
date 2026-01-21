@@ -127,8 +127,8 @@ export const ProtocolProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const dbUpdates = {
             name: updates.name,
             category: updates.category,
-            dose_amount: updates.doseAmount,
-            dose_unit: updates.doseUnit,
+            dose_amount: updates.doseAmount || null,
+            dose_unit: updates.doseUnit || null,
             frequency: updates.frequency,
             route: updates.route || null,
             timing_notes: updates.timingNotes || null,
@@ -137,6 +137,7 @@ export const ProtocolProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             expected_outcomes: updates.expectedOutcomes || null,
             linked_tracker_id: updates.linkedTrackerId || null,
             default_tracker_type: updates.defaultTrackerType || null,
+            effect_timing: updates.effectTiming || null,
         };
 
         const { error } = await supabase

@@ -62,6 +62,7 @@ export interface DbProtocol {
     }> | null;
     linked_tracker_id: string | null;
     default_tracker_type: string | null;
+    effect_timing: string | null;
     created_at: string;
 }
 
@@ -205,8 +206,8 @@ export function dbToProtocol(db: DbProtocol): Protocol {
         id: db.id,
         name: db.name,
         category: (db.category as Protocol['category']) || 'other',
-        doseAmount: db.dose_amount ?? 0,
-        doseUnit: db.dose_unit || '',
+        doseAmount: db.dose_amount ?? undefined,
+        doseUnit: db.dose_unit || undefined,
         frequency: db.frequency || '',
         route: db.route || undefined,
         timingNotes: db.timing_notes || undefined,
@@ -215,6 +216,7 @@ export function dbToProtocol(db: DbProtocol): Protocol {
         expectedOutcomes: db.expected_outcomes || undefined,
         linkedTrackerId: db.linked_tracker_id || undefined,
         defaultTrackerType: db.default_tracker_type as Protocol['defaultTrackerType'],
+        effectTiming: db.effect_timing as Protocol['effectTiming'],
         createdAt: db.created_at,
     };
 }
@@ -225,8 +227,8 @@ export function protocolToDb(protocol: Omit<Protocol, 'id' | 'createdAt'> & { id
         user_id: userId,
         name: protocol.name,
         category: protocol.category,
-        dose_amount: protocol.doseAmount,
-        dose_unit: protocol.doseUnit,
+        dose_amount: protocol.doseAmount || null,
+        dose_unit: protocol.doseUnit || null,
         frequency: protocol.frequency,
         route: protocol.route || null,
         timing_notes: protocol.timingNotes || null,
@@ -235,6 +237,7 @@ export function protocolToDb(protocol: Omit<Protocol, 'id' | 'createdAt'> & { id
         expected_outcomes: protocol.expectedOutcomes || null,
         linked_tracker_id: protocol.linkedTrackerId || null,
         default_tracker_type: protocol.defaultTrackerType || null,
+        effect_timing: protocol.effectTiming || null,
     };
 }
 
@@ -394,13 +397,24 @@ export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: strin
 
 // Default trackers to seed on first run
 const DEFAULT_TRACKERS: Omit<TrackerDefinition, 'id'>[] = [
+    // Health - Sleep
     { name: 'Sleep Hours', emoji: '🌙', type: 'number', unit: 'hrs', group: 'Health', checkinConfig: { isRequired: true, inCheckin: true } },
     { name: 'Sleep Quality', emoji: '💤', type: 'rating', group: 'Health', checkinConfig: { isRequired: true, inCheckin: true } },
-    { name: 'Caffeine', emoji: '☕', type: 'number', unit: 'mg', group: 'Diet', checkinConfig: { isRequired: false, inCheckin: true } },
-    { name: 'Movement', emoji: '🏃', type: 'rating', group: 'Health', checkinConfig: { isRequired: false, inCheckin: true } },
+    // Health - Physical
+    { name: 'Training', emoji: '🏋️', type: 'text', group: 'Health', checkinConfig: { isRequired: false, inCheckin: true } },
+    { name: 'Steps', emoji: '👟', type: 'number', unit: 'steps', group: 'Health', checkinConfig: { isRequired: false, inCheckin: true } },
+    // Health - Body
+    { name: 'Nose Blocked', emoji: '👃', type: 'rating', group: 'Health', checkinConfig: { isRequired: false, inCheckin: true } },
+    { name: 'Asthma', emoji: '🌬️', type: 'rating', group: 'Health', checkinConfig: { isRequired: false, inCheckin: true } },
+    { name: 'Hunger', emoji: '🍽️', type: 'rating', group: 'Health', checkinConfig: { isRequired: false, inCheckin: true } },
+    // Mental
     { name: 'Mood', emoji: '😊', type: 'rating', group: 'Mental', checkinConfig: { isRequired: true, inCheckin: true } },
     { name: 'Energy', emoji: '⚡', type: 'rating', group: 'Mental', checkinConfig: { isRequired: true, inCheckin: true } },
+    { name: 'Mental Clarity', emoji: '🧠', type: 'rating', group: 'Mental', checkinConfig: { isRequired: false, inCheckin: true } },
     { name: 'Stress', emoji: '😰', type: 'rating', group: 'Mental', checkinConfig: { isRequired: false, inCheckin: true } },
+    // Diet
+    { name: 'Caffeine', emoji: '☕', type: 'number', unit: 'mg', group: 'Diet', checkinConfig: { isRequired: false, inCheckin: true } },
+    // Journal
     { name: 'Daily Notes', emoji: '📓', type: 'text', group: 'Journal', checkinConfig: { isRequired: false, inCheckin: true } },
 ];
 

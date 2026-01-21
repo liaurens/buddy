@@ -1,23 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTracker } from '../../context/TrackerContext';
 import { useProtocol } from '../../context/ProtocolContext';
 import { CheckCircle, X, Pill, Moon } from 'lucide-react';
-import type { TrackerDefinition } from '../../types';
+import type { TrackerDefinition, Entry, Dose } from '../../types';
 
 interface CheckinModalProps {
     isOpen: boolean;
     onClose: () => void;
     onComplete: () => void;
     date?: Date; // Optional date for backdating
+    existingEntries?: Entry[]; // Existing entries for the date
+    existingDoses?: Dose[]; // Existing doses for the date
 }
 
-const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete, date }) => {
-    const { trackers, addEntry } = useTracker();
+const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete, date, existingEntries = [], existingDoses = [] }) => {
+    const { trackers, addEntry, updateEntry } = useTracker();
     const { protocols, logDose } = useProtocol();
 
     const [trackerValues, setTrackerValues] = useState<Record<string, number | string>>({});
     const [protocolLogs, setProtocolLogs] = useState<Record<string, { taken: boolean }>>({});
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+    // Track which entries already exist (for update vs create)
+    const existingEntryMap = useMemo(() => {
+        const map: Record<string, Entry> = {};
+        existingEntries.forEach(entry => {
+            map[entry.trackerId] = entry;
+        });
+        return map;
+    }, [existingEntries]);
+
+    // Pre-populate form with existing data when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            // Populate tracker values from existing entries
+            const initialValues: Record<string, number | string> = {};
+            existingEntries.forEach(entry => {
+                const tracker = trackers.find(t => t.id === entry.trackerId);
+                if (tracker) {
+                    if (tracker.type === 'text') {
+                        initialValues[entry.trackerId] = entry.textValue || '';
+                    } else {
+                        initialValues[entry.trackerId] = entry.value;
+                    }
+                }
+            });
+            setTrackerValues(initialValues);
+
+            // Populate protocol logs from existing doses
+            const initialProtocols: Record<string, { taken: boolean }> = {};
+            existingDoses.forEach(dose => {
+                if (!dose.skipped && dose.takenAt) {
+                    initialProtocols[dose.protocolId] = { taken: true };
+                }
+            });
+            setProtocolLogs(initialProtocols);
+
+            setSubmitStatus('idle');
+        }
+    }, [isOpen, existingEntries, existingDoses, trackers]);
 
     if (!isOpen) return null;
 
@@ -49,31 +90,43 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
     const handleSubmit = async () => {
         try {
             // Use provided date (noon to avoid timezone shifts?) or current time
-            // If date is provided, we use that date but keep current time or set to specific time?
-            // For Journal backdating, usually just setting to "noon" of that day is safe for "daily" granularity.
             const targetDate = date ? new Date(date) : new Date();
             if (date) {
                 targetDate.setHours(12, 0, 0, 0);
             }
             const timestamp = targetDate.toISOString();
 
-            // 1. Log Protocols
+            // 1. Log Protocols (only new ones that weren't already logged)
+            const existingDoseProtocolIds = new Set(existingDoses.filter(d => !d.skipped && d.takenAt).map(d => d.protocolId));
             for (const [id, log] of Object.entries(protocolLogs)) {
-                if (log.taken) await logDose(id);
+                if (log.taken && !existingDoseProtocolIds.has(id)) {
+                    await logDose(id);
+                }
             }
 
-            // 2. Log Trackers
+            // 2. Log Trackers - update existing or create new
             const promises = Object.entries(trackerValues).map(([trackerId, value]) => {
                 const tracker = trackers.find(t => t.id === trackerId);
                 const isTextType = tracker?.type === 'text';
+                const existingEntry = existingEntryMap[trackerId];
 
-                return addEntry({
-                    trackerId,
-                    value: isTextType ? 0 : Number(value),
-                    textValue: isTextType ? String(value) : undefined,
-                    notes: 'Daily Check-in',
-                    timestamp
-                });
+                if (existingEntry) {
+                    // Update existing entry
+                    return updateEntry({
+                        ...existingEntry,
+                        value: isTextType ? 0 : Number(value),
+                        textValue: isTextType ? String(value) : undefined,
+                    });
+                } else {
+                    // Create new entry
+                    return addEntry({
+                        trackerId,
+                        value: isTextType ? 0 : Number(value),
+                        textValue: isTextType ? String(value) : undefined,
+                        notes: 'Daily Check-in',
+                        timestamp
+                    });
+                }
             });
 
             // 3. Calculate Sleep Score (Scientific-ish) logic... 
@@ -174,6 +227,7 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                     <div className="flex items-center gap-2">
                         <input
                             type={tracker.type === 'number' ? "number" : "text"}
+                            step={tracker.id === 'sleep_hours' || tracker.name?.toLowerCase().includes('sleep') ? "0.5" : "any"}
                             value={trackerValues[tracker.id] || ''}
                             onChange={(e) => handleTrackerChange(tracker.id, tracker.type === 'number' ? parseFloat(e.target.value) : e.target.value)}
                             placeholder={tracker.unit || "Value"}
@@ -205,12 +259,12 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                             </h3>
                             <div className="space-y-3">
                                 {activeProtocols.map(p => (
-                                    <label key={p.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-indigo-50 transition-colors ring-1 ring-slate-100">
-                                        <div>
-                                            <div className="font-semibold text-slate-800">{p.name}</div>
+                                    <label key={p.id} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-indigo-50 transition-colors ring-1 ring-slate-100">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="font-semibold text-slate-800 truncate" title={p.name}>{p.name}</div>
                                             <div className="text-xs text-slate-500">{p.doseAmount} {p.doseUnit}</div>
                                         </div>
-                                        <div className="relative">
+                                        <div className="relative shrink-0">
                                             <input
                                                 type="checkbox"
                                                 className="w-6 h-6 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"

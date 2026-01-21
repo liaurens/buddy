@@ -16,7 +16,10 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
     const [doseAmount, setDoseAmount] = useState(editingProtocol?.doseAmount?.toString() || '');
     const [doseUnit, setDoseUnit] = useState(editingProtocol?.doseUnit || 'mg');
     const [frequency, setFrequency] = useState(editingProtocol?.frequency || 'daily');
+    const [effectTiming, setEffectTiming] = useState<Protocol['effectTiming']>(editingProtocol?.effectTiming);
     const [active, setActive] = useState(editingProtocol?.active ?? true);
+
+    const isPractice = category === 'practice';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,9 +27,10 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
         const protocolData = {
             name,
             category,
-            doseAmount: parseFloat(doseAmount),
-            doseUnit,
+            doseAmount: isPractice ? undefined : parseFloat(doseAmount) || undefined,
+            doseUnit: isPractice ? undefined : doseUnit || undefined,
             frequency,
+            effectTiming,
             active,
         };
 
@@ -74,6 +78,7 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
                                 <option value="supplement">Supplement</option>
                                 <option value="pharmaceutical">Pharmaceutical</option>
                                 <option value="peptide">Peptide</option>
+                                <option value="practice">Practice (Non-substance)</option>
                                 <option value="other">Other</option>
                             </select>
                         </div>
@@ -93,30 +98,44 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Dose Amount</label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={doseAmount}
-                                onChange={e => setDoseAmount(e.target.value)}
-                                placeholder="200"
-                                className="w-full p-2 border border-slate-200 rounded-lg"
-                                required
-                            />
+                    {!isPractice && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Dose Amount</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={doseAmount}
+                                    onChange={e => setDoseAmount(e.target.value)}
+                                    placeholder="200"
+                                    className="w-full p-2 border border-slate-200 rounded-lg"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Unit</label>
+                                <input
+                                    type="text"
+                                    value={doseUnit}
+                                    onChange={e => setDoseUnit(e.target.value)}
+                                    placeholder="mg"
+                                    className="w-full p-2 border border-slate-200 rounded-lg"
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Unit</label>
-                            <input
-                                type="text"
-                                value={doseUnit}
-                                onChange={e => setDoseUnit(e.target.value)}
-                                placeholder="mg"
-                                className="w-full p-2 border border-slate-200 rounded-lg"
-                                required
-                            />
-                        </div>
+                    )}
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Effect Timing</label>
+                        <select
+                            value={effectTiming || ''}
+                            onChange={e => setEffectTiming(e.target.value as Protocol['effectTiming'] || undefined)}
+                            className="w-full p-2 border border-slate-200 rounded-lg"
+                        >
+                            <option value="">Not specified</option>
+                            <option value="immediate">Immediate (e.g., Adderall, caffeine)</option>
+                            <option value="immediate_compounding">Immediate + Compounding (e.g., creatine)</option>
+                            <option value="long_term">Long Term (e.g., Enclomiphene)</option>
+                        </select>
                     </div>
 
                     <div className="flex items-center gap-2">

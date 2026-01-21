@@ -97,9 +97,9 @@ export interface ExpectedOutcome {
 export interface Protocol {
     id: string;
     name: string;
-    category: 'peptide' | 'pharmaceutical' | 'supplement' | 'other';
-    doseAmount: number;
-    doseUnit: string;
+    category: 'peptide' | 'pharmaceutical' | 'supplement' | 'practice' | 'other';
+    doseAmount?: number; // Optional for practice-type protocols
+    doseUnit?: string;   // Optional for practice-type protocols
     frequency: string;
     route?: string;
     timingNotes?: string;
@@ -108,6 +108,7 @@ export interface Protocol {
     expectedOutcomes?: ExpectedOutcome[];
     linkedTrackerId?: string; // ID of a tracker that automatically logs this protocol's dose
     defaultTrackerType?: 'boolean' | 'number'; // If auto-creating, what type?
+    effectTiming?: 'immediate' | 'immediate_compounding' | 'long_term'; // Effect timing tag
     createdAt: string;
 }
 
