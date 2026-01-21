@@ -96,7 +96,7 @@ export interface DbExperiment {
     user_id: string;
     name: string;
     description: string | null;
-    description: string | null;
+
     tracker1_id: string | null; // deprecated in favor of independent_ids but keeping for backward compat
     independent_ids: string[] | null;
     tracker2_id: string | null;
@@ -314,8 +314,7 @@ export function dbToExperiment(db: DbExperiment): Experiment {
         id: db.id,
         name: db.name,
         description: db.description || undefined,
-        name: db.name,
-        description: db.description || undefined,
+
         tracker1Id: db.tracker1_id || '', // Maintain for backward compat
         independentIds: db.independent_ids || (db.tracker1_id ? [db.tracker1_id] : []),
         tracker2Id: db.tracker2_id || '',
@@ -332,8 +331,7 @@ export function experimentToDb(exp: Omit<Experiment, 'id' | 'active'> & { id?: s
         user_id: userId,
         name: exp.name,
         description: exp.description || null,
-        name: exp.name,
-        description: exp.description || null,
+
         tracker1_id: exp.tracker1Id || null, // Keep populating for now
         independent_ids: exp.independentIds || (exp.tracker1Id ? [exp.tracker1Id] : null),
         tracker2_id: exp.tracker2Id || null,
@@ -406,9 +404,6 @@ export function strategyToDb(strategy: Omit<Strategy, 'id'> & { id?: string }, u
         content: strategy.content || null,
         findings: strategy.findings || null,
         is_favorite: strategy.isFavorite || false,
-    };
-}
-
     };
 }
 

@@ -3,7 +3,7 @@ export interface Experiment {
     name: string;
     description?: string;
     tracker1Id: string;
-    description?: string;
+
     independentIds?: string[]; // Array of tracker/protocol IDs being tested (Causes)
     tracker2Id: string; // The dependent variable (Effect)
     startDate: string;
