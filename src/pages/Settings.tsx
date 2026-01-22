@@ -415,6 +415,15 @@ const Settings: React.FC = () => {
                                         />
                                         Req
                                     </label>
+                                    <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={tracker.checkinConfig?.showInDailyReport ?? false}
+                                            onChange={(e) => handleUpdateTrackerConfig(tracker, { showInDailyReport: e.target.checked })}
+                                            className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                        />
+                                        Report
+                                    </label>
                                 </div>
                                 <button
                                     onClick={() => deleteTracker(tracker.id)}

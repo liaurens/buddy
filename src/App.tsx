@@ -15,12 +15,13 @@ import ToolboxPage from './pages/ToolboxPage';
 import TodoPage from './pages/TodoPage';
 import CalendarPage from './pages/CalendarPage';
 import SmartNotesPage from './pages/SmartNotesPage';
+import PomodoroTimer from './features/focus/PomodoroTimer';
 import LoginScreen from './components/LoginScreen';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured } from './services/supabase';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes' | 'focus'>('home');
   const [navParams, setNavParams] = useState<any>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
@@ -64,6 +65,8 @@ const App: React.FC = () => {
         return <DailyReportPage />;
       case 'notes':
         return <SmartNotesPage />;
+      case 'focus':
+        return <PomodoroTimer />;
       default:
         return <HomePage onNavigate={handleNavigate} />;
     }

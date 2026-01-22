@@ -5,7 +5,7 @@ import { useExperiment } from '../context/ExperimentContext';
 import { format, isSameDay } from 'date-fns';
 import {
     Zap, Calendar as CalendarIcon,
-    BookOpen, CheckSquare, Lightbulb, BarChart2
+    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer
 } from 'lucide-react';
 
 interface HomePageProps {
@@ -78,6 +78,14 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             icon: <CheckSquare size={24} className="text-indigo-600" />,
             color: 'bg-indigo-50 text-indigo-900 border-indigo-100',
             action: () => onNavigate('todos')
+        },
+        {
+            id: 'focus',
+            title: 'Focus',
+            description: 'Pomodoro Timer',
+            icon: <Timer size={24} className="text-rose-600" />,
+            color: 'bg-rose-50 text-rose-900 border-rose-100',
+            action: () => onNavigate('focus')
         },
         {
             id: 'notes',

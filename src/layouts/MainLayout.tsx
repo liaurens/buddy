@@ -3,7 +3,7 @@ import { Settings as SettingsIcon, CheckSquare, Activity, Pill, FlaskConical, Ca
 
 interface MainLayoutProps {
     children: React.ReactNode;
-    activeTab: 'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes';
+    activeTab: 'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes' | 'focus';
     setActiveTab: (tab: any) => void;
 }
 

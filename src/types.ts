@@ -38,6 +38,7 @@ export interface TrackerDefinition {
     checkinConfig?: {
         isRequired: boolean;
         inCheckin: boolean;
+        showInDailyReport?: boolean;
     };
 }
 

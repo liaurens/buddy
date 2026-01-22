@@ -89,35 +89,46 @@ const DailyReportPage: React.FC = () => {
             {/* Entries Display */}
             <div className="space-y-3">
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider px-1">Logged Data</h3>
-                {todaysEntries.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400 text-sm italic">
-                        Nothing logged for this day.
-                    </div>
-                ) : (
-                    <div className="bg-white rounded-2xl border border-slate-100 divide-y divide-slate-50 shadow-sm">
-                        {todaysEntries.map(entry => {
-                            const tracker = trackers.find(t => t.id === entry.trackerId);
-                            if (!tracker) return null;
-                            return (
-                                <div key={entry.id} className="p-4 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-2xl">{tracker.emoji}</span>
-                                        <div>
-                                            <p className="font-medium text-slate-900">{tracker.name}</p>
-                                            <p className="text-xs text-slate-500">{entry.notes || tracker.group}</p>
+                {(() => {
+                    const reportEntries = todaysEntries.filter(entry => {
+                        const tracker = trackers.find(t => t.id === entry.trackerId);
+                        return tracker?.checkinConfig?.showInDailyReport;
+                    });
+
+                    if (reportEntries.length === 0) {
+                        return (
+                            <div className="text-center py-8 text-slate-400 text-sm italic">
+                                Nothing logged for this day.
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <div className="bg-white rounded-2xl border border-slate-100 divide-y divide-slate-50 shadow-sm">
+                            {reportEntries.map(entry => {
+                                const tracker = trackers.find(t => t.id === entry.trackerId);
+                                if (!tracker) return null;
+                                return (
+                                    <div key={entry.id} className="p-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-2xl">{tracker.emoji}</span>
+                                            <div>
+                                                <p className="font-medium text-slate-900">{tracker.name}</p>
+                                                <p className="text-xs text-slate-500">{entry.notes || tracker.group}</p>
+                                            </div>
+                                        </div>
+                                        <div className="font-bold text-slate-700">
+                                            {tracker.type === 'boolean'
+                                                ? (entry.value ? 'Yes' : 'No')
+                                                : <>{entry.value} <span className="text-xs font-normal text-slate-400">{tracker.unit}</span></>
+                                            }
                                         </div>
                                     </div>
-                                    <div className="font-bold text-slate-700">
-                                        {tracker.type === 'boolean'
-                                            ? (entry.value ? 'Yes' : 'No')
-                                            : <>{entry.value} <span className="text-xs font-normal text-slate-400">{tracker.unit}</span></>
-                                        }
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                                );
+                            })}
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* ---------------- CHECK-IN MODAL ---------------- */}
