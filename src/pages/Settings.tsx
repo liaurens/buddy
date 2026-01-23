@@ -388,40 +388,40 @@ const Settings: React.FC = () => {
                                     )}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
                                 {/* Check-in Configuration */}
-                                <div className="flex items-center gap-2">
-                                    <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
+                                <div className="flex flex-col gap-1">
+                                    <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer hover:text-slate-800" title="Show in daily check-in">
                                         <input
                                             type="checkbox"
                                             checked={tracker.checkinConfig?.inCheckin ?? true}
                                             onChange={(e) => handleUpdateTrackerConfig(tracker, { inCheckin: e.target.checked })}
-                                            className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                            className="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
                                         />
-                                        Show
+                                        Check-in
                                     </label>
-                                    <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
+                                    <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer hover:text-slate-800" title="Required in daily check-in">
                                         <input
                                             type="checkbox"
                                             checked={tracker.checkinConfig?.isRequired ?? false}
                                             onChange={(e) => handleUpdateTrackerConfig(tracker, { isRequired: e.target.checked })}
-                                            className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                            className="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
                                         />
-                                        Req
+                                        Required
                                     </label>
-                                    <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
+                                    <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer hover:text-slate-800" title="Show in daily report">
                                         <input
                                             type="checkbox"
                                             checked={tracker.checkinConfig?.showInDailyReport ?? false}
                                             onChange={(e) => handleUpdateTrackerConfig(tracker, { showInDailyReport: e.target.checked })}
-                                            className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                            className="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
                                         />
-                                        Report
+                                        Daily Report
                                     </label>
                                 </div>
                                 <button
                                     onClick={() => deleteTracker(tracker.id)}
-                                    className="text-slate-400 hover:text-rose-500 transition-colors"
+                                    className="text-slate-400 hover:text-rose-500 transition-colors ml-auto"
                                     title="Delete Tracker"
                                 >
                                     <Trash2 size={16} />

@@ -44,15 +44,15 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({ autoFocus = fals
 
     return (
         <form onSubmit={handleSubmit} className="relative">
-            <div className="flex items-center gap-2 bg-slate-800 rounded-xl p-2 border border-slate-700 focus-within:border-indigo-500 transition-colors">
-                <Zap className="w-5 h-5 text-indigo-400 ml-2 flex-shrink-0" />
+            <div className="flex items-center gap-2 bg-white rounded-xl p-2 border border-slate-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all shadow-sm">
+                <Zap className="w-5 h-5 text-indigo-600 ml-2 flex-shrink-0" />
                 <input
                     ref={inputRef}
                     type="text"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="Quick note... (use -flag to sort)"
-                    className="flex-1 bg-transparent text-white placeholder-slate-500 outline-none text-sm"
+                    className="flex-1 bg-transparent text-slate-800 placeholder-slate-400 outline-none text-sm"
                     disabled={isSubmitting}
                 />
                 <button
@@ -66,7 +66,7 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({ autoFocus = fals
 
             {/* Flag detection indicator */}
             {matchingCategory && (
-                <div className="absolute -bottom-6 left-0 text-xs text-slate-400 flex items-center gap-1">
+                <div className="absolute -bottom-6 left-0 text-xs text-slate-600 flex items-center gap-1">
                     <span>Will sort to:</span>
                     <span
                         className="px-2 py-0.5 rounded-full text-white text-xs"
@@ -78,7 +78,7 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({ autoFocus = fals
             )}
 
             {detectedFlag && !matchingCategory && (
-                <div className="absolute -bottom-6 left-0 text-xs text-amber-400">
+                <div className="absolute -bottom-6 left-0 text-xs text-amber-600">
                     Unknown flag "-{detectedFlag}" - will go to Inbox
                 </div>
             )}

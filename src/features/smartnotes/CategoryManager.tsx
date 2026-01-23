@@ -69,32 +69,32 @@ export const CategoryManager: React.FC = () => {
     };
 
     const CategoryForm = ({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) => (
-        <div className="bg-slate-700 rounded-lg p-4 space-y-3">
+        <div className="bg-slate-50 rounded-lg p-4 space-y-3 border border-slate-200">
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="block text-xs text-slate-400 mb-1">Name</label>
+                    <label className="block text-xs text-slate-600 mb-1">Name</label>
                     <input
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
                         placeholder="Groceries"
-                        className="w-full bg-slate-600 text-white rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-white border border-slate-200 text-slate-800 rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
                 <div>
-                    <label className="block text-xs text-slate-400 mb-1">Flag (trigger word)</label>
+                    <label className="block text-xs text-slate-600 mb-1">Flag (trigger word)</label>
                     <input
                         type="text"
                         value={formData.flag}
                         onChange={(e) => setFormData(f => ({ ...f, flag: e.target.value.toLowerCase() }))}
                         placeholder="boodschap"
-                        className="w-full bg-slate-600 text-white rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="w-full bg-white border border-slate-200 text-slate-800 rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
             </div>
 
             <div>
-                <label className="block text-xs text-slate-400 mb-1">Emoji</label>
+                <label className="block text-xs text-slate-600 mb-1">Emoji</label>
                 <div className="flex flex-wrap gap-1">
                     {PRESET_EMOJIS.map(emoji => (
                         <button
@@ -104,7 +104,7 @@ export const CategoryManager: React.FC = () => {
                             className={`w-8 h-8 rounded flex items-center justify-center text-lg ${
                                 formData.emoji === emoji
                                     ? 'bg-indigo-600 ring-2 ring-indigo-400'
-                                    : 'bg-slate-600 hover:bg-slate-500'
+                                    : 'bg-white border border-slate-200 hover:bg-slate-100'
                             }`}
                         >
                             {emoji}
@@ -114,7 +114,7 @@ export const CategoryManager: React.FC = () => {
             </div>
 
             <div>
-                <label className="block text-xs text-slate-400 mb-1">Color</label>
+                <label className="block text-xs text-slate-600 mb-1">Color</label>
                 <div className="flex flex-wrap gap-1">
                     {PRESET_COLORS.map(color => (
                         <button
@@ -122,7 +122,7 @@ export const CategoryManager: React.FC = () => {
                             type="button"
                             onClick={() => setFormData(f => ({ ...f, color }))}
                             className={`w-8 h-8 rounded ${
-                                formData.color === color ? 'ring-2 ring-white' : ''
+                                formData.color === color ? 'ring-2 ring-slate-800' : ''
                             }`}
                             style={{ backgroundColor: color }}
                         />
@@ -133,7 +133,7 @@ export const CategoryManager: React.FC = () => {
             <div className="flex justify-end gap-2 pt-2">
                 <button
                     onClick={onCancel}
-                    className="px-3 py-1.5 text-slate-400 hover:text-white text-sm"
+                    className="px-3 py-1.5 text-slate-600 hover:text-slate-800 text-sm"
                 >
                     Cancel
                 </button>
@@ -151,7 +151,7 @@ export const CategoryManager: React.FC = () => {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                     <Tag className="w-5 h-5" />
                     Categories
                 </h3>
@@ -179,7 +179,7 @@ export const CategoryManager: React.FC = () => {
                                 onCancel={resetForm}
                             />
                         ) : (
-                            <div className="flex items-center justify-between bg-slate-800 rounded-lg p-3 border border-slate-700">
+                            <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-slate-200 shadow-sm">
                                 <div className="flex items-center gap-3">
                                     <span
                                         className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
@@ -188,8 +188,8 @@ export const CategoryManager: React.FC = () => {
                                         {category.emoji}
                                     </span>
                                     <div>
-                                        <p className="text-white font-medium">{category.name}</p>
-                                        <p className="text-xs text-slate-400">
+                                        <p className="text-slate-800 font-medium">{category.name}</p>
+                                        <p className="text-xs text-slate-500">
                                             -{category.flag} | {getNotesCount(category.id)} notes
                                         </p>
                                     </div>
@@ -197,13 +197,13 @@ export const CategoryManager: React.FC = () => {
                                 <div className="flex items-center gap-1">
                                     <button
                                         onClick={() => handleEdit(category)}
-                                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded"
+                                        className="p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded"
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => deleteCategory(category.id)}
-                                        className="p-2 text-red-400 hover:text-red-300 hover:bg-slate-700 rounded"
+                                        className="p-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
