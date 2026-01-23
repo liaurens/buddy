@@ -85,6 +85,12 @@ export interface Task {
     priority?: 'urgent' | 'high' | 'medium' | 'low';
     estimatedTime?: number; // in minutes
     subtasks?: Subtask[];
+
+    // Time tracking for daily planning
+    actualMinutes?: number;       // Actual time spent when completed
+    startedAt?: string;            // ISO timestamp when task was started
+    completedAt?: string;          // ISO timestamp when task was completed
+    historicalMinutes?: number[];  // Previous durations for similar tasks (learning data)
 }
 
 export interface TaskState {
@@ -93,6 +99,10 @@ export interface TaskState {
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
     updateTask: (task: Task) => void;
+
+    // Time tracking methods for daily planning
+    startTask: (id: string) => void;
+    completeTaskWithDuration: (id: string, actualMinutes: number) => void;
 }
 
 // Protocol & Medication Tracking Types

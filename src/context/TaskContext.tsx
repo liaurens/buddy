@@ -108,8 +108,46 @@ export const TaskProvider: React.FC<{ children: React.ReactNode }> = ({ children
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
     }, [userId, queryClient]);
 
+    const startTask = useCallback(async (id: string) => {
+        if (!userId) return;
+
+        const { error } = await supabase
+            .from('todos')
+            .update({ started_at: new Date().toISOString() })
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+    }, [userId, queryClient]);
+
+    const completeTaskWithDuration = useCallback(async (id: string, actualMinutes: number) => {
+        if (!userId) return;
+
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+
+        // Add to historical minutes (keep last 10)
+        const historicalMinutes = task.historicalMinutes || [];
+        const updatedHistory = [...historicalMinutes, actualMinutes].slice(-10);
+
+        const { error } = await supabase
+            .from('todos')
+            .update({
+                completed: true,
+                actual_minutes: actualMinutes,
+                completed_at: new Date().toISOString(),
+                historical_minutes: updatedHistory,
+            })
+            .eq('id', id)
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+    }, [userId, tasks, queryClient]);
+
     return (
-        <TaskContext.Provider value={{ tasks, addTask, toggleTask, deleteTask, updateTask }}>
+        <TaskContext.Provider value={{ tasks, addTask, toggleTask, deleteTask, updateTask, startTask, completeTaskWithDuration }}>
             {children}
         </TaskContext.Provider>
     );
