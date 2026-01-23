@@ -207,5 +207,3 @@ export const useTracker = () => {
     return context;
 };
 
-// Re-export for convenience
-export { exportAllData, importAllData };

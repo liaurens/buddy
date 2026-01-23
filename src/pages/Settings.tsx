@@ -7,7 +7,7 @@ import { Plus, Trash2, Download, Upload, Save, X, Cloud, LogOut, Zap, Copy, Refr
 import { v4 as uuidv4 } from 'uuid';
 
 const Settings: React.FC = () => {
-    const { trackers, addTracker, deleteTracker, exportData, importData } = useTracker();
+    const { trackers, addTracker, deleteTracker, updateTracker, exportData, importData } = useTracker();
     const { user, signOut } = useAuth();
     const [isAdding, setIsAdding] = useState(false);
     const [importText, setImportText] = useState('');
@@ -165,13 +165,7 @@ const Settings: React.FC = () => {
         };
 
         try {
-            const { error } = await supabase
-                .from('trackers')
-                .update({ checkin_config: updatedTracker.checkinConfig })
-                .eq('id', tracker.id)
-                .eq('user_id', user?.id);
-
-            if (error) throw error;
+            await updateTracker(updatedTracker);
         } catch (error) {
             console.error('Failed to update tracker:', error);
         }
