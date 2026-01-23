@@ -553,40 +553,56 @@ const DEFAULT_TRACKERS: Omit<TrackerDefinition, 'id'>[] = [
 
 // Initialize database with default trackers if empty
 export async function initializeUserData(userId: string): Promise<void> {
-    const { data: existingTrackers, error } = await supabase
-        .from('trackers')
-        .select('id')
-        .eq('user_id', userId)
-        .limit(1);
-
-    if (error) {
-        console.error('Error checking for existing trackers:', error);
-        return;
-    }
-
-    if (!existingTrackers || existingTrackers.length === 0) {
-        console.log('Seeding default trackers for new user...');
-        const trackersToInsert = DEFAULT_TRACKERS.map(t => ({
-            id: crypto.randomUUID(),
-            user_id: userId,
-            name: t.name,
-            emoji: t.emoji,
-            type: t.type,
-            unit: t.unit || null,
-            group: t.group || null,
-            checkin_config: t.checkinConfig || null,
-            goal: null,
-        }));
-
-        const { error: insertError } = await supabase
+    try {
+        const { data: existingTrackers, error } = await supabase
             .from('trackers')
-            .insert(trackersToInsert);
+            .select('id')
+            .eq('user_id', userId)
+            .limit(1);
 
-        if (insertError) {
-            console.error('Error seeding default trackers:', insertError);
-        } else {
-            console.log('Default trackers seeded successfully');
+        if (error) {
+            // Silently ignore AbortErrors (caused by React strict mode or component unmount)
+            if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+                return;
+            }
+            console.error('Error checking for existing trackers:', error);
+            return;
         }
+
+        if (!existingTrackers || existingTrackers.length === 0) {
+            console.log('Seeding default trackers for new user...');
+            const trackersToInsert = DEFAULT_TRACKERS.map(t => ({
+                id: crypto.randomUUID(),
+                user_id: userId,
+                name: t.name,
+                emoji: t.emoji,
+                type: t.type,
+                unit: t.unit || null,
+                group: t.group || null,
+                checkin_config: t.checkinConfig || null,
+                goal: null,
+            }));
+
+            const { error: insertError } = await supabase
+                .from('trackers')
+                .insert(trackersToInsert);
+
+            if (insertError) {
+                // Silently ignore AbortErrors
+                if (insertError.name === 'AbortError' || insertError.message?.includes('aborted')) {
+                    return;
+                }
+                console.error('Error seeding default trackers:', insertError);
+            } else {
+                console.log('Default trackers seeded successfully');
+            }
+        }
+    } catch (err: any) {
+        // Silently ignore AbortErrors
+        if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+            return;
+        }
+        console.error('Error initializing user data:', err);
     }
 }
 
