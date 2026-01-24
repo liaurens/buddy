@@ -16,13 +16,14 @@ import TodoPage from './pages/TodoPage';
 import CalendarPage from './pages/CalendarPage';
 import SmartNotesPage from './pages/SmartNotesPage';
 import ReflectionPage from './pages/ReflectionPage';
+import PlanPage from './pages/PlanPage';
 import PomodoroTimer from './features/focus/PomodoroTimer';
 import LoginScreen from './components/LoginScreen';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured } from './services/supabase';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes' | 'focus' | 'reflection'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes' | 'focus' | 'reflection' | 'plan'>('home');
   const [navParams, setNavParams] = useState<any>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
@@ -70,6 +71,8 @@ const App: React.FC = () => {
         return <PomodoroTimer />;
       case 'reflection':
         return <ReflectionPage />;
+      case 'plan':
+        return <PlanPage />;
       default:
         return <HomePage onNavigate={handleNavigate} />;
     }
