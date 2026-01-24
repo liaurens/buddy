@@ -13,6 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useTimer } from '../hooks/useTimer';
 import { loadPlanForDate, startBlock, completeBlock, skipBlock } from '../services/planning';
 import { recordBlockCompletion } from '../services/reflection';
+import PlanGenerator from '../components/PlanGenerator';
 import type { DailyPlan, TimeBlock } from '../types/planning';
 import {
     Clock,
@@ -189,22 +190,19 @@ const PlanPage: React.FC = () => {
                     </div>
 
                     {/* Empty State */}
-                    <div className="text-center py-12">
-                        <Sparkles className="mx-auto text-slate-400 mb-4" size={64} />
-                        <h2 className="text-2xl font-semibold text-slate-800 mb-2">
-                            No plan for this day
-                        </h2>
-                        <p className="text-slate-600 mb-6">
-                            {isToday
-                                ? 'Create your first daily plan with AI to get started'
-                                : 'No plan was created for this date'}
-                        </p>
-                        {isToday && (
-                            <button className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
-                                Generate Today's Plan
-                            </button>
-                        )}
-                    </div>
+                    {isToday ? (
+                        <PlanGenerator date={selectedDate} onPlanGenerated={loadPlan} />
+                    ) : (
+                        <div className="text-center py-12">
+                            <Sparkles className="mx-auto text-slate-400 mb-4" size={64} />
+                            <h2 className="text-2xl font-semibold text-slate-800 mb-2">
+                                No plan for this day
+                            </h2>
+                            <p className="text-slate-600">
+                                No plan was created for this date
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         );
