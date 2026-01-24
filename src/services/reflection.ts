@@ -351,3 +351,75 @@ export async function getAverageTimeForSimilarTasks(
         return null;
     }
 }
+
+// ============================================================================
+// AI Planning Integration
+// ============================================================================
+
+/**
+ * Get learning patterns formatted for AI planning context
+ * Returns only the most actionable patterns
+ */
+export async function getLearningPatternsForPlanning(
+    userId: string,
+    limit: number = 5
+): Promise<LearningPattern[]> {
+    try {
+        const allPatterns = await detectPatterns(userId, 30);
+
+        // Filter to most significant patterns (high variance, good sample size)
+        return allPatterns
+            .filter(p => Math.abs(p.avgVariancePercent) > 10 && p.sampleSize >= 3)
+            .sort((a, b) => Math.abs(b.avgVariancePercent) - Math.abs(a.avgVariancePercent))
+            .slice(0, limit);
+    } catch (error) {
+        console.error('Failed to get learning patterns for planning:', error);
+        return [];
+    }
+}
+
+/**
+ * Adjust estimate based on learning patterns
+ * Used to automatically apply learned variance to new task estimates
+ */
+export function applyLearningToEstimate(
+    taskTitle: string,
+    baseEstimate: number,
+    patterns: LearningPattern[]
+): number {
+    if (!patterns || patterns.length === 0) return baseEstimate;
+
+    const titleLower = taskTitle.toLowerCase();
+
+    // Try to find task-type specific pattern first
+    const taskTypePattern = patterns.find(p => {
+        if (p.category !== 'task_type') return false;
+
+        // Check if pattern applies to this task
+        if (titleLower.includes('meeting') || titleLower.includes('call')) {
+            return p.pattern.toLowerCase().includes('meeting');
+        }
+        if (titleLower.includes('code') || titleLower.includes('develop')) {
+            return p.pattern.toLowerCase().includes('coding');
+        }
+        if (titleLower.includes('write') || titleLower.includes('document')) {
+            return p.pattern.toLowerCase().includes('writing');
+        }
+        if (titleLower.includes('email') || titleLower.includes('message')) {
+            return p.pattern.toLowerCase().includes('communication');
+        }
+
+        return false;
+    });
+
+    // Use task-type pattern if found, otherwise use general pattern
+    const applicablePattern = taskTypePattern || patterns.find(p => p.category === 'general');
+
+    if (!applicablePattern) return baseEstimate;
+
+    // Apply the variance
+    const adjustmentFactor = 1 + (applicablePattern.avgVariancePercent / 100);
+    const adjustedEstimate = Math.ceil(baseEstimate * adjustmentFactor);
+
+    return adjustedEstimate;
+}

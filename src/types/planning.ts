@@ -144,6 +144,13 @@ export interface PlanGenerationContext {
     // Historical context
     previousPlans?: DailyPlan[];  // Recent plans for learning
     taskDurationHistory?: Record<string, number[]>;
+    learningPatterns?: Array<{    // Detected estimation patterns
+        pattern: string;
+        category: 'task_type' | 'time_of_day' | 'buffer' | 'general';
+        avgVariancePercent: number;
+        sampleSize: number;
+        recommendation: string;
+    }>;
 
     // User preferences
     workStartTime?: string;       // e.g., "09:00"
