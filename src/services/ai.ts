@@ -9,7 +9,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import type { PlanGenerationContext, PlanSuggestion, ReplanRequest } from '../types/planning';
 
 // ============================================================================
@@ -39,7 +39,7 @@ export interface AIResponse<T> {
 const DEFAULT_MODELS = {
     openai: 'gpt-4o', // Latest GPT-4 optimized model
     anthropic: 'claude-sonnet-4-20250514', // Latest Claude Sonnet
-    gemini: 'gemini-2.0-flash-exp', // Latest Gemini Flash (free tier)
+    gemini: 'gemini-3-flash-preview', // Gemini 3.0 Preview (free tier)
 } as const;
 
 // ============================================================================
@@ -50,7 +50,7 @@ export class AIService {
     private config: AIConfig;
     private openaiClient?: OpenAI;
     private anthropicClient?: Anthropic;
-    private geminiClient?: GoogleGenerativeAI;
+    private geminiClient?: GoogleGenAI;
 
     constructor(config: AIConfig) {
         this.config = config;
@@ -69,7 +69,9 @@ export class AIService {
                 dangerouslyAllowBrowser: true, // Required for client-side usage
             });
         } else {
-            this.geminiClient = new GoogleGenerativeAI(this.config.apiKey);
+            this.geminiClient = new GoogleGenAI({
+                apiKey: this.config.apiKey,
+            });
         }
     }
 
@@ -252,25 +254,24 @@ Return a JSON object with this structure:
         }
 
         const model = this.config.model || DEFAULT_MODELS.gemini;
-        const genModel = this.geminiClient.getGenerativeModel({
+        const prompt = `${systemPrompt}\n\n${userPrompt}\n\nIMPORTANT: Respond with valid JSON only, no markdown formatting.`;
+
+        const response = await this.geminiClient.models.generateContent({
             model,
-            generationConfig: {
+            contents: prompt,
+            config: {
                 temperature: 0.7,
                 responseMimeType: 'application/json',
             },
         });
 
-        const prompt = `${systemPrompt}\n\n${userPrompt}`;
-        const result = await genModel.generateContent(prompt);
-        const response = result.response;
-        const text = response.text();
-
+        const text = response.text || '';
         const data = JSON.parse(text);
 
         return {
             success: true,
             data,
-            tokensUsed: result.response.usageMetadata?.totalTokenCount,
+            tokensUsed: response.usageMetadata?.totalTokenCount,
             model,
         };
     }
