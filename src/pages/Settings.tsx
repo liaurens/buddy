@@ -5,6 +5,7 @@ import { supabase, getSetting, setSetting } from '../services/supabase';
 import type { TrackerDefinition, TrackerType } from '../types';
 import { Plus, Trash2, Download, Upload, Save, X, Cloud, LogOut, Zap, Copy, RefreshCw, Check, Brain, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { initializeAIService, AIService } from '../services/ai';
 
 const Settings: React.FC = () => {
     const { trackers, addTracker, deleteTracker, updateTracker, exportData, importData } = useTracker();
@@ -90,7 +91,6 @@ const Settings: React.FC = () => {
             ]);
 
             // Initialize AI service with new config
-            const { initializeAIService } = await import('../services/ai');
             initializeAIService({
                 provider: aiProvider,
                 apiKey: aiApiKey.trim(),
@@ -116,7 +116,6 @@ const Settings: React.FC = () => {
         setConnectionTestResult(null);
 
         try {
-            const { AIService } = await import('../services/ai');
             const service = new AIService({
                 provider: aiProvider,
                 apiKey: aiApiKey.trim(),
