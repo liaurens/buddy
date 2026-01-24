@@ -1,9 +1,9 @@
 import React from 'react';
-import { Settings as SettingsIcon, CheckSquare, Activity, Pill, FlaskConical, Calendar, Zap } from 'lucide-react';
+import { Settings as SettingsIcon, CheckSquare, Activity, Pill, FlaskConical, Calendar, Zap, TrendingUp } from 'lucide-react';
 
 interface MainLayoutProps {
     children: React.ReactNode;
-    activeTab: 'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes' | 'focus';
+    activeTab: 'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes' | 'focus' | 'reflection';
     setActiveTab: (tab: any) => void;
 }
 
@@ -73,8 +73,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                         </>
                     )}
 
-                    {/* Context: TASKS / CALENDAR / NOTES */}
-                    {['todos', 'calendar', 'notes'].includes(activeTab) && (
+                    {/* Context: TASKS / CALENDAR / NOTES / REFLECTION */}
+                    {['todos', 'calendar', 'notes', 'reflection'].includes(activeTab) && (
                         <>
                             <button
                                 onClick={() => setActiveTab('todos')}
@@ -82,6 +82,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                             >
                                 <CheckSquare size={24} />
                                 <span className="text-[10px] mt-1 font-medium">Tasks</span>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('reflection')}
+                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'reflection' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                <TrendingUp size={24} />
+                                <span className="text-[10px] mt-1 font-medium">Reflect</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('notes')}
