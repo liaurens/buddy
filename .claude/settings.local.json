@@ -11,7 +11,24 @@
       "Bash(node -e:*)",
       "Bash(npm install:*)",
       "Bash(npx netlify-cli:*)",
-      "Bash(npm run test:run:*)"
+      "Bash(npm run test:run:*)",
+      "Bash(done)",
+      "Bash(npm run dev:*)",
+      "Bash(wc:*)",
+      "Bash(npx knip:*)",
+      "Bash(npx depcheck:*)",
+      "Bash(npx ts-prune:*)",
+      "Bash(npm test:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(dir \"C:\\\\Users\\\\Z005775W\\\\Dropbox\\\\buddy-app\\\\src\")",
+      "Bash(git commit:*)",
+      "mcp__postgres__query",
+      "Bash(git check-ignore:*)",
+      "Bash(del nul)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "postgres"
+  ]
 }
