@@ -26,7 +26,9 @@
       "mcp__postgres__query",
       "Bash(git check-ignore:*)",
       "Bash(del nul)",
-      "Bash(timeout /t 5)"
+      "Bash(timeout /t 5)",
+      "Bash(ping:*)",
+      "Bash(npm uninstall:*)"
     ]
   },
   "enabledMcpjsonServers": [

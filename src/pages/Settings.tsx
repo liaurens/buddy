@@ -3,9 +3,10 @@ import { useTracker } from '../context/TrackerContext';
 import { useAuth } from '../hooks/useAuth';
 import { supabase, getSetting, setSetting } from '../services/supabase';
 import type { TrackerDefinition, TrackerType } from '../types';
-import { Plus, Trash2, Download, Upload, Save, X, Cloud, LogOut, Zap, Copy, RefreshCw, Check, Brain, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, Save, X, Cloud, LogOut, Zap, Copy, RefreshCw, Check, Brain, AlertCircle, Calendar } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeAIService, AIService } from '../services/ai';
+import { fetchICalFeed } from '../services/calendar';
 
 const Settings: React.FC = () => {
     const { trackers, addTracker, deleteTracker, updateTracker, exportData, importData } = useTracker();
@@ -27,6 +28,14 @@ const Settings: React.FC = () => {
     const [isTestingConnection, setIsTestingConnection] = useState(false);
     const [connectionTestResult, setConnectionTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
+    // Calendar Configuration state
+    const [calendarUrl, setCalendarUrl] = useState('');
+    const [calendarName, setCalendarName] = useState('');
+    const [isSavingCalendar, setIsSavingCalendar] = useState(false);
+    const [isTestingCalendar, setIsTestingCalendar] = useState(false);
+    const [calendarTestResult, setCalendarTestResult] = useState<{ success: boolean; message: string; eventCount?: number } | null>(null);
+    const [lastCalendarSync, setLastCalendarSync] = useState<string | null>(null);
+
     // Load existing API key on mount
     useEffect(() => {
         if (user?.id) {
@@ -47,6 +56,21 @@ const Settings: React.FC = () => {
                 if (provider) setAiProvider(provider as 'openai' | 'anthropic' | 'gemini');
                 if (key) setAiApiKey(key);
                 if (model) setAiModel(model);
+            });
+        }
+    }, [user?.id]);
+
+    // Load calendar configuration on mount
+    useEffect(() => {
+        if (user?.id) {
+            Promise.all([
+                getSetting(user.id, 'calendar_url'),
+                getSetting(user.id, 'calendar_name'),
+                getSetting(user.id, 'calendar_last_sync'),
+            ]).then(([url, name, lastSync]) => {
+                if (url) setCalendarUrl(url);
+                if (name) setCalendarName(name);
+                if (lastSync) setLastCalendarSync(lastSync);
             });
         }
     }, [user?.id]);
@@ -137,6 +161,70 @@ const Settings: React.FC = () => {
             });
         } finally {
             setIsTestingConnection(false);
+        }
+    };
+
+    const handleSaveCalendarConfig = async () => {
+        if (!user?.id || !calendarUrl.trim()) {
+            alert('Please enter a calendar URL');
+            return;
+        }
+
+        setIsSavingCalendar(true);
+        setCalendarTestResult(null);
+
+        try {
+            await Promise.all([
+                setSetting(user.id, 'calendar_url', calendarUrl.trim()),
+                setSetting(user.id, 'calendar_name', calendarName.trim() || 'My Calendar'),
+            ]);
+
+            alert('Calendar configuration saved successfully!');
+        } catch (error) {
+            console.error('Failed to save calendar config:', error);
+            alert('Failed to save calendar configuration');
+        } finally {
+            setIsSavingCalendar(false);
+        }
+    };
+
+    const handleTestCalendarSync = async () => {
+        if (!calendarUrl.trim()) {
+            alert('Please enter a calendar URL first');
+            return;
+        }
+
+        setIsTestingCalendar(true);
+        setCalendarTestResult(null);
+
+        try {
+            const result = await fetchICalFeed(calendarUrl.trim());
+
+            if (result.success) {
+                // Save last sync time
+                if (user?.id) {
+                    await setSetting(user.id, 'calendar_last_sync', result.syncedAt);
+                    setLastCalendarSync(result.syncedAt);
+                }
+
+                setCalendarTestResult({
+                    success: true,
+                    message: `Successfully synced ${result.events.length} event${result.events.length !== 1 ? 's' : ''} from calendar!`,
+                    eventCount: result.events.length,
+                });
+            } else {
+                setCalendarTestResult({
+                    success: false,
+                    message: `Sync failed: ${result.error || 'Unknown error'}`,
+                });
+            }
+        } catch (error: any) {
+            setCalendarTestResult({
+                success: false,
+                message: `Sync failed: ${error.message || 'Unknown error'}`,
+            });
+        } finally {
+            setIsTestingCalendar(false);
         }
     };
 
@@ -481,6 +569,127 @@ const Settings: React.FC = () => {
                             }`}>
                                 {connectionTestResult.message}
                             </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Calendar Integration */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-4">
+                    <Calendar className="text-purple-600" size={24} />
+                    <h2 className="text-xl font-semibold text-slate-800">Calendar Integration</h2>
+                </div>
+                <p className="text-sm text-slate-500 mb-6">
+                    Connect your iPhone calendar or Google Calendar to automatically import events into your daily plan.
+                </p>
+
+                <div className="space-y-4">
+                    {/* Calendar Name */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Calendar Name
+                            <span className="text-xs text-slate-500 ml-2">(Optional)</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={calendarName}
+                            onChange={(e) => setCalendarName(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                            placeholder="My Calendar"
+                        />
+                    </div>
+
+                    {/* iCal URL */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                            iCal/Webcal URL
+                            <span className="text-xs text-slate-500 ml-2">
+                                (Get from iPhone Calendar → Settings → Accounts)
+                            </span>
+                        </label>
+                        <input
+                            type="url"
+                            value={calendarUrl}
+                            onChange={(e) => setCalendarUrl(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm font-mono"
+                            placeholder="https://calendar.google.com/calendar/ical/..."
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                            Supports: Apple iCloud Calendar, Google Calendar public links
+                        </p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleSaveCalendarConfig}
+                            disabled={isSavingCalendar || !calendarUrl.trim()}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        >
+                            {isSavingCalendar ? (
+                                <>
+                                    <RefreshCw size={16} className="animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={16} />
+                                    Save Configuration
+                                </>
+                            )}
+                        </button>
+                        <button
+                            onClick={handleTestCalendarSync}
+                            disabled={isTestingCalendar || !calendarUrl.trim()}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        >
+                            {isTestingCalendar ? (
+                                <>
+                                    <RefreshCw size={16} className="animate-spin" />
+                                    Testing...
+                                </>
+                            ) : (
+                                <>
+                                    <RefreshCw size={16} />
+                                    Test Sync
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Last Sync Info */}
+                    {lastCalendarSync && (
+                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <p className="text-xs text-slate-600">
+                                <strong>Last synced:</strong> {new Date(lastCalendarSync).toLocaleString()}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Sync Test Result */}
+                    {calendarTestResult && (
+                        <div className={`p-3 rounded-lg border flex items-start gap-2 ${
+                            calendarTestResult.success
+                                ? 'bg-green-50 border-green-200'
+                                : 'bg-red-50 border-red-200'
+                        }`}>
+                            <AlertCircle
+                                size={16}
+                                className={calendarTestResult.success ? 'text-green-600 mt-0.5' : 'text-red-600 mt-0.5'}
+                            />
+                            <div className="flex-1">
+                                <p className={`text-sm ${
+                                    calendarTestResult.success ? 'text-green-800' : 'text-red-800'
+                                }`}>
+                                    {calendarTestResult.message}
+                                </p>
+                                {calendarTestResult.success && calendarTestResult.eventCount !== undefined && (
+                                    <p className="text-xs text-green-700 mt-1">
+                                        Events in the next 7 days: {calendarTestResult.eventCount}
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
