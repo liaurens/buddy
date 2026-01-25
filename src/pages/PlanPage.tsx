@@ -52,7 +52,14 @@ const PlanPage: React.FC = () => {
             const data = await loadPlanForDate(user.id, selectedDate);
             setPlan(data);
         } catch (err: any) {
-            setError(err.message || 'Failed to load plan');
+            const errorMessage = err.message || 'Failed to load plan';
+
+            // Check if it's a database table missing error
+            if (errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
+                setError('Database tables not set up. Please run the migration SQL in Supabase (see docs/daily_planning_migration.sql)');
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setLoading(false);
         }

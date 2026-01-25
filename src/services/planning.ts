@@ -45,7 +45,14 @@ async function getCalendarEventsForDate(userId: string, date: string): Promise<C
             .lte('start_time', endOfDay.toISOString())
             .order('start_time', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+            // If table doesn't exist, return empty array (graceful degradation)
+            if (error.code === '42P01' || error.message?.includes('does not exist')) {
+                console.warn('calendar_events table not found - returning empty array');
+                return [];
+            }
+            throw error;
+        }
 
         return data || [];
     } catch (error) {
@@ -88,7 +95,14 @@ async function getActivityTemplates(userId: string): Promise<ActivityTemplate[]>
             .eq('is_active', true)
             .order('name', { ascending: true });
 
-        if (error) throw error;
+        if (error) {
+            // If table doesn't exist, return empty array (graceful degradation)
+            if (error.code === '42P01' || error.message?.includes('does not exist')) {
+                console.warn('activity_templates table not found - returning empty array');
+                return [];
+            }
+            throw error;
+        }
 
         return data || [];
     } catch (error) {
@@ -308,6 +322,10 @@ export async function loadPlanForDate(userId: string, date: string): Promise<Dai
                 // No plan found
                 return null;
             }
+            // Check for table doesn't exist error
+            if (planError.code === '42P01' || planError.message?.includes('does not exist')) {
+                throw new Error('Planning tables not found. Please run the database migration (docs/daily_planning_migration.sql in Supabase SQL Editor).');
+            }
             throw planError;
         }
 
@@ -324,9 +342,10 @@ export async function loadPlanForDate(userId: string, date: string): Promise<Dai
             ...plan,
             blocks: blocks || [],
         };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to load plan for date:', error);
-        return null;
+        // Re-throw to let the component handle it
+        throw error;
     }
 }
 
