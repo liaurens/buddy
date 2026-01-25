@@ -35,6 +35,7 @@ const PlanPage: React.FC = () => {
     const [plan, setPlan] = useState<DailyPlan | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [blockToSkip, setBlockToSkip] = useState<TimeBlock | null>(null);
 
     useEffect(() => {
         if (user?.id) {
@@ -106,20 +107,31 @@ const PlanPage: React.FC = () => {
         }
     };
 
-    const handleSkipBlock = async (block: TimeBlock) => {
-        if (!user?.id) return;
+    const handleSkipBlock = (block: TimeBlock) => {
+        // Show confirmation dialog
+        setBlockToSkip(block);
+    };
+
+    const confirmSkipBlock = async () => {
+        if (!user?.id || !blockToSkip) return;
 
         try {
             // If timer is running for this block, stop it
-            if (timer.activeBlockId === block.id) {
+            if (timer.activeBlockId === blockToSkip.id) {
                 timer.stop();
             }
 
-            await skipBlock(user.id, block.id);
+            await skipBlock(user.id, blockToSkip.id);
+            setBlockToSkip(null);
             await loadPlan();
         } catch (err: any) {
             setError(err.message || 'Failed to skip block');
+            setBlockToSkip(null);
         }
+    };
+
+    const cancelSkipBlock = () => {
+        setBlockToSkip(null);
     };
 
     const handleDateChange = (days: number) => {
@@ -405,6 +417,41 @@ const PlanPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Skip Confirmation Dialog */}
+                {blockToSkip && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+                            <div className="flex items-start gap-3 mb-4">
+                                <div className="p-2 bg-amber-100 rounded-lg">
+                                    <AlertCircle className="text-amber-600" size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-slate-900 text-lg">
+                                        Skip this task?
+                                    </h3>
+                                    <p className="text-sm text-slate-600 mt-1">
+                                        "{blockToSkip.title}" won't be completed today.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={cancelSkipBlock}
+                                    className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmSkipBlock}
+                                    className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors"
+                                >
+                                    Skip Task
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

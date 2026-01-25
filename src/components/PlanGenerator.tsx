@@ -50,9 +50,41 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated }) 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [suggestion, setSuggestion] = useState<PlanSuggestion | null>(null);
+    const [workHoursError, setWorkHoursError] = useState<string | null>(null);
+
+    const validateWorkHours = (start: string, end: string): boolean => {
+        if (!start || !end) return true; // Allow empty values
+
+        const startMinutes = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
+        const endMinutes = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]);
+
+        if (endMinutes <= startMinutes) {
+            setWorkHoursError('End time must be after start time');
+            return false;
+        }
+
+        setWorkHoursError(null);
+        return true;
+    };
+
+    const handleWorkStartChange = (value: string) => {
+        setWorkStartTime(value);
+        validateWorkHours(value, workEndTime);
+    };
+
+    const handleWorkEndChange = (value: string) => {
+        setWorkEndTime(value);
+        validateWorkHours(workStartTime, value);
+    };
 
     const handleGeneratePlan = async () => {
         if (!user?.id) return;
+
+        // Validate work hours before generating
+        if (!validateWorkHours(workStartTime, workEndTime)) {
+            setError('Please fix work hours before generating plan');
+            return;
+        }
 
         setLoading(true);
         setError(null);
@@ -146,6 +178,15 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated }) 
 
             {!suggestion ? (
                 <div className="space-y-6">
+                    {/* Welcome Message for New Users */}
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm text-blue-900">
+                            <span className="font-semibold">👋 Let's create your AI-powered daily plan!</span>
+                            <br />
+                            Tell me how you're feeling and when you work. I'll analyze your tasks and calendar to create a realistic, balanced schedule.
+                        </p>
+                    </div>
+
                     {/* User State */}
                     <div className="space-y-4">
                         <h3 className="font-semibold text-slate-900 flex items-center gap-2">
@@ -224,8 +265,10 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated }) 
                                 <input
                                     type="time"
                                     value={workStartTime}
-                                    onChange={(e) => setWorkStartTime(e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    onChange={(e) => handleWorkStartChange(e.target.value)}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                                        workHoursError ? 'border-red-300 bg-red-50' : 'border-slate-300'
+                                    }`}
                                 />
                             </div>
                             <div>
@@ -235,11 +278,19 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated }) 
                                 <input
                                     type="time"
                                     value={workEndTime}
-                                    onChange={(e) => setWorkEndTime(e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    onChange={(e) => handleWorkEndChange(e.target.value)}
+                                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                                        workHoursError ? 'border-red-300 bg-red-50' : 'border-slate-300'
+                                    }`}
                                 />
                             </div>
                         </div>
+                        {workHoursError && (
+                            <div className="text-sm text-red-600 flex items-center gap-2">
+                                <AlertCircle size={16} />
+                                {workHoursError}
+                            </div>
+                        )}
                     </div>
 
                     {/* Break Preferences */}
@@ -289,6 +340,23 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated }) 
                             </>
                         )}
                     </button>
+
+                    {/* Loading Progress Indicator */}
+                    {loading && (
+                        <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                            <div className="flex flex-col items-center gap-3">
+                                <Loader className="animate-spin text-indigo-600" size={32} />
+                                <div className="text-center">
+                                    <p className="text-sm font-medium text-indigo-900">
+                                        Analyzing your tasks and calendar...
+                                    </p>
+                                    <p className="text-xs text-indigo-700 mt-1">
+                                        This usually takes 5-10 seconds
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="space-y-6">
