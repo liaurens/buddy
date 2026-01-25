@@ -70,9 +70,9 @@ async function getPendingTasks(userId: string): Promise<Task[]> {
             .from('todos')
             .select('*')
             .eq('user_id', userId)
-            .eq('status', 'pending')
+            .eq('completed', false)
             .order('priority', { ascending: false })
-            .order('due_date', { ascending: true });
+            .order('dueDate', { ascending: true });
 
         if (error) throw error;
 

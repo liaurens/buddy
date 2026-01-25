@@ -73,9 +73,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                         </>
                     )}
 
-                    {/* Context: TASKS / CALENDAR / NOTES / REFLECTION / PLAN */}
-                    {['todos', 'calendar', 'notes', 'reflection', 'plan'].includes(activeTab) && (
+                    {/* Context: CALENDAR HUB (Calendar + Plan) */}
+                    {['calendar', 'plan'].includes(activeTab) && (
                         <>
+                            <button
+                                onClick={() => setActiveTab('calendar')}
+                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'calendar' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                <Calendar size={24} />
+                                <span className="text-[10px] mt-1 font-medium">Calendar</span>
+                            </button>
                             <button
                                 onClick={() => setActiveTab('plan')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'plan' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
@@ -83,6 +90,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                                 <CalendarClock size={24} />
                                 <span className="text-[10px] mt-1 font-medium">Plan</span>
                             </button>
+                        </>
+                    )}
+
+                    {/* Context: TASKS HUB (Tasks + Reflection + Notes) */}
+                    {['todos', 'notes', 'reflection'].includes(activeTab) && (
+                        <>
                             <button
                                 onClick={() => setActiveTab('todos')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'todos' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
@@ -96,13 +109,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                             >
                                 <TrendingUp size={24} />
                                 <span className="text-[10px] mt-1 font-medium">Reflect</span>
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('calendar')}
-                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'calendar' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                            >
-                                <Calendar size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Calendar</span>
                             </button>
                         </>
                     )}
