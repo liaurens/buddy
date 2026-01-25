@@ -208,7 +208,8 @@ CREATE INDEX IF NOT EXISTS idx_activity_templates_category ON activity_templates
 -- Calendar events indexes
 CREATE INDEX IF NOT EXISTS idx_calendar_events_user_time ON calendar_events(user_id, start_time);
 CREATE INDEX IF NOT EXISTS idx_calendar_events_external ON calendar_events(user_id, external_id, source);
-CREATE INDEX IF NOT EXISTS idx_calendar_events_date ON calendar_events(user_id, DATE(start_time));
+-- Note: Removed DATE(start_time) index due to immutability issues with timestamptz
+-- The idx_calendar_events_user_time index above is sufficient for date-based queries
 
 -- ============================================================================
 -- 7. ROW LEVEL SECURITY (RLS) POLICIES
