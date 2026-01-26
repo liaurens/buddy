@@ -11,64 +11,24 @@ const PRESET_COLORS = [
 
 const PRESET_EMOJIS = ['📝', '✅', '💡', '🛒', '💼', '📁', '🏠', '💪', '📚', '🎯', '⭐', '🔔'];
 
-export const CategoryManager: React.FC = () => {
-    const { categories, addCategory, updateCategory, deleteCategory, notes } = useSmartNotes();
-    const [isAdding, setIsAdding] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        flag: '',
-        emoji: '📝',
-        color: '#6366f1',
-    });
-
-    const resetForm = () => {
-        setFormData({ name: '', flag: '', emoji: '📝', color: '#6366f1' });
-        setIsAdding(false);
-        setEditingId(null);
+interface CategoryFormProps {
+    formData: {
+        name: string;
+        flag: string;
+        emoji: string;
+        color: string;
     };
+    setFormData: React.Dispatch<React.SetStateAction<{
+        name: string;
+        flag: string;
+        emoji: string;
+        color: string;
+    }>>;
+    onSave: () => void;
+    onCancel: () => void;
+}
 
-    const handleAdd = async () => {
-        if (!formData.name.trim() || !formData.flag.trim()) return;
-        await addCategory({
-            name: formData.name.trim(),
-            flag: formData.flag.trim().toLowerCase(),
-            emoji: formData.emoji,
-            color: formData.color,
-        });
-        resetForm();
-    };
-
-    const handleEdit = (category: NoteCategory) => {
-        setEditingId(category.id);
-        setFormData({
-            name: category.name,
-            flag: category.flag,
-            emoji: category.emoji || '📝',
-            color: category.color || '#6366f1',
-        });
-    };
-
-    const handleSaveEdit = async (categoryId: string) => {
-        if (!formData.name.trim() || !formData.flag.trim()) return;
-        const category = categories.find(c => c.id === categoryId);
-        if (!category) return;
-
-        await updateCategory({
-            ...category,
-            name: formData.name.trim(),
-            flag: formData.flag.trim().toLowerCase(),
-            emoji: formData.emoji,
-            color: formData.color,
-        });
-        resetForm();
-    };
-
-    const getNotesCount = (categoryId: string) => {
-        return notes.filter(n => n.categoryId === categoryId).length;
-    };
-
-    const CategoryForm = ({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) => (
+const CategoryForm: React.FC<CategoryFormProps> = ({ formData, setFormData, onSave, onCancel }) => (
         <div className="bg-slate-50 rounded-lg p-4 space-y-3 border border-slate-200">
             <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -79,6 +39,7 @@ export const CategoryManager: React.FC = () => {
                         onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
                         placeholder="Groceries"
                         className="w-full bg-white border border-slate-200 text-slate-800 rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                        autoFocus
                     />
                 </div>
                 <div>
@@ -146,7 +107,64 @@ export const CategoryManager: React.FC = () => {
                 </button>
             </div>
         </div>
-    );
+);
+
+export const CategoryManager: React.FC = () => {
+    const { categories, addCategory, updateCategory, deleteCategory, notes } = useSmartNotes();
+    const [isAdding, setIsAdding] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [formData, setFormData] = useState({
+        name: '',
+        flag: '',
+        emoji: '📝',
+        color: '#6366f1',
+    });
+
+    const resetForm = () => {
+        setFormData({ name: '', flag: '', emoji: '📝', color: '#6366f1' });
+        setIsAdding(false);
+        setEditingId(null);
+    };
+
+    const handleAdd = async () => {
+        if (!formData.name.trim() || !formData.flag.trim()) return;
+        await addCategory({
+            name: formData.name.trim(),
+            flag: formData.flag.trim().toLowerCase(),
+            emoji: formData.emoji,
+            color: formData.color,
+        });
+        resetForm();
+    };
+
+    const handleEdit = (category: NoteCategory) => {
+        setEditingId(category.id);
+        setFormData({
+            name: category.name,
+            flag: category.flag,
+            emoji: category.emoji || '📝',
+            color: category.color || '#6366f1',
+        });
+    };
+
+    const handleSaveEdit = async (categoryId: string) => {
+        if (!formData.name.trim() || !formData.flag.trim()) return;
+        const category = categories.find(c => c.id === categoryId);
+        if (!category) return;
+
+        await updateCategory({
+            ...category,
+            name: formData.name.trim(),
+            flag: formData.flag.trim().toLowerCase(),
+            emoji: formData.emoji,
+            color: formData.color,
+        });
+        resetForm();
+    };
+
+    const getNotesCount = (categoryId: string) => {
+        return notes.filter(n => n.categoryId === categoryId).length;
+    };
 
     return (
         <div className="space-y-4">
@@ -167,7 +185,12 @@ export const CategoryManager: React.FC = () => {
             </div>
 
             {isAdding && (
-                <CategoryForm onSave={handleAdd} onCancel={resetForm} />
+                <CategoryForm
+                    formData={formData}
+                    setFormData={setFormData}
+                    onSave={handleAdd}
+                    onCancel={resetForm}
+                />
             )}
 
             <div className="space-y-2">
@@ -175,6 +198,8 @@ export const CategoryManager: React.FC = () => {
                     <div key={category.id}>
                         {editingId === category.id ? (
                             <CategoryForm
+                                formData={formData}
+                                setFormData={setFormData}
                                 onSave={() => handleSaveEdit(category.id)}
                                 onCancel={resetForm}
                             />
