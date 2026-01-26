@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, Calendar as CalendarIcon, Save } from 'lucide-react';
 import { format } from 'date-fns';
-import type { Experiment } from '../../types';
-import { getExperimentLogs, addExperimentLog } from '../../services/supabase';
-import { useTracker } from '../../context/TrackerContext';
-import { useProtocol } from '../../context/ProtocolContext';
+import type { Experiment } from '../../../../types';
+import { getExperimentLogs, addExperimentLog } from '../../../../services/supabase';
+import { useTracker } from '../../../../context/TrackerContext';
+import { useProtocol } from '../../../../context/ProtocolContext';
 
 interface ExperimentDetailsProps {
     experiment: Experiment;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useProtocol } from '../../context/ProtocolContext';
-import type { Protocol } from '../../types';
+import { useProtocol } from '../../../../context/ProtocolContext';
+import type { Protocol } from '../../../../types';
 import { X, Save } from 'lucide-react';
 
 interface ProtocolFormProps {

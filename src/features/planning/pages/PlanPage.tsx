@@ -13,7 +13,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useTimer } from '../../../hooks/useTimer';
 import { loadPlanForDate, startBlock, completeBlock, skipBlock } from '../../../services/planning';
 import { recordBlockCompletion } from '../../../services/reflection';
-import PlanGenerator from '../../../components/PlanGenerator';
+import PlanGenerator from '../components/PlanGenerator';
 import type { DailyPlan, TimeBlock } from '../../../types/planning';
 import {
     Clock,

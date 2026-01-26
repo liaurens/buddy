@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { useTracker } from '../../context/TrackerContext';
-import { useProtocol } from '../../context/ProtocolContext';
+import { useTracker } from '../../../../context/TrackerContext';
+import { useProtocol } from '../../../../context/ProtocolContext';
 import { format } from 'date-fns';
 import { Trash2, Edit2, X, Check, Trophy, Pill } from 'lucide-react';
-import type { Entry, Dose } from '../../types';
+import type { Entry, Dose } from '../../../../types';
 import TrackerTrends from './TrackerTrends';
 
 const Dashboard: React.FC = () => {

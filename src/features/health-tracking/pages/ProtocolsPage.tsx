@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import ProtocolList from '../../../features/protocols/ProtocolList';
-import ProtocolForm from '../../../features/protocols/ProtocolForm';
+import ProtocolList from '../components/protocols/ProtocolList';
+import ProtocolForm from '../components/protocols/ProtocolForm';
 import type { Protocol } from '../../../types';
 import { Plus } from 'lucide-react';
 

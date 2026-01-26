@@ -11,8 +11,8 @@ import { TrackerPage, ProtocolsPage, ExperimentsPage, CheckInPage } from './feat
 import { PlanPage, CalendarPage, ReflectionPage } from './features/planning';
 import { TodoPage, NotesPage } from './features/tasks';
 import { ToolboxPage } from './features/toolbox';
-import PomodoroTimer from './features/focus/PomodoroTimer';
-import LoginScreen from './components/LoginScreen';
+import PomodoroTimer from './features/focus/components/PomodoroTimer';
+import LoginScreen from './features/core/components/LoginScreen';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured } from './services/supabase';
 

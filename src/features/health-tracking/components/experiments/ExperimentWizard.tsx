@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useTracker } from '../../context/TrackerContext';
-import { useProtocol } from '../../context/ProtocolContext';
-import { useExperiment } from '../../context/ExperimentContext';
+import { useTracker } from '../../../../context/TrackerContext';
+import { useProtocol } from '../../../../context/ProtocolContext';
+import { useExperiment } from '../../../../context/ExperimentContext';
 import { X, ArrowRight, ArrowLeft, FlaskConical, Calendar, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 

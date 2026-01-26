@@ -5,6 +5,9 @@ export * from './types';
 export { default as HomePage } from './pages/HomePage';
 export { default as SettingsPage } from './pages/SettingsPage';
 
-// Components will be exported as they are created
+// Components
+export { default as LoginScreen } from './components/LoginScreen';
+export { default as ErrorBoundary } from './components/ErrorBoundary';
+
 // Hooks will be exported as they are created
 // Services will be exported as they are created

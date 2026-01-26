@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../../hooks/useAuth';
 import { Cloud, LogIn, Mail, Loader2, Lock, UserPlus } from 'lucide-react';
 
 const LoginScreen: React.FC = () => {

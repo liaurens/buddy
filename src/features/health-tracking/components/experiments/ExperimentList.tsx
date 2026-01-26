@@ -1,8 +1,8 @@
 import React from 'react';
-import { useTracker } from '../../context/TrackerContext';
-import { useExperiment } from '../../context/ExperimentContext';
-import { useProtocol } from '../../context/ProtocolContext';
-import type { Experiment } from '../../types';
+import { useTracker } from '../../../../context/TrackerContext';
+import { useExperiment } from '../../../../context/ExperimentContext';
+import { useProtocol } from '../../../../context/ProtocolContext';
+import type { Experiment } from '../../../../types';
 import { FlaskConical, ArrowRight, TrendingUp, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 

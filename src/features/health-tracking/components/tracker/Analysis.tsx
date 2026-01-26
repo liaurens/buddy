@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useTracker } from '../../context/TrackerContext';
-import { useProtocol } from '../../context/ProtocolContext'; // Added import
+import { useTracker } from '../../../../context/TrackerContext';
+import { useProtocol } from '../../../../context/ProtocolContext'; // Added import
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, LineChart, Line } from 'recharts';
 import { format, startOfDay, parseISO } from 'date-fns';
 import {
@@ -13,7 +13,7 @@ import {
     getDataQualityWarnings,
     interpretPValue,
     getCorrelationColor
-} from '../../utils/analysis';
+} from '../../../../utils/analysis';
 import { TrendingUp, AlertTriangle, Zap, Clock } from 'lucide-react';
 
 interface AnalysisProps {

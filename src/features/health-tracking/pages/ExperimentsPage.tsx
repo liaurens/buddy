@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import ExperimentList from '../../../features/experiments/ExperimentList';
-import ExperimentWizard from '../../../features/experiments/ExperimentWizard';
-import ExperimentDetails from '../../../features/experiments/ExperimentDetails';
+import ExperimentList from '../components/experiments/ExperimentList';
+import ExperimentWizard from '../components/experiments/ExperimentWizard';
+import ExperimentDetails from '../components/experiments/ExperimentDetails';
 import type { Experiment } from '../../../types';
 import { Plus, FlaskConical } from 'lucide-react';
 

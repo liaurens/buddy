@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useTracker } from '../../context/TrackerContext';
-import { useProtocol } from '../../context/ProtocolContext';
+import { useTracker } from '../../../../context/TrackerContext';
+import { useProtocol } from '../../../../context/ProtocolContext';
 import { CheckCircle, X, Pill, Moon } from 'lucide-react';
-import type { TrackerDefinition, Entry, Dose } from '../../types';
+import type { TrackerDefinition, Entry, Dose } from '../../../../types';
 
 interface CheckinModalProps {
     isOpen: boolean;
