@@ -78,7 +78,7 @@ const DailyReportPage: React.FC = () => {
                         <h2 className="text-xl font-bold text-slate-800">No Check-in</h2>
                         <button
                             onClick={() => setIsCheckinOpen(true)}
-                            className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-600 transition-colors"
+                            className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-colors"
                         >
                             Start Check-in
                         </button>
