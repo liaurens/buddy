@@ -123,7 +123,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             {/* Daily Prompt */}
             {!hasCheckin && (
                 <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-xl shadow-slate-200 cursor-pointer group"
-                    onClick={() => onNavigate('journal')}
+                    onClick={() => onNavigate('check-in')}
                 >
                     <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center gap-3">

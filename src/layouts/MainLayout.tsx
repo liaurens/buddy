@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings as SettingsIcon, CheckSquare, Activity, Pill, FlaskConical, Calendar, TrendingUp, CalendarClock } from 'lucide-react';
+import { Settings as SettingsIcon, CheckSquare, Activity, Pill, FlaskConical, Calendar, TrendingUp, CalendarClock, StickyNote } from 'lucide-react';
 
 type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'toolbox' | 'focus' | 'settings';
 
@@ -75,8 +75,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                         </>
                     )}
 
-                    {/* Context: CALENDAR HUB (Calendar + Planning) */}
-                    {['calendar', 'planning'].includes(activeTab) && (
+                    {/* Context: CALENDAR HUB (Calendar + Planning + Reflection) */}
+                    {['calendar', 'planning', 'reflection'].includes(activeTab) && (
                         <>
                             <button
                                 onClick={() => setActiveTab('calendar')}
@@ -92,11 +92,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                                 <CalendarClock size={24} />
                                 <span className="text-[10px] mt-1 font-medium">Plan</span>
                             </button>
+                            <button
+                                onClick={() => setActiveTab('reflection')}
+                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'reflection' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                <TrendingUp size={24} />
+                                <span className="text-[10px] mt-1 font-medium">Reflect</span>
+                            </button>
                         </>
                     )}
 
-                    {/* Context: TASKS HUB (Tasks + Reflection + Notes) */}
-                    {['tasks', 'notes', 'reflection'].includes(activeTab) && (
+                    {/* Context: TASKS HUB (Tasks + Notes) */}
+                    {['tasks', 'notes'].includes(activeTab) && (
                         <>
                             <button
                                 onClick={() => setActiveTab('tasks')}
@@ -106,11 +113,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                                 <span className="text-[10px] mt-1 font-medium">Tasks</span>
                             </button>
                             <button
-                                onClick={() => setActiveTab('reflection')}
-                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'reflection' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                onClick={() => setActiveTab('notes')}
+                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'notes' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                <TrendingUp size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Reflect</span>
+                                <StickyNote size={24} />
+                                <span className="text-[10px] mt-1 font-medium">Notes</span>
                             </button>
                         </>
                     )}
