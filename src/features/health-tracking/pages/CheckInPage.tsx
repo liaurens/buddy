@@ -35,7 +35,7 @@ const DailyReportPage: React.FC = () => {
             {/* Header / Date Nav */}
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Journal History</h1>
+                    <h1 className="text-2xl font-bold text-slate-900">Daily Check-In</h1>
                     <p className="text-slate-500">{format(new Date(selectedDate), 'EEEE, MMM do')}</p>
                 </div>
             </header>

@@ -26,6 +26,7 @@ export interface Task {
 
 export interface TaskState {
     tasks: Task[];
+    isLoading: boolean;
     addTask: (title: string, priority?: Task['priority'], estimatedTime?: number) => void;
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
@@ -62,6 +63,7 @@ export interface SmartNote {
 export interface SmartNotesState {
     notes: SmartNote[];
     categories: NoteCategory[];
+    isLoading: boolean;
 
     addNote: (content: string) => Promise<void>;
     updateNote: (note: SmartNote) => Promise<void>;

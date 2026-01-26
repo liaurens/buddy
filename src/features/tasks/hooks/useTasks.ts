@@ -16,7 +16,7 @@ export const useTasks = (): TaskState => {
     const userId = user?.id;
 
     // Fetch tasks (todos)
-    const { data: tasks = [] } = useQuery({
+    const { data: tasks = [], isLoading } = useQuery({
         queryKey: ['todos', userId],
         queryFn: async () => {
             if (!userId) return [];
@@ -142,5 +142,5 @@ export const useTasks = (): TaskState => {
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
     }, [userId, tasks, queryClient]);
 
-    return { tasks, addTask, toggleTask, deleteTask, updateTask, startTask, completeTaskWithDuration };
+    return { tasks, isLoading, addTask, toggleTask, deleteTask, updateTask, startTask, completeTaskWithDuration };
 };

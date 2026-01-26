@@ -25,6 +25,12 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
 
     return (
         <div className="space-y-6">
+            {/* Page Header */}
+            <div className="mb-4">
+                <h1 className="text-3xl font-bold text-slate-900">Health Tracking</h1>
+                <p className="text-slate-500">Monitor your metrics and discover patterns</p>
+            </div>
+
             {/* Tracker Sub-Navigation */}
             <div className="flex p-1 bg-slate-200 rounded-lg">
                 <button

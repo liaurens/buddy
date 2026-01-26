@@ -8,7 +8,7 @@ import { useSmartNotes } from '../../../context/SmartNotesContext';
 type ViewMode = 'inbox' | 'category' | 'all' | 'settings';
 
 const SmartNotesPage: React.FC = () => {
-    const { categories, notes } = useSmartNotes();
+    const { categories, notes, isLoading } = useSmartNotes();
     const [viewMode, setViewMode] = useState<ViewMode>('inbox');
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
@@ -62,6 +62,12 @@ const SmartNotesPage: React.FC = () => {
 
                 {viewMode === 'settings' ? (
                     <CategoryManager />
+                ) : isLoading ? (
+                    <div className="space-y-3">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="bg-slate-100 h-24 rounded-xl animate-pulse" />
+                        ))}
+                    </div>
                 ) : (
                     <>
                         {/* Navigation Tabs */}

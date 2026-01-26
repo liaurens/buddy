@@ -48,20 +48,20 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
     const tools = [
         {
-            id: 'journal',
-            title: 'Journal',
-            description: 'Daily check-in & logs',
+            id: 'check-in',
+            title: 'Daily Check-In',
+            description: 'Log your daily metrics',
             icon: <BookOpen size={24} className="text-emerald-600" />,
             color: 'bg-emerald-50 text-emerald-900 border-emerald-100',
             action: () => onNavigate('check-in')
         },
         {
             id: 'tracker',
-            title: 'Tracker Stats',
-            description: 'Trends & Analysis',
+            title: 'Health Dashboard',
+            description: 'View trends & analysis',
             icon: <BarChart2 size={24} className="text-blue-600" />,
             color: 'bg-blue-50 text-blue-900 border-blue-100',
-            action: () => onNavigate('health') // This maps to "Dashboard" view
+            action: () => onNavigate('health')
         },
         {
             id: 'toolbox',

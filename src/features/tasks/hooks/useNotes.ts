@@ -82,11 +82,11 @@ export const useNotes = (): SmartNotesState => {
     });
 
     // Fetch notes
-    const { data: notes = [] } = useQuery({
+    const { data: notes = [], isLoading } = useQuery({
         queryKey: ['smart_notes', userId],
         queryFn: async () => {
             if (!userId) return [];
-            const { data, error } = await supabase
+            const { data, error} = await supabase
                 .from('smart_notes')
                 .select('*')
                 .eq('user_id', userId)
@@ -257,6 +257,7 @@ export const useNotes = (): SmartNotesState => {
     return {
         notes,
         categories,
+        isLoading,
         addNote,
         updateNote,
         deleteNote,

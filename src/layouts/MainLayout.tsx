@@ -10,11 +10,33 @@ interface MainLayoutProps {
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveTab }) => {
+    // Determine hub context
+    const getHubContext = () => {
+        if (['health', 'protocols', 'experiments'].includes(activeTab)) {
+            return { name: 'Health Hub', tab: activeTab };
+        }
+        if (['calendar', 'planning', 'reflection'].includes(activeTab)) {
+            return { name: 'Calendar Hub', tab: activeTab };
+        }
+        if (['tasks', 'notes'].includes(activeTab)) {
+            return { name: 'Tasks Hub', tab: activeTab };
+        }
+        return null;
+    };
+
+    const hubContext = getHubContext();
+
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 pb-24">
             {/* Header */}
             <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-                <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+                <div className="max-w-md mx-auto px-4 py-4">
+                    {/* Breadcrumb when in hub */}
+                    {hubContext && (
+                        <div className="text-xs text-slate-500 mb-1 font-medium">
+                            {hubContext.name} › {activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('-', ' ')}
+                        </div>
+                    )}
                     <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
                         Correlate Tracker
                     </h1>

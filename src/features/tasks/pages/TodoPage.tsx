@@ -4,7 +4,7 @@ import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon } from 'luc
 import { format, isPast, isToday } from 'date-fns';
 
 const TodoPage: React.FC = () => {
-    const { tasks: allTodos, addTask, toggleTask, deleteTask } = useTasks();
+    const { tasks: allTodos, isLoading, addTask, toggleTask, deleteTask } = useTasks();
 
     // Filter todos in memory
     const activeTodos = allTodos.filter(t => !t.completed);
@@ -82,9 +82,18 @@ const TodoPage: React.FC = () => {
             </form>
 
             <div className="space-y-4">
-                {/* Active List */}
-                <div className="space-y-2">
-                    {activeTodos.map(todo => (
+                {/* Loading State */}
+                {isLoading ? (
+                    <div className="space-y-2">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="bg-slate-100 h-20 rounded-xl animate-pulse" />
+                        ))}
+                    </div>
+                ) : (
+                    <>
+                        {/* Active List */}
+                        <div className="space-y-2">
+                            {activeTodos.map(todo => (
                         <div key={todo.id} className="group flex items-start gap-3 bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:border-indigo-200 transition-all">
                             <button
                                 onClick={() => handleToggle(todo.id)}
@@ -141,6 +150,8 @@ const TodoPage: React.FC = () => {
                             ))}
                         </div>
                     </div>
+                )}
+                    </>
                 )}
             </div>
         </div>
