@@ -19,19 +19,51 @@ Here is everything you need to get started, whether you are a user or a develope
 
 ## 🚀 Key Features
 
--   **Smart Task Management**: Chunking, prioritization, and time estimation.
--   **Focus Timer**: Built-in Pomodoro timer to manage work/break cycles.
--   **Correlation Tracker**: Log sleep, mood, caffeine, and more to find hidden patterns in your life.
--   **Daily Journal**: Reflection and intention setting.
+### Health Tracking
+-   **Custom Metrics**: Track any biometric data (sleep, mood, energy, etc.)
+-   **Correlation Analysis**: Discover hidden patterns and relationships in your data
+-   **Protocol Management**: Manage supplements and medications with cycle tracking
+-   **Experiments**: Test hypotheses about your health and habits
+
+### Planning & Productivity
+-   **AI-Powered Daily Planning**: Generate optimized daily schedules
+-   **Time Blocking**: Visual calendar with time block management
+-   **Daily Reflection**: Review and learn from each day
+-   **Focus Timer**: Pomodoro-style focus sessions with break management
+
+### Task Management
+-   **Smart Task List**: Prioritization, time estimation, and subtasks
+-   **Quick Notes**: Fast note capture with flag-based auto-categorization
+-   **Category System**: Organize notes with custom categories and emojis
+
+### Personal Growth
+-   **Strategy Library**: Build your personal playbook of tactics and best practices
+
+## 🏗️ Project Structure
+
+The app uses a **feature-based architecture** where each tool is self-contained:
+
+```
+src/features/
+├── health-tracking/    # Analytics and experimentation
+├── planning/           # Daily planning and time management
+├── tasks/              # Task and note management
+├── focus/              # Focus tools and timers
+├── toolbox/            # Personal strategies library
+└── core/               # Shared infrastructure
+```
+
+See [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for detailed documentation.
 
 ## 🛠️ Technology Stack
 
 -   **Frontend**: React 19, TypeScript, Vite
 -   **Styling**: Tailwind CSS
--   **State Management**: React Context
--   **Database**: Dexie.js (IndexedDB) with Dexie Cloud sync
+-   **State Management**: Custom Hooks with React Query
+-   **Database**: Supabase (PostgreSQL) with real-time sync
 -   **Testing**: Vitest, React Testing Library
 -   **PWA**: Offline-capable Progressive Web App
+-   **Architecture**: Feature-based organization (vertical slicing)
 
 ## 🤝 Contributing
 
