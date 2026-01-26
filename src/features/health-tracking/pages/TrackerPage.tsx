@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import Dashboard from '../features/tracker/Dashboard';
-import EntryForm from '../features/tracker/EntryForm';
-import Analysis from '../features/tracker/Analysis';
+import Dashboard from '../../../features/tracker/Dashboard';
+import EntryForm from '../../../features/tracker/EntryForm';
+import Analysis from '../../../features/tracker/Analysis';
 
 interface TrackerPageProps {
     initialParams?: {

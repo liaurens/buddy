@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { useTracker } from '../context/TrackerContext';
-import { useProtocol } from '../context/ProtocolContext';
+import { useTracker } from '../../../context/TrackerContext';
+import { useProtocol } from '../../../context/ProtocolContext';
 import { format, subDays, isSameDay } from 'date-fns';
 import { CheckCircle, CheckSquare } from 'lucide-react';
-import CheckinModal from '../features/tracker/CheckinModal';
+import CheckinModal from '../../../features/tracker/CheckinModal';
 
 const DailyReportPage: React.FC = () => {
     const { trackers, entries } = useTracker();

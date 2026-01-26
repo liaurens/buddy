@@ -5,25 +5,21 @@ import { ProtocolProvider } from './context/ProtocolContext';
 import { ExperimentProvider } from './context/ExperimentContext';
 import { SmartNotesProvider } from './context/SmartNotesContext';
 import MainLayout from './layouts/MainLayout';
-import Settings from './pages/Settings';
-import TrackerPage from './pages/TrackerPage';
-import ProtocolsPage from './pages/ProtocolsPage';
-import DailyReportPage from './pages/DailyReportPage';
-import ExperimentsPage from './pages/ExperimentsPage';
-import HomePage from './pages/HomePage';
-import ToolboxPage from './pages/ToolboxPage';
-import TodoPage from './pages/TodoPage';
-import CalendarPage from './pages/CalendarPage';
-import SmartNotesPage from './pages/SmartNotesPage';
-import ReflectionPage from './pages/ReflectionPage';
-import PlanPage from './pages/PlanPage';
+// Feature imports
+import { HomePage, SettingsPage } from './features/core';
+import { TrackerPage, ProtocolsPage, ExperimentsPage, CheckInPage } from './features/health-tracking';
+import { PlanPage, CalendarPage, ReflectionPage } from './features/planning';
+import { TodoPage, NotesPage } from './features/tasks';
+import { ToolboxPage } from './features/toolbox';
 import PomodoroTimer from './features/focus/PomodoroTimer';
 import LoginScreen from './components/LoginScreen';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured } from './services/supabase';
 
+type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'toolbox' | 'focus' | 'settings';
+
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes' | 'focus' | 'reflection' | 'plan'>('home');
+  const [activeTab, setActiveTab] = useState<AppRoute>('home');
   const [navParams, setNavParams] = useState<any>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
@@ -49,29 +45,29 @@ const App: React.FC = () => {
     switch (activeTab) {
       case 'home':
         return <HomePage onNavigate={handleNavigate} />;
-      case 'tracker':
+      case 'health':
         return <TrackerPage initialParams={navParams} />;
       case 'protocols':
         return <ProtocolsPage />;
       case 'toolbox':
         return <ToolboxPage />;
-      case 'todos':
+      case 'tasks':
         return <TodoPage />;
       case 'calendar':
         return <CalendarPage />;
       case 'settings':
-        return <Settings />;
+        return <SettingsPage />;
       case 'experiments':
         return <ExperimentsPage onNavigate={handleNavigate} />;
-      case 'journal':
-        return <DailyReportPage />;
+      case 'check-in':
+        return <CheckInPage />;
       case 'notes':
-        return <SmartNotesPage />;
+        return <NotesPage />;
       case 'focus':
         return <PomodoroTimer />;
       case 'reflection':
         return <ReflectionPage />;
-      case 'plan':
+      case 'planning':
         return <PlanPage />;
       default:
         return <HomePage onNavigate={handleNavigate} />;

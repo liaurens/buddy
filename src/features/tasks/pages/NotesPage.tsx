@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Inbox, Settings, ChevronDown, ChevronRight } from 'lucide-react';
-import { QuickNoteInput } from '../features/smartnotes/QuickNoteInput';
-import { SmartNotesList } from '../features/smartnotes/SmartNotesList';
-import { CategoryManager } from '../features/smartnotes/CategoryManager';
-import { useSmartNotes } from '../context/SmartNotesContext';
+import { QuickNoteInput } from '../../../features/smartnotes/QuickNoteInput';
+import { SmartNotesList } from '../../../features/smartnotes/SmartNotesList';
+import { CategoryManager } from '../../../features/smartnotes/CategoryManager';
+import { useSmartNotes } from '../../../context/SmartNotesContext';
 
 type ViewMode = 'inbox' | 'category' | 'all' | 'settings';
 

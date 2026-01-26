@@ -1,10 +1,12 @@
 import React from 'react';
 import { Settings as SettingsIcon, CheckSquare, Activity, Pill, FlaskConical, Calendar, TrendingUp, CalendarClock } from 'lucide-react';
 
+type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'toolbox' | 'focus' | 'settings';
+
 interface MainLayoutProps {
     children: React.ReactNode;
-    activeTab: 'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments' | 'notes' | 'focus' | 'reflection' | 'plan';
-    setActiveTab: (tab: any) => void;
+    activeTab: AppRoute;
+    setActiveTab: (tab: AppRoute) => void;
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveTab }) => {
@@ -35,33 +37,33 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                         <span className="text-[10px] mt-1 font-medium">Home</span>
                     </button>
 
-                    {/* Context: JOURNAL */}
-                    {(activeTab === 'journal') && (
+                    {/* Context: CHECK-IN */}
+                    {(activeTab === 'check-in') && (
                         <>
-                            {/* Maybe add a 'History' vs 'Entry' toggle here if Journal expands? 
-                                 For now, Journal is single page, so maybe just Settings? 
-                                 Or user wants context specific tools. 
-                                 Let's add 'Statistics' shortcut for Journal context?
+                            {/* Maybe add a 'History' vs 'Entry' toggle here if Check-in expands?
+                                 For now, Check-in is single page, so maybe just Settings?
+                                 Or user wants context specific tools.
+                                 Let's add 'Statistics' shortcut for Check-in context?
                              */}
                         </>
                     )}
 
-                    {/* Context: TRACKER / EXPERIMENTS / PROTOCOLS */}
-                    {['tracker', 'experiments', 'protocols'].includes(activeTab) && (
+                    {/* Context: HEALTH / EXPERIMENTS / PROTOCOLS */}
+                    {['health', 'experiments', 'protocols'].includes(activeTab) && (
                         <>
                             <button
-                                onClick={() => setActiveTab('tracker')}
-                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'tracker' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                onClick={() => setActiveTab('health')}
+                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'health' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
                                 <Activity size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Stats</span>
+                                <span className="text-[10px] mt-1 font-medium">Health</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('experiments')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'experiments' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
                                 <FlaskConical size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Lab</span>
+                                <span className="text-[10px] mt-1 font-medium">Experiments</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('protocols')}
@@ -73,8 +75,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                         </>
                     )}
 
-                    {/* Context: CALENDAR HUB (Calendar + Plan) */}
-                    {['calendar', 'plan'].includes(activeTab) && (
+                    {/* Context: CALENDAR HUB (Calendar + Planning) */}
+                    {['calendar', 'planning'].includes(activeTab) && (
                         <>
                             <button
                                 onClick={() => setActiveTab('calendar')}
@@ -84,8 +86,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                                 <span className="text-[10px] mt-1 font-medium">Calendar</span>
                             </button>
                             <button
-                                onClick={() => setActiveTab('plan')}
-                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'plan' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                onClick={() => setActiveTab('planning')}
+                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'planning' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
                                 <CalendarClock size={24} />
                                 <span className="text-[10px] mt-1 font-medium">Plan</span>
@@ -94,11 +96,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                     )}
 
                     {/* Context: TASKS HUB (Tasks + Reflection + Notes) */}
-                    {['todos', 'notes', 'reflection'].includes(activeTab) && (
+                    {['tasks', 'notes', 'reflection'].includes(activeTab) && (
                         <>
                             <button
-                                onClick={() => setActiveTab('todos')}
-                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'todos' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                onClick={() => setActiveTab('tasks')}
+                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'tasks' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
                                 <CheckSquare size={24} />
                                 <span className="text-[10px] mt-1 font-medium">Tasks</span>

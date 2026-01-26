@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Search, BookOpen, Lightbulb, Star, ChevronRight, X } from 'lucide-react';
 import { format } from 'date-fns';
-import type { Strategy } from '../types';
-import { useAuth } from '../hooks/useAuth';
-import { supabase, dbToStrategy, strategyToDb, type DbStrategy } from '../services/supabase';
+import type { Strategy } from '../../../types';
+import { useAuth } from '../../../hooks/useAuth';
+import { supabase, dbToStrategy, strategyToDb, type DbStrategy } from '../../../services/supabase';
 
 const PRESET_TAGS = [
     { label: 'Strength', color: 'bg-emerald-100 text-emerald-700' },

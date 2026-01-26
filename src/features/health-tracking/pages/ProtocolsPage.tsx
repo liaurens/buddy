@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import ProtocolList from '../features/protocols/ProtocolList';
-import ProtocolForm from '../features/protocols/ProtocolForm';
-import type { Protocol } from '../types';
+import ProtocolList from '../../../features/protocols/ProtocolList';
+import ProtocolForm from '../../../features/protocols/ProtocolForm';
+import type { Protocol } from '../../../types';
 import { Plus } from 'lucide-react';
 
 const ProtocolsPage = () => {

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import ExperimentList from '../features/experiments/ExperimentList';
-import ExperimentWizard from '../features/experiments/ExperimentWizard';
-import ExperimentDetails from '../features/experiments/ExperimentDetails';
-import type { Experiment } from '../types';
+import ExperimentList from '../../../features/experiments/ExperimentList';
+import ExperimentWizard from '../../../features/experiments/ExperimentWizard';
+import ExperimentDetails from '../../../features/experiments/ExperimentDetails';
+import type { Experiment } from '../../../types';
 import { Plus, FlaskConical } from 'lucide-react';
 
+type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'toolbox' | 'focus' | 'settings';
+
 interface ExperimentsPageProps {
-    onNavigate?: (tab: 'home' | 'tracker' | 'protocols' | 'toolbox' | 'todos' | 'calendar' | 'settings' | 'journal' | 'experiments', params?: any) => void;
+    onNavigate?: (tab: AppRoute, params?: any) => void;
 }
 
 const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
@@ -15,7 +17,7 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
 
     const handleRunAnalysis = (experiment: Experiment) => {
         if (onNavigate) {
-            onNavigate('tracker', {
+            onNavigate('health', {
                 subTab: 'analysis',
                 xId: experiment.tracker1Id,
                 yId: experiment.tracker2Id

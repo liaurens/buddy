@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useTracker } from '../context/TrackerContext';
-import { useProtocol } from '../context/ProtocolContext';
-import { useExperiment } from '../context/ExperimentContext';
+import { useTracker } from '../../../context/TrackerContext';
+import { useProtocol } from '../../../context/ProtocolContext';
+import { useExperiment } from '../../../context/ExperimentContext';
 import { format, isSameDay } from 'date-fns';
 import {
     Zap, Calendar as CalendarIcon,
@@ -53,7 +53,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             description: 'Daily check-in & logs',
             icon: <BookOpen size={24} className="text-emerald-600" />,
             color: 'bg-emerald-50 text-emerald-900 border-emerald-100',
-            action: () => onNavigate('journal')
+            action: () => onNavigate('check-in')
         },
         {
             id: 'tracker',
@@ -61,7 +61,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             description: 'Trends & Analysis',
             icon: <BarChart2 size={24} className="text-blue-600" />,
             color: 'bg-blue-50 text-blue-900 border-blue-100',
-            action: () => onNavigate('tracker') // This maps to "Dashboard" view
+            action: () => onNavigate('health') // This maps to "Dashboard" view
         },
         {
             id: 'toolbox',
@@ -77,7 +77,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             description: 'Todo List',
             icon: <CheckSquare size={24} className="text-indigo-600" />,
             color: 'bg-indigo-50 text-indigo-900 border-indigo-100',
-            action: () => onNavigate('todos')
+            action: () => onNavigate('tasks')
         },
         {
             id: 'focus',
