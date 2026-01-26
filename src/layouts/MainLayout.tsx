@@ -49,14 +49,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
 
             {/* Bottom Navigation */}
             <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 z-20 safe-area-inset-bottom">
-                <div className="flex justify-around items-center h-16">
+                <div className="flex justify-around items-center h-20">
                     {/* Always show Home */}
                     <button
                         onClick={() => setActiveTab('home')}
                         className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'home' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                     >
-                        <CheckSquare size={24} />
-                        <span className="text-[10px] mt-1 font-medium">Home</span>
+                        <CheckSquare size={28} />
+                        <span className="text-xs mt-1 font-medium">Home</span>
                     </button>
 
                     {/* Context: CHECK-IN */}
@@ -77,22 +77,22 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                                 onClick={() => setActiveTab('health')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'health' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                <Activity size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Health</span>
+                                <Activity size={28} />
+                                <span className="text-xs mt-1 font-medium">Health</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('experiments')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'experiments' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                <FlaskConical size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Experiments</span>
+                                <FlaskConical size={28} />
+                                <span className="text-xs mt-1 font-medium">Experiments</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('protocols')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'protocols' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                <Pill size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Protocols</span>
+                                <Pill size={28} />
+                                <span className="text-xs mt-1 font-medium">Protocols</span>
                             </button>
                         </>
                     )}
@@ -104,22 +104,22 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                                 onClick={() => setActiveTab('calendar')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'calendar' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                <Calendar size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Calendar</span>
+                                <Calendar size={28} />
+                                <span className="text-xs mt-1 font-medium">Calendar</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('planning')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'planning' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                <CalendarClock size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Plan</span>
+                                <CalendarClock size={28} />
+                                <span className="text-xs mt-1 font-medium">Plan</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('reflection')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'reflection' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                <TrendingUp size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Reflect</span>
+                                <TrendingUp size={28} />
+                                <span className="text-xs mt-1 font-medium">Reflect</span>
                             </button>
                         </>
                     )}
@@ -131,15 +131,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                                 onClick={() => setActiveTab('tasks')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'tasks' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                <CheckSquare size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Tasks</span>
+                                <CheckSquare size={28} />
+                                <span className="text-xs mt-1 font-medium">Tasks</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('notes')}
                                 className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'notes' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
-                                <StickyNote size={24} />
-                                <span className="text-[10px] mt-1 font-medium">Notes</span>
+                                <StickyNote size={28} />
+                                <span className="text-xs mt-1 font-medium">Notes</span>
                             </button>
                         </>
                     )}

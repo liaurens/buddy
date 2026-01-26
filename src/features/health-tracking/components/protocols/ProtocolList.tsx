@@ -12,10 +12,21 @@ const ProtocolList: React.FC<ProtocolListProps> = ({ onEdit }) => {
 
     if (protocols.length === 0) {
         return (
-            <div className="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                <Pill size={48} className="mx-auto mb-3 text-slate-300" />
-                <p>No protocols defined.</p>
-                <p className="text-sm">Add supplements or medications you are taking.</p>
+            <div className="text-center py-16 px-4">
+                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Pill size={32} className="text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 mb-2">No protocols yet</h3>
+                <p className="text-slate-500 mb-6">
+                    Track supplements, medications, or daily routines
+                </p>
+                <button
+                    onClick={() => onEdit({} as Protocol)}
+                    className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors inline-flex items-center gap-2"
+                >
+                    <Pill size={20} />
+                    Create Your First Protocol
+                </button>
             </div>
         );
     }

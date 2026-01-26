@@ -56,6 +56,7 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
             <ExperimentList
                 onRunAnalysis={handleRunAnalysis}
                 onViewDetails={setSelectedExperiment}
+                onCreateNew={() => setIsWizardOpen(true)}
             />
 
             {isWizardOpen && (
