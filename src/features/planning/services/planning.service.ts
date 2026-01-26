@@ -8,10 +8,10 @@
  * - Plan retrieval and updates
  */
 
-import { supabase } from './supabase';
-import { initializeAIService } from './ai';
+import { supabase } from '../../../services/supabase';
+import { initializeAIService } from './ai.service';
 import { generateDailyPlanSystemPrompt, generateDailyPlanUserPrompt } from './ai-prompts';
-import { getLearningPatternsForPlanning } from './reflection';
+import { getLearningPatternsForPlanning } from './reflection.service';
 import type {
     DailyPlan,
     TimeBlock,
@@ -19,8 +19,8 @@ import type {
     PlanSuggestion,
     CalendarEvent,
     ActivityTemplate
-} from '../types/planning';
-import type { Task } from '../types';
+} from '../../../types/planning';
+import type { Task } from '../../../types';
 
 // ============================================================================
 // Context Gathering

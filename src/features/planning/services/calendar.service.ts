@@ -7,7 +7,7 @@
  */
 
 import ICAL from 'ical.js';
-import type { CalendarEvent } from '../types/planning';
+import type { CalendarEvent } from '../../../types/planning';
 
 // ============================================================================
 // Types

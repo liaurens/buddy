@@ -10,8 +10,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { generateDayReflection, detectPatterns } from '../../../services/reflection';
-import type { DayReflection, LearningPattern } from '../../../services/reflection';
+import { generateDayReflection, detectPatterns } from '../services/reflection.service';
+import type { DayReflection, LearningPattern } from '../services/reflection.service';
 import { TrendingUp, TrendingDown, Target, Clock, CheckCircle, AlertCircle, Lightbulb } from 'lucide-react';
 
 const ReflectionPage: React.FC = () => {

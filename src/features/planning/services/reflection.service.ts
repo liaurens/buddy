@@ -8,7 +8,7 @@
  * - Task-specific accuracy
  */
 
-import { supabase } from './supabase';
+import { supabase } from '../../../services/supabase';
 
 // ============================================================================
 // Types

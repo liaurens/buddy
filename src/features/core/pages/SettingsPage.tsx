@@ -5,8 +5,8 @@ import { supabase, getSetting, setSetting } from '../../../services/supabase';
 import type { TrackerDefinition, TrackerType } from '../../../types';
 import { Plus, Trash2, Download, Upload, Save, X, Cloud, LogOut, Zap, Copy, RefreshCw, Check, Brain, AlertCircle, Calendar } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { initializeAIService, AIService } from '../../../services/ai';
-import { fetchICalFeed } from '../../../services/calendar';
+import { initializeAIService, AIService } from '../../planning/services/ai.service';
+import { fetchICalFeed } from '../../planning/services/calendar.service';
 
 const Settings: React.FC = () => {
     const { trackers, addTracker, deleteTracker, updateTracker, exportData, importData } = useTracker();

@@ -7,8 +7,8 @@
  * - Task breakdown
  */
 
-import type { PlanGenerationContext, ReplanRequest, CalendarEvent, ActivityTemplate } from '../types/planning';
-import type { Task } from '../types';
+import type { PlanGenerationContext, ReplanRequest, CalendarEvent, ActivityTemplate } from '../../../types/planning';
+import type { Task } from '../../../types';
 
 // ============================================================================
 // Helper Functions

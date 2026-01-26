@@ -28,7 +28,10 @@
       "Bash(del nul)",
       "Bash(timeout /t 5)",
       "Bash(ping:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(dir:*)",
+      "Bash(tree:*)",
+      "Bash(git mv:*)"
     ]
   },
   "enabledMcpjsonServers": [

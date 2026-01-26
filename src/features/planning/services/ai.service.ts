@@ -10,7 +10,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { GoogleGenAI } from '@google/genai';
-import type { PlanGenerationContext, PlanSuggestion, ReplanRequest } from '../types/planning';
+import type { PlanGenerationContext, PlanSuggestion, ReplanRequest } from '../../../types/planning';
 
 // ============================================================================
 // Types

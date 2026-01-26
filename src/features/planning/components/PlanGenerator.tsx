@@ -12,7 +12,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { buildPlanningContext, generateDailyPlan, savePlanToDatabase } from '../../../services/planning';
+import { buildPlanningContext, generateDailyPlan, savePlanToDatabase } from '../services/planning.service';
 import type { PlanSuggestion } from '../../../types/planning';
 import {
     Sparkles,
