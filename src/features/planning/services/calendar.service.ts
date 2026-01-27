@@ -261,23 +261,8 @@ export async function saveCalendarEventsToDatabase(
     source: string = 'ical'
 ): Promise<{ success: boolean; error?: string; savedCount: number }> {
     try {
-        // Delete existing events from this source (to avoid duplicates)
-        const { error: deleteError } = await supabase
-            .from('calendar_events')
-            .delete()
-            .eq('user_id', userId)
-            .eq('source', source);
-
-        if (deleteError) {
-            console.error('Failed to delete old calendar events:', deleteError);
-            return {
-                success: false,
-                error: deleteError.message,
-                savedCount: 0,
-            };
-        }
-
-        // Insert new events
+        // Insert or update new events FIRST (before deleting)
+        // This prevents data loss if insert fails
         if (events.length > 0) {
             // Map camelCase to snake_case for database
             const eventsToInsert = events.map(event => ({
@@ -296,22 +281,61 @@ export async function saveCalendarEventsToDatabase(
                 synced_at: new Date().toISOString(),
             }));
 
-            const { error: insertError, count } = await supabase
+            // Use upsert to handle updates of existing events
+            const { error: upsertError } = await supabase
                 .from('calendar_events')
-                .insert(eventsToInsert);
+                .upsert(eventsToInsert, {
+                    onConflict: 'user_id,external_id,source',
+                });
 
-            if (insertError) {
-                console.error('Failed to insert calendar events:', insertError);
+            if (upsertError) {
+                console.error('Failed to upsert calendar events:', upsertError);
                 return {
                     success: false,
-                    error: insertError.message,
+                    error: upsertError.message,
                     savedCount: 0,
                 };
+            }
+
+            // Now delete events from this source that are NOT in the new set
+            // (i.e., events that were deleted from the calendar)
+            const externalIds = events
+                .map(e => e.externalId)
+                .filter(id => id != null);
+
+            if (externalIds.length > 0) {
+                const { error: deleteError } = await supabase
+                    .from('calendar_events')
+                    .delete()
+                    .eq('user_id', userId)
+                    .eq('source', source)
+                    .not('external_id', 'in', `(${externalIds.map(id => `'${id}'`).join(',')})`);
+
+                if (deleteError) {
+                    console.warn('Failed to delete old calendar events:', deleteError);
+                    // Don't fail - new events were saved successfully
+                }
             }
 
             return {
                 success: true,
                 savedCount: events.length,
+            };
+        }
+
+        // If no events provided, delete all events from this source
+        const { error: deleteError } = await supabase
+            .from('calendar_events')
+            .delete()
+            .eq('user_id', userId)
+            .eq('source', source);
+
+        if (deleteError) {
+            console.error('Failed to delete calendar events:', deleteError);
+            return {
+                success: false,
+                error: deleteError.message,
+                savedCount: 0,
             };
         }
 

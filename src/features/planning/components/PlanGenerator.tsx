@@ -28,9 +28,10 @@ import {
 interface PlanGeneratorProps {
     date: string;
     onPlanGenerated: () => void;
+    hasExistingPlan?: boolean; // Whether there's already a plan for this date
 }
 
-const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated }) => {
+const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated, hasExistingPlan = false }) => {
     const { user } = useAuth();
 
     // User state
@@ -84,6 +85,14 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated }) 
         if (!validateWorkHours(workStartTime, workEndTime)) {
             setError('Please fix work hours before generating plan');
             return;
+        }
+
+        // Confirm if replacing existing plan
+        if (hasExistingPlan) {
+            const confirmed = window.confirm(
+                'You already have a plan for today. Generating a new plan will replace it, but completed tasks will be preserved.\n\nAre you sure you want to continue?'
+            );
+            if (!confirmed) return;
         }
 
         setLoading(true);

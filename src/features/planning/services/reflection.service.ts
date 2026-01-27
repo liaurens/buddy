@@ -60,24 +60,15 @@ export async function recordBlockCompletion(
     actualMinutes: number
 ): Promise<void> {
     try {
-        // Update time block with actual minutes and completion time
-        const { error } = await supabase
-            .from('time_blocks')
-            .update({
-                actual_minutes: actualMinutes,
-                completed_at: new Date().toISOString(),
-                status: 'completed',
-            })
-            .eq('id', blockId)
-            .eq('user_id', userId);
+        // NOTE: Block status/completion is already updated by completeBlock()
+        // This function only handles learning/history tracking
 
-        if (error) throw error;
-
-        // If block has a task, update task's historical minutes
+        // Get block info to update task history
         const { data: block } = await supabase
             .from('time_blocks')
             .select('task_id, title')
             .eq('id', blockId)
+            .eq('user_id', userId)
             .single();
 
         if (block?.task_id) {

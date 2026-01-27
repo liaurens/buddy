@@ -275,15 +275,17 @@ export async function savePlanToDatabase(
 
         planId = plan.id;
 
-        // Delete existing time blocks for this plan (if re-planning)
+        // Delete only PENDING and ACTIVE time blocks (preserve completed/skipped)
+        // This prevents loss of user progress when re-planning
         const { error: deleteError } = await supabase
             .from('time_blocks')
             .delete()
-            .eq('plan_id', planId);
+            .eq('plan_id', planId)
+            .in('status', ['pending', 'active']);
 
         if (deleteError) {
-            console.warn('Failed to delete old time blocks:', deleteError);
-            // Continue anyway - insert will fail if blocks exist
+            console.warn('Failed to delete pending/active time blocks:', deleteError);
+            // Continue anyway
         }
 
         // Create time blocks
