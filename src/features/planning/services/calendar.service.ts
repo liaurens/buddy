@@ -279,10 +279,21 @@ export async function saveCalendarEventsToDatabase(
 
         // Insert new events
         if (events.length > 0) {
+            // Map camelCase to snake_case for database
             const eventsToInsert = events.map(event => ({
-                ...event,
                 user_id: userId,
-                userId: undefined, // Remove camelCase field
+                title: event.title,
+                description: event.description || null,
+                location: event.location || null,
+                start_time: event.startTime,
+                end_time: event.endTime,
+                is_all_day: event.isAllDay || false,
+                travel_time_minutes: event.travelTimeMinutes || null,
+                travel_from_location: event.travelFromLocation || null,
+                source: source,
+                external_id: event.externalId || null,
+                calendar_name: event.calendarName || null,
+                synced_at: new Date().toISOString(),
             }));
 
             const { error: insertError, count } = await supabase
