@@ -47,23 +47,50 @@ function normalizeCalendarUrl(url: string): string {
 }
 
 /**
+ * Wrap URL with CORS proxy to bypass browser CORS restrictions
+ */
+function wrapWithCorsProxy(url: string): string {
+    // Use AllOrigins CORS proxy (free, no rate limits for reasonable use)
+    // Alternative: https://corsproxy.io/?${encodeURIComponent(url)}
+    return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+}
+
+/**
  * Fetch and parse iCal feed from URL
  */
-export async function fetchICalFeed(url: string): Promise<CalendarSyncResult> {
+export async function fetchICalFeed(url: string, useCorsProxy: boolean = true): Promise<CalendarSyncResult> {
     const syncedAt = new Date().toISOString();
 
     try {
         // Normalize URL (webcal:// → https://)
         const normalizedUrl = normalizeCalendarUrl(url);
 
+        // For iCloud/CalDAV URLs, use CORS proxy by default
+        const fetchUrl = useCorsProxy ? wrapWithCorsProxy(normalizedUrl) : normalizedUrl;
+
+        console.log('Fetching calendar from:', useCorsProxy ? 'CORS proxy' : 'direct');
+        console.log('URL:', fetchUrl);
+
         // Fetch the iCal data
-        const response = await fetch(normalizedUrl);
+        const response = await fetch(fetchUrl, {
+            headers: {
+                'Accept': 'text/calendar, text/plain, */*',
+            },
+        });
+
+        console.log('Response status:', response.status, response.statusText);
 
         if (!response.ok) {
-            throw new Error(`Failed to fetch calendar: ${response.statusText}`);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const icalData = await response.text();
+        console.log('Received iCal data, length:', icalData.length);
+
+        // Check if we got valid iCal data
+        if (!icalData.includes('BEGIN:VCALENDAR')) {
+            throw new Error('Invalid calendar data received - not in iCal format');
+        }
 
         // Parse iCal data
         const events = parseICalData(icalData, normalizedUrl);
@@ -74,6 +101,14 @@ export async function fetchICalFeed(url: string): Promise<CalendarSyncResult> {
             syncedAt,
         };
     } catch (error: any) {
+        console.error('Calendar fetch error details:', error);
+
+        // If direct fetch failed with CORS and we haven't tried proxy yet, retry with proxy
+        if (!useCorsProxy && (error.message?.includes('CORS') || error.name === 'TypeError')) {
+            console.log('CORS error detected, retrying with proxy...');
+            return fetchICalFeed(url, true);
+        }
+
         return {
             success: false,
             events: [],
