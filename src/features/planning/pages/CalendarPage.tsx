@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTasks } from '../../../context/TaskContext';
+import { useAuth } from '../../../hooks/useAuth';
+import { supabase } from '../../../services/supabase';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday } from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle, Circle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle, Circle, MapPin } from 'lucide-react';
+import type { CalendarEvent } from '../../../types/planning';
 
 const CalendarPage: React.FC = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const { tasks: allTodos } = useTasks();
+    const { user } = useAuth();
+    const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
@@ -17,8 +22,40 @@ const CalendarPage: React.FC = () => {
     const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
     const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
+    // Fetch calendar events for the current month
+    useEffect(() => {
+        const fetchCalendarEvents = async () => {
+            if (!user?.id) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('calendar_events')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .gte('start_time', monthStart.toISOString())
+                    .lte('start_time', monthEnd.toISOString())
+                    .order('start_time', { ascending: true });
+
+                if (error) {
+                    console.error('Failed to fetch calendar events:', error);
+                    return;
+                }
+
+                setCalendarEvents(data || []);
+            } catch (err) {
+                console.error('Error fetching calendar events:', err);
+            }
+        };
+
+        fetchCalendarEvents();
+    }, [user?.id, currentDate]); // Re-fetch when month changes
+
     const getTodosForDay = (date: Date) => {
         return allTodos.filter(t => t.dueDate && isSameDay(new Date(t.dueDate), date));
+    };
+
+    const getCalendarEventsForDay = (date: Date) => {
+        return calendarEvents.filter(e => isSameDay(new Date(e.start_time), date));
     };
 
     const [selectedDay, setSelectedDay] = useState<Date | null>(new Date());
@@ -53,6 +90,8 @@ const CalendarPage: React.FC = () => {
 
                     {days.map(day => {
                         const dayTodos = getTodosForDay(day);
+                        const dayEvents = getCalendarEventsForDay(day);
+                        const totalItems = dayTodos.length + dayEvents.length;
                         const isSelected = selectedDay && isSameDay(day, selectedDay);
                         const isCurrent = isToday(day);
 
@@ -69,15 +108,23 @@ const CalendarPage: React.FC = () => {
                                 </span>
 
                                 <div className="mt-1 space-y-1">
-                                    {dayTodos.slice(0, 3).map(todo => (
+                                    {/* Show calendar events first */}
+                                    {dayEvents.slice(0, 2).map(event => (
+                                        <div key={event.id} className="text-[10px] truncate px-1 rounded flex items-center gap-1 bg-purple-100 text-purple-700">
+                                            <div className="w-1 h-1 rounded-full bg-purple-500" />
+                                            {format(new Date(event.start_time), 'HH:mm')} {event.title}
+                                        </div>
+                                    ))}
+                                    {/* Then show todos */}
+                                    {dayTodos.slice(0, Math.max(0, 3 - dayEvents.length)).map(todo => (
                                         <div key={todo.id} className={`text-[10px] truncate px-1 rounded flex items-center gap-1 ${todo.completed ? 'bg-slate-100 text-slate-400 line-through' : 'bg-indigo-100 text-indigo-700'
                                             }`}>
                                             <div className={`w-1 h-1 rounded-full ${todo.completed ? 'bg-slate-400' : 'bg-indigo-500'}`} />
                                             {todo.title}
                                         </div>
                                     ))}
-                                    {dayTodos.length > 3 && (
-                                        <div className="text-[9px] text-slate-400 pl-1">+{dayTodos.length - 3} more</div>
+                                    {totalItems > 3 && (
+                                        <div className="text-[9px] text-slate-400 pl-1">+{totalItems - 3} more</div>
                                     )}
                                 </div>
                             </div>
@@ -93,22 +140,59 @@ const CalendarPage: React.FC = () => {
                         {format(selectedDay, 'EEEE, MMMM do')}
                     </h3>
 
-                    {getTodosForDay(selectedDay).length === 0 ? (
-                        <p className="text-slate-400 italic">No tasks scheduled for this day.</p>
+                    {getTodosForDay(selectedDay).length === 0 && getCalendarEventsForDay(selectedDay).length === 0 ? (
+                        <p className="text-slate-400 italic">No events or tasks scheduled for this day.</p>
                     ) : (
-                        <div className="space-y-2">
-                            {getTodosForDay(selectedDay).map(todo => (
-                                <div key={todo.id} className="flex items-center gap-3">
-                                    {todo.completed ? (
-                                        <CheckCircle size={18} className="text-emerald-500" />
-                                    ) : (
-                                        <Circle size={18} className="text-slate-300" />
-                                    )}
-                                    <span className={todo.completed ? 'line-through text-slate-400' : 'text-slate-700'}>
-                                        {todo.title}
-                                    </span>
+                        <div className="space-y-4">
+                            {/* Calendar Events */}
+                            {getCalendarEventsForDay(selectedDay).length > 0 && (
+                                <div>
+                                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Calendar Events</h4>
+                                    <div className="space-y-2">
+                                        {getCalendarEventsForDay(selectedDay).map(event => (
+                                            <div key={event.id} className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
+                                                <CalendarIcon size={16} className="text-purple-600 mt-0.5 shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-slate-800 truncate">{event.title}</div>
+                                                    <div className="text-xs text-slate-600 mt-1">
+                                                        {format(new Date(event.start_time), 'h:mm a')} - {format(new Date(event.end_time), 'h:mm a')}
+                                                    </div>
+                                                    {event.location && (
+                                                        <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                                            <MapPin size={12} />
+                                                            {event.location}
+                                                        </div>
+                                                    )}
+                                                    {event.description && (
+                                                        <div className="text-xs text-slate-500 mt-1">{event.description}</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            ))}
+                            )}
+
+                            {/* Tasks */}
+                            {getTodosForDay(selectedDay).length > 0 && (
+                                <div>
+                                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tasks</h4>
+                                    <div className="space-y-2">
+                                        {getTodosForDay(selectedDay).map(todo => (
+                                            <div key={todo.id} className="flex items-center gap-3">
+                                                {todo.completed ? (
+                                                    <CheckCircle size={18} className="text-emerald-500" />
+                                                ) : (
+                                                    <Circle size={18} className="text-slate-300" />
+                                                )}
+                                                <span className={todo.completed ? 'line-through text-slate-400' : 'text-slate-700'}>
+                                                    {todo.title}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
