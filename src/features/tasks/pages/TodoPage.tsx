@@ -18,9 +18,8 @@ const TodoPage: React.FC = () => {
         e.preventDefault();
         if (!newTask.trim()) return;
 
-        // TaskContext's addTask handles priority, but we need to handle dueDate separately
-        // We'll use updateTask to add the dueDate after creation
-        await addTask(newTask, priority);
+        // Pass dueDate to addTask (will be undefined if not set)
+        await addTask(newTask, priority, undefined, dueDate || undefined);
         setNewTask('');
         setPriority('medium');
         setDueDate('');

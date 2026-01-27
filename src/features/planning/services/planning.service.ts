@@ -72,7 +72,7 @@ async function getPendingTasks(userId: string): Promise<Task[]> {
             .eq('user_id', userId)
             .eq('completed', false)
             .order('priority', { ascending: false })
-            .order('dueDate', { ascending: true });
+            .order('due_date', { ascending: true });
 
         if (error) throw error;
 
@@ -261,7 +261,6 @@ export async function savePlanToDatabase(
                 ai_reasoning: suggestion.reasoning,
                 ai_warnings: suggestion.warnings || [],
                 status: 'active',
-                total_planned_minutes: suggestion.totalMinutes,
             }, {
                 onConflict: 'user_id,date',
             })
@@ -290,12 +289,19 @@ export async function savePlanToDatabase(
 
         // Create time blocks
         if (suggestion.blocks.length > 0) {
+            // UUID validation regex
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            const isValidUuid = (id: string | undefined | null): boolean => {
+                return id != null && uuidRegex.test(id);
+            };
+
             const blocks = suggestion.blocks.map((block, idx) => ({
                 plan_id: planId,
                 user_id: userId,
-                task_id: block.taskId,
-                activity_template_id: block.activityTemplateId,
-                calendar_event_id: block.calendarEventId,
+                // Only use IDs if they are valid UUIDs, otherwise set to null
+                task_id: isValidUuid(block.taskId) ? block.taskId : null,
+                activity_template_id: isValidUuid(block.activityTemplateId) ? block.activityTemplateId : null,
+                calendar_event_id: isValidUuid(block.calendarEventId) ? block.calendarEventId : null,
                 title: block.title,
                 description: block.description,
                 start_time: block.startTime,
@@ -435,13 +441,13 @@ export async function updateBlockStatus(
     actualMinutes?: number
 ): Promise<void> {
     try {
-        const updates: Partial<TimeBlock> = { status };
+        const updates: Record<string, unknown> = { status };
 
         if (status === 'active') {
-            updates.startedAt = new Date().toISOString();
+            updates.started_at = new Date().toISOString();
         } else if (status === 'completed' && actualMinutes !== undefined) {
-            updates.actualMinutes = actualMinutes;
-            updates.completedAt = new Date().toISOString();
+            updates.actual_minutes = actualMinutes;
+            updates.completed_at = new Date().toISOString();
         }
 
         const { error } = await supabase

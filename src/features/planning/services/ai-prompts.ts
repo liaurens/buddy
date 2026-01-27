@@ -26,18 +26,20 @@ function formatCalendarEvents(events: CalendarEvent[]): string {
         const end = new Date(event.endTime);
         const duration = Math.round((end.getTime() - start.getTime()) / 60000);
 
-        return `- ${formatTime(start)}-${formatTime(end)} (${duration}min): ${event.title}${event.location ? ` @ ${event.location}` : ''}${event.travelTimeMinutes ? ` [+${event.travelTimeMinutes}min travel]` : ''}`;
+        // Include event ID so AI can reference it in the plan
+        return `- [ID: ${event.id}] ${formatTime(start)}-${formatTime(end)} (${duration}min): ${event.title}${event.location ? ` @ ${event.location}` : ''}${event.travelTimeMinutes ? ` [+${event.travelTimeMinutes}min travel]` : ''}`;
     }).join('\n');
 }
 
-function formatTasks(tasks: Array<{ id: string; title: string; priority?: string; estimatedTime?: number; dueDate?: string }>): string {
+function formatTasks(tasks: Array<{ id: string; title: string; priority?: string; estimatedTime?: number; deadline?: string }>): string {
     if (tasks.length === 0) return 'No pending tasks.';
 
     return tasks.map((task, idx) => {
         const priority = task.priority ? ` [${task.priority.toUpperCase()}]` : '';
         const estimate = task.estimatedTime ? ` (~${task.estimatedTime}min)` : '';
-        const deadline = task.dueDate ? ` (due: ${task.dueDate})` : '';
-        return `${idx + 1}. ${task.title}${priority}${estimate}${deadline}`;
+        const deadline = task.deadline ? ` (due: ${task.deadline})` : '';
+        // Include task ID so AI can reference it in the plan
+        return `${idx + 1}. [ID: ${task.id}] ${task.title}${priority}${estimate}${deadline}`;
     }).join('\n');
 }
 
@@ -50,7 +52,8 @@ function formatActivityTemplates(templates: ActivityTemplate[]): string {
             const avgTime = t.averageMinutes || t.defaultMinutes;
             const pref = t.preferredTimeSlot ? ` [prefers ${t.preferredTimeSlot}]` : '';
             const freq = t.frequency ? ` (${t.frequency})` : '';
-            return `- ${t.emoji || '•'} ${t.name}: ${avgTime}min${pref}${freq}`;
+            // Include template ID so AI can reference it in the plan
+            return `- [ID: ${t.id}] ${t.emoji || '•'} ${t.name}: ${avgTime}min${pref}${freq}`;
         }).join('\n');
 }
 
@@ -122,9 +125,9 @@ Return your response as valid JSON matching this structure:
       "startTime": "HH:MM",
       "endTime": "HH:MM",
       "estimatedMinutes": 60,
-      "taskId": "uuid-if-from-task-list",
-      "activityTemplateId": "uuid-if-from-template",
-      "calendarEventId": "uuid-if-from-calendar",
+      "taskId": null,
+      "activityTemplateId": null,
+      "calendarEventId": null,
       "status": "pending",
       "sortOrder": 0
     }
@@ -134,7 +137,13 @@ Return your response as valid JSON matching this structure:
   "suggestions": ["Suggestion 1", "Suggestion 2"],
   "totalMinutes": 480,
   "freeTimeMinutes": 120
-}`;
+}
+
+CRITICAL RULES FOR IDs:
+- taskId: Use the EXACT UUID from the task list (shown as [ID: uuid]) or null if not a task
+- activityTemplateId: Use the EXACT UUID from templates or null if not from a template
+- calendarEventId: Use the EXACT ID from calendar events or null if not a calendar event
+- NEVER make up IDs - use only the exact IDs provided or null`;
 }
 
 export function generateDailyPlanUserPrompt(context: PlanGenerationContext): string {

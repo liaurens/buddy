@@ -32,7 +32,7 @@ export const useTasks = (): TaskState => {
         enabled: !!userId,
     });
 
-    const addTask = useCallback(async (title: string, priority?: Task['priority'], estimatedTime?: number) => {
+    const addTask = useCallback(async (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string) => {
         if (!userId) return;
 
         const newTask: Task = {
@@ -42,6 +42,7 @@ export const useTasks = (): TaskState => {
             createdAt: new Date().toISOString(),
             priority: priority || 'medium',
             estimatedTime,
+            dueDate,
             subtasks: []
         };
 

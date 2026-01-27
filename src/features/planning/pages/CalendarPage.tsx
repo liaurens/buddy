@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTasks } from '../../../context/TaskContext';
 import { useAuth } from '../../../hooks/useAuth';
-import { supabase } from '../../../services/supabase';
+import { supabase, dbToCalendarEvent, type DbCalendarEvent } from '../../../services/supabase';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle, Circle, MapPin } from 'lucide-react';
 import type { CalendarEvent } from '../../../types/planning';
@@ -16,13 +16,11 @@ const CalendarPage: React.FC = () => {
     const monthEnd = endOfMonth(currentDate);
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-    // Pad start of month
     const startPadding = Array(monthStart.getDay()).fill(null);
 
     const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
     const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
-    // Fetch calendar events for the current month
     useEffect(() => {
         const fetchCalendarEvents = async () => {
             if (!user?.id) return;
@@ -41,21 +39,22 @@ const CalendarPage: React.FC = () => {
                     return;
                 }
 
-                setCalendarEvents(data || []);
+                const events = (data as DbCalendarEvent[] || []).map(dbToCalendarEvent);
+                setCalendarEvents(events);
             } catch (err) {
                 console.error('Error fetching calendar events:', err);
             }
         };
 
         fetchCalendarEvents();
-    }, [user?.id, currentDate]); // Re-fetch when month changes
+    }, [user?.id, currentDate]);
 
     const getTodosForDay = (date: Date) => {
         return allTodos.filter(t => t.dueDate && isSameDay(new Date(t.dueDate), date));
     };
 
     const getCalendarEventsForDay = (date: Date) => {
-        return calendarEvents.filter(e => isSameDay(new Date(e.start_time), date));
+        return calendarEvents.filter(e => isSameDay(new Date(e.startTime), date));
     };
 
     const [selectedDay, setSelectedDay] = useState<Date | null>(new Date());
@@ -76,7 +75,6 @@ const CalendarPage: React.FC = () => {
                 </div>
             </header>
 
-            {/* Calendar Grid */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
@@ -108,14 +106,12 @@ const CalendarPage: React.FC = () => {
                                 </span>
 
                                 <div className="mt-1 space-y-1">
-                                    {/* Show calendar events first */}
                                     {dayEvents.slice(0, 2).map(event => (
                                         <div key={event.id} className="text-[10px] truncate px-1 rounded flex items-center gap-1 bg-purple-100 text-purple-700">
                                             <div className="w-1 h-1 rounded-full bg-purple-500" />
-                                            {format(new Date(event.start_time), 'HH:mm')} {event.title}
+                                            {format(new Date(event.startTime), 'HH:mm')} {event.title}
                                         </div>
                                     ))}
-                                    {/* Then show todos */}
                                     {dayTodos.slice(0, Math.max(0, 3 - dayEvents.length)).map(todo => (
                                         <div key={todo.id} className={`text-[10px] truncate px-1 rounded flex items-center gap-1 ${todo.completed ? 'bg-slate-100 text-slate-400 line-through' : 'bg-indigo-100 text-indigo-700'
                                             }`}>
@@ -133,7 +129,6 @@ const CalendarPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Selected Day View */}
             {selectedDay && (
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 animate-in slide-in-from-bottom-2 fade-in">
                     <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">
@@ -144,7 +139,6 @@ const CalendarPage: React.FC = () => {
                         <p className="text-slate-400 italic">No events or tasks scheduled for this day.</p>
                     ) : (
                         <div className="space-y-4">
-                            {/* Calendar Events */}
                             {getCalendarEventsForDay(selectedDay).length > 0 && (
                                 <div>
                                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Calendar Events</h4>
@@ -155,7 +149,7 @@ const CalendarPage: React.FC = () => {
                                                 <div className="flex-1 min-w-0">
                                                     <div className="font-medium text-slate-800 truncate">{event.title}</div>
                                                     <div className="text-xs text-slate-600 mt-1">
-                                                        {format(new Date(event.start_time), 'h:mm a')} - {format(new Date(event.end_time), 'h:mm a')}
+                                                        {format(new Date(event.startTime), 'h:mm a')} - {format(new Date(event.endTime), 'h:mm a')}
                                                     </div>
                                                     {event.location && (
                                                         <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
@@ -173,7 +167,6 @@ const CalendarPage: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Tasks */}
                             {getTodosForDay(selectedDay).length > 0 && (
                                 <div>
                                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tasks</h4>
