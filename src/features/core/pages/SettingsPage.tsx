@@ -6,7 +6,7 @@ import type { TrackerDefinition, TrackerType } from '../../../types';
 import { Plus, Trash2, Download, Upload, Save, X, Cloud, LogOut, Zap, Copy, RefreshCw, Check, Brain, AlertCircle, Calendar } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeAIService, AIService } from '../../planning/services/ai.service';
-import { fetchICalFeed } from '../../planning/services/calendar.service';
+import { fetchICalFeed, saveCalendarEventsToDatabase } from '../../planning/services/calendar.service';
 
 const Settings: React.FC = () => {
     const { trackers, addTracker, deleteTracker, updateTracker, exportData, importData } = useTracker();
@@ -194,24 +194,46 @@ const Settings: React.FC = () => {
             return;
         }
 
+        if (!user?.id) {
+            alert('User not authenticated');
+            return;
+        }
+
         setIsTestingCalendar(true);
         setCalendarTestResult(null);
 
         try {
+            // Fetch calendar events
             const result = await fetchICalFeed(calendarUrl.trim());
 
             if (result.success) {
-                // Save last sync time
-                if (user?.id) {
-                    await setSetting(user.id, 'calendar_last_sync', result.syncedAt);
-                    setLastCalendarSync(result.syncedAt);
-                }
+                // Save events to database
+                const saveResult = await saveCalendarEventsToDatabase(
+                    user.id,
+                    result.events,
+                    'ical'
+                );
 
-                setCalendarTestResult({
-                    success: true,
-                    message: `Successfully synced ${result.events.length} event${result.events.length !== 1 ? 's' : ''} from calendar!`,
-                    eventCount: result.events.length,
-                });
+                if (saveResult.success) {
+                    // Save last sync time and calendar config
+                    await Promise.all([
+                        setSetting(user.id, 'calendar_last_sync', result.syncedAt),
+                        setSetting(user.id, 'calendar_url', calendarUrl.trim()),
+                        setSetting(user.id, 'calendar_name', calendarName.trim() || 'My Calendar'),
+                    ]);
+                    setLastCalendarSync(result.syncedAt);
+
+                    setCalendarTestResult({
+                        success: true,
+                        message: `Successfully synced and saved ${saveResult.savedCount} event${saveResult.savedCount !== 1 ? 's' : ''} to database!`,
+                        eventCount: saveResult.savedCount,
+                    });
+                } else {
+                    setCalendarTestResult({
+                        success: false,
+                        message: `Fetched ${result.events.length} events but failed to save to database: ${saveResult.error}`,
+                    });
+                }
             } else {
                 setCalendarTestResult({
                     success: false,

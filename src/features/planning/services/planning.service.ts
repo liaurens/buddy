@@ -245,11 +245,13 @@ export async function savePlanToDatabase(
     context: PlanGenerationContext,
     aiModel?: string
 ): Promise<DailyPlan> {
+    let planId: string | null = null;
+
     try {
-        // Create plan record
+        // Create plan record (use upsert to handle existing plans)
         const { data: plan, error: planError } = await supabase
             .from('daily_plans')
-            .insert({
+            .upsert({
                 user_id: userId,
                 date,
                 mood_at_plan_time: context.mood,
@@ -260,41 +262,88 @@ export async function savePlanToDatabase(
                 ai_warnings: suggestion.warnings || [],
                 status: 'active',
                 total_planned_minutes: suggestion.totalMinutes,
+            }, {
+                onConflict: 'user_id,date',
             })
             .select()
             .single();
 
-        if (planError) throw planError;
+        if (planError) {
+            console.error('Failed to create/update daily plan:', planError);
+            throw new Error(`Failed to save plan: ${planError.message}`);
+        }
+
+        planId = plan.id;
+
+        // Delete existing time blocks for this plan (if re-planning)
+        const { error: deleteError } = await supabase
+            .from('time_blocks')
+            .delete()
+            .eq('plan_id', planId);
+
+        if (deleteError) {
+            console.warn('Failed to delete old time blocks:', deleteError);
+            // Continue anyway - insert will fail if blocks exist
+        }
 
         // Create time blocks
-        const blocks = suggestion.blocks.map((block, idx) => ({
-            plan_id: plan.id,
-            user_id: userId,
-            task_id: block.taskId,
-            activity_template_id: block.activityTemplateId,
-            calendar_event_id: block.calendarEventId,
-            title: block.title,
-            description: block.description,
-            start_time: block.startTime,
-            end_time: block.endTime,
-            estimated_minutes: block.estimatedMinutes,
-            status: 'pending' as const,
-            sort_order: idx,
-        }));
+        if (suggestion.blocks.length > 0) {
+            const blocks = suggestion.blocks.map((block, idx) => ({
+                plan_id: planId,
+                user_id: userId,
+                task_id: block.taskId,
+                activity_template_id: block.activityTemplateId,
+                calendar_event_id: block.calendarEventId,
+                title: block.title,
+                description: block.description,
+                start_time: block.startTime,
+                end_time: block.endTime,
+                estimated_minutes: block.estimatedMinutes,
+                status: 'pending' as const,
+                sort_order: idx,
+            }));
 
-        const { data: savedBlocks, error: blocksError } = await supabase
-            .from('time_blocks')
-            .insert(blocks)
-            .select();
+            const { data: savedBlocks, error: blocksError } = await supabase
+                .from('time_blocks')
+                .insert(blocks)
+                .select();
 
-        if (blocksError) throw blocksError;
+            if (blocksError) {
+                // Rollback: delete the plan we just created
+                await supabase
+                    .from('daily_plans')
+                    .delete()
+                    .eq('id', planId);
+
+                console.error('Failed to create time blocks, rolled back plan:', blocksError);
+                throw new Error(`Failed to save time blocks: ${blocksError.message}`);
+            }
+
+            return {
+                ...plan,
+                blocks: savedBlocks || [],
+            };
+        }
 
         return {
             ...plan,
-            blocks: savedBlocks || [],
+            blocks: [],
         };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to save plan to database:', error);
+
+        // If we have a plan ID and hit an error, try to clean up
+        if (planId) {
+            try {
+                await supabase
+                    .from('daily_plans')
+                    .delete()
+                    .eq('id', planId);
+            } catch (rollbackError) {
+                console.error('Failed to rollback plan:', rollbackError);
+            }
+        }
+
         throw error;
     }
 }

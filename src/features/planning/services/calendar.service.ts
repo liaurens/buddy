@@ -8,6 +8,7 @@
 
 import ICAL from 'ical.js';
 import type { CalendarEvent } from '../../../types/planning';
+import { supabase } from '../../../services/supabase';
 
 // ============================================================================
 // Types
@@ -195,4 +196,71 @@ export function sortEventsByTime(events: CalendarEvent[]): CalendarEvent[] {
     return [...events].sort((a, b) => {
         return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
     });
+}
+
+/**
+ * Save calendar events to database
+ * Replaces existing events from the same source
+ */
+export async function saveCalendarEventsToDatabase(
+    userId: string,
+    events: CalendarEvent[],
+    source: string = 'ical'
+): Promise<{ success: boolean; error?: string; savedCount: number }> {
+    try {
+        // Delete existing events from this source (to avoid duplicates)
+        const { error: deleteError } = await supabase
+            .from('calendar_events')
+            .delete()
+            .eq('user_id', userId)
+            .eq('source', source);
+
+        if (deleteError) {
+            console.error('Failed to delete old calendar events:', deleteError);
+            return {
+                success: false,
+                error: deleteError.message,
+                savedCount: 0,
+            };
+        }
+
+        // Insert new events
+        if (events.length > 0) {
+            const eventsToInsert = events.map(event => ({
+                ...event,
+                user_id: userId,
+                userId: undefined, // Remove camelCase field
+            }));
+
+            const { error: insertError, count } = await supabase
+                .from('calendar_events')
+                .insert(eventsToInsert);
+
+            if (insertError) {
+                console.error('Failed to insert calendar events:', insertError);
+                return {
+                    success: false,
+                    error: insertError.message,
+                    savedCount: 0,
+                };
+            }
+
+            return {
+                success: true,
+                savedCount: events.length,
+            };
+        }
+
+        return {
+            success: true,
+            savedCount: 0,
+        };
+    } catch (error: any) {
+        console.error('Error saving calendar events to database:', error);
+        return {
+            success: false,
+            error: error.message || 'Unknown error',
+            savedCount: 0,
+        };
+    }
 }
