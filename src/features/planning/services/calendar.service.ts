@@ -32,14 +32,32 @@ export interface CalendarConfig {
 // ============================================================================
 
 /**
+ * Normalize calendar URL (convert webcal:// to https://)
+ */
+function normalizeCalendarUrl(url: string): string {
+    // Convert webcal:// to https://
+    if (url.startsWith('webcal://')) {
+        return url.replace('webcal://', 'https://');
+    }
+    // Convert http:// to https:// for security
+    if (url.startsWith('http://')) {
+        return url.replace('http://', 'https://');
+    }
+    return url;
+}
+
+/**
  * Fetch and parse iCal feed from URL
  */
 export async function fetchICalFeed(url: string): Promise<CalendarSyncResult> {
     const syncedAt = new Date().toISOString();
 
     try {
+        // Normalize URL (webcal:// → https://)
+        const normalizedUrl = normalizeCalendarUrl(url);
+
         // Fetch the iCal data
-        const response = await fetch(url);
+        const response = await fetch(normalizedUrl);
 
         if (!response.ok) {
             throw new Error(`Failed to fetch calendar: ${response.statusText}`);
@@ -48,7 +66,7 @@ export async function fetchICalFeed(url: string): Promise<CalendarSyncResult> {
         const icalData = await response.text();
 
         // Parse iCal data
-        const events = parseICalData(icalData, url);
+        const events = parseICalData(icalData, normalizedUrl);
 
         return {
             success: true,

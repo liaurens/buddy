@@ -60,6 +60,28 @@
 
 ---
 
+## 3. webcal:// URL Protocol Not Supported ✅ FIXED
+
+**Problem**:
+- User enters iCloud calendar URL starting with `webcal://`
+- Browser Fetch API error: "URL scheme 'webcal' is not supported"
+- Calendar sync fails immediately
+
+**Root Cause**:
+- `webcal://` is not a real protocol - it's just `https://` with a hint that it's a calendar
+- Browser Fetch API doesn't recognize `webcal://` scheme
+- URL needs to be normalized before fetching
+
+**Fix Applied**:
+- Added `normalizeCalendarUrl()` function
+- Converts `webcal://` to `https://` before fetching
+- Also converts `http://` to `https://` for security
+
+**Files Changed**:
+- `src/features/planning/services/calendar.service.ts` (added normalizeCalendarUrl)
+
+---
+
 ## Remaining Issues (Not Fixed)
 
 ### Timer State Not Persisted
