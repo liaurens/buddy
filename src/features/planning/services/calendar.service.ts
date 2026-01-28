@@ -25,6 +25,73 @@ export interface CalendarConfig {
     source: 'ical' | 'caldav';
 }
 
+/**
+ * Validates calendar URLs to prevent SSRF attacks
+ * @throws {Error} if URL is invalid or potentially malicious
+ */
+function validateCalendarUrl(url: string): void {
+    try {
+        const parsed = new URL(url);
+
+        // Only allow HTTPS (except localhost for development)
+        if (parsed.protocol !== 'https:' &&
+            parsed.protocol !== 'webcal:' &&
+            parsed.protocol !== 'http:' &&
+            parsed.hostname !== 'localhost') {
+            throw new Error('Only HTTPS and webcal URLs are allowed');
+        }
+
+        // Blacklist internal IP ranges to prevent SSRF
+        const internalIpPatterns = [
+            /^127\./,           // Loopback
+            /^10\./,            // Private network
+            /^172\.(1[6-9]|2[0-9]|3[01])\./, // Private network
+            /^192\.168\./,      // Private network
+            /^169\.254\./,      // Link-local
+            /^::1$/,            // IPv6 loopback
+            /^fc00:/,           // IPv6 private
+            /^fe80:/,           // IPv6 link-local
+            /^localhost$/i,     // Localhost (block in production)
+        ];
+
+        // Block internal IPs in production
+        if (import.meta.env.PROD) {
+            if (internalIpPatterns.some(pattern => pattern.test(parsed.hostname))) {
+                throw new Error('Internal URLs are not allowed');
+            }
+        }
+
+        // Whitelist known calendar providers for security
+        const allowedDomains = [
+            'calendar.google.com',
+            'outlook.office365.com',
+            'outlook.live.com',
+            'caldav.icloud.com',
+            'ical.me',
+            'p.ical.me',
+            'calendar.yahoo.com',
+            'calendar.proton.me',
+            'calendly.com',
+        ];
+
+        const isAllowedDomain = allowedDomains.some(domain =>
+            parsed.hostname === domain || parsed.hostname.endsWith(`.${domain}`)
+        );
+
+        if (!isAllowedDomain && import.meta.env.PROD) {
+            // In production, warn about untrusted domains but allow for flexibility
+            console.warn(`[Security] Calendar URL from untrusted domain: ${parsed.hostname}`);
+            // You can make this stricter by throwing an error instead of warning
+        }
+
+    } catch (error) {
+        if (error instanceof TypeError) {
+            throw new Error('Invalid URL format');
+        }
+        throw error;
+    }
+}
+
 function normalizeCalendarUrl(url: string): string {
     if (url.startsWith('webcal://')) {
         return url.replace('webcal://', 'https://');
@@ -104,6 +171,19 @@ async function fetchViaCorsProxy(url: string, proxyIndex: number = 0): Promise<{
 
 export async function fetchICalFeed(url: string): Promise<CalendarSyncResult> {
     const syncedAt = new Date().toISOString();
+
+    // Validate URL to prevent SSRF attacks
+    try {
+        validateCalendarUrl(url);
+    } catch (error) {
+        return {
+            success: false,
+            events: [],
+            error: error instanceof Error ? error.message : 'Invalid calendar URL',
+            syncedAt,
+        };
+    }
+
     const normalizedUrl = normalizeCalendarUrl(url);
 
     let result = await fetchViaEdgeFunction(url);

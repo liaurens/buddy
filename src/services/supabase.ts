@@ -6,9 +6,6 @@ import type { DailyPlan, TimeBlock, ActivityTemplate, CalendarEvent } from '../t
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-console.log('Supabase URL configured:', !!supabaseUrl);
-console.log('Supabase Key configured:', !!supabaseAnonKey);
-
 if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
 }
@@ -866,7 +863,6 @@ export async function initializeUserData(userId: string): Promise<void> {
         }
 
         if (!existingTrackers || existingTrackers.length === 0) {
-            console.log('Seeding default trackers for new user...');
             const trackersToInsert = DEFAULT_TRACKERS.map(t => ({
                 id: crypto.randomUUID(),
                 user_id: userId,
@@ -889,8 +885,6 @@ export async function initializeUserData(userId: string): Promise<void> {
                     return;
                 }
                 console.error('Error seeding default trackers:', insertError);
-            } else {
-                console.log('Default trackers seeded successfully');
             }
         }
     } catch (err: any) {

@@ -17,7 +17,6 @@
     "@google/genai": "^1.38.0",
     "@supabase/supabase-js": "^2.45.0",
     "@tanstack/react-query": "^5.51.0",
-    "@types/uuid": "^10.0.0",
     "date-fns": "^4.1.0",
     "ical.js": "^2.2.1",
     "lucide-react": "^0.556.0",
@@ -32,7 +31,6 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.1",
     "@types/node": "^24.10.9",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

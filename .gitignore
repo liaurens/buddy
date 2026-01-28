@@ -30,3 +30,9 @@ dexie-cloud.key
 *.njsproj
 *.sln
 *.sw?
+
+# Windows null device file created by shell redirections
+nul
+
+# MCP configuration with database credentials
+.mcp.json

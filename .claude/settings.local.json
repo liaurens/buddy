@@ -31,7 +31,13 @@
       "Bash(npm uninstall:*)",
       "Bash(dir:*)",
       "Bash(tree:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(npx supabase --version)",
+      "Bash(git status:*)",
+      "Bash(find:*)",
+      "Bash(npx eslint:*)",
+      "Bash(ls:*)",
+      "Bash(nul {})"
     ]
   },
   "enabledMcpjsonServers": [
