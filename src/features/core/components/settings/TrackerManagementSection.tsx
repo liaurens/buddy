@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, Save, X } from 'lucide-react';
 import type { TrackerDefinition, TrackerType } from '../../../../types';
 import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '../../../../components/ui/Toast';
 
 interface TrackerManagementSectionProps {
     trackers: TrackerDefinition[];
@@ -16,6 +17,7 @@ export const TrackerManagementSection: React.FC<TrackerManagementSectionProps> =
     onDeleteTracker,
     onUpdateTracker,
 }) => {
+    const toast = useToast();
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [newEmoji, setNewEmoji] = useState('');
@@ -42,12 +44,12 @@ export const TrackerManagementSection: React.FC<TrackerManagementSectionProps> =
         };
         try {
             await onAddTracker(newTracker);
-            alert('Tracker added successfully!');
+            toast.success('Tracker added successfully!');
             setIsAdding(false);
             resetForm();
         } catch (error) {
             console.error('Failed to add tracker:', error);
-            alert(`Failed to add tracker: ${(error as Error).message || String(error)}`);
+            toast.error(`Failed to add tracker: ${(error as Error).message || String(error)}`);
         }
     };
 

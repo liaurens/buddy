@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Save, RefreshCw, AlertCircle } from 'lucide-react';
 import { getSetting, setSetting } from '../../../../services/supabase';
 import { fetchICalFeed, saveCalendarEventsToDatabase } from '../../../planning/services/calendar.service';
+import { useToast } from '../../../../components/ui/Toast';
 
 interface CalendarConfigSectionProps {
     userId?: string;
 }
 
 export const CalendarConfigSection: React.FC<CalendarConfigSectionProps> = ({ userId }) => {
+    const toast = useToast();
     const [calendarUrl, setCalendarUrl] = useState('');
     const [calendarName, setCalendarName] = useState('');
     const [isSavingCalendar, setIsSavingCalendar] = useState(false);
@@ -31,7 +33,7 @@ export const CalendarConfigSection: React.FC<CalendarConfigSectionProps> = ({ us
 
     const handleSaveCalendarConfig = async () => {
         if (!userId || !calendarUrl.trim()) {
-            alert('Please enter a calendar URL');
+            toast.warning('Please enter a calendar URL');
             return;
         }
 
@@ -44,10 +46,10 @@ export const CalendarConfigSection: React.FC<CalendarConfigSectionProps> = ({ us
                 setSetting(userId, 'calendar_name', calendarName.trim() || 'My Calendar'),
             ]);
 
-            alert('Calendar configuration saved successfully!');
+            toast.success('Calendar configuration saved successfully!');
         } catch (error) {
             console.error('Failed to save calendar config:', error);
-            alert('Failed to save calendar configuration');
+            toast.error('Failed to save calendar configuration');
         } finally {
             setIsSavingCalendar(false);
         }
@@ -55,12 +57,12 @@ export const CalendarConfigSection: React.FC<CalendarConfigSectionProps> = ({ us
 
     const handleTestCalendarSync = async () => {
         if (!calendarUrl.trim()) {
-            alert('Please enter a calendar URL first');
+            toast.warning('Please enter a calendar URL first');
             return;
         }
 
         if (!userId) {
-            alert('User not authenticated');
+            toast.error('User not authenticated');
             return;
         }
 

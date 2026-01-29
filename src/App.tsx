@@ -4,6 +4,7 @@ import { TaskProvider } from './context/TaskContext';
 import { ProtocolProvider } from './context/ProtocolContext';
 import { ExperimentProvider } from './context/ExperimentContext';
 import { SmartNotesProvider } from './context/SmartNotesContext';
+import { ToastProvider } from './components/ui/Toast';
 import MainLayout from './layouts/MainLayout';
 // Feature imports
 import { HomePage, SettingsPage } from './features/core';
@@ -114,19 +115,21 @@ const App: React.FC = () => {
   }
 
   return (
-    <TrackerProvider>
-      <ProtocolProvider>
-        <ExperimentProvider>
-          <TaskProvider>
-            <SmartNotesProvider>
-              <MainLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-                {renderContent()}
-              </MainLayout>
-            </SmartNotesProvider>
-          </TaskProvider>
-        </ExperimentProvider>
-      </ProtocolProvider>
-    </TrackerProvider>
+    <ToastProvider>
+      <TrackerProvider>
+        <ProtocolProvider>
+          <ExperimentProvider>
+            <TaskProvider>
+              <SmartNotesProvider>
+                <MainLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+                  {renderContent()}
+                </MainLayout>
+              </SmartNotesProvider>
+            </TaskProvider>
+          </ExperimentProvider>
+        </ProtocolProvider>
+      </TrackerProvider>
+    </ToastProvider>
   );
 }
 

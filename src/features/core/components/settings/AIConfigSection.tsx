@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Brain, Save, RefreshCw, Zap, AlertCircle } from 'lucide-react';
 import { getSetting, setSetting } from '../../../../services/supabase';
 import { initializeAIService, AIService } from '../../../planning/services/ai.service';
+import { useToast } from '../../../../components/ui/Toast';
 
 interface AIConfigSectionProps {
     userId?: string;
 }
 
 export const AIConfigSection: React.FC<AIConfigSectionProps> = ({ userId }) => {
+    const toast = useToast();
     const [aiProvider, setAiProvider] = useState<'openai' | 'anthropic' | 'gemini'>('gemini');
     const [aiApiKey, setAiApiKey] = useState('');
     const [aiModel, setAiModel] = useState('');
@@ -31,7 +33,7 @@ export const AIConfigSection: React.FC<AIConfigSectionProps> = ({ userId }) => {
 
     const handleSaveAIConfig = async () => {
         if (!userId || !aiApiKey.trim()) {
-            alert('Please enter an API key');
+            toast.warning('Please enter an API key');
             return;
         }
 
@@ -51,10 +53,10 @@ export const AIConfigSection: React.FC<AIConfigSectionProps> = ({ userId }) => {
                 model: aiModel.trim() || undefined,
             });
 
-            alert('AI configuration saved successfully!');
+            toast.success('AI configuration saved successfully!');
         } catch (error) {
             console.error('Failed to save AI config:', error);
-            alert('Failed to save AI configuration');
+            toast.error('Failed to save AI configuration');
         } finally {
             setIsSavingAI(false);
         }
@@ -62,7 +64,7 @@ export const AIConfigSection: React.FC<AIConfigSectionProps> = ({ userId }) => {
 
     const handleTestAIConnection = async () => {
         if (!aiApiKey.trim()) {
-            alert('Please enter an API key first');
+            toast.warning('Please enter an API key first');
             return;
         }
 

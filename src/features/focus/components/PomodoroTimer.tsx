@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Coffee, Brain } from 'lucide-react';
+import { useToast } from '../../../components/ui/Toast';
 
 const PomodoroTimer: React.FC = () => {
+    const toast = useToast();
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isActive, setIsActive] = useState(false);
     const [mode, setMode] = useState<'work' | 'break'>('work');
@@ -17,11 +19,11 @@ const PomodoroTimer: React.FC = () => {
             setIsActive(false);
             // Play sound or notify?
             if (mode === 'work') {
-                alert("Focus session complete! Take a break.");
+                toast.success("Focus session complete! Take a break.");
                 setMode('break');
                 setTimeLeft(5 * 60);
             } else {
-                alert("Break over! Ready to focus?");
+                toast.info("Break over! Ready to focus?");
                 setMode('work');
                 setTimeLeft(25 * 60);
             }

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Zap, Copy, RefreshCw, Check } from 'lucide-react';
 import { getSetting, setSetting } from '../../../../services/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '../../../../components/ui/Toast';
 
 interface QuickNotesAPISectionProps {
     userId?: string;
 }
 
 export const QuickNotesAPISection: React.FC<QuickNotesAPISectionProps> = ({ userId }) => {
+    const toast = useToast();
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [apiKeyCopied, setApiKeyCopied] = useState(false);
     const [isGeneratingKey, setIsGeneratingKey] = useState(false);
@@ -29,7 +31,7 @@ export const QuickNotesAPISection: React.FC<QuickNotesAPISectionProps> = ({ user
             setApiKey(newKey);
         } catch (error) {
             console.error('Failed to generate API key:', error);
-            alert('Failed to generate API key');
+            toast.error('Failed to generate API key');
         } finally {
             setIsGeneratingKey(false);
         }

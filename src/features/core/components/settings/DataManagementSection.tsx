@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Upload, Trash2 } from 'lucide-react';
 import { supabase } from '../../../../services/supabase';
+import { useToast } from '../../../../components/ui/Toast';
 
 interface DataManagementSectionProps {
     userId?: string;
@@ -13,6 +14,7 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
     onExport,
     onImport,
 }) => {
+    const toast = useToast();
     const [importText, setImportText] = useState('');
     const [showImport, setShowImport] = useState(false);
 
@@ -31,11 +33,11 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
 
     const handleImport = async () => {
         if (await onImport(importText)) {
-            alert('Data imported successfully!');
+            toast.success('Data imported successfully!');
             setImportText('');
             setShowImport(false);
         } else {
-            alert('Failed to import data. Invalid format.');
+            toast.error('Failed to import data. Invalid format.');
         }
     };
 
@@ -59,7 +61,7 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
                 window.location.reload();
             } catch (error) {
                 console.error('Failed to delete data:', error);
-                alert('Failed to reset data. See console for details.');
+                toast.error('Failed to reset data. See console for details.');
             }
         }
     };
