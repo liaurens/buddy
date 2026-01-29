@@ -35,6 +35,10 @@ export const useToast = () => {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
+    const removeToast = useCallback((id: string) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, []);
+
     const addToast = useCallback((type: ToastType, message: string, duration: number = 4000) => {
         const id = Math.random().toString(36).substring(7);
         const toast: Toast = { id, type, message, duration };
@@ -46,11 +50,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 removeToast(id);
             }, duration);
         }
-    }, []);
-
-    const removeToast = useCallback((id: string) => {
-        setToasts(prev => prev.filter(toast => toast.id !== id));
-    }, []);
+    }, [removeToast]);
 
     const success = useCallback((message: string, duration?: number) => {
         addToast('success', message, duration);
