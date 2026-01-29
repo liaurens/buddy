@@ -41,7 +41,8 @@
       "Bash(xargs:*)",
       "Bash(npx supabase db push)",
       "Bash(npx supabase functions deploy send-notification)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(git push:*)"
     ]
   },
   "enabledMcpjsonServers": [

@@ -86,7 +86,12 @@ const NotificationPermissionPrompt: React.FC<NotificationPermissionPromptProps> 
 
             {error && (
               <div className="bg-white/20 text-white text-sm rounded px-3 py-2 mb-3">
-                {error}
+                <strong>Error:</strong> {error}
+                {error.includes('VAPID') && (
+                  <div className="mt-2 text-xs opacity-90">
+                    💡 The VAPID key needs to be configured in your hosting environment (Netlify/Vercel).
+                  </div>
+                )}
               </div>
             )}
 

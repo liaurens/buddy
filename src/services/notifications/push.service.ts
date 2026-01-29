@@ -120,8 +120,11 @@ export async function subscribeToPush(userId: string): Promise<PushSubscriptionJ
 
   // Check VAPID key
   if (!VAPID_PUBLIC_KEY) {
-    throw new SubscriptionFailedError('VAPID public key not configured');
+    console.error('VAPID_PUBLIC_KEY is missing. Check your .env file.');
+    throw new SubscriptionFailedError('VAPID public key not configured. Please contact support.');
   }
+
+  console.log('VAPID key configured:', VAPID_PUBLIC_KEY.substring(0, 10) + '...');
 
   // Request permission
   const permission = await requestNotificationPermission();
@@ -165,7 +168,20 @@ export async function subscribeToPush(userId: string): Promise<PushSubscriptionJ
     return subscriptionJSON;
   } catch (error) {
     console.error('Push subscription failed:', error);
-    throw new SubscriptionFailedError(error);
+
+    // Provide specific error messages
+    if (error instanceof DOMException) {
+      if (error.name === 'NotAllowedError') {
+        throw new PermissionDeniedError();
+      }
+      if (error.name === 'NotSupportedError') {
+        throw new SubscriptionFailedError('Push notifications not supported on this device');
+      }
+    }
+
+    // Re-throw with original message if available
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new SubscriptionFailedError(`Failed to create push subscription: ${errorMessage}`);
   }
 }
 
