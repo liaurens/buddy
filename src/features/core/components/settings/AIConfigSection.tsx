@@ -3,6 +3,7 @@ import { Brain, Save, RefreshCw, Zap, AlertCircle } from 'lucide-react';
 import { getSetting, setSetting } from '../../../../services/supabase';
 import { initializeAIService, AIService } from '../../../planning/services/ai.service';
 import { useToast } from '../../../../components/ui/Toast';
+import { aiConfigSchema } from '../../../../lib/validation/schemas';
 
 interface AIConfigSectionProps {
     userId?: string;
@@ -32,8 +33,8 @@ export const AIConfigSection: React.FC<AIConfigSectionProps> = ({ userId }) => {
     }, [userId]);
 
     const handleSaveAIConfig = async () => {
-        if (!userId || !aiApiKey.trim()) {
-            toast.warning('Please enter an API key');
+        if (!userId) {
+            toast.error('User not authenticated');
             return;
         }
 
@@ -41,41 +42,55 @@ export const AIConfigSection: React.FC<AIConfigSectionProps> = ({ userId }) => {
         setConnectionTestResult(null);
 
         try {
-            await Promise.all([
-                setSetting(userId, 'ai_provider', aiProvider),
-                setSetting(userId, 'ai_api_key', aiApiKey.trim()),
-                aiModel.trim() ? setSetting(userId, 'ai_model', aiModel.trim()) : Promise.resolve(),
-            ]);
-
-            initializeAIService({
+            // Validate AI configuration
+            const validatedConfig = aiConfigSchema.parse({
                 provider: aiProvider,
                 apiKey: aiApiKey.trim(),
                 model: aiModel.trim() || undefined,
             });
 
+            await Promise.all([
+                setSetting(userId, 'ai_provider', validatedConfig.provider),
+                setSetting(userId, 'ai_api_key', validatedConfig.apiKey),
+                validatedConfig.model ? setSetting(userId, 'ai_model', validatedConfig.model) : Promise.resolve(),
+            ]);
+
+            initializeAIService({
+                provider: validatedConfig.provider,
+                apiKey: validatedConfig.apiKey,
+                model: validatedConfig.model,
+            });
+
             toast.success('AI configuration saved successfully!');
-        } catch (error) {
-            console.error('Failed to save AI config:', error);
-            toast.error('Failed to save AI configuration');
+        } catch (error: any) {
+            if (error.name === 'ZodError') {
+                const firstError = error.errors[0];
+                toast.error(firstError.message);
+            } else {
+                console.error('Failed to save AI config:', error);
+                toast.error('Failed to save AI configuration');
+            }
         } finally {
             setIsSavingAI(false);
         }
     };
 
     const handleTestAIConnection = async () => {
-        if (!aiApiKey.trim()) {
-            toast.warning('Please enter an API key first');
-            return;
-        }
-
         setIsTestingConnection(true);
         setConnectionTestResult(null);
 
         try {
-            const service = new AIService({
+            // Validate AI configuration before testing
+            const validatedConfig = aiConfigSchema.parse({
                 provider: aiProvider,
                 apiKey: aiApiKey.trim(),
                 model: aiModel.trim() || undefined,
+            });
+
+            const service = new AIService({
+                provider: validatedConfig.provider,
+                apiKey: validatedConfig.apiKey,
+                model: validatedConfig.model,
             });
 
             const result = await service.testConnection();
@@ -87,10 +102,18 @@ export const AIConfigSection: React.FC<AIConfigSectionProps> = ({ userId }) => {
                     : `Connection failed: ${result.error || 'Unknown error'}`,
             });
         } catch (error: any) {
-            setConnectionTestResult({
-                success: false,
-                message: `Connection failed: ${error.message || 'Unknown error'}`,
-            });
+            if (error.name === 'ZodError') {
+                const firstError = error.errors[0];
+                setConnectionTestResult({
+                    success: false,
+                    message: firstError.message,
+                });
+            } else {
+                setConnectionTestResult({
+                    success: false,
+                    message: `Connection failed: ${error.message || 'Unknown error'}`,
+                });
+            }
         } finally {
             setIsTestingConnection(false);
         }

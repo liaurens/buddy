@@ -3,6 +3,7 @@ import { Calendar, Save, RefreshCw, AlertCircle } from 'lucide-react';
 import { getSetting, setSetting } from '../../../../services/supabase';
 import { fetchICalFeed, saveCalendarEventsToDatabase } from '../../../planning/services/calendar.service';
 import { useToast } from '../../../../components/ui/Toast';
+import { calendarConfigSchema } from '../../../../lib/validation/schemas';
 
 interface CalendarConfigSectionProps {
     userId?: string;
@@ -32,8 +33,8 @@ export const CalendarConfigSection: React.FC<CalendarConfigSectionProps> = ({ us
     }, [userId]);
 
     const handleSaveCalendarConfig = async () => {
-        if (!userId || !calendarUrl.trim()) {
-            toast.warning('Please enter a calendar URL');
+        if (!userId) {
+            toast.error('User not authenticated');
             return;
         }
 
@@ -41,26 +42,32 @@ export const CalendarConfigSection: React.FC<CalendarConfigSectionProps> = ({ us
         setCalendarTestResult(null);
 
         try {
+            // Validate calendar configuration
+            const validatedConfig = calendarConfigSchema.parse({
+                calendarUrl: calendarUrl.trim(),
+                calendarName: calendarName.trim() || 'My Calendar',
+            });
+
             await Promise.all([
-                setSetting(userId, 'calendar_url', calendarUrl.trim()),
-                setSetting(userId, 'calendar_name', calendarName.trim() || 'My Calendar'),
+                setSetting(userId, 'calendar_url', validatedConfig.calendarUrl),
+                setSetting(userId, 'calendar_name', validatedConfig.calendarName),
             ]);
 
             toast.success('Calendar configuration saved successfully!');
-        } catch (error) {
-            console.error('Failed to save calendar config:', error);
-            toast.error('Failed to save calendar configuration');
+        } catch (error: any) {
+            if (error.name === 'ZodError') {
+                const firstError = error.errors[0];
+                toast.error(firstError.message);
+            } else {
+                console.error('Failed to save calendar config:', error);
+                toast.error('Failed to save calendar configuration');
+            }
         } finally {
             setIsSavingCalendar(false);
         }
     };
 
     const handleTestCalendarSync = async () => {
-        if (!calendarUrl.trim()) {
-            toast.warning('Please enter a calendar URL first');
-            return;
-        }
-
         if (!userId) {
             toast.error('User not authenticated');
             return;
@@ -70,7 +77,13 @@ export const CalendarConfigSection: React.FC<CalendarConfigSectionProps> = ({ us
         setCalendarTestResult(null);
 
         try {
-            const result = await fetchICalFeed(calendarUrl.trim());
+            // Validate calendar URL before testing
+            const validatedConfig = calendarConfigSchema.parse({
+                calendarUrl: calendarUrl.trim(),
+                calendarName: calendarName.trim() || 'My Calendar',
+            });
+
+            const result = await fetchICalFeed(validatedConfig.calendarUrl);
 
             if (result.success) {
                 const saveResult = await saveCalendarEventsToDatabase(
@@ -82,8 +95,8 @@ export const CalendarConfigSection: React.FC<CalendarConfigSectionProps> = ({ us
                 if (saveResult.success) {
                     await Promise.all([
                         setSetting(userId, 'calendar_last_sync', result.syncedAt),
-                        setSetting(userId, 'calendar_url', calendarUrl.trim()),
-                        setSetting(userId, 'calendar_name', calendarName.trim() || 'My Calendar'),
+                        setSetting(userId, 'calendar_url', validatedConfig.calendarUrl),
+                        setSetting(userId, 'calendar_name', validatedConfig.calendarName),
                     ]);
                     setLastCalendarSync(result.syncedAt);
 
@@ -105,10 +118,18 @@ export const CalendarConfigSection: React.FC<CalendarConfigSectionProps> = ({ us
                 });
             }
         } catch (error: any) {
-            setCalendarTestResult({
-                success: false,
-                message: `Sync failed: ${error.message || 'Unknown error'}`,
-            });
+            if (error.name === 'ZodError') {
+                const firstError = error.errors[0];
+                setCalendarTestResult({
+                    success: false,
+                    message: firstError.message,
+                });
+            } else {
+                setCalendarTestResult({
+                    success: false,
+                    message: `Sync failed: ${error.message || 'Unknown error'}`,
+                });
+            }
         } finally {
             setIsTestingCalendar(false);
         }

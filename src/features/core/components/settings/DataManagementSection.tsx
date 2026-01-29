@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Download, Upload, Trash2 } from 'lucide-react';
 import { supabase } from '../../../../services/supabase';
 import { useToast } from '../../../../components/ui/Toast';
+import { dataImportSchema } from '../../../../lib/validation/schemas';
 
 interface DataManagementSectionProps {
     userId?: string;
@@ -32,12 +33,30 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
     };
 
     const handleImport = async () => {
-        if (await onImport(importText)) {
-            toast.success('Data imported successfully!');
-            setImportText('');
-            setShowImport(false);
-        } else {
-            toast.error('Failed to import data. Invalid format.');
+        try {
+            // Parse JSON
+            const parsedData = JSON.parse(importText);
+
+            // Validate structure
+            const validatedData = dataImportSchema.parse(parsedData);
+
+            // Attempt import
+            if (await onImport(JSON.stringify(validatedData))) {
+                toast.success('Data imported successfully!');
+                setImportText('');
+                setShowImport(false);
+            } else {
+                toast.error('Failed to import data. Please try again.');
+            }
+        } catch (error: any) {
+            if (error.name === 'SyntaxError') {
+                toast.error('Invalid JSON format. Please check your input.');
+            } else if (error.name === 'ZodError') {
+                const firstError = error.errors[0];
+                toast.error(`Validation error: ${firstError.message}`);
+            } else {
+                toast.error('Failed to import data. Invalid format.');
+            }
         }
     };
 

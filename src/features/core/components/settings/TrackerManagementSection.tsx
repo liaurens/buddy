@@ -3,6 +3,7 @@ import { Plus, Trash2, Save, X } from 'lucide-react';
 import type { TrackerDefinition, TrackerType } from '../../../../types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '../../../../components/ui/Toast';
+import { trackerDefinitionSchema } from '../../../../lib/validation/schemas';
 
 interface TrackerManagementSectionProps {
     trackers: TrackerDefinition[];
@@ -30,10 +31,11 @@ export const TrackerManagementSection: React.FC<TrackerManagementSectionProps> =
 
     const handleAddTracker = async (e: React.FormEvent) => {
         e.preventDefault();
-        const newTracker: TrackerDefinition = {
-            id: uuidv4(),
+
+        // Prepare tracker data for validation
+        const trackerData = {
             name: newName,
-            emoji: newEmoji,
+            emoji: newEmoji || undefined,
             type: newType,
             unit: newUnit || undefined,
             group: newGroup || 'Custom',
@@ -42,14 +44,30 @@ export const TrackerManagementSection: React.FC<TrackerManagementSectionProps> =
                 condition: goalCondition
             } : undefined
         };
+
+        // Validate input
         try {
+            const validatedData = trackerDefinitionSchema.parse(trackerData);
+
+            const newTracker: TrackerDefinition = {
+                id: uuidv4(),
+                ...validatedData,
+                emoji: validatedData.emoji || '', // Ensure emoji is always a string
+            };
+
             await onAddTracker(newTracker);
             toast.success('Tracker added successfully!');
             setIsAdding(false);
             resetForm();
-        } catch (error) {
-            console.error('Failed to add tracker:', error);
-            toast.error(`Failed to add tracker: ${(error as Error).message || String(error)}`);
+        } catch (error: any) {
+            // Handle Zod validation errors
+            if (error.name === 'ZodError') {
+                const firstError = error.errors[0];
+                toast.error(firstError.message);
+            } else {
+                console.error('Failed to add tracker:', error);
+                toast.error(`Failed to add tracker: ${error.message || String(error)}`);
+            }
         }
     };
 
