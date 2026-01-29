@@ -141,7 +141,7 @@ export async function subscribeToPush(userId: string): Promise<PushSubscriptionJ
     // Create push subscription
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
     });
 
     // Convert to JSON format
@@ -260,7 +260,6 @@ export async function showLocalNotification(
     icon: '/icon-192.png',
     badge: '/icon-badge.png',
     data,
-    vibrate: [200, 100, 200],
     tag: 'buddy-notification',
   });
 }

@@ -153,13 +153,14 @@ export interface NotificationPreferences {
 
 // Error types
 export class NotificationError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public details?: any
-  ) {
+  code: string;
+  details?: any;
+
+  constructor(message: string, code: string, details?: any) {
     super(message);
     this.name = 'NotificationError';
+    this.code = code;
+    this.details = details;
   }
 }
 

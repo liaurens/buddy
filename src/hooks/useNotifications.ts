@@ -9,7 +9,6 @@ import {
   getNotificationPermission,
   subscribeToPush,
   unsubscribeFromPush,
-  isSubscribed,
   getPushSubscription,
   getUpcomingNotifications,
 } from '../services/notifications';
