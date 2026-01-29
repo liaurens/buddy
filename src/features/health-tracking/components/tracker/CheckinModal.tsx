@@ -171,27 +171,27 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
         const isRequired = tracker.checkinConfig?.isRequired;
 
         return (
-            <div className={`p-3 rounded-xl border transition-colors ${isRequired && !trackerValues[tracker.id] && trackerValues[tracker.id] !== 0
+            <div className={`p-3 rounded-lg border transition-colors ${isRequired && !trackerValues[tracker.id] && trackerValues[tracker.id] !== 0
                 ? 'bg-rose-50 border-rose-100'
-                : 'bg-slate-50/50 border-slate-100 hover:border-slate-200'
+                : 'bg-white border-slate-100'
                 }`}>
-                <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium text-slate-800 flex items-center gap-2 truncate pr-2">
-                        <span className="text-base">{tracker.emoji}</span>
+                <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5 truncate pr-2">
+                        <span className="text-base leading-none">{tracker.emoji}</span>
                         <span className="truncate">{tracker.name}</span>
-                        {isRequired && <div className="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0" title="Required" />}
+                        {isRequired && <div className="h-1 w-1 rounded-full bg-rose-500 shrink-0" title="Required" />}
                     </label>
                 </div>
 
                 {tracker.type === 'rating' && (
-                    <div className="flex justify-between gap-1">
+                    <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
                             <button
                                 key={num}
                                 onClick={() => handleTrackerChange(tracker.id, num)}
-                                className={`flex-1 h-8 rounded-md font-bold text-xs transition-all ${trackerValues[tracker.id] === num
-                                    ? 'bg-indigo-600 text-white shadow-sm'
-                                    : 'bg-white border border-slate-200 text-slate-400 hover:border-indigo-300 hover:text-indigo-500'
+                                className={`flex-1 h-7 rounded text-[10px] font-bold transition-all ${trackerValues[tracker.id] === num
+                                    ? 'bg-indigo-600 text-white shadow-sm scale-110 z-10'
+                                    : 'bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600'
                                     }`}
                             >
                                 {num}
@@ -204,18 +204,18 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                     <div className="flex gap-2">
                         <button
                             onClick={() => handleTrackerChange(tracker.id, 1)}
-                            className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${trackerValues[tracker.id] === 1
+                            className={`flex-1 py-1 rounded-md text-xs font-bold transition-all ${trackerValues[tracker.id] === 1
                                 ? 'bg-emerald-500 text-white shadow-sm'
-                                : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                                : 'bg-slate-50 text-slate-500 hover:bg-emerald-50 hover:text-emerald-600'
                                 }`}
                         >
                             Yes
                         </button>
                         <button
                             onClick={() => handleTrackerChange(tracker.id, 0)}
-                            className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${trackerValues[tracker.id] === 0
-                                ? 'bg-slate-500 text-white shadow-sm' // Rose for no? Or neutral?
-                                : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'
+                            className={`flex-1 py-1 rounded-md text-xs font-bold transition-all ${trackerValues[tracker.id] === 0
+                                ? 'bg-slate-500 text-white shadow-sm'
+                                : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                                 }`}
                         >
                             No
@@ -224,16 +224,16 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                 )}
 
                 {(tracker.type === 'number' || tracker.type === 'text') && (
-                    <div className="flex items-center gap-2">
+                    <div className="relative">
                         <input
                             type={tracker.type === 'number' ? "number" : "text"}
                             step={tracker.id === 'sleep_hours' || tracker.name?.toLowerCase().includes('sleep') ? "0.5" : "any"}
                             value={trackerValues[tracker.id] || ''}
                             onChange={(e) => handleTrackerChange(tracker.id, tracker.type === 'number' ? parseFloat(e.target.value) : e.target.value)}
                             placeholder={tracker.unit || "Value"}
-                            className="w-full text-sm px-3 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                            className="w-full text-sm pl-2 pr-8 py-1.5 border border-slate-200 rounded-md focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50/50"
                         />
-                        {tracker.unit && <span className="text-slate-400 text-xs font-medium shrink-0">{tracker.unit}</span>}
+                        {tracker.unit && <span className="absolute right-2 top-1.5 text-slate-400 text-xs font-medium pointer-events-none">{tracker.unit}</span>}
                     </div>
                 )}
             </div>

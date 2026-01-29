@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Search, BookOpen, Lightbulb, Star, ChevronRight, X } from 'lucide-react';
+import { Plus, Trash2, Search, BookOpen, Lightbulb, Star, ChevronRight, X, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Strategy } from '../../../types';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase, dbToStrategy, strategyToDb, type DbStrategy } from '../../../services/supabase';
+import ToolboxSettingsModal from '../components/ToolboxSettingsModal';
 
 const PRESET_TAGS = [
     { label: 'Strength', color: 'bg-emerald-100 text-emerald-700' },
@@ -40,6 +41,7 @@ const ToolboxPage: React.FC = () => {
     const [isAdding, setIsAdding] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
 
     // Filter State
     const [activeFilterTag, setActiveFilterTag] = useState<string | null>(null);
@@ -129,13 +131,22 @@ const ToolboxPage: React.FC = () => {
 
             {/* Left Panel: List */}
             <div className={`flex-1 flex flex-col space-y-4 ${selectedStrategy ? 'hidden md:flex' : 'flex'}`}>
-                <header>
+                <header className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
                         <div className="p-2 bg-amber-100 rounded-xl text-amber-600">
                             <Lightbulb size={24} />
                         </div>
                         Toolbox
                     </h1>
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                        aria-label="Toolbox Settings"
+                    >
+                        <Settings size={20} />
+                    </button>
+                </header>
+                <header>
                     <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
                         {PRESET_TAGS.map(tag => (
                             <button
@@ -356,6 +367,12 @@ const ToolboxPage: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Settings Modal */}
+            <ToolboxSettingsModal
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+            />
         </div>
     );
 };

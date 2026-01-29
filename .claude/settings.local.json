@@ -37,7 +37,11 @@
       "Bash(find:*)",
       "Bash(npx eslint:*)",
       "Bash(ls:*)",
-      "Bash(nul {})"
+      "Bash(nul {})",
+      "Bash(xargs:*)",
+      "Bash(npx supabase db push)",
+      "Bash(npx supabase functions deploy send-notification)",
+      "Bash(npx supabase:*)"
     ]
   },
   "enabledMcpjsonServers": [

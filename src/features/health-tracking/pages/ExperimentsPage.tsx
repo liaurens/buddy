@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import ExperimentList from '../components/experiments/ExperimentList';
 import ExperimentWizard from '../components/experiments/ExperimentWizard';
 import ExperimentDetails from '../components/experiments/ExperimentDetails';
+import ExperimentSettingsModal from '../components/experiments/ExperimentSettingsModal';
 import type { Experiment } from '../../../types';
-import { Plus, FlaskConical } from 'lucide-react';
+import { Plus, FlaskConical, Settings } from 'lucide-react';
 
-type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'toolbox' | 'focus' | 'settings';
+type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'toolbox' | 'focus' | 'account';
 
 interface ExperimentsPageProps {
     onNavigate?: (tab: AppRoute, params?: any) => void;
@@ -14,6 +15,7 @@ interface ExperimentsPageProps {
 const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
     const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
 
     const handleRunAnalysis = (experiment: Experiment) => {
         if (onNavigate) {
@@ -44,13 +46,22 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
                     </h1>
                     <p className="text-slate-500">Test your hypotheses and find what works for you.</p>
                 </div>
-                <button
-                    onClick={() => setIsWizardOpen(true)}
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
-                >
-                    <Plus size={20} />
-                    New Experiment
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                        aria-label="Experiment Settings"
+                    >
+                        <Settings size={20} />
+                    </button>
+                    <button
+                        onClick={() => setIsWizardOpen(true)}
+                        className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
+                    >
+                        <Plus size={20} />
+                        New Experiment
+                    </button>
+                </div>
             </div>
 
             <ExperimentList
@@ -62,6 +73,12 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
             {isWizardOpen && (
                 <ExperimentWizard onClose={() => setIsWizardOpen(false)} />
             )}
+
+            {/* Settings Modal */}
+            <ExperimentSettingsModal
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+            />
         </div>
     );
 };

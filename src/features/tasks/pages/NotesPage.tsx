@@ -3,6 +3,7 @@ import { Inbox, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { QuickNoteInput } from '../components/notes/QuickNoteInput';
 import { SmartNotesList } from '../components/notes/SmartNotesList';
 import { CategoryManager } from '../components/notes/CategoryManager';
+import NoteSettingsModal from '../components/notes/NoteSettingsModal';
 import { useSmartNotes } from '../../../context/SmartNotesContext';
 
 type ViewMode = 'inbox' | 'category' | 'all' | 'settings';
@@ -12,6 +13,7 @@ const SmartNotesPage: React.FC = () => {
     const [viewMode, setViewMode] = useState<ViewMode>('inbox');
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const inboxCount = notes.filter(n => !n.categoryId && !n.processed).length;
 
@@ -39,17 +41,22 @@ const SmartNotesPage: React.FC = () => {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold text-slate-800">Quick Notes</h1>
-                    <button
-                        onClick={() => setViewMode(viewMode === 'settings' ? 'inbox' : 'settings')}
-                        className={`p-2 rounded-lg transition-colors ${
-                            viewMode === 'settings'
-                                ? 'bg-indigo-600 text-white'
-                                : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
-                        }`}
-                    >
-                        <Settings className="w-5 h-5" />
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setIsSettingsOpen(true)}
+                            className="p-2 rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                            title="Settings"
+                        >
+                            <Settings className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
+
+                {/* Settings Modal */}
+                <NoteSettingsModal
+                    isOpen={isSettingsOpen}
+                    onClose={() => setIsSettingsOpen(false)}
+                />
 
                 {/* Quick Input */}
                 <div className="mb-8">

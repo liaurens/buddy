@@ -4,6 +4,7 @@ import { useProtocol } from '../../../context/ProtocolContext';
 import { format, subDays, isSameDay } from 'date-fns';
 import { CheckCircle, CheckSquare } from 'lucide-react';
 import CheckinModal from '../components/tracker/CheckinModal';
+import CheckInSettingsModal from '../components/checkin/CheckInSettingsModal';
 
 const DailyReportPage: React.FC = () => {
     const { trackers, entries } = useTracker();
@@ -11,6 +12,7 @@ const DailyReportPage: React.FC = () => {
 
     const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [isCheckinOpen, setIsCheckinOpen] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
 
     const todaysEntries = useMemo(() =>
         entries.filter(e => isSameDay(new Date(e.timestamp), new Date(selectedDate))),
@@ -139,6 +141,12 @@ const DailyReportPage: React.FC = () => {
                 date={new Date(selectedDate)}
                 existingEntries={todaysEntries}
                 existingDoses={todaysDoses}
+            />
+
+            {/* Settings Modal */}
+            <CheckInSettingsModal
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
             />
         </div>
     );

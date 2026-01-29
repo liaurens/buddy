@@ -1,0 +1,182 @@
+/**
+ * Notification System Types
+ * TypeScript interfaces for cross-platform push notifications
+ */
+
+export type ToolCategory =
+  | 'tracker'
+  | 'protocol'
+  | 'checkin'
+  | 'experiment'
+  | 'tasks'
+  | 'notes'
+  | 'calendar'
+  | 'planning'
+  | 'reflection'
+  | 'pomodoro'
+  | 'toolbox';
+
+export type NotificationType =
+  | 'tracker_reminder'
+  | 'protocol_dose'
+  | 'checkin_daily'
+  | 'task_due'
+  | 'pomodoro_complete'
+  | 'experiment_complete'
+  | 'calendar_event'
+  | 'custom';
+
+export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'cancelled';
+
+export type DeviceType = 'ios' | 'android' | 'windows' | 'mac' | 'other';
+
+export type LogStatus = 'sent' | 'failed' | 'clicked' | 'dismissed';
+
+// Database types
+export interface NotificationSubscription {
+  id: string;
+  userId: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  deviceType: DeviceType | null;
+  userAgent: string | null;
+  createdAt: string;
+  lastUsedAt: string;
+}
+
+export interface ScheduledNotification {
+  id: string;
+  userId: string;
+  toolCategory: ToolCategory;
+  notificationType: NotificationType;
+  scheduledFor: string; // ISO timestamp
+  title: string;
+  body: string;
+  data: Record<string, any>;
+  status: NotificationStatus;
+  createdAt: string;
+  sentAt: string | null;
+  errorMessage: string | null;
+}
+
+export interface NotificationLog {
+  id: string;
+  subscriptionId: string | null;
+  scheduledNotificationId: string | null;
+  userId: string;
+  status: LogStatus;
+  errorMessage: string | null;
+  createdAt: string;
+}
+
+// Web Push subscription object (from browser)
+export interface PushSubscriptionJSON {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
+// Notification payload
+export interface NotificationPayload {
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  tag?: string;
+  data?: Record<string, any>;
+  actions?: NotificationAction[];
+  requireInteraction?: boolean;
+  silent?: boolean;
+  timestamp?: number;
+}
+
+export interface NotificationAction {
+  action: string;
+  title: string;
+  icon?: string;
+}
+
+// Service worker notification options
+export interface ServiceWorkerNotificationOptions {
+  title: string;
+  options: {
+    body: string;
+    icon?: string;
+    badge?: string;
+    tag?: string;
+    data?: Record<string, any>;
+    actions?: NotificationAction[];
+    requireInteraction?: boolean;
+    silent?: boolean;
+    timestamp?: number;
+    vibrate?: number[];
+  };
+}
+
+// Notification scheduling request
+export interface ScheduleNotificationRequest {
+  userId: string;
+  toolCategory: ToolCategory;
+  notificationType: NotificationType;
+  scheduledFor: Date;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+}
+
+// Notification preferences (loaded from settings)
+export interface NotificationPreferences {
+  tracker: {
+    enabled: boolean;
+    reminderTime: string; // HH:MM format
+  };
+  protocol: {
+    enabled: boolean;
+    advanceMinutes: number;
+    sound: boolean;
+  };
+  checkin: {
+    enabled: boolean;
+    reminderTime: string;
+  };
+  tasks: {
+    enabled: boolean;
+    timing: 'atDue' | '15min' | '1hour' | '1day';
+  };
+  pomodoro: {
+    sound: boolean;
+  };
+}
+
+// Error types
+export class NotificationError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'NotificationError';
+  }
+}
+
+export class PermissionDeniedError extends NotificationError {
+  constructor() {
+    super('Notification permission denied', 'PERMISSION_DENIED');
+  }
+}
+
+export class SubscriptionFailedError extends NotificationError {
+  constructor(details?: any) {
+    super('Failed to create push subscription', 'SUBSCRIPTION_FAILED', details);
+  }
+}
+
+export class SendNotificationError extends NotificationError {
+  constructor(message: string, details?: any) {
+    super(message, 'SEND_FAILED', details);
+  }
+}

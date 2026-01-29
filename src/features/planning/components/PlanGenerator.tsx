@@ -12,6 +12,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import { updateCategorySettings } from '../../../services/settings';
 import { buildPlanningContext, generateDailyPlan, savePlanToDatabase } from '../services/planning.service';
 import type { PlanSuggestion } from '../../../types/planning';
 import {
@@ -52,6 +53,7 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated, ha
     const [error, setError] = useState<string | null>(null);
     const [suggestion, setSuggestion] = useState<PlanSuggestion | null>(null);
     const [workHoursError, setWorkHoursError] = useState<string | null>(null);
+    const [saveAsDefaults, setSaveAsDefaults] = useState(true);
 
     const validateWorkHours = (start: string, end: string): boolean => {
         if (!start || !end) return true; // Allow empty values
@@ -148,6 +150,26 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated, ha
             );
 
             await savePlanToDatabase(user.id, date, suggestion, context);
+
+            // Save as default settings if checkbox is checked
+            if (saveAsDefaults) {
+                try {
+                    await updateCategorySettings(user.id, 'planning', {
+                        workStartTime,
+                        workEndTime,
+                        includeLunchBreak,
+                        lunchDuration,
+                        shortBreakInterval,
+                        shortBreakDuration: 5,
+                        bufferBetweenBlocks: 5,
+                        lunchStartTime: '12:00',
+                    });
+                } catch (settingsErr) {
+                    console.error('Failed to save default settings:', settingsErr);
+                    // Don't fail the plan save if settings save fails
+                }
+            }
+
             onPlanGenerated();
         } catch (err: any) {
             setError(err.message || 'Failed to save plan');
@@ -431,6 +453,19 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated, ha
                             )}
                         </div>
                     </div>
+
+                    {/* Save as Defaults Checkbox */}
+                    <label className="flex items-center gap-3">
+                        <input
+                            type="checkbox"
+                            checked={saveAsDefaults}
+                            onChange={(e) => setSaveAsDefaults(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-slate-700">
+                            Save these settings as my defaults
+                        </span>
+                    </label>
 
                     {/* Actions */}
                     <div className="flex gap-3">

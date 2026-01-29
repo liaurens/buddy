@@ -11,8 +11,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { generateDayReflection, detectPatterns } from '../services/reflection.service';
+import ReflectionSettingsModal from '../components/reflection/ReflectionSettingsModal';
 import type { DayReflection, LearningPattern } from '../services/reflection.service';
-import { TrendingUp, TrendingDown, Target, Clock, CheckCircle, AlertCircle, Lightbulb } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Clock, CheckCircle, AlertCircle, Lightbulb, Settings } from 'lucide-react';
 
 const ReflectionPage: React.FC = () => {
     const { user } = useAuth();
@@ -21,6 +22,7 @@ const ReflectionPage: React.FC = () => {
     const [patterns, setPatterns] = useState<LearningPattern[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
 
     useEffect(() => {
         if (user?.id) {
@@ -109,12 +111,21 @@ const ReflectionPage: React.FC = () => {
                         <h1 className="text-3xl font-bold text-slate-800">Daily Reflection</h1>
                         <p className="text-slate-600">Learn from today to plan better tomorrow</p>
                     </div>
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        />
+                        <button
+                            onClick={() => setShowSettings(true)}
+                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                            aria-label="Reflection Settings"
+                        >
+                            <Settings size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Completion Stats */}
@@ -276,6 +287,12 @@ const ReflectionPage: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Settings Modal */}
+                <ReflectionSettingsModal
+                    isOpen={showSettings}
+                    onClose={() => setShowSettings(false)}
+                />
             </div>
         </div>
     );

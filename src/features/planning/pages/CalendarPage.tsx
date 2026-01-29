@@ -3,7 +3,8 @@ import { useTasks } from '../../../context/TaskContext';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase, dbToCalendarEvent, type DbCalendarEvent } from '../../../services/supabase';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday } from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle, Circle, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle, Circle, MapPin, Settings } from 'lucide-react';
+import CalendarSettingsModal from '../components/calendar/CalendarSettingsModal';
 import type { CalendarEvent } from '../../../types/planning';
 
 const CalendarPage: React.FC = () => {
@@ -11,6 +12,7 @@ const CalendarPage: React.FC = () => {
     const { tasks: allTodos } = useTasks();
     const { user } = useAuth();
     const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+    const [showSettings, setShowSettings] = useState(false);
 
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
@@ -68,10 +70,19 @@ const CalendarPage: React.FC = () => {
                     </div>
                     Calendar
                 </h1>
-                <div className="flex gap-2">
-                    <button onClick={prevMonth} className="p-2 hover:bg-slate-100 rounded-lg"><ChevronLeft size={20} /></button>
-                    <span className="font-bold text-lg w-32 text-center">{format(currentDate, 'MMMM yyyy')}</span>
-                    <button onClick={nextMonth} className="p-2 hover:bg-slate-100 rounded-lg"><ChevronRight size={20} /></button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                        aria-label="Calendar Settings"
+                    >
+                        <Settings size={20} />
+                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={prevMonth} className="p-2 hover:bg-slate-100 rounded-lg"><ChevronLeft size={20} /></button>
+                        <span className="font-bold text-lg w-32 text-center">{format(currentDate, 'MMMM yyyy')}</span>
+                        <button onClick={nextMonth} className="p-2 hover:bg-slate-100 rounded-lg"><ChevronRight size={20} /></button>
+                    </div>
                 </div>
             </header>
 
@@ -190,6 +201,12 @@ const CalendarPage: React.FC = () => {
                     )}
                 </div>
             )}
+
+            {/* Settings Modal */}
+            <CalendarSettingsModal
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+            />
         </div>
     );
 };

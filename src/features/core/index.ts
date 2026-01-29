@@ -3,7 +3,6 @@ export * from './types';
 
 // Pages
 export { default as HomePage } from './pages/HomePage';
-export { default as SettingsPage } from './pages/SettingsPage';
 
 // Components
 export { default as LoginScreen } from './components/LoginScreen';

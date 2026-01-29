@@ -14,6 +14,7 @@ import { useTimer } from '../../../hooks/useTimer';
 import { loadPlanForDate, startBlock, completeBlock, skipBlock } from '../services/planning.service';
 import { recordBlockCompletion } from '../services/reflection.service';
 import PlanGenerator from '../components/PlanGenerator';
+import PlanningSettingsModal from '../components/plan/PlanningSettingsModal';
 import type { DailyPlan, TimeBlock } from '../../../types/planning';
 import {
     Clock,
@@ -25,7 +26,8 @@ import {
     AlertCircle,
     Sparkles,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Settings
 } from 'lucide-react';
 
 const PlanPage: React.FC = () => {
@@ -36,6 +38,7 @@ const PlanPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [blockToSkip, setBlockToSkip] = useState<TimeBlock | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
 
     useEffect(() => {
         if (user?.id) {
@@ -182,6 +185,21 @@ const PlanPage: React.FC = () => {
         return (
             <div className="min-h-screen bg-slate-50 p-6">
                 <div className="max-w-4xl mx-auto">
+                    {/* Header with Settings */}
+                    <div className="mb-6 flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-slate-900">Daily Plan</h1>
+                            <p className="text-slate-500">Create and manage your daily schedule</p>
+                        </div>
+                        <button
+                            onClick={() => setShowSettings(true)}
+                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                            aria-label="Planning Settings"
+                        >
+                            <Settings size={20} />
+                        </button>
+                    </div>
+
                     {/* Date Navigation */}
                     <div className="flex items-center justify-between mb-6">
                         <button
@@ -222,6 +240,12 @@ const PlanPage: React.FC = () => {
                             </p>
                         </div>
                     )}
+
+                    {/* Settings Modal */}
+                    <PlanningSettingsModal
+                        isOpen={showSettings}
+                        onClose={() => setShowSettings(false)}
+                    />
                 </div>
             </div>
         );
@@ -452,6 +476,12 @@ const PlanPage: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Settings Modal */}
+                <PlanningSettingsModal
+                    isOpen={showSettings}
+                    onClose={() => setShowSettings(false)}
+                />
             </div>
         </div>
     );

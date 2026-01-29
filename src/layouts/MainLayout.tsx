@@ -1,15 +1,16 @@
 import React from 'react';
-import { Settings as SettingsIcon, CheckSquare, Activity, Pill, FlaskConical, Calendar, TrendingUp, CalendarClock, StickyNote } from 'lucide-react';
+import { Settings, CheckSquare, Activity, Pill, FlaskConical, Calendar, TrendingUp, CalendarClock, StickyNote, ListChecks } from 'lucide-react';
 
-type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'toolbox' | 'focus' | 'settings';
+type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'checklists' | 'toolbox' | 'focus' | 'account';
 
 interface MainLayoutProps {
     children: React.ReactNode;
     activeTab: AppRoute;
     setActiveTab: (tab: AppRoute) => void;
+    onSettingsClick: () => void;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveTab }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveTab, onSettingsClick }) => {
     // Determine hub context
     const getHubContext = () => {
         if (['health', 'protocols', 'experiments'].includes(activeTab)) {
@@ -18,8 +19,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
         if (['calendar', 'planning', 'reflection'].includes(activeTab)) {
             return { name: 'Calendar Hub', tab: activeTab };
         }
-        if (['tasks', 'notes'].includes(activeTab)) {
+        if (['tasks', 'checklists'].includes(activeTab)) {
             return { name: 'Tasks Hub', tab: activeTab };
+        }
+        if (activeTab === 'notes') {
+            return { name: 'Notebook', tab: activeTab };
         }
         return null;
     };
@@ -75,10 +79,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                         <>
                             <button
                                 onClick={() => setActiveTab('health')}
-                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'health' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`flex-1 flex flex-col items-center justify-center w-full h-full ${activeTab === 'health' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
                                 <Activity size={28} />
-                                <span className="text-xs mt-1 font-medium">Health</span>
+                                <span className="text-xs mt-1 font-medium">Metrics</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('experiments')}
@@ -124,8 +128,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                         </>
                     )}
 
-                    {/* Context: TASKS HUB (Tasks + Notes) */}
-                    {['tasks', 'notes'].includes(activeTab) && (
+                    {/* Context: TASKS HUB (Tasks + Checklists) */}
+                    {['tasks', 'checklists'].includes(activeTab) && (
                         <>
                             <button
                                 onClick={() => setActiveTab('tasks')}
@@ -135,8 +139,28 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                                 <span className="text-xs mt-1 font-medium">Tasks</span>
                             </button>
                             <button
+                                onClick={() => setActiveTab('checklists')}
+                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'checklists' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                <ListChecks size={28} />
+                                <span className="text-xs mt-1 font-medium">Lists</span>
+                            </button>
+                        </>
+                    )}
+
+                    {/* Context: NOTES */}
+                    {activeTab === 'notes' && (
+                        <>
+                            <button
+                                onClick={() => setActiveTab('tasks')}
+                                className="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600"
+                            >
+                                <CheckSquare size={28} />
+                                <span className="text-xs mt-1 font-medium">Tasks</span>
+                            </button>
+                            <button
                                 onClick={() => setActiveTab('notes')}
-                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'notes' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                className="flex flex-col items-center justify-center w-full h-full text-indigo-600"
                             >
                                 <StickyNote size={28} />
                                 <span className="text-xs mt-1 font-medium">Notes</span>
@@ -145,10 +169,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                     )}
 
                     <button
-                        onClick={() => setActiveTab('settings')}
-                        className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'settings' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                        onClick={onSettingsClick}
+                        className="flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-slate-600"
                     >
-                        <SettingsIcon size={28} />
+                        <Settings size={28} />
                         <span className="text-xs mt-1 font-medium">Settings</span>
                     </button>
                 </div>

@@ -1,12 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Coffee, Brain } from 'lucide-react';
+import { Play, Pause, RotateCcw, Coffee, Brain, Settings } from 'lucide-react';
 import { useToast } from '../../../components/ui/Toast';
+import { useAuth } from '../../../hooks/useAuth';
+import { getCategorySettings, type PomodoroSettings } from '../../../services/settings';
+import PomodoroSettingsModal from './PomodoroSettingsModal';
 
 const PomodoroTimer: React.FC = () => {
     const toast = useToast();
+    const { user } = useAuth();
+    const [settings, setSettings] = useState<PomodoroSettings | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
     const [timeLeft, setTimeLeft] = useState(25 * 60);
     const [isActive, setIsActive] = useState(false);
     const [mode, setMode] = useState<'work' | 'break'>('work');
+
+    // Load settings on mount
+    useEffect(() => {
+        if (user) {
+            getCategorySettings(user.id, 'pomodoro').then(data => {
+                setSettings(data);
+                setTimeLeft(data.workDuration * 60);
+            }).catch(error => {
+                console.error('Failed to load pomodoro settings:', error);
+            });
+        }
+    }, [user]);
 
     useEffect(() => {
         let interval: any = null;
@@ -17,15 +35,28 @@ const PomodoroTimer: React.FC = () => {
             }, 1000);
         } else if (timeLeft === 0) {
             setIsActive(false);
-            // Play sound or notify?
-            if (mode === 'work') {
-                toast.success("Focus session complete! Take a break.");
-                setMode('break');
-                setTimeLeft(5 * 60);
-            } else {
-                toast.info("Break over! Ready to focus?");
-                setMode('work');
-                setTimeLeft(25 * 60);
+            if (settings) {
+                if (mode === 'work') {
+                    if (settings.soundEnabled) {
+                        // Play sound (future enhancement)
+                    }
+                    toast.success("Focus session complete! Take a break.");
+                    setMode('break');
+                    setTimeLeft(settings.shortBreakDuration * 60);
+                    if (settings.autoStartBreaks) {
+                        setTimeout(() => setIsActive(true), 1000);
+                    }
+                } else {
+                    if (settings.soundEnabled) {
+                        // Play sound (future enhancement)
+                    }
+                    toast.info("Break over! Ready to focus?");
+                    setMode('work');
+                    setTimeLeft(settings.workDuration * 60);
+                    if (settings.autoStartPomodoros) {
+                        setTimeout(() => setIsActive(true), 1000);
+                    }
+                }
             }
         }
 
@@ -38,13 +69,17 @@ const PomodoroTimer: React.FC = () => {
 
     const resetTimer = () => {
         setIsActive(false);
-        setTimeLeft(mode === 'work' ? 25 * 60 : 5 * 60);
+        if (settings) {
+            setTimeLeft(mode === 'work' ? settings.workDuration * 60 : settings.shortBreakDuration * 60);
+        }
     };
 
     const switchMode = (newMode: 'work' | 'break') => {
         setMode(newMode);
         setIsActive(false);
-        setTimeLeft(newMode === 'work' ? 25 * 60 : 5 * 60);
+        if (settings) {
+            setTimeLeft(newMode === 'work' ? settings.workDuration * 60 : settings.shortBreakDuration * 60);
+        }
     };
 
     const formatTime = (seconds: number) => {
@@ -53,16 +88,28 @@ const PomodoroTimer: React.FC = () => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
+    const workDuration = settings?.workDuration || 25;
+    const breakDuration = settings?.shortBreakDuration || 5;
+
     const progress = mode === 'work'
-        ? ((25 * 60 - timeLeft) / (25 * 60)) * 100
-        : ((5 * 60 - timeLeft) / (5 * 60)) * 100;
+        ? ((workDuration * 60 - timeLeft) / (workDuration * 60)) * 100
+        : ((breakDuration * 60 - timeLeft) / (breakDuration * 60)) * 100;
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-            <h2 className="text-xl font-semibold mb-6 text-slate-800 flex items-center gap-2">
-                {mode === 'work' ? <Brain className="text-indigo-500" /> : <Coffee className="text-emerald-500" />}
-                Focus Timer
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                    {mode === 'work' ? <Brain className="text-indigo-500" /> : <Coffee className="text-emerald-500" />}
+                    Focus Timer
+                </h2>
+                <button
+                    onClick={() => setShowSettings(true)}
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                    aria-label="Pomodoro Settings"
+                >
+                    <Settings size={20} />
+                </button>
+            </div>
 
             <div className="flex flex-col items-center">
                 {/* Timer Display */}
@@ -123,17 +170,35 @@ const PomodoroTimer: React.FC = () => {
                         className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${mode === 'work' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                             }`}
                     >
-                        Focus (25m)
+                        Focus ({workDuration}m)
                     </button>
                     <button
                         onClick={() => switchMode('break')}
                         className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${mode === 'break' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                             }`}
                     >
-                        Break (5m)
+                        Break ({breakDuration}m)
                     </button>
                 </div>
             </div>
+
+            {/* Settings Modal */}
+            <PomodoroSettingsModal
+                isOpen={showSettings}
+                onClose={() => {
+                    setShowSettings(false);
+                    // Reload settings after closing modal
+                    if (user) {
+                        getCategorySettings(user.id, 'pomodoro').then(data => {
+                            setSettings(data);
+                            // Reset timer to new duration if not active
+                            if (!isActive) {
+                                setTimeLeft(mode === 'work' ? data.workDuration * 60 : data.shortBreakDuration * 60);
+                            }
+                        });
+                    }
+                }}
+            />
         </div>
     );
 };

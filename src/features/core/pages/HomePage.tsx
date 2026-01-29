@@ -5,7 +5,7 @@ import { useExperiment } from '../../../context/ExperimentContext';
 import { format, isSameDay } from 'date-fns';
 import {
     Zap, Calendar as CalendarIcon,
-    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer
+    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer, ListChecks
 } from 'lucide-react';
 
 interface HomePageProps {
@@ -110,6 +110,14 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             icon: <Zap size={24} className="text-violet-600" />,
             color: 'bg-violet-50 text-violet-900 border-violet-100',
             action: () => onNavigate('experiments')
+        },
+        {
+            id: 'checklists',
+            title: 'Checklists',
+            description: 'Reusable Lists',
+            icon: <ListChecks size={24} className="text-sky-600" />,
+            color: 'bg-sky-50 text-sky-900 border-sky-100',
+            action: () => onNavigate('checklists')
         }
     ];
 
