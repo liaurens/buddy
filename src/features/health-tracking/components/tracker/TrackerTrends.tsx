@@ -1,9 +1,14 @@
 import React, { useMemo } from 'react';
 import { useTracker } from '../../../../context/TrackerContext';
 import { format, subDays, isSameDay, startOfDay } from 'date-fns';
-import { Activity } from 'lucide-react';
+import { Activity, Edit2 } from 'lucide-react';
+import type { TrackerDefinition } from '../../types';
 
-const TrackerTrends: React.FC = () => {
+interface TrackerTrendsProps {
+    onEditTracker?: (tracker: TrackerDefinition) => void;
+}
+
+const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
     const { trackers, entries } = useTracker();
 
     // Get last 7 days
@@ -50,13 +55,24 @@ const TrackerTrends: React.FC = () => {
                     const maxVal = Math.max(...values, tracker.goal?.target || 10, 1);
 
                     return (
-                        <div key={tracker.id} className="p-3 bg-slate-50/50 rounded-lg border border-slate-100 hover:border-slate-200 transition-all">
+                        <div key={tracker.id} className="group p-3 bg-slate-50/50 rounded-lg border border-slate-100 hover:border-slate-200 transition-all relative">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                     <span className="text-xl">{tracker.emoji}</span>
                                     <span className="text-sm font-medium text-slate-700 truncate max-w-[100px]">{tracker.name}</span>
                                 </div>
-                                <span className="text-xs text-slate-400 font-mono">7d</span>
+                                <div className="flex items-center gap-1">
+                                    {onEditTracker && (
+                                        <button
+                                            onClick={() => onEditTracker(tracker)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-indigo-600 transition-all"
+                                            title="Edit tracker"
+                                        >
+                                            <Edit2 size={12} />
+                                        </button>
+                                    )}
+                                    <span className="text-xs text-slate-400 font-mono">7d</span>
+                                </div>
                             </div>
 
                             <div className="flex items-end justify-between h-12 gap-1">

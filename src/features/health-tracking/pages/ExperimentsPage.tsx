@@ -19,9 +19,14 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
 
     const handleRunAnalysis = (experiment: Experiment) => {
         if (onNavigate) {
+            // Use independentIds (newer) or fall back to tracker1Id (legacy)
+            const firstIndependentId = (experiment.independentIds && experiment.independentIds.length > 0)
+                ? experiment.independentIds[0]
+                : experiment.tracker1Id;
+
             onNavigate('health', {
                 subTab: 'analysis',
-                xId: experiment.tracker1Id,
+                xId: firstIndependentId,
                 yId: experiment.tracker2Id
             });
         }

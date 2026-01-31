@@ -79,7 +79,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                         <>
                             <button
                                 onClick={() => setActiveTab('health')}
-                                className={`flex-1 flex flex-col items-center justify-center w-full h-full ${activeTab === 'health' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`flex flex-col items-center justify-center w-full h-full ${activeTab === 'health' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
                             >
                                 <Activity size={28} />
                                 <span className="text-xs mt-1 font-medium">Metrics</span>

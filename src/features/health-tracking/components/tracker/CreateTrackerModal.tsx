@@ -7,31 +7,34 @@ import type { TrackerDefinition, TrackerType } from '../../types';
 interface CreateTrackerModalProps {
     isOpen: boolean;
     onClose: () => void;
+    editingTracker?: TrackerDefinition; // Optional: if provided, we're editing
 }
 
-const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose }) => {
-    const { addTracker } = useTracker();
+const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose, editingTracker }) => {
+    const { addTracker, updateTracker } = useTracker();
     const [step, setStep] = useState(1); // 1: Basic, 2: Config, 3: Goal/Checkin
 
-    const [formData, setFormData] = useState<Partial<TrackerDefinition>>({
-        type: 'number',
-        group: 'Health',
-        checkinConfig: {
-            isRequired: false,
-            inCheckin: true,
-            showInDailyReport: true
+    const [formData, setFormData] = useState<Partial<TrackerDefinition>>(
+        editingTracker || {
+            type: 'number',
+            group: 'Health',
+            checkinConfig: {
+                isRequired: false,
+                inCheckin: true,
+                showInDailyReport: true
+            }
         }
-    });
+    );
 
-    const [hasGoal, setHasGoal] = useState(false);
-    const [goalTarget, setGoalTarget] = useState<number>(0);
-    const [goalCondition, setGoalCondition] = useState<'gt' | 'lt' | 'eq'>('gt');
+    const [hasGoal, setHasGoal] = useState(!!editingTracker?.goal);
+    const [goalTarget, setGoalTarget] = useState<number>(editingTracker?.goal?.target || 0);
+    const [goalCondition, setGoalCondition] = useState<'gt' | 'lt' | 'eq'>(editingTracker?.goal?.condition || 'gt');
 
     const handleSave = async () => {
         if (!formData.name || !formData.type) return;
 
-        const newTracker: TrackerDefinition = {
-            id: uuidv4(),
+        const trackerData: TrackerDefinition = {
+            id: editingTracker?.id || uuidv4(),
             name: formData.name,
             emoji: formData.emoji || '📊',
             type: formData.type,
@@ -44,7 +47,12 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
             } : undefined
         };
 
-        await addTracker(newTracker);
+        if (editingTracker) {
+            await updateTracker(trackerData);
+        } else {
+            await addTracker(trackerData);
+        }
+
         onClose();
         // Reset form
         setStep(1);
@@ -57,6 +65,9 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
                 showInDailyReport: true
             }
         });
+        setHasGoal(false);
+        setGoalTarget(0);
+        setGoalCondition('gt');
     };
 
     const updateField = (field: keyof TrackerDefinition, value: any) => {
@@ -94,7 +105,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
                     onClick={handleSave}
                     className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
                 >
-                    Create Tracker
+                    {editingTracker ? 'Save Changes' : 'Create Tracker'}
                 </button>
             )}
         </div>
@@ -104,7 +115,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            title="Create New Tracker"
+            title={editingTracker ? 'Edit Tracker' : 'Create New Tracker'}
             footer={footer}
         >
             <div className="space-y-6">

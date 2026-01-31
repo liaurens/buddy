@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../hooks/useAuth';
+import { useTracker } from '../../../../context/TrackerContext';
 import {
   getCategorySettings,
   updateCategorySettings,
@@ -7,6 +8,7 @@ import {
   type CheckInSettings,
 } from '../../../../services/settings';
 import Modal from '../../../../components/ui/Modal';
+import { CheckSquare, Square, Plus } from 'lucide-react';
 
 interface CheckInSettingsModalProps {
   isOpen: boolean;
@@ -18,9 +20,11 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({
   onClose,
 }) => {
   const { user } = useAuth();
+  const { trackers, updateTracker } = useTracker();
   const [settings, setSettings] = useState<CheckInSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'general' | 'trackers'>('general');
 
   // Load settings when modal opens
   useEffect(() => {
@@ -53,6 +57,51 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({
     } finally {
       setSaving(false);
     }
+  };
+
+  const toggleTrackerInCheckIn = async (trackerId: string) => {
+    const tracker = trackers.find(t => t.id === trackerId);
+    if (!tracker) return;
+
+    const newConfig = {
+      ...tracker.checkinConfig,
+      inCheckin: !tracker.checkinConfig?.inCheckin
+    };
+
+    await updateTracker({
+      ...tracker,
+      checkinConfig: newConfig
+    });
+  };
+
+  const toggleTrackerRequired = async (trackerId: string) => {
+    const tracker = trackers.find(t => t.id === trackerId);
+    if (!tracker) return;
+
+    const newConfig = {
+      ...tracker.checkinConfig,
+      isRequired: !tracker.checkinConfig?.isRequired
+    };
+
+    await updateTracker({
+      ...tracker,
+      checkinConfig: newConfig
+    });
+  };
+
+  const toggleShowInReport = async (trackerId: string) => {
+    const tracker = trackers.find(t => t.id === trackerId);
+    if (!tracker) return;
+
+    const newConfig = {
+      ...tracker.checkinConfig,
+      showInDailyReport: !tracker.checkinConfig?.showInDailyReport
+    };
+
+    await updateTracker({
+      ...tracker,
+      checkinConfig: newConfig
+    });
   };
 
   const handleReset = async () => {
@@ -116,6 +165,14 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({
 
   if (!settings) return null;
 
+  // Group trackers by group
+  const groupedTrackers = trackers.reduce((acc, tracker) => {
+    const group = tracker.group || 'Other';
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(tracker);
+    return acc;
+  }, {} as Record<string, typeof trackers>);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -124,7 +181,32 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({
       footer={footer}
       size="lg"
     >
-      <div className="space-y-6">
+      {/* Tab Navigation */}
+      <div className="flex gap-2 mb-6 border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab('general')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'general'
+              ? 'text-indigo-600 border-b-2 border-indigo-600'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          General
+        </button>
+        <button
+          onClick={() => setActiveTab('trackers')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            activeTab === 'trackers'
+              ? 'text-indigo-600 border-b-2 border-indigo-600'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Manage Trackers
+        </button>
+      </div>
+
+      {activeTab === 'general' ? (
+        <div className="space-y-6">
         {/* Reminder Settings */}
         <div>
           <h3 className="text-lg font-medium text-slate-900 mb-4">Reminders</h3>
@@ -212,34 +294,102 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({
           </div>
         </div>
 
-        {/* Data Settings */}
-        <div>
-          <h3 className="text-lg font-medium text-slate-900 mb-4">Data</h3>
-          <div className="space-y-4">
-            {/* Required Fields */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Required Fields (Tracker IDs)
-              </label>
-              <textarea
-                value={settings.requiredFields.join('\n')}
-                onChange={(e) =>
-                  updateSetting(
-                    'requiredFields',
-                    e.target.value.split('\n').filter(f => f.trim())
-                  )
-                }
-                rows={3}
-                placeholder="One tracker ID per line"
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Tracker IDs that must have data for check-in to be complete
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p className="text-sm text-blue-900">
+              <strong>Tip:</strong> Toggle which trackers appear in your daily check-in, mark them as required, or show them in your daily report.
+            </p>
+          </div>
+
+          {Object.entries(groupedTrackers).map(([group, groupTrackers]) => (
+            <div key={group} className="space-y-3">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                {group}
+              </h3>
+              <div className="space-y-2">
+                {groupTrackers.map(tracker => {
+                  const inCheckIn = tracker.checkinConfig?.inCheckin ?? false;
+                  const isRequired = tracker.checkinConfig?.isRequired ?? false;
+                  const showInReport = tracker.checkinConfig?.showInDailyReport ?? false;
+
+                  return (
+                    <div
+                      key={tracker.id}
+                      className={`p-4 rounded-lg border transition-all ${
+                        inCheckIn
+                          ? 'bg-indigo-50/50 border-indigo-200'
+                          : 'bg-slate-50 border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <button
+                          onClick={() => toggleTrackerInCheckIn(tracker.id)}
+                          className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors"
+                        >
+                          {inCheckIn ? (
+                            <CheckSquare size={20} className="text-indigo-600" />
+                          ) : (
+                            <Square size={20} />
+                          )}
+                        </button>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">{tracker.emoji}</span>
+                            <span className="font-medium text-slate-900">
+                              {tracker.name}
+                            </span>
+                            {tracker.unit && (
+                              <span className="text-xs text-slate-500">
+                                ({tracker.unit})
+                              </span>
+                            )}
+                          </div>
+
+                          {inCheckIn && (
+                            <div className="flex gap-4 text-sm">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isRequired}
+                                  onChange={() => toggleTrackerRequired(tracker.id)}
+                                  className="h-4 w-4 text-indigo-600 rounded border-slate-300"
+                                />
+                                <span className="text-slate-700">Required</span>
+                              </label>
+
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={showInReport}
+                                  onChange={() => toggleShowInReport(tracker.id)}
+                                  className="h-4 w-4 text-indigo-600 rounded border-slate-300"
+                                />
+                                <span className="text-slate-700">Show in Report</span>
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {trackers.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-slate-500 mb-4">No trackers yet</p>
+              <p className="text-sm text-slate-400">
+                Create trackers in the Health Tracking section first
               </p>
             </div>
-          </div>
+          )}
         </div>
-      </div>
+      )}
     </Modal>
   );
 };

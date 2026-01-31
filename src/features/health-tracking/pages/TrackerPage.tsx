@@ -3,6 +3,7 @@ import Dashboard from '../components/tracker/Dashboard';
 import EntryForm from '../components/tracker/EntryForm';
 import Analysis from '../components/tracker/Analysis';
 import CreateTrackerModal from '../components/tracker/CreateTrackerModal';
+import type { TrackerDefinition } from '../types';
 import { Plus } from 'lucide-react';
 
 interface TrackerPageProps {
@@ -18,6 +19,7 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
         initialParams?.subTab || 'dashboard'
     );
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingTracker, setEditingTracker] = useState<TrackerDefinition | undefined>(undefined);
 
     // Reset subtab if params change (optional, but good for navigation)
     useEffect(() => {
@@ -35,7 +37,10 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
                     <p className="text-slate-500">Monitor your metrics and discover patterns</p>
                 </div>
                 <button
-                    onClick={() => setIsCreateModalOpen(true)}
+                    onClick={() => {
+                        setEditingTracker(undefined);
+                        setIsCreateModalOpen(true);
+                    }}
                     className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
                 >
                     <Plus size={18} />
@@ -68,7 +73,14 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
                 </button>
             </div>
 
-            {trackerSubTab === 'dashboard' && <Dashboard />}
+            {trackerSubTab === 'dashboard' && (
+                <Dashboard
+                    onEditTracker={(tracker) => {
+                        setEditingTracker(tracker);
+                        setIsCreateModalOpen(true);
+                    }}
+                />
+            )}
             {trackerSubTab === 'add' && <EntryForm />}
             {trackerSubTab === 'analysis' && (
                 <Analysis
@@ -79,7 +91,11 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
 
             <CreateTrackerModal
                 isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    setEditingTracker(undefined);
+                }}
+                editingTracker={editingTracker}
             />
         </div>
     );

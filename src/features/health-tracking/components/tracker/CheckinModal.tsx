@@ -171,13 +171,13 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
         const isRequired = tracker.checkinConfig?.isRequired;
 
         return (
-            <div className={`p-3 rounded-lg border transition-colors ${isRequired && !trackerValues[tracker.id] && trackerValues[tracker.id] !== 0
+            <div className={`p-2 rounded-lg border transition-colors ${isRequired && !trackerValues[tracker.id] && trackerValues[tracker.id] !== 0
                 ? 'bg-rose-50 border-rose-100'
                 : 'bg-white border-slate-100'
                 }`}>
-                <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5 truncate pr-2">
-                        <span className="text-base leading-none">{tracker.emoji}</span>
+                <div className="flex justify-between items-center mb-1">
+                    <label className="text-xs font-medium text-slate-700 flex items-center gap-1 truncate pr-1">
+                        <span className="text-sm leading-none">{tracker.emoji}</span>
                         <span className="truncate">{tracker.name}</span>
                         {isRequired && <div className="h-1 w-1 rounded-full bg-rose-500 shrink-0" title="Required" />}
                     </label>
@@ -189,8 +189,8 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                             <button
                                 key={num}
                                 onClick={() => handleTrackerChange(tracker.id, num)}
-                                className={`flex-1 h-7 rounded text-[10px] font-bold transition-all ${trackerValues[tracker.id] === num
-                                    ? 'bg-indigo-600 text-white shadow-sm scale-110 z-10'
+                                className={`flex-1 h-6 rounded text-[9px] font-bold transition-all ${trackerValues[tracker.id] === num
+                                    ? 'bg-indigo-600 text-white shadow-sm scale-105 z-10'
                                     : 'bg-slate-50 text-slate-400 hover:bg-indigo-50 hover:text-indigo-600'
                                     }`}
                             >
@@ -201,10 +201,10 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                 )}
 
                 {tracker.type === 'boolean' && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                         <button
                             onClick={() => handleTrackerChange(tracker.id, 1)}
-                            className={`flex-1 py-1 rounded-md text-xs font-bold transition-all ${trackerValues[tracker.id] === 1
+                            className={`flex-1 py-1 rounded-md text-[11px] font-bold transition-all ${trackerValues[tracker.id] === 1
                                 ? 'bg-emerald-500 text-white shadow-sm'
                                 : 'bg-slate-50 text-slate-500 hover:bg-emerald-50 hover:text-emerald-600'
                                 }`}
@@ -213,7 +213,7 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                         </button>
                         <button
                             onClick={() => handleTrackerChange(tracker.id, 0)}
-                            className={`flex-1 py-1 rounded-md text-xs font-bold transition-all ${trackerValues[tracker.id] === 0
+                            className={`flex-1 py-1 rounded-md text-[11px] font-bold transition-all ${trackerValues[tracker.id] === 0
                                 ? 'bg-slate-500 text-white shadow-sm'
                                 : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                                 }`}
@@ -231,9 +231,9 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                             value={trackerValues[tracker.id] || ''}
                             onChange={(e) => handleTrackerChange(tracker.id, tracker.type === 'number' ? parseFloat(e.target.value) : e.target.value)}
                             placeholder={tracker.unit || "Value"}
-                            className="w-full text-sm pl-2 pr-8 py-1.5 border border-slate-200 rounded-md focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50/50"
+                            className="w-full text-xs pl-2 pr-8 py-1 border border-slate-200 rounded-md focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50/50"
                         />
-                        {tracker.unit && <span className="absolute right-2 top-1.5 text-slate-400 text-xs font-medium pointer-events-none">{tracker.unit}</span>}
+                        {tracker.unit && <span className="absolute right-2 top-1 text-slate-400 text-[10px] font-medium pointer-events-none">{tracker.unit}</span>}
                     </div>
                 )}
             </div>
@@ -242,32 +242,32 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
 
     return (
         <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
-            <div className="min-h-screen p-4 flex flex-col max-w-xl mx-auto">
-                <div className="flex justify-between items-center text-white mb-8 mt-2">
-                    <h2 className="text-2xl font-bold">Daily Check-in</h2>
-                    <button onClick={onClose} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
-                        <X size={24} />
+            <div className="min-h-screen p-3 flex flex-col max-w-xl mx-auto">
+                <div className="flex justify-between items-center text-white mb-4 mt-1">
+                    <h2 className="text-xl font-bold">Daily Check-in</h2>
+                    <button onClick={onClose} className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+                        <X size={20} />
                     </button>
                 </div>
 
-                <div className="space-y-6 flex-1 pb-6">
+                <div className="space-y-3 flex-1 pb-4">
                     {/* 1. Protocols */}
                     {activeProtocols.length > 0 && (
-                        <section className="bg-white rounded-2xl p-5 shadow-lg">
-                            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                <Pill className="text-indigo-500" size={20} /> Use Protocols
+                        <section className="bg-white rounded-xl p-3 shadow-md">
+                            <h3 className="text-sm font-bold text-slate-800 mb-2 flex items-center gap-1.5 uppercase tracking-wide text-slate-500">
+                                <Pill className="text-indigo-500" size={16} /> Protocols
                             </h3>
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {activeProtocols.map(p => (
-                                    <label key={p.id} className="flex items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-indigo-50 transition-colors ring-1 ring-slate-100">
+                                    <label key={p.id} className="flex items-center justify-between gap-2 p-2 bg-slate-50 rounded-lg cursor-pointer hover:bg-indigo-50 transition-colors ring-1 ring-slate-100">
                                         <div className="min-w-0 flex-1">
-                                            <div className="font-semibold text-slate-800 truncate" title={p.name}>{p.name}</div>
+                                            <div className="font-medium text-sm text-slate-800 truncate" title={p.name}>{p.name}</div>
                                             <div className="text-xs text-slate-500">{p.doseAmount} {p.doseUnit}</div>
                                         </div>
                                         <div className="relative shrink-0">
                                             <input
                                                 type="checkbox"
-                                                className="w-6 h-6 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                                 checked={!!protocolLogs[p.id]?.taken}
                                                 onChange={(e) => {
                                                     setProtocolLogs(prev => e.target.checked
@@ -285,11 +285,11 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
 
                     {/* 2. Sleep Section */}
                     {(sleepTrackers.length > 0) && (
-                        <section className="bg-white rounded-2xl p-5 shadow-lg space-y-4">
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                                <Moon size={16} /> Sleep Stats
+                        <section className="bg-white rounded-xl p-3 shadow-md space-y-2">
+                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <Moon size={14} /> Sleep
                             </h3>
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {sleepTrackers.map(t => (
                                     <div key={t.id}>{renderInput(t)}</div>
                                 ))}
@@ -306,11 +306,11 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                             return acc;
                         }, {} as Record<string, TrackerDefinition[]>)
                     ).map(([group, trackers]) => (
-                        <section key={group} className="bg-white rounded-2xl p-5 shadow-lg space-y-4">
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+                        <section key={group} className="bg-white rounded-xl p-3 shadow-md space-y-2">
+                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                                 {group}
                             </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {trackers.map(tracker => (
                                     <div key={tracker.id} className={tracker.type === 'boolean' || tracker.type === 'rating' ? '' : 'col-span-1 sm:col-span-2'}>
                                         {renderInput(tracker)}
@@ -322,32 +322,16 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                 </div>
 
                 {/* Footer Action */}
-                <div className="mt-8 pt-4 pb-8 sticky bottom-0 z-10">
-                    {/* Added a subtle gradient/blur background behind the sticky button to ensure legibility over content if we wanted sticky, 
-                        BUT user complained about overlap. 
-                        Let's try standard static layout first as proposed in thought trace?
-                        Wait, layout with flex-1 puts it at bottom of flow.
-                        But if the list is long, user has to scroll.
-                        Reference thought trace: "This seems perfect. It behaves as 'sticky footer at bottom of page'".
-                        
-                        The `min-h-screen` on line 173 with `flex-1` on line 181 usually achieves this.
-                        Code:
-                        <div className="min-h-screen p-4 flex flex-col ..."> 
-                           <div className="... flex-1 ...">Content</div>
-                           <div className="...">Footer</div>
-                        </div>
-                        
-                        So I just need to remove `fixed` and `pb-32`.
-                     */}
+                <div className="mt-4 pt-3 pb-6">
                     <div className="max-w-xl mx-auto">
                         <button
                             onClick={handleSubmit}
                             disabled={!isFormComplete() || submitStatus !== 'idle'}
-                            className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold text-xl shadow-xl shadow-indigo-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                            className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-lg shadow-lg shadow-indigo-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                         >
                             {submitStatus === 'success' ? (
                                 <>
-                                    <CheckCircle size={24} />
+                                    <CheckCircle size={20} />
                                     Saved!
                                 </>
                             ) : (
@@ -355,7 +339,7 @@ const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete
                             )}
                         </button>
                         {!isFormComplete() && (
-                            <p className="text-center text-slate-400 text-sm mt-3 font-medium">
+                            <p className="text-center text-slate-400 text-xs mt-2 font-medium">
                                 Fill all <span className="text-rose-400">required</span> fields to complete
                             </p>
                         )}

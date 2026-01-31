@@ -3,10 +3,14 @@ import { useTracker } from '../../../../context/TrackerContext';
 import { useProtocol } from '../../../../context/ProtocolContext';
 import { format } from 'date-fns';
 import { Trash2, Edit2, X, Check, Trophy, Pill } from 'lucide-react';
-import type { Entry, Dose } from '../../../../types';
+import type { Entry, Dose, TrackerDefinition } from '../../../../types';
 import TrackerTrends from './TrackerTrends';
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+    onEditTracker?: (tracker: TrackerDefinition) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
     const { entries, deleteEntry, updateEntry, trackers } = useTracker();
     const { doses, protocols, deleteDose } = useProtocol();
 
@@ -99,7 +103,7 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <TrackerTrends />
+            <TrackerTrends onEditTracker={onEditTracker} />
 
             <h2 className="text-xl font-bold text-slate-800 px-1">History & Trends</h2>
 
