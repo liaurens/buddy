@@ -12,6 +12,9 @@ export interface Task {
     title: string;
     completed: boolean;
     dueDate?: string;
+    dueTime?: string;              // HH:MM format for specific time
+    location?: string;             // Location for the task
+    labels?: string[];             // Custom labels/tags for grouping
     createdAt: string;
     priority?: 'urgent' | 'high' | 'medium' | 'low';
     estimatedTime?: number; // in minutes

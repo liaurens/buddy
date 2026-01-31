@@ -105,11 +105,14 @@ export const reflectionSettingsSchema = z.object({
 
 export const taskSettingsSchema = z.object({
   defaultPriority: z.enum(['low', 'medium', 'high']).default('medium'),
-  defaultSortOrder: z.enum(['priority', 'dueDate', 'created']).default('priority'),
+  defaultSortOrder: z.enum(['priority', 'dueDate', 'created', 'label']).default('priority'),
   showCompletedCount: z.number().int().min(5).max(50).default(10),
   enableNotifications: z.boolean().default(false),
   notificationTiming: z.enum(['atDue', '15min', '1hour', '1day']).default('15min'),
   autoArchiveAfterDays: z.number().int().min(7).max(365).default(30),
+  customLabels: z.array(z.string()).default(['Work', 'Personal', 'Shopping']),
+  groupByLabel: z.boolean().default(false),
+  keepHighPrioritySeparate: z.boolean().default(true),
 });
 
 // ============================================================================

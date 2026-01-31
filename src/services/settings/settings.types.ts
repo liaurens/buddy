@@ -103,11 +103,14 @@ export interface ReflectionSettings {
 
 export interface TaskSettings {
   defaultPriority: 'low' | 'medium' | 'high';
-  defaultSortOrder: 'priority' | 'dueDate' | 'created';
+  defaultSortOrder: 'priority' | 'dueDate' | 'created' | 'label';
   showCompletedCount: number;
   enableNotifications: boolean;
   notificationTiming: 'atDue' | '15min' | '1hour' | '1day';
   autoArchiveAfterDays: number;
+  customLabels: string[];                     // Custom labels for tasks
+  groupByLabel: boolean;                      // Group tasks by label
+  keepHighPrioritySeparate: boolean;         // Show high priority tasks separately
 }
 
 // ============================================================================

@@ -141,6 +141,9 @@ export interface DbTodo {
     title: string;
     completed: boolean;
     due_date: string | null;
+    due_time: string | null;          // HH:MM format
+    location: string | null;          // Location for the task
+    labels: string[] | null;          // Custom labels/tags
     created_at: string;
     priority: string | null;
     estimated_time: number | null;
@@ -585,6 +588,9 @@ export function dbToTodo(db: DbTodo): Task {
         title: db.title,
         completed: db.completed,
         dueDate: db.due_date || undefined,
+        dueTime: db.due_time || undefined,
+        location: db.location || undefined,
+        labels: db.labels || undefined,
         createdAt: db.created_at,
         priority: db.priority as Task['priority'],
         estimatedTime: db.estimated_time || undefined,
@@ -604,6 +610,9 @@ export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: strin
         title: todo.title,
         completed: todo.completed,
         due_date: todo.dueDate || null,
+        due_time: todo.dueTime || null,
+        location: todo.location || null,
+        labels: todo.labels || null,
         created_at: todo.createdAt,
         priority: todo.priority || null,
         estimated_time: todo.estimatedTime || null,
