@@ -36,7 +36,13 @@ export async function getCategorySettings<T extends SettingCategory>(
       const dbKey = `${category}_${key}`;
       const value = await getSetting(userId, dbKey);
       if (value !== undefined) {
-        rawSettings[key] = value;
+        // Parse JSON strings back to proper types
+        try {
+          rawSettings[key] = JSON.parse(value);
+        } catch {
+          // If not valid JSON, keep as string
+          rawSettings[key] = value;
+        }
       }
     })
   );
