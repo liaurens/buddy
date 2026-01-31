@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTasks } from '../../../context/TaskContext';
 import { useAuth } from '../../../hooks/useAuth';
 import { getCategorySettings, type TaskSettings } from '../../../services/settings';
-import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon, Clock, MapPin, Tag, Settings } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon, MapPin, Tag, Settings } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
 import TaskSettingsModal from '../components/TaskSettingsModal';
 

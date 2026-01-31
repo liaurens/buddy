@@ -8,7 +8,7 @@ import {
   type CheckInSettings,
 } from '../../../../services/settings';
 import Modal from '../../../../components/ui/Modal';
-import { CheckSquare, Square, Plus } from 'lucide-react';
+import { CheckSquare, Square } from 'lucide-react';
 
 interface CheckInSettingsModalProps {
   isOpen: boolean;
@@ -64,8 +64,9 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({
     if (!tracker) return;
 
     const newConfig = {
-      ...tracker.checkinConfig,
-      inCheckin: !tracker.checkinConfig?.inCheckin
+      isRequired: tracker.checkinConfig?.isRequired ?? false,
+      inCheckin: !tracker.checkinConfig?.inCheckin,
+      showInDailyReport: tracker.checkinConfig?.showInDailyReport
     };
 
     await updateTracker({
@@ -79,8 +80,9 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({
     if (!tracker) return;
 
     const newConfig = {
-      ...tracker.checkinConfig,
-      isRequired: !tracker.checkinConfig?.isRequired
+      isRequired: !tracker.checkinConfig?.isRequired,
+      inCheckin: tracker.checkinConfig?.inCheckin ?? true,
+      showInDailyReport: tracker.checkinConfig?.showInDailyReport
     };
 
     await updateTracker({
@@ -94,7 +96,8 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({
     if (!tracker) return;
 
     const newConfig = {
-      ...tracker.checkinConfig,
+      isRequired: tracker.checkinConfig?.isRequired ?? false,
+      inCheckin: tracker.checkinConfig?.inCheckin ?? true,
       showInDailyReport: !tracker.checkinConfig?.showInDailyReport
     };
 
