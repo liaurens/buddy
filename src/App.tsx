@@ -42,14 +42,8 @@ const App: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
 
   const handleSettingsClick = () => {
-    console.log('Settings clicked, current tab:', activeTab);
     setShowSettings(true);
   };
-
-  // Debug: log when showSettings changes
-  useEffect(() => {
-    console.log('showSettings changed to:', showSettings, 'activeTab:', activeTab);
-  }, [showSettings, activeTab]);
 
   // Check if user is logged in
   const { isLoggedIn, isLoading } = useAuth();

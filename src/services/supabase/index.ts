@@ -1,83 +1,49 @@
 /**
  * Supabase Service - Main Entry Point
- *
- * This file maintains backward compatibility during the refactoring process.
- * Gradually migrating from monolithic supabase.ts to modular structure.
- *
- * Migration Status:
- * ✅ Client (exported from ./client.ts)
- * ✅ Types (exported from ./types/)
- * ✅ Tracker converters (exported from ./converters/tracker.ts)
- * ✅ Protocol converters (exported from ./converters/protocol.ts)
- * ⏳ Remaining converters (still in ../supabase.ts)
- * ⏳ Operations (still in ../supabase.ts)
  */
 
-// Re-export client
+// Client
 export { supabase, isSupabaseConfigured } from './client';
 
-// Re-export all database types
+// Database types
 export type {
-    DbTracker,
-    DbEntry,
-    DbProtocol,
-    DbCycle,
-    DbDose,
-    DbExperiment,
-    DbCorrelation,
-    DbExperimentLog,
+    DbTracker, DbEntry,
+    DbProtocol, DbCycle, DbDose,
+    DbExperiment, DbCorrelation, DbExperimentLog,
     DbStrategy,
     DbTodo,
-    DbNoteCategory,
-    DbSmartNote,
-    DbDailyPlan,
-    DbTimeBlock,
-    DbActivityTemplate,
-    DbCalendarEvent,
+    DbNoteCategory, DbSmartNote,
+    DbDailyPlan, DbTimeBlock, DbActivityTemplate, DbCalendarEvent,
 } from './types';
 
-// Re-export migrated converters
-export {
-    dbToTracker,
-    trackerToDb,
-    dbToEntry,
-    entryToDb,
-} from './converters/tracker';
+// Converters - Tracker
+export { dbToTracker, trackerToDb, dbToEntry, entryToDb } from './converters/tracker';
 
-export {
-    dbToProtocol,
-    protocolToDb,
-    dbToCycle,
-    cycleToDb,
-    dbToDose,
-    doseToDb,
-} from './converters/protocol';
+// Converters - Protocol
+export { dbToProtocol, protocolToDb, dbToCycle, cycleToDb, dbToDose, doseToDb } from './converters/protocol';
 
-// Re-export remaining items from old file (temporary during migration)
+// Converters - Experiment
+export { dbToExperiment, experimentToDb, dbToExperimentLog, experimentLogToDb, dbToCorrelation } from './converters/experiment';
+
+// Converters - Strategy
+export { dbToStrategy, strategyToDb } from './converters/strategy';
+
+// Converters - Todo
+export { dbToTodo, todoToDb } from './converters/todo';
+
+// Converters - Notes
+export { dbToNoteCategory, dbToSmartNote, smartNoteToDb } from './converters/notes';
+
+// Converters - Planning
 export {
-    dbToExperiment,
-    experimentToDb,
-    dbToExperimentLog,
-    experimentLogToDb,
-    dbToCorrelation,
-    dbToStrategy,
-    strategyToDb,
-    dbToTodo,
-    todoToDb,
-    dbToNoteCategory,
-    dbToSmartNote,
-    smartNoteToDb,
-    dbToDailyPlan,
-    dailyPlanToDb,
-    dbToTimeBlock,
-    timeBlockToDb,
-    dbToActivityTemplate,
-    activityTemplateToDb,
-    dbToCalendarEvent,
-    calendarEventToDb,
-    getSetting,
-    setSetting,
-    exportAllData,
-    importAllData,
-    initializeUserData,
-} from '../supabase';
+    dbToDailyPlan, dailyPlanToDb,
+    dbToTimeBlock, timeBlockToDb,
+    dbToActivityTemplate, activityTemplateToDb,
+    dbToCalendarEvent, calendarEventToDb,
+} from './converters/planning';
+
+// Operations
+export { getSetting, setSetting } from './operations/settings';
+export { exportAllData, importAllData } from './operations/backup';
+export { initializeUserData } from './operations/seed';
+export { getExperimentLogs, addExperimentLog } from './operations/experiment-logs';
