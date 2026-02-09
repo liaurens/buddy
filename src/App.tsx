@@ -29,6 +29,23 @@ import ToolboxSettingsModal from './features/toolbox/components/ToolboxSettingsM
 import ChecklistSettingsModal from './features/checklists/components/ChecklistSettingsModal';
 import type { AppRoute } from './constants/routes';
 
+type SettingsModalProps = { isOpen: boolean; onClose: () => void };
+
+const SETTINGS_MODALS: Partial<Record<AppRoute, React.ComponentType<SettingsModalProps>>> = {
+  health: TrackerSettingsModal,
+  protocols: ProtocolSettingsModal,
+  experiments: ExperimentSettingsModal,
+  'check-in': CheckInSettingsModal,
+  notes: NoteSettingsModal,
+  calendar: CalendarSettingsModal,
+  planning: PlanningSettingsModal,
+  reflection: ReflectionSettingsModal,
+  tasks: TaskSettingsModal,
+  focus: PomodoroSettingsModal,
+  toolbox: ToolboxSettingsModal,
+  checklists: ChecklistSettingsModal,
+};
+
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppRoute>('home');
   const [navParams, setNavParams] = useState<any>(null);
@@ -141,19 +158,11 @@ const App: React.FC = () => {
         {renderContent()}
       </MainLayout>
 
-      {/* Context-Aware Settings Modals */}
-      {showSettings && activeTab === 'health' && <TrackerSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'protocols' && <ProtocolSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'experiments' && <ExperimentSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'check-in' && <CheckInSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'notes' && <NoteSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'calendar' && <CalendarSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'planning' && <PlanningSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'reflection' && <ReflectionSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'tasks' && <TaskSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'focus' && <PomodoroSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'toolbox' && <ToolboxSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-      {showSettings && activeTab === 'checklists' && <ChecklistSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {/* Context-Aware Settings Modal */}
+      {showSettings && SETTINGS_MODALS[activeTab] && (() => {
+        const SettingsModal = SETTINGS_MODALS[activeTab]!;
+        return <SettingsModal isOpen={true} onClose={() => setShowSettings(false)} />;
+      })()}
 
       {/* Account Page Modal for Home */}
       {showSettings && (activeTab === 'home' || activeTab === 'account') && (
