@@ -27,8 +27,7 @@ import TaskSettingsModal from './features/tasks/components/TaskSettingsModal';
 import PomodoroSettingsModal from './features/focus/components/PomodoroSettingsModal';
 import ToolboxSettingsModal from './features/toolbox/components/ToolboxSettingsModal';
 import ChecklistSettingsModal from './features/checklists/components/ChecklistSettingsModal';
-
-type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'checklists' | 'toolbox' | 'focus' | 'account';
+import type { AppRoute } from './constants/routes';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppRoute>('home');
