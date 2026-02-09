@@ -1,5 +1,5 @@
 import React from 'react';
-import { useProtocol } from '../../../../context/ProtocolContext';
+import { useProtocols } from '../../hooks/useProtocols';
 import type { Protocol } from '../../../../types';
 import { Edit2, Trash2, Pill, Activity } from 'lucide-react';
 
@@ -8,7 +8,7 @@ interface ProtocolListProps {
 }
 
 const ProtocolList: React.FC<ProtocolListProps> = ({ onEdit }) => {
-    const { protocols, deleteProtocol, logDose } = useProtocol();
+    const { protocols, deleteProtocol, logDose } = useProtocols();
 
     if (protocols.length === 0) {
         return (

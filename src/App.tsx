@@ -1,9 +1,4 @@
 import { useState, useEffect } from 'react';
-import { TrackerProvider } from './context/TrackerContext';
-import { TaskProvider } from './context/TaskContext';
-import { ProtocolProvider } from './context/ProtocolContext';
-import { ExperimentProvider } from './context/ExperimentContext';
-import { SmartNotesProvider } from './context/SmartNotesContext';
 import { ToastProvider } from './components/ui/Toast';
 import MainLayout from './layouts/MainLayout';
 // Feature imports
@@ -139,55 +134,45 @@ const App: React.FC = () => {
 
   return (
     <ToastProvider>
-      <TrackerProvider>
-        <ProtocolProvider>
-          <ExperimentProvider>
-            <TaskProvider>
-              <SmartNotesProvider>
-                <MainLayout
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  onSettingsClick={handleSettingsClick}
-                >
-                  {renderContent()}
-                </MainLayout>
+      <MainLayout
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onSettingsClick={handleSettingsClick}
+      >
+        {renderContent()}
+      </MainLayout>
 
-                {/* Context-Aware Settings Modals */}
-                {showSettings && activeTab === 'health' && <TrackerSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'protocols' && <ProtocolSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'experiments' && <ExperimentSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'check-in' && <CheckInSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'notes' && <NoteSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'calendar' && <CalendarSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'planning' && <PlanningSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'reflection' && <ReflectionSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'tasks' && <TaskSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'focus' && <PomodoroSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'toolbox' && <ToolboxSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'checklists' && <ChecklistSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {/* Context-Aware Settings Modals */}
+      {showSettings && activeTab === 'health' && <TrackerSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'protocols' && <ProtocolSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'experiments' && <ExperimentSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'check-in' && <CheckInSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'notes' && <NoteSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'calendar' && <CalendarSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'planning' && <PlanningSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'reflection' && <ReflectionSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'tasks' && <TaskSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'focus' && <PomodoroSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'toolbox' && <ToolboxSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {showSettings && activeTab === 'checklists' && <ChecklistSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
 
-                {/* Account Page Modal for Home */}
-                {showSettings && (activeTab === 'home' || activeTab === 'account') && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
-                    <div className="relative w-full max-w-2xl mx-4 bg-white rounded-lg shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
-                      <AccountPage />
-                      <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4">
-                        <button
-                          onClick={() => setShowSettings(false)}
-                          className="w-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </SmartNotesProvider>
-            </TaskProvider>
-          </ExperimentProvider>
-        </ProtocolProvider>
-      </TrackerProvider>
+      {/* Account Page Modal for Home */}
+      {showSettings && (activeTab === 'home' || activeTab === 'account') && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
+          <div className="relative w-full max-w-2xl mx-4 bg-white rounded-lg shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
+            <AccountPage />
+            <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4">
+              <button
+                onClick={() => setShowSettings(false)}
+                className="w-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ToastProvider>
   );
 }

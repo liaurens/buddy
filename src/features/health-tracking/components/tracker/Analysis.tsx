@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useTracker } from '../../../../context/TrackerContext';
-import { useProtocol } from '../../../../context/ProtocolContext'; // Added import
+import { useTrackers } from '../../hooks/useTrackers';
+import { useProtocols } from '../../hooks/useProtocols';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, LineChart, Line } from 'recharts';
 import { format, startOfDay, parseISO } from 'date-fns';
 import {
@@ -22,8 +22,8 @@ interface AnalysisProps {
 }
 
 const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
-    const { entries, trackers } = useTracker();
-    const { protocols, doses } = useProtocol(); // Get doses history directly
+    const { entries, trackers } = useTrackers();
+    const { protocols, doses } = useProtocols(); // Get doses history directly
 
     // Default selection
     const [xTrackerId, setXTrackerId] = useState<string>(initialX || trackers[0]?.id || '');

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useTracker } from '../../../../context/TrackerContext';
+import { useTrackers } from '../../hooks/useTrackers';
 import { format, subDays, isSameDay, startOfDay } from 'date-fns';
 import { Activity, Edit2 } from 'lucide-react';
 import type { TrackerDefinition } from '../../types';
@@ -9,7 +9,7 @@ interface TrackerTrendsProps {
 }
 
 const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
-    const { trackers, entries } = useTracker();
+    const { trackers, entries } = useTrackers();
 
     // Get last 7 days
     const last7Days = useMemo(() => {

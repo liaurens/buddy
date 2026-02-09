@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../hooks/useAuth';
-import { useTracker } from '../../../../context/TrackerContext';
+import { useTrackers } from '../../hooks/useTrackers';
 import {
   getCategorySettings,
   updateCategorySettings,
@@ -20,7 +20,7 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({
   onClose,
 }) => {
   const { user } = useAuth();
-  const { trackers, updateTracker } = useTracker();
+  const { trackers, updateTracker } = useTrackers();
   const [settings, setSettings] = useState<CheckInSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

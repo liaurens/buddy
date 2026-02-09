@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useTracker } from '../../../../context/TrackerContext';
-import { useProtocol } from '../../../../context/ProtocolContext';
+import { useTrackers } from '../../hooks/useTrackers';
+import { useProtocols } from '../../hooks/useProtocols';
 import { CheckCircle, X, Pill, Moon } from 'lucide-react';
 import type { TrackerDefinition, Entry, Dose } from '../../../../types';
 
@@ -14,8 +14,8 @@ interface CheckinModalProps {
 }
 
 const CheckinModal: React.FC<CheckinModalProps> = ({ isOpen, onClose, onComplete, date, existingEntries = [], existingDoses = [] }) => {
-    const { trackers, addEntry, updateEntry } = useTracker();
-    const { protocols, logDose } = useProtocol();
+    const { trackers, addEntry, updateEntry } = useTrackers();
+    const { protocols, logDose } = useProtocols();
 
     const [trackerValues, setTrackerValues] = useState<Record<string, number | string>>({});
     const [protocolLogs, setProtocolLogs] = useState<Record<string, { taken: boolean }>>({});

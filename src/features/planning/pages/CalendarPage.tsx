@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useTasks } from '../../../context/TaskContext';
+import { useTasks } from '../../tasks/hooks/useTasks';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase, dbToCalendarEvent, type DbCalendarEvent } from '../../../services/supabase';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday } from 'date-fns';

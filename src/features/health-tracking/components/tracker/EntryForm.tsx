@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { useTracker } from '../../../../context/TrackerContext';
+import { useTrackers } from '../../hooks/useTrackers';
 import { Plus, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 const EntryForm: React.FC = () => {
-    const { addEntry, trackers } = useTracker();
+    const { addEntry, trackers } = useTrackers();
     const [selectedTrackerId, setSelectedTrackerId] = useState<string>(trackers[0]?.id || '');
     const [value, setValue] = useState<string>('');
     const [notes, setNotes] = useState<string>('');

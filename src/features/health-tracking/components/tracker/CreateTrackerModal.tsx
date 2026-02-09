@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTracker } from '../../../../context/TrackerContext';
+import { useTrackers } from '../../hooks/useTrackers';
 import Modal from '../../../../components/ui/Modal';
 import { v4 as uuidv4 } from 'uuid';
 import type { TrackerDefinition, TrackerType } from '../../types';
@@ -11,7 +11,7 @@ interface CreateTrackerModalProps {
 }
 
 const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose, editingTracker }) => {
-    const { addTracker, updateTracker } = useTracker();
+    const { addTracker, updateTracker } = useTrackers();
     const [step, setStep] = useState(1); // 1: Basic, 2: Config, 3: Goal/Checkin
 
     const [formData, setFormData] = useState<Partial<TrackerDefinition>>(

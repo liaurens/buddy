@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { useTracker } from '../../../context/TrackerContext';
-import { useProtocol } from '../../../context/ProtocolContext';
+import { useTrackers } from '../hooks/useTrackers';
+import { useProtocols } from '../hooks/useProtocols';
 import { format, subDays, isSameDay } from 'date-fns';
 import { CheckCircle, CheckSquare } from 'lucide-react';
 import CheckinModal from '../components/tracker/CheckinModal';
 import CheckInSettingsModal from '../components/checkin/CheckInSettingsModal';
 
 const DailyReportPage: React.FC = () => {
-    const { trackers, entries } = useTracker();
-    const { doses } = useProtocol();
+    const { trackers, entries } = useTrackers();
+    const { doses } = useProtocols();
 
     const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [isCheckinOpen, setIsCheckinOpen] = useState(false);

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Zap } from 'lucide-react';
-import { useSmartNotes } from '../../../../context/SmartNotesContext';
+import { useNotes as useSmartNotes } from '../../hooks/useNotes';
 
 interface QuickNoteInputProps {
     autoFocus?: boolean;

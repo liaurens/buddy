@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useTracker } from '../../../context/TrackerContext';
-import { useProtocol } from '../../../context/ProtocolContext';
-import { useExperiment } from '../../../context/ExperimentContext';
+import { useTrackers } from '../../health-tracking/hooks/useTrackers';
+import { useProtocols } from '../../health-tracking/hooks/useProtocols';
+import { useExperiments } from '../../health-tracking/hooks/useExperiments';
 import { format, isSameDay } from 'date-fns';
 import {
     Zap, Calendar as CalendarIcon,
@@ -13,9 +13,9 @@ interface HomePageProps {
 }
 
 const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
-    const { entries } = useTracker();
-    const { protocols } = useProtocol();
-    const { getActiveExperiments } = useExperiment();
+    const { entries } = useTrackers();
+    const { protocols } = useProtocols();
+    const { getActiveExperiments } = useExperiments();
 
     const [todayValues, setTodayValues] = useState<any[]>([]);
 
