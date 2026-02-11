@@ -148,7 +148,7 @@ export async function updateNotificationStatus(
   status: NotificationStatus,
   errorMessage?: string
 ): Promise<boolean> {
-  const update: any = {
+  const update: Record<string, unknown> = {
     status,
     sent_at: status === 'sent' ? new Date().toISOString() : null,
   };
@@ -241,7 +241,8 @@ export async function getNotificationLogs(
 }
 
 // Database converters
-function dbToNotificationSubscription(db: any): NotificationSubscription {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function dbToNotificationSubscription(db: Record<string, any>): NotificationSubscription {
   return {
     id: db.id,
     userId: db.user_id,
@@ -255,7 +256,8 @@ function dbToNotificationSubscription(db: any): NotificationSubscription {
   };
 }
 
-function dbToScheduledNotification(db: any): ScheduledNotification {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function dbToScheduledNotification(db: Record<string, any>): ScheduledNotification {
   return {
     id: db.id,
     userId: db.user_id,
@@ -272,7 +274,8 @@ function dbToScheduledNotification(db: any): ScheduledNotification {
   };
 }
 
-function dbToNotificationLog(db: any): NotificationLog {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function dbToNotificationLog(db: Record<string, any>): NotificationLog {
   return {
     id: db.id,
     subscriptionId: db.subscription_id,

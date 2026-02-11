@@ -337,7 +337,7 @@ export async function savePlanToDatabase(
             ...plan,
             blocks: [],
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Failed to save plan to database:', error);
 
         // If we have a plan ID and hit an error, try to clean up
@@ -399,7 +399,7 @@ export async function loadPlanForDate(userId: string, date: string): Promise<Dai
             ...plan,
             blocks: blocks || [],
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Failed to load plan for date:', error);
         // Re-throw to let the component handle it
         throw error;

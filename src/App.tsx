@@ -28,6 +28,7 @@ import PomodoroSettingsModal from './features/focus/components/PomodoroSettingsM
 import ToolboxSettingsModal from './features/toolbox/components/ToolboxSettingsModal';
 import ChecklistSettingsModal from './features/checklists/components/ChecklistSettingsModal';
 import type { AppRoute } from './constants/routes';
+import { LOADING_TIMEOUT_MS } from './constants/config';
 
 type SettingsModalProps = { isOpen: boolean; onClose: () => void };
 
@@ -48,7 +49,7 @@ const SETTINGS_MODALS: Partial<Record<AppRoute, React.ComponentType<SettingsModa
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppRoute>('home');
-  const [navParams, setNavParams] = useState<any>(null);
+  const [navParams, setNavParams] = useState<Record<string, unknown> | null>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -65,13 +66,13 @@ const App: React.FC = () => {
       if (isLoading) {
         setLoadingTimeout(true);
       }
-    }, 5000);
+    }, LOADING_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [isLoading]);
 
-  const handleNavigate = (tab: typeof activeTab, params?: any) => {
+  const handleNavigate = (tab: typeof activeTab, params?: Record<string, unknown>) => {
     setActiveTab(tab);
-    setNavParams(params);
+    setNavParams(params ?? null);
   };
 
   const renderContent = () => {

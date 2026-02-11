@@ -55,8 +55,8 @@ const PlanPage: React.FC = () => {
         try {
             const data = await loadPlanForDate(user.id, selectedDate);
             setPlan(data);
-        } catch (err: any) {
-            const errorMessage = err.message || 'Failed to load plan';
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to load plan';
 
             // Check if it's a database table missing error
             if (errorMessage.includes('relation') && errorMessage.includes('does not exist')) {
@@ -78,8 +78,8 @@ const PlanPage: React.FC = () => {
 
             // Refresh plan
             await loadPlan();
-        } catch (err: any) {
-            setError(err.message || 'Failed to start block');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to start block');
         }
     };
 
@@ -105,8 +105,8 @@ const PlanPage: React.FC = () => {
 
             // Refresh plan
             await loadPlan();
-        } catch (err: any) {
-            setError(err.message || 'Failed to complete block');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to complete block');
         }
     };
 
@@ -127,8 +127,8 @@ const PlanPage: React.FC = () => {
             await skipBlock(user.id, blockToSkip.id);
             setBlockToSkip(null);
             await loadPlan();
-        } catch (err: any) {
-            setError(err.message || 'Failed to skip block');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to skip block');
             setBlockToSkip(null);
         }
     };

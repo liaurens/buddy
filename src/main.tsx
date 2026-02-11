@@ -4,13 +4,14 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './hooks/useAuth'
 import './index.css'
+import { QUERY_STALE_TIME_MS } from './constants/config'
 import App from './App.tsx'
 
 // Create a client with default options
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60, // 1 minute
+      staleTime: QUERY_STALE_TIME_MS,
       refetchOnWindowFocus: true,
       retry: 1,
     },

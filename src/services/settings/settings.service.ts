@@ -142,26 +142,3 @@ export function getDefaultSettings<T extends SettingCategory>(
   const schema = settingsSchemas[category] as any;
   return schema.parse({}) as AllSettings[T];
 }
-
-/**
- * Backward compatible helper - get raw setting value
- * @deprecated Use getCategorySettings or getSingleSetting instead
- */
-export async function getRawSetting(
-  userId: string,
-  key: string
-): Promise<string | undefined> {
-  return getSetting(userId, key);
-}
-
-/**
- * Backward compatible helper - set raw setting value
- * @deprecated Use updateCategorySettings or updateSingleSetting instead
- */
-export async function setRawSetting(
-  userId: string,
-  key: string,
-  value: string
-): Promise<void> {
-  return setSetting(userId, key, value);
-}

@@ -70,8 +70,17 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
         setGoalCondition('gt');
     };
 
-    const updateField = (field: keyof TrackerDefinition, value: any) => {
+    const updateField = (field: keyof TrackerDefinition, value: Partial<TrackerDefinition>[keyof TrackerDefinition]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const updateCheckin = (patch: Partial<{ isRequired: boolean; inCheckin: boolean; showInDailyReport: boolean }>) => {
+        updateField('checkinConfig', {
+            isRequired: formData.checkinConfig?.isRequired ?? false,
+            inCheckin: formData.checkinConfig?.inCheckin ?? false,
+            showInDailyReport: formData.checkinConfig?.showInDailyReport,
+            ...patch,
+        });
     };
 
     const footer = (
@@ -238,7 +247,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
                                 <input
                                     type="checkbox"
                                     checked={formData.checkinConfig?.inCheckin}
-                                    onChange={e => updateField('checkinConfig', { ...formData.checkinConfig, inCheckin: e.target.checked })}
+                                    onChange={e => updateCheckin({ inCheckin: e.target.checked })}
                                     className="h-4 w-4 text-indigo-600 rounded"
                                 />
                             </label>
@@ -249,7 +258,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
                                     <input
                                         type="checkbox"
                                         checked={formData.checkinConfig?.isRequired}
-                                        onChange={e => updateField('checkinConfig', { ...formData.checkinConfig, isRequired: e.target.checked })}
+                                        onChange={e => updateCheckin({ isRequired: e.target.checked })}
                                         className="h-4 w-4 text-indigo-600 rounded"
                                     />
                                 </label>
@@ -260,7 +269,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
                                 <input
                                     type="checkbox"
                                     checked={formData.checkinConfig?.showInDailyReport}
-                                    onChange={e => updateField('checkinConfig', { ...formData.checkinConfig, showInDailyReport: e.target.checked })}
+                                    onChange={e => updateCheckin({ showInDailyReport: e.target.checked })}
                                     className="h-4 w-4 text-indigo-600 rounded"
                                 />
                             </label>

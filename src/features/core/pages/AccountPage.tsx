@@ -68,12 +68,11 @@ const AccountPage: React.FC = () => {
             } else {
                 toast.error('Failed to import data. Please try again.');
             }
-        } catch (error: any) {
-            if (error.name === 'SyntaxError') {
+        } catch (error: unknown) {
+            if (error instanceof SyntaxError) {
                 toast.error('Invalid JSON format. Please check your input.');
-            } else if (error.name === 'ZodError') {
-                const firstError = error.errors[0];
-                toast.error(`Validation error: ${firstError.message}`);
+            } else if (error instanceof Error && error.name === 'ZodError') {
+                toast.error(`Validation error: ${error.message}`);
             } else {
                 toast.error('Failed to import data. Invalid format.');
             }

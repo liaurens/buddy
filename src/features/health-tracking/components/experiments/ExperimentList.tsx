@@ -16,14 +16,7 @@ const ExperimentList: React.FC<ExperimentListProps> = ({ onRunAnalysis, onViewDe
     const { trackers } = useTrackers();
     const { experiments, deleteExperiment } = useExperiments();
 
-    // Safely attempt to get protocols, defaulting to empty if context is missing/error
-    let protocols: any[] = [];
-    try {
-        const protocolCtx = useProtocols();
-        protocols = protocolCtx.protocols;
-    } catch (e) {
-        // useProtocol might throw if used outside provider
-    }
+    const { protocols } = useProtocols();
 
     const getVariableInfo = (id: string) => {
         const t = trackers.find(x => x.id === id);

@@ -117,7 +117,7 @@ export function useProtocols(): ProtocolContextType {
     }, [userId, queryClient]);
 
     const updateProtocol = useCallback(async (protocol: Protocol) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { id, createdAt: _createdAt, ...updates } = protocol;
         const dbUpdates = {
@@ -147,7 +147,7 @@ export function useProtocols(): ProtocolContextType {
     }, [userId, queryClient]);
 
     const deleteProtocol = useCallback(async (id: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         // Delete related doses first
         await supabase.from('doses').delete().eq('protocol_id', id).eq('user_id', userId);
@@ -200,7 +200,7 @@ export function useProtocols(): ProtocolContextType {
     }, [userId, cycles, queryClient]);
 
     const completeCycle = useCallback(async (cycleId: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('cycles')
@@ -216,7 +216,7 @@ export function useProtocols(): ProtocolContextType {
     }, [userId, queryClient]);
 
     const abortCycle = useCallback(async (cycleId: string, notes?: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('cycles')
@@ -238,7 +238,7 @@ export function useProtocols(): ProtocolContextType {
         cycleId?: string,
         actualAmount?: number
     ) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const timestamp = new Date().toISOString();
         const newDose: Omit<Dose, 'id'> & { id: string } = {
@@ -285,7 +285,7 @@ export function useProtocols(): ProtocolContextType {
         cycleId?: string,
         reason?: string
     ) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const newDose: Omit<Dose, 'id'> & { id: string } = {
             id: uuidv4(),
@@ -304,7 +304,7 @@ export function useProtocols(): ProtocolContextType {
     }, [userId, queryClient]);
 
     const deleteDose = useCallback(async (doseId: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('doses')

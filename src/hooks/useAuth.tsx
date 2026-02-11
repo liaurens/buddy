@@ -48,9 +48,9 @@ export function useAuthProvider(): AuthState {
 
                     setIsLoading(false);
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 // Ignore abort errors
-                if (err?.name === 'AbortError') return;
+                if (err instanceof Error && err.name === 'AbortError') return;
 
                 console.error('Auth initialization error:', err);
                 if (mounted) {

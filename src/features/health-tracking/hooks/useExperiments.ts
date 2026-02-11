@@ -58,7 +58,7 @@ export const useExperiments = (): ExperimentContextType => {
     }, [userId, queryClient]);
 
     const updateExperiment = useCallback(async (experiment: Experiment) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { id, ...updates } = experiment;
         const dbUpdates = {
@@ -83,7 +83,7 @@ export const useExperiments = (): ExperimentContextType => {
     }, [userId, queryClient]);
 
     const deleteExperiment = useCallback(async (id: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('experiments')

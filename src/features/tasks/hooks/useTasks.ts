@@ -33,7 +33,7 @@ export const useTasks = (): TaskState => {
     });
 
     const addTask = useCallback(async (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const newTask: Task = {
             id: uuidv4(),
@@ -54,7 +54,7 @@ export const useTasks = (): TaskState => {
     }, [userId, queryClient]);
 
     const toggleTask = useCallback(async (id: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const task = tasks.find(t => t.id === id);
         if (!task) return;
@@ -70,7 +70,7 @@ export const useTasks = (): TaskState => {
     }, [userId, tasks, queryClient]);
 
     const deleteTask = useCallback(async (id: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('todos')
@@ -83,7 +83,7 @@ export const useTasks = (): TaskState => {
     }, [userId, queryClient]);
 
     const updateTask = useCallback(async (updatedTask: Task) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { id, ...updates } = updatedTask;
         const dbUpdates = {
@@ -106,7 +106,7 @@ export const useTasks = (): TaskState => {
     }, [userId, queryClient]);
 
     const startTask = useCallback(async (id: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('todos')
@@ -119,7 +119,7 @@ export const useTasks = (): TaskState => {
     }, [userId, queryClient]);
 
     const completeTaskWithDuration = useCallback(async (id: string, actualMinutes: number) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const task = tasks.find(t => t.id === id);
         if (!task) return;
