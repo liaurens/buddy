@@ -78,7 +78,7 @@ const ToolboxPage: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
         if (window.confirm('Delete this strategy?')) {
             await supabase.from('strategies').delete().eq('id', id).eq('user_id', userId);
             queryClient.invalidateQueries({ queryKey: ['strategies', userId] });

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useTracker } from '../../../../context/TrackerContext';
-import { useProtocol } from '../../../../context/ProtocolContext';
+import { useTrackers } from '../../hooks/useTrackers';
+import { useProtocols } from '../../hooks/useProtocols';
 import { format } from 'date-fns';
 import { Trash2, Edit2, X, Check, Trophy, Pill } from 'lucide-react';
 import type { Entry, Dose, TrackerDefinition } from '../../../../types';
@@ -11,8 +11,8 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
-    const { entries, deleteEntry, updateEntry, trackers } = useTracker();
-    const { doses, protocols, deleteDose } = useProtocol();
+    const { entries, deleteEntry, updateEntry, trackers } = useTrackers();
+    const { doses, protocols, deleteDose } = useProtocols();
 
     // Edit state only for Entries (Trackers) for now
     const [editingId, setEditingId] = useState<string | null>(null);

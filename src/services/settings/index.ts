@@ -52,6 +52,4 @@ export {
   resetCategorySettings,
   clearSettingsCache,
   getDefaultSettings,
-  getRawSetting,
-  setRawSetting,
 } from './settings.service';

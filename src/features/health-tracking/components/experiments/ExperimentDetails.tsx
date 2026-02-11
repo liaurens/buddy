@@ -4,8 +4,8 @@ import { ArrowLeft, Plus, Calendar as CalendarIcon, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Experiment } from '../../../../types';
 import { getExperimentLogs, addExperimentLog } from '../../../../services/supabase';
-import { useTracker } from '../../../../context/TrackerContext';
-import { useProtocol } from '../../../../context/ProtocolContext';
+import { useTrackers } from '../../hooks/useTrackers';
+import { useProtocols } from '../../hooks/useProtocols';
 
 interface ExperimentDetailsProps {
     experiment: Experiment;
@@ -14,8 +14,8 @@ interface ExperimentDetailsProps {
 
 const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment, onBack }) => {
     const queryClient = useQueryClient();
-    const { trackers } = useTracker();
-    const { protocols } = useProtocol();
+    const { trackers } = useTrackers();
+    const { protocols } = useProtocols();
 
     // Notes Form State
     const [isAddingNote, setIsAddingNote] = useState(false);

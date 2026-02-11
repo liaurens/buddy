@@ -1,7 +1,7 @@
 import React from 'react';
 import { Settings, CheckSquare, Activity, Pill, FlaskConical, Calendar, TrendingUp, CalendarClock, StickyNote, ListChecks } from 'lucide-react';
-
-type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'checklists' | 'toolbox' | 'focus' | 'account';
+import type { AppRoute } from '../constants/routes';
+import { HEALTH_HUB_ROUTES, CALENDAR_HUB_ROUTES, TASKS_HUB_ROUTES } from '../constants/routes';
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -13,13 +13,13 @@ interface MainLayoutProps {
 const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveTab, onSettingsClick }) => {
     // Determine hub context
     const getHubContext = () => {
-        if (['health', 'protocols', 'experiments'].includes(activeTab)) {
+        if (HEALTH_HUB_ROUTES.includes(activeTab)) {
             return { name: 'Health Hub', tab: activeTab };
         }
-        if (['calendar', 'planning', 'reflection'].includes(activeTab)) {
+        if (CALENDAR_HUB_ROUTES.includes(activeTab)) {
             return { name: 'Calendar Hub', tab: activeTab };
         }
-        if (['tasks', 'checklists'].includes(activeTab)) {
+        if (TASKS_HUB_ROUTES.includes(activeTab)) {
             return { name: 'Tasks Hub', tab: activeTab };
         }
         if (activeTab === 'notes') {
@@ -75,7 +75,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                     )}
 
                     {/* Context: HEALTH / EXPERIMENTS / PROTOCOLS */}
-                    {['health', 'experiments', 'protocols'].includes(activeTab) && (
+                    {HEALTH_HUB_ROUTES.includes(activeTab) && (
                         <>
                             <button
                                 onClick={() => setActiveTab('health')}
@@ -102,7 +102,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                     )}
 
                     {/* Context: CALENDAR HUB (Calendar + Planning + Reflection) */}
-                    {['calendar', 'planning', 'reflection'].includes(activeTab) && (
+                    {CALENDAR_HUB_ROUTES.includes(activeTab) && (
                         <>
                             <button
                                 onClick={() => setActiveTab('calendar')}
@@ -129,7 +129,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                     )}
 
                     {/* Context: TASKS HUB (Tasks + Checklists) */}
-                    {['tasks', 'checklists'].includes(activeTab) && (
+                    {TASKS_HUB_ROUTES.includes(activeTab) && (
                         <>
                             <button
                                 onClick={() => setActiveTab('tasks')}

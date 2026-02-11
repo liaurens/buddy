@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useProtocol } from '../../../../context/ProtocolContext';
+import { useProtocols } from '../../hooks/useProtocols';
 import type { Protocol } from '../../../../types';
 import { X, Save } from 'lucide-react';
 
@@ -9,7 +9,7 @@ interface ProtocolFormProps {
 }
 
 const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol }) => {
-    const { addProtocol, updateProtocol } = useProtocol();
+    const { addProtocol, updateProtocol } = useProtocols();
 
     const [name, setName] = useState(editingProtocol?.name || '');
     const [category, setCategory] = useState<Protocol['category']>(editingProtocol?.category || 'supplement');

@@ -154,9 +154,9 @@ export interface NotificationPreferences {
 // Error types
 export class NotificationError extends Error {
   code: string;
-  details?: any;
+  details?: unknown;
 
-  constructor(message: string, code: string, details?: any) {
+  constructor(message: string, code: string, details?: unknown) {
     super(message);
     this.name = 'NotificationError';
     this.code = code;
@@ -171,13 +171,13 @@ export class PermissionDeniedError extends NotificationError {
 }
 
 export class SubscriptionFailedError extends NotificationError {
-  constructor(details?: any) {
+  constructor(details?: unknown) {
     super('Failed to create push subscription', 'SUBSCRIPTION_FAILED', details);
   }
 }
 
 export class SendNotificationError extends NotificationError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: unknown) {
     super(message, 'SEND_FAILED', details);
   }
 }

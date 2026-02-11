@@ -5,11 +5,10 @@ import ExperimentDetails from '../components/experiments/ExperimentDetails';
 import ExperimentSettingsModal from '../components/experiments/ExperimentSettingsModal';
 import type { Experiment } from '../../../types';
 import { Plus, FlaskConical, Settings } from 'lucide-react';
-
-type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'toolbox' | 'focus' | 'account';
+import type { AppRoute } from '../../../constants/routes';
 
 interface ExperimentsPageProps {
-    onNavigate?: (tab: AppRoute, params?: any) => void;
+    onNavigate?: (tab: AppRoute, params?: Record<string, unknown>) => void;
 }
 
 const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {

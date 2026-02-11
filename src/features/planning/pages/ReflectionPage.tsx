@@ -40,8 +40,8 @@ const ReflectionPage: React.FC = () => {
         try {
             const data = await generateDayReflection(user.id, selectedDate);
             setReflection(data);
-        } catch (err: any) {
-            setError(err.message || 'Failed to load reflection');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to load reflection');
             setReflection(null);
         } finally {
             setLoading(false);

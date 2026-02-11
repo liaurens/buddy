@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Trash2, Check, MoveRight, Inbox, Edit2, X, Save } from 'lucide-react';
-import { useSmartNotes } from '../../../../context/SmartNotesContext';
+import { useNotes as useSmartNotes } from '../../hooks/useNotes';
 import type { SmartNote, NoteCategory } from '../../../../types';
 
 interface SmartNotesListProps {

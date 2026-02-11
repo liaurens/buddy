@@ -4,7 +4,7 @@ import { QuickNoteInput } from '../components/notes/QuickNoteInput';
 import { SmartNotesList } from '../components/notes/SmartNotesList';
 import { CategoryManager } from '../components/notes/CategoryManager';
 import NoteSettingsModal from '../components/notes/NoteSettingsModal';
-import { useSmartNotes } from '../../../context/SmartNotesContext';
+import { useNotes as useSmartNotes } from '../hooks/useNotes';
 
 type ViewMode = 'inbox' | 'category' | 'all' | 'settings';
 

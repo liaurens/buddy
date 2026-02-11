@@ -136,8 +136,8 @@ async function fetchViaEdgeFunction(url: string): Promise<{ success: boolean; da
         }
 
         return { success: true, data: result.data };
-    } catch (error: any) {
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
 }
 
@@ -161,11 +161,11 @@ async function fetchViaCorsProxy(url: string, proxyIndex: number = 0): Promise<{
         }
 
         return { success: true, data: icalData };
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (proxyIndex < CORS_PROXIES.length - 1) {
             return fetchViaCorsProxy(url, proxyIndex + 1);
         }
-        return { success: false, error: error.message };
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
 }
 
@@ -341,7 +341,7 @@ export async function saveCalendarEventsToDatabase(
         }
 
         return { success: true, savedCount: data?.length || 0 };
-    } catch (error: any) {
-        return { success: false, error: error.message, savedCount: 0 };
+    } catch (error: unknown) {
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error', savedCount: 0 };
     }
 }

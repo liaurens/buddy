@@ -100,7 +100,7 @@ export const useNotes = (): SmartNotesState => {
 
     // Add a note with automatic flag detection and sorting
     const addNote = useCallback(async (content: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { cleanContent, flag } = parseNoteContent(content);
 
@@ -133,7 +133,7 @@ export const useNotes = (): SmartNotesState => {
     }, [userId, categories, queryClient]);
 
     const updateNote = useCallback(async (note: SmartNote) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('smart_notes')
@@ -152,7 +152,7 @@ export const useNotes = (): SmartNotesState => {
     }, [userId, queryClient]);
 
     const deleteNote = useCallback(async (id: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('smart_notes')
@@ -165,7 +165,7 @@ export const useNotes = (): SmartNotesState => {
     }, [userId, queryClient]);
 
     const moveToCategory = useCallback(async (noteId: string, categoryId: string | null) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('smart_notes')
@@ -181,7 +181,7 @@ export const useNotes = (): SmartNotesState => {
     }, [userId, queryClient]);
 
     const markProcessed = useCallback(async (noteId: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('smart_notes')
@@ -198,7 +198,7 @@ export const useNotes = (): SmartNotesState => {
 
     // Category management
     const addCategory = useCallback(async (category: Omit<NoteCategory, 'id' | 'createdAt'>) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const newCategory = {
             id: uuidv4(),
@@ -216,7 +216,7 @@ export const useNotes = (): SmartNotesState => {
     }, [userId, queryClient]);
 
     const updateCategory = useCallback(async (category: NoteCategory) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('note_categories')
@@ -234,7 +234,7 @@ export const useNotes = (): SmartNotesState => {
     }, [userId, queryClient]);
 
     const deleteCategory = useCallback(async (id: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         // Move notes in this category to inbox (null category)
         await supabase

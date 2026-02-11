@@ -8,11 +8,13 @@ export interface DbTodo {
     title: string;
     completed: boolean;
     due_date: string | null;
+    due_time: string | null;
+    location: string | null;
+    labels: string[] | null;
     created_at: string;
     priority: string | null;
     estimated_time: number | null;
     subtasks: Array<{ id: string; title: string; completed: boolean }> | null;
-    // Time tracking (Phase 1)
     actual_minutes: number | null;
     started_at: string | null;
     completed_at: string | null;

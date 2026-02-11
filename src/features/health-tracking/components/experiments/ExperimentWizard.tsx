@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useTracker } from '../../../../context/TrackerContext';
-import { useProtocol } from '../../../../context/ProtocolContext';
-import { useExperiment } from '../../../../context/ExperimentContext';
+import { useTrackers } from '../../hooks/useTrackers';
+import { useProtocols } from '../../hooks/useProtocols';
+import { useExperiments } from '../../hooks/useExperiments';
 import { X, ArrowRight, ArrowLeft, FlaskConical, Calendar, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -10,9 +10,9 @@ interface ExperimentWizardProps {
 }
 
 const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
-    const { trackers } = useTracker();
-    const { protocols } = useProtocol();
-    const { addExperiment } = useExperiment();
+    const { trackers } = useTrackers();
+    const { protocols } = useProtocols();
+    const { addExperiment } = useExperiments();
     const [step, setStep] = useState(1);
 
     // Form State

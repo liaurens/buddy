@@ -54,7 +54,7 @@ export const useTrackers = (): TrackerState => {
     });
 
     const addEntry = useCallback(async (entry: Omit<Entry, 'id'>) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const newEntry: Entry = {
             ...entry,
@@ -70,7 +70,7 @@ export const useTrackers = (): TrackerState => {
     }, [userId, queryClient]);
 
     const updateEntry = useCallback(async (updatedEntry: Entry) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { id, ...updates } = updatedEntry;
         const dbUpdates = {
@@ -93,7 +93,7 @@ export const useTrackers = (): TrackerState => {
     }, [userId, queryClient]);
 
     const deleteEntry = useCallback(async (id: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { error } = await supabase
             .from('entries')
@@ -106,7 +106,7 @@ export const useTrackers = (): TrackerState => {
     }, [userId, queryClient]);
 
     const addTracker = useCallback(async (tracker: TrackerDefinition) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const dbTracker = trackerToDb(tracker, userId);
         const { error } = await supabase.from('trackers').insert(dbTracker);
@@ -116,7 +116,7 @@ export const useTrackers = (): TrackerState => {
     }, [userId, queryClient]);
 
     const updateTracker = useCallback(async (tracker: TrackerDefinition) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         const { id, ...updates } = tracker;
         const dbUpdates = {
@@ -140,7 +140,7 @@ export const useTrackers = (): TrackerState => {
     }, [userId, queryClient]);
 
     const deleteTracker = useCallback(async (id: string) => {
-        if (!userId) return;
+        if (!userId) throw new Error('Not authenticated');
 
         // Delete related entries first
         await supabase
@@ -162,12 +162,12 @@ export const useTrackers = (): TrackerState => {
     }, [userId, queryClient]);
 
     const exportData = useCallback(async () => {
-        if (!userId) return '{}';
+        if (!userId) throw new Error('Not authenticated');
         return await exportAllData(userId);
     }, [userId]);
 
     const importData = useCallback(async (jsonData: string): Promise<boolean> => {
-        if (!userId) return false;
+        if (!userId) throw new Error('Not authenticated');
         const success = await importAllData(jsonData, userId);
         if (success) {
             queryClient.invalidateQueries({ queryKey: ['trackers', userId] });

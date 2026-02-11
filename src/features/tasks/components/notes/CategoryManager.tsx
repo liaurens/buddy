@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Edit2, Tag } from 'lucide-react';
-import { useSmartNotes } from '../../../../context/SmartNotesContext';
+import { useNotes as useSmartNotes } from '../../hooks/useNotes';
 import type { NoteCategory } from '../../../../types';
 
 const PRESET_COLORS = [

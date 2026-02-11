@@ -91,10 +91,10 @@ export class AIService {
             } else {
                 return await this.generateWithGemini(systemPrompt, userPrompt);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 success: false,
-                error: error.message || 'AI generation failed',
+                error: error instanceof Error ? error.message : 'AI generation failed',
             };
         }
     }
@@ -115,10 +115,10 @@ export class AIService {
             } else {
                 return await this.generateWithGemini(systemPrompt, userPrompt);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 success: false,
-                error: error.message || 'AI replan generation failed',
+                error: error instanceof Error ? error.message : 'AI replan generation failed',
             };
         }
     }
@@ -155,10 +155,10 @@ Return a JSON object with this structure:
             } else {
                 return await this.generateWithGemini(systemPrompt, userPrompt);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 success: false,
-                error: error.message || 'Task breakdown failed',
+                error: error instanceof Error ? error.message : 'Task breakdown failed',
             };
         }
     }
@@ -294,10 +294,10 @@ Return a JSON object with this structure:
             }
 
             return { success: result.success };
-        } catch (error: any) {
+        } catch (error: unknown) {
             return {
                 success: false,
-                error: error.message || 'Connection test failed',
+                error: error instanceof Error ? error.message : 'Connection test failed',
             };
         }
     }

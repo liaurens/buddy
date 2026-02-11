@@ -15,6 +15,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { updateCategorySettings } from '../../../services/settings';
 import { buildPlanningContext, generateDailyPlan, savePlanToDatabase } from '../services/planning.service';
 import type { PlanSuggestion } from '../../../types/planning';
+import { DEFAULT_LUNCH_DURATION_MINUTES, DEFAULT_BREAK_INTERVAL_MINUTES } from '../../../constants/config';
 import {
     Sparkles,
     Brain,
@@ -44,9 +45,9 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated, ha
     const [workStartTime, setWorkStartTime] = useState('09:00');
     const [workEndTime, setWorkEndTime] = useState('17:00');
     const [includeLunchBreak, setIncludeLunchBreak] = useState(true);
-    const lunchDuration = 60;
+    const lunchDuration = DEFAULT_LUNCH_DURATION_MINUTES;
     const [includeShortBreaks, setIncludeShortBreaks] = useState(true);
-    const shortBreakInterval = 90;
+    const shortBreakInterval = DEFAULT_BREAK_INTERVAL_MINUTES;
 
     // State
     const [loading, setLoading] = useState(false);
@@ -120,8 +121,8 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated, ha
             // Generate plan
             const plan = await generateDailyPlan(user.id, context);
             setSuggestion(plan);
-        } catch (err: any) {
-            setError(err.message || 'Failed to generate plan');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to generate plan');
         } finally {
             setLoading(false);
         }
@@ -171,8 +172,8 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated, ha
             }
 
             onPlanGenerated();
-        } catch (err: any) {
-            setError(err.message || 'Failed to save plan');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to save plan');
         } finally {
             setLoading(false);
         }

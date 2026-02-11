@@ -3,6 +3,7 @@ import { Play, Pause, RotateCcw, Coffee, Brain, Settings } from 'lucide-react';
 import { useToast } from '../../../components/ui/Toast';
 import { useAuth } from '../../../hooks/useAuth';
 import { getCategorySettings, type PomodoroSettings } from '../../../services/settings';
+import { DEFAULT_WORK_MINUTES, DEFAULT_BREAK_MINUTES, AUTOSTART_DELAY_MS } from '../../../constants/config';
 import PomodoroSettingsModal from './PomodoroSettingsModal';
 
 const PomodoroTimer: React.FC = () => {
@@ -10,7 +11,7 @@ const PomodoroTimer: React.FC = () => {
     const { user } = useAuth();
     const [settings, setSettings] = useState<PomodoroSettings | null>(null);
     const [showSettings, setShowSettings] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(25 * 60);
+    const [timeLeft, setTimeLeft] = useState(DEFAULT_WORK_MINUTES * 60);
     const [isActive, setIsActive] = useState(false);
     const [mode, setMode] = useState<'work' | 'break'>('work');
 
@@ -27,7 +28,7 @@ const PomodoroTimer: React.FC = () => {
     }, [user]);
 
     useEffect(() => {
-        let interval: any = null;
+        let interval: ReturnType<typeof setInterval> | null = null;
 
         if (isActive && timeLeft > 0) {
             interval = setInterval(() => {
@@ -44,7 +45,7 @@ const PomodoroTimer: React.FC = () => {
                     setMode('break');
                     setTimeLeft(settings.shortBreakDuration * 60);
                     if (settings.autoStartBreaks) {
-                        setTimeout(() => setIsActive(true), 1000);
+                        setTimeout(() => setIsActive(true), AUTOSTART_DELAY_MS);
                     }
                 } else {
                     if (settings.soundEnabled) {
@@ -54,7 +55,7 @@ const PomodoroTimer: React.FC = () => {
                     setMode('work');
                     setTimeLeft(settings.workDuration * 60);
                     if (settings.autoStartPomodoros) {
-                        setTimeout(() => setIsActive(true), 1000);
+                        setTimeout(() => setIsActive(true), AUTOSTART_DELAY_MS);
                     }
                 }
             }
@@ -88,8 +89,8 @@ const PomodoroTimer: React.FC = () => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const workDuration = settings?.workDuration || 25;
-    const breakDuration = settings?.shortBreakDuration || 5;
+    const workDuration = settings?.workDuration || DEFAULT_WORK_MINUTES;
+    const breakDuration = settings?.shortBreakDuration || DEFAULT_BREAK_MINUTES;
 
     const progress = mode === 'work'
         ? ((workDuration * 60 - timeLeft) / (workDuration * 60)) * 100

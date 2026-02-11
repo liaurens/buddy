@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useTracker } from '../../../context/TrackerContext';
-import { useProtocol } from '../../../context/ProtocolContext';
-import { useExperiment } from '../../../context/ExperimentContext';
+import { useTrackers } from '../../health-tracking/hooks/useTrackers';
+import { useProtocols } from '../../health-tracking/hooks/useProtocols';
+import { useExperiments } from '../../health-tracking/hooks/useExperiments';
 import { format, isSameDay } from 'date-fns';
 import {
     Zap, Calendar as CalendarIcon,
     BookOpen, CheckSquare, Lightbulb, BarChart2, Timer, ListChecks
 } from 'lucide-react';
+import type { AppRoute } from '../../../constants/routes';
+import type { Entry } from '../../health-tracking/types';
 
 interface HomePageProps {
-    onNavigate: (tab: any) => void;
+    onNavigate: (tab: AppRoute) => void;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
-    const { entries } = useTracker();
-    const { protocols } = useProtocol();
-    const { getActiveExperiments } = useExperiment();
+    const { entries } = useTrackers();
+    const { protocols } = useProtocols();
+    const { getActiveExperiments } = useExperiments();
 
-    const [todayValues, setTodayValues] = useState<any[]>([]);
+    const [todayValues, setTodayValues] = useState<Entry[]>([]);
 
     const activeProtocols = protocols.filter(p => p.active);
     const activeExperiments = getActiveExperiments();
@@ -44,7 +46,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             title: 'Protocol Reminder',
             message: `Doses needed for: ${activeProtocols.map(p => p.name).join(', ')}`
         } : null
-    ].filter(Boolean) as any[];
+    ].filter((n): n is NonNullable<typeof n> => n !== null);
 
     const tools = [
         {

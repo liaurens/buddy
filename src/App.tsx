@@ -1,9 +1,4 @@
 import { useState, useEffect } from 'react';
-import { TrackerProvider } from './context/TrackerContext';
-import { TaskProvider } from './context/TaskContext';
-import { ProtocolProvider } from './context/ProtocolContext';
-import { ExperimentProvider } from './context/ExperimentContext';
-import { SmartNotesProvider } from './context/SmartNotesContext';
 import { ToastProvider } from './components/ui/Toast';
 import MainLayout from './layouts/MainLayout';
 // Feature imports
@@ -32,24 +27,35 @@ import TaskSettingsModal from './features/tasks/components/TaskSettingsModal';
 import PomodoroSettingsModal from './features/focus/components/PomodoroSettingsModal';
 import ToolboxSettingsModal from './features/toolbox/components/ToolboxSettingsModal';
 import ChecklistSettingsModal from './features/checklists/components/ChecklistSettingsModal';
+import type { AppRoute } from './constants/routes';
+import { LOADING_TIMEOUT_MS } from './constants/config';
 
-type AppRoute = 'home' | 'health' | 'protocols' | 'experiments' | 'check-in' | 'planning' | 'calendar' | 'reflection' | 'tasks' | 'notes' | 'checklists' | 'toolbox' | 'focus' | 'account';
+type SettingsModalProps = { isOpen: boolean; onClose: () => void };
+
+const SETTINGS_MODALS: Partial<Record<AppRoute, React.ComponentType<SettingsModalProps>>> = {
+  health: TrackerSettingsModal,
+  protocols: ProtocolSettingsModal,
+  experiments: ExperimentSettingsModal,
+  'check-in': CheckInSettingsModal,
+  notes: NoteSettingsModal,
+  calendar: CalendarSettingsModal,
+  planning: PlanningSettingsModal,
+  reflection: ReflectionSettingsModal,
+  tasks: TaskSettingsModal,
+  focus: PomodoroSettingsModal,
+  toolbox: ToolboxSettingsModal,
+  checklists: ChecklistSettingsModal,
+};
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppRoute>('home');
-  const [navParams, setNavParams] = useState<any>(null);
+  const [navParams, setNavParams] = useState<Record<string, unknown> | null>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   const handleSettingsClick = () => {
-    console.log('Settings clicked, current tab:', activeTab);
     setShowSettings(true);
   };
-
-  // Debug: log when showSettings changes
-  useEffect(() => {
-    console.log('showSettings changed to:', showSettings, 'activeTab:', activeTab);
-  }, [showSettings, activeTab]);
 
   // Check if user is logged in
   const { isLoggedIn, isLoading } = useAuth();
@@ -60,13 +66,13 @@ const App: React.FC = () => {
       if (isLoading) {
         setLoadingTimeout(true);
       }
-    }, 5000);
+    }, LOADING_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [isLoading]);
 
-  const handleNavigate = (tab: typeof activeTab, params?: any) => {
+  const handleNavigate = (tab: typeof activeTab, params?: Record<string, unknown>) => {
     setActiveTab(tab);
-    setNavParams(params);
+    setNavParams(params ?? null);
   };
 
   const renderContent = () => {
@@ -145,55 +151,37 @@ const App: React.FC = () => {
 
   return (
     <ToastProvider>
-      <TrackerProvider>
-        <ProtocolProvider>
-          <ExperimentProvider>
-            <TaskProvider>
-              <SmartNotesProvider>
-                <MainLayout
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  onSettingsClick={handleSettingsClick}
-                >
-                  {renderContent()}
-                </MainLayout>
+      <MainLayout
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onSettingsClick={handleSettingsClick}
+      >
+        {renderContent()}
+      </MainLayout>
 
-                {/* Context-Aware Settings Modals */}
-                {showSettings && activeTab === 'health' && <TrackerSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'protocols' && <ProtocolSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'experiments' && <ExperimentSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'check-in' && <CheckInSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'notes' && <NoteSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'calendar' && <CalendarSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'planning' && <PlanningSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'reflection' && <ReflectionSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'tasks' && <TaskSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'focus' && <PomodoroSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'toolbox' && <ToolboxSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
-                {showSettings && activeTab === 'checklists' && <ChecklistSettingsModal isOpen={true} onClose={() => setShowSettings(false)} />}
+      {/* Context-Aware Settings Modal */}
+      {showSettings && SETTINGS_MODALS[activeTab] && (() => {
+        const SettingsModal = SETTINGS_MODALS[activeTab]!;
+        return <SettingsModal isOpen={true} onClose={() => setShowSettings(false)} />;
+      })()}
 
-                {/* Account Page Modal for Home */}
-                {showSettings && (activeTab === 'home' || activeTab === 'account') && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
-                    <div className="relative w-full max-w-2xl mx-4 bg-white rounded-lg shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
-                      <AccountPage />
-                      <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4">
-                        <button
-                          onClick={() => setShowSettings(false)}
-                          className="w-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </SmartNotesProvider>
-            </TaskProvider>
-          </ExperimentProvider>
-        </ProtocolProvider>
-      </TrackerProvider>
+      {/* Account Page Modal for Home */}
+      {showSettings && (activeTab === 'home' || activeTab === 'account') && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowSettings(false)} />
+          <div className="relative w-full max-w-2xl mx-4 bg-white rounded-lg shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto">
+            <AccountPage />
+            <div className="sticky bottom-0 bg-white border-t border-slate-200 p-4">
+              <button
+                onClick={() => setShowSettings(false)}
+                className="w-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </ToastProvider>
   );
 }
