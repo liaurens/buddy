@@ -9,7 +9,6 @@
 
 import React from 'react';
 import { Flame, Target, CheckCircle2, Circle, ChevronRight, Zap, Trophy } from 'lucide-react';
-import { format } from 'date-fns';
 import { useStreak } from '../hooks/useStreak';
 import { useTaskRecommendation } from '../hooks/useTaskRecommendation';
 import { useTasks } from '../hooks/useTasks';

@@ -20,7 +20,7 @@ function getIntensityClass(count: number): string {
     return 'bg-emerald-600';
 }
 
-const StreakCalendar: React.FC<StreakCalendarProps> = ({ calendarData, completedToday }) => {
+const StreakCalendar: React.FC<StreakCalendarProps> = ({ calendarData }) => {
     const today = new Date();
 
     // Build a 5-week grid (35 days) ending today

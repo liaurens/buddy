@@ -6,7 +6,7 @@
  * If a task has subtasks, surfaces the first incomplete subtask.
  */
 
-import { differenceInCalendarDays, isToday, isPast, startOfDay } from 'date-fns';
+import { differenceInCalendarDays, startOfDay } from 'date-fns';
 import type { Task, Subtask } from '../types';
 
 export interface TaskRecommendation {

@@ -6,7 +6,7 @@
  * Also tracks consistency rate (completions / total days in period).
  */
 
-import { startOfDay, subDays, differenceInCalendarDays, format, isSameDay } from 'date-fns';
+import { subDays, differenceInCalendarDays, format } from 'date-fns';
 import type { Task } from '../types';
 
 export interface StreakData {
