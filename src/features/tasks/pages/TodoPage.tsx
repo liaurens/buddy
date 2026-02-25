@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTasks } from '../hooks/useTasks';
+import { useTaskRecommendation } from '../hooks/useTaskRecommendation';
 import { useAuth } from '../../../hooks/useAuth';
 import { getCategorySettings, type TaskSettings } from '../../../services/settings';
-import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon, MapPin, Tag, Settings } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon, MapPin, Tag, Settings, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
 import TaskSettingsModal from '../components/TaskSettingsModal';
+import AITaskSplitter from '../components/AITaskSplitter';
+import type { Task, Subtask } from '../types';
 
 const TodoPage: React.FC = () => {
     const { user } = useAuth();
     const { tasks: allTodos, isLoading, addTask, toggleTask, deleteTask, updateTask } = useTasks();
+    const { ranked } = useTaskRecommendation();
 
     // Settings
     const [settings, setSettings] = useState<TaskSettings | null>(null);
@@ -20,8 +24,10 @@ const TodoPage: React.FC = () => {
     }, [user]);
 
     // Filter todos in memory
-    const activeTodos = allTodos.filter(t => !t.completed);
     const completedTodos = allTodos.filter(t => t.completed).slice(0, settings?.showCompletedCount || 10);
+
+    // Use ranked order for active tasks (smart sorting by recommendation score)
+    const activeTodos = useMemo(() => ranked.map(r => r.task), [ranked]);
 
     const [newTask, setNewTask] = useState('');
     const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
@@ -30,6 +36,8 @@ const TodoPage: React.FC = () => {
     const [location, setLocation] = useState('');
     const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
     const [showSettings, setShowSettings] = useState(false);
+    const [splittingTaskId, setSplittingTaskId] = useState<string | null>(null);
+    const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -78,50 +86,40 @@ const TodoPage: React.FC = () => {
         await deleteTask(id);
     };
 
+    const handleSubtaskToggle = async (task: Task, subtaskId: string) => {
+        const updatedSubtasks = task.subtasks?.map(st =>
+            st.id === subtaskId ? { ...st, completed: !st.completed } : st
+        ) || [];
+
+        // If all subtasks are completed, also complete the parent task
+        const allDone = updatedSubtasks.every(st => st.completed);
+
+        await updateTask({
+            ...task,
+            subtasks: updatedSubtasks,
+            completed: allDone ? true : task.completed,
+        });
+    };
+
+    const handleAISplit = async (task: Task, subtasks: Subtask[]) => {
+        await updateTask({
+            ...task,
+            subtasks,
+        });
+        setSplittingTaskId(null);
+        setExpandedTaskId(task.id);
+    };
+
     const getPriorityColor = (p?: string) => {
-        if (p === 'high') return 'text-rose-500 bg-rose-50';
+        if (p === 'high' || p === 'urgent') return 'text-rose-500 bg-rose-50';
         if (p === 'low') return 'text-blue-500 bg-blue-50';
         return 'text-amber-500 bg-amber-50';
     };
 
-    // Group tasks by label if enabled in settings
-    const groupedTodos = useMemo(() => {
-        if (!settings?.groupByLabel) {
-            return { '': activeTodos };
-        }
-
-        const groups: Record<string, typeof activeTodos> = {};
-
-        // Separate high priority tasks if setting is enabled
-        if (settings.keepHighPrioritySeparate) {
-            const highPriority = activeTodos.filter(t => t.priority === 'high');
-            if (highPriority.length > 0) {
-                groups['🔥 High Priority'] = highPriority;
-            }
-        }
-
-        // Group by labels
-        activeTodos.forEach(todo => {
-            // Skip high priority if we're keeping them separate
-            if (settings.keepHighPrioritySeparate && todo.priority === 'high') {
-                return;
-            }
-
-            if (todo.labels && todo.labels.length > 0) {
-                todo.labels.forEach(label => {
-                    if (!groups[label]) groups[label] = [];
-                    if (!groups[label].find(t => t.id === todo.id)) {
-                        groups[label].push(todo);
-                    }
-                });
-            } else {
-                if (!groups['📋 No Label']) groups['📋 No Label'] = [];
-                groups['📋 No Label'].push(todo);
-            }
-        });
-
-        return groups;
-    }, [activeTodos, settings]);
+    const getScoreBadge = (index: number) => {
+        if (index === 0) return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-600 uppercase">Top Pick</span>;
+        return null;
+    };
 
     return (
         <div className="max-w-2xl mx-auto p-4 pb-24 space-y-6">
@@ -232,64 +230,129 @@ const TodoPage: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {/* Active List - Grouped or Flat */}
-                        {Object.entries(groupedTodos).map(([groupName, todos]) => (
-                            <div key={groupName} className="space-y-2">
-                                {groupName && settings?.groupByLabel && (
-                                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mt-6 first:mt-0">
-                                        {groupName}
-                                    </h3>
-                                )}
-                                {todos.map(todo => (
-                                <div key={todo.id} className="group flex items-start gap-3 bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:border-indigo-200 transition-all">
-                                    <button
-                                        onClick={() => handleToggle(todo.id)}
-                                        className="mt-0.5 text-slate-300 hover:text-indigo-600 transition-colors"
-                                    >
-                                        <Circle size={24} />
-                                    </button>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-slate-800 text-lg leading-tight">{todo.title}</p>
-                                        <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                                            {todo.priority && (
-                                                <span className={`px-2 py-0.5 rounded font-bold uppercase tracking-wider ${getPriorityColor(todo.priority)}`}>
-                                                    {todo.priority}
-                                                </span>
-                                            )}
-                                            {todo.dueDate && (
-                                                <span className={`flex items-center gap-1 font-medium ${isPast(new Date(todo.dueDate)) && !isToday(new Date(todo.dueDate)) ? 'text-rose-500' :
-                                                    isToday(new Date(todo.dueDate)) ? 'text-amber-600' : 'text-slate-400'
-                                                    }`}>
-                                                    <CalendarIcon size={12} />
-                                                    {format(new Date(todo.dueDate), 'MMM d')}
-                                                    {todo.dueTime && ` ${todo.dueTime}`}
-                                                </span>
-                                            )}
-                                            {todo.location && (
-                                                <span className="flex items-center gap-1 font-medium text-slate-500">
-                                                    <MapPin size={12} />
-                                                    {todo.location}
-                                                </span>
-                                            )}
-                                            {todo.labels && todo.labels.length > 0 && (
-                                                <>
-                                                    {todo.labels.map(label => (
-                                                        <span key={label} className="flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-medium">
-                                                            <Tag size={10} />
-                                                            {label}
-                                                        </span>
+                        {/* Smart-sorted active tasks */}
+                        {activeTodos.length > 0 && (
+                            <div className="space-y-2">
+                                {activeTodos.map((todo, index) => (
+                                    <div key={todo.id}>
+                                        <div className={`group bg-white p-4 rounded-xl border shadow-sm hover:border-indigo-200 transition-all ${
+                                            index === 0 ? 'border-indigo-200 ring-1 ring-indigo-100' : 'border-slate-100'
+                                        }`}>
+                                            <div className="flex items-start gap-3">
+                                                <button
+                                                    onClick={() => handleToggle(todo.id)}
+                                                    className="mt-0.5 text-slate-300 hover:text-indigo-600 transition-colors"
+                                                >
+                                                    <Circle size={24} />
+                                                </button>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-medium text-slate-800 text-lg leading-tight">{todo.title}</p>
+                                                        {getScoreBadge(index)}
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                                                        {todo.priority && (
+                                                            <span className={`px-2 py-0.5 rounded font-bold uppercase tracking-wider ${getPriorityColor(todo.priority)}`}>
+                                                                {todo.priority}
+                                                            </span>
+                                                        )}
+                                                        {todo.dueDate && (
+                                                            <span className={`flex items-center gap-1 font-medium ${isPast(new Date(todo.dueDate)) && !isToday(new Date(todo.dueDate)) ? 'text-rose-500' :
+                                                                isToday(new Date(todo.dueDate)) ? 'text-amber-600' : 'text-slate-400'
+                                                                }`}>
+                                                                <CalendarIcon size={12} />
+                                                                {format(new Date(todo.dueDate), 'MMM d')}
+                                                                {todo.dueTime && ` ${todo.dueTime}`}
+                                                            </span>
+                                                        )}
+                                                        {todo.location && (
+                                                            <span className="flex items-center gap-1 font-medium text-slate-500">
+                                                                <MapPin size={12} />
+                                                                {todo.location}
+                                                            </span>
+                                                        )}
+                                                        {todo.labels && todo.labels.length > 0 && (
+                                                            <>
+                                                                {todo.labels.map(label => (
+                                                                    <span key={label} className="flex items-center gap-1 px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-medium">
+                                                                        <Tag size={10} />
+                                                                        {label}
+                                                                    </span>
+                                                                ))}
+                                                            </>
+                                                        )}
+                                                        {todo.subtasks && todo.subtasks.length > 0 && (
+                                                            <span className="flex items-center gap-1 font-medium text-slate-400">
+                                                                {todo.subtasks.filter(st => st.completed).length}/{todo.subtasks.length} subtasks
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Actions */}
+                                                <div className="flex items-center gap-1">
+                                                    {/* AI Split button - only show if no subtasks yet */}
+                                                    {(!todo.subtasks || todo.subtasks.length === 0) && (
+                                                        <button
+                                                            onClick={() => setSplittingTaskId(splittingTaskId === todo.id ? null : todo.id)}
+                                                            className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-indigo-500 transition-all"
+                                                            title="Split with AI"
+                                                        >
+                                                            <Sparkles size={16} />
+                                                        </button>
+                                                    )}
+                                                    {/* Expand subtasks */}
+                                                    {todo.subtasks && todo.subtasks.length > 0 && (
+                                                        <button
+                                                            onClick={() => setExpandedTaskId(expandedTaskId === todo.id ? null : todo.id)}
+                                                            className="p-2 text-slate-300 hover:text-indigo-500 transition-colors"
+                                                        >
+                                                            {expandedTaskId === todo.id ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => handleDelete(todo.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-rose-500 transition-opacity">
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Subtasks (expanded) */}
+                                            {expandedTaskId === todo.id && todo.subtasks && todo.subtasks.length > 0 && (
+                                                <div className="ml-9 mt-3 space-y-1.5 border-l-2 border-slate-100 pl-3">
+                                                    {todo.subtasks.map(st => (
+                                                        <button
+                                                            key={st.id}
+                                                            onClick={() => handleSubtaskToggle(todo, st.id)}
+                                                            className="flex items-center gap-2 w-full text-left py-1 group/st"
+                                                        >
+                                                            {st.completed ? (
+                                                                <CheckCircle size={16} className="text-emerald-500 flex-shrink-0" />
+                                                            ) : (
+                                                                <Circle size={16} className="text-slate-300 group-hover/st:text-indigo-400 flex-shrink-0" />
+                                                            )}
+                                                            <span className={`text-sm ${st.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                                                {st.title}
+                                                            </span>
+                                                        </button>
                                                     ))}
-                                                </>
+                                                </div>
                                             )}
                                         </div>
+
+                                        {/* AI Splitter (shown below the task) */}
+                                        {splittingTaskId === todo.id && (
+                                            <div className="mt-2">
+                                                <AITaskSplitter
+                                                    task={todo}
+                                                    onSplit={(subtasks) => handleAISplit(todo, subtasks)}
+                                                    onCancel={() => setSplittingTaskId(null)}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
-                                    <button onClick={() => handleDelete(todo.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-rose-500 transition-opacity">
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
                                 ))}
                             </div>
-                        ))}
+                        )}
 
                         {activeTodos.length === 0 && (
                             <div className="text-center py-12">

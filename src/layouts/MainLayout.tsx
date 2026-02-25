@@ -42,7 +42,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                         </div>
                     )}
                     <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                        Correlate Tracker
+                        Buddy
                     </h1>
                 </div>
             </header>
