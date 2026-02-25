@@ -59,9 +59,13 @@ export const useTasks = (): TaskState => {
         const task = tasks.find(t => t.id === id);
         if (!task) return;
 
+        const nowCompleting = !task.completed;
         const { error } = await supabase
             .from('todos')
-            .update({ completed: !task.completed })
+            .update({
+                completed: nowCompleting,
+                completed_at: nowCompleting ? new Date().toISOString() : null,
+            })
             .eq('id', id)
             .eq('user_id', userId);
 

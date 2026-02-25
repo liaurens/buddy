@@ -124,8 +124,6 @@ export async function subscribeToPush(userId: string): Promise<PushSubscriptionJ
     throw new SubscriptionFailedError('VAPID public key not configured. Please contact support.');
   }
 
-  console.log('VAPID key configured:', VAPID_PUBLIC_KEY.substring(0, 10) + '...');
-
   // Request permission
   const permission = await requestNotificationPermission();
   if (permission !== 'granted') {
