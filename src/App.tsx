@@ -10,6 +10,7 @@ import { TodoPage, NotesPage } from './features/tasks';
 import { ChecklistsPage } from './features/checklists';
 import { ToolboxPage } from './features/toolbox';
 import PomodoroTimer from './features/focus/components/PomodoroTimer';
+import AssistantChat from './features/assistant/components/AssistantChat';
 import LoginScreen from './features/core/components/LoginScreen';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured } from './services/supabase';
@@ -105,6 +106,12 @@ const App: React.FC = () => {
         return <PlanPage />;
       case 'checklists':
         return <ChecklistsPage />;
+      case 'assistant':
+        return (
+          <div className="max-w-2xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
+            <AssistantChat onNavigate={handleNavigate} />
+          </div>
+        );
       default:
         return <HomePage onNavigate={handleNavigate} />;
     }
