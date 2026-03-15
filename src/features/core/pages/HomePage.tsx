@@ -5,11 +5,12 @@ import { useExperiments } from '../../health-tracking/hooks/useExperiments';
 import { format, isSameDay } from 'date-fns';
 import {
     Zap, Calendar as CalendarIcon,
-    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer, ListChecks, ChevronDown, ChevronUp
+    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer, ListChecks, ChevronDown, ChevronUp, MessageSquare
 } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
 import type { Entry } from '../../health-tracking/types';
 import HabitDashboard from '../../tasks/components/HabitDashboard';
+import AssistantPromptBar from '../../assistant/components/AssistantPromptBar';
 
 interface HomePageProps {
     onNavigate: (tab: AppRoute) => void;
@@ -125,6 +126,18 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <header className="pt-2">
                 <p className="text-slate-500 text-sm font-medium">{format(today, 'EEEE, MMMM do')}</p>
             </header>
+
+            {/* Assistant Prompt Bar */}
+            <AssistantPromptBar onNavigate={onNavigate} />
+
+            {/* Open full chat link */}
+            <button
+                onClick={() => onNavigate('assistant')}
+                className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 transition-colors -mt-2"
+            >
+                <MessageSquare size={13} />
+                Open full chat
+            </button>
 
             {/* Habit Dashboard - The star of the show */}
             <HabitDashboard onNavigateToTasks={() => onNavigate('tasks')} />

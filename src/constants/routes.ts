@@ -16,7 +16,8 @@ export type AppRoute =
     | 'checklists'
     | 'toolbox'
     | 'focus'
-    | 'account';
+    | 'account'
+    | 'assistant';
 
 export const HEALTH_HUB_ROUTES: AppRoute[] = ['health', 'protocols', 'experiments'];
 export const CALENDAR_HUB_ROUTES: AppRoute[] = ['calendar', 'planning', 'reflection'];
