@@ -109,17 +109,23 @@ export async function handleRequest(
   // ─── Step 4: Log (non-blocking) ──────────────────────────────────────────
   const totalTokens = aiCalls.getTotalTokens()
   logInteraction(
-    context.userId,
-    input,
-    routed.action,
-    routed.routingMethod,
-    result as unknown as Record<string, unknown>,
-    context.source,
-    totalTokens.input + totalTokens.output,
-    tracker.getTotalDuration(),
-    context.supabase as Parameters<typeof logInteraction>[8],
-    routed.domain,
-    toolId
+    {
+      userId: context.userId,
+      input,
+      detectedIntent: routed.action,
+      detectionMethod: routed.routingMethod,
+      response: result as unknown as Record<string, unknown>,
+      source: context.source,
+      tokensUsed: totalTokens.input + totalTokens.output,
+      latencyMs: tracker.getTotalDuration(),
+      domain: routed.domain,
+      toolId,
+      routingMethod: routed.routingMethod,
+      errorDetails: result.success ? undefined : (result.data as Record<string, unknown>),
+      aiCalls: aiCalls.toJSON(),
+      processingSteps: tracker.getSteps() as unknown as Array<Record<string, unknown>>,
+    },
+    context.supabase
   )
 
   // ─── Step 5: Build response ───────────────────────────────────────────────

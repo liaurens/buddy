@@ -56,32 +56,44 @@ export async function getLearnings(
   return data ?? []
 }
 
-export async function logInteraction(
-  userId: string,
-  input: string,
-  detectedIntent: string,
-  detectionMethod: string,
-  response: Record<string, unknown>,
-  source: string,
-  tokensUsed: number,
-  latencyMs: number,
-  // deno-lint-ignore no-explicit-any
-  supabase: any,
-  domain?: string,
+export interface LogEntry {
+  userId: string
+  input: string
+  detectedIntent: string
+  detectionMethod: string
+  response: Record<string, unknown>
+  source: string
+  tokensUsed: number
+  latencyMs: number
+  domain?: string
   toolId?: string
+  routingMethod?: string
+  errorDetails?: Record<string, unknown>
+  aiCalls?: Array<Record<string, unknown>>
+  processingSteps?: Array<Record<string, unknown>>
+}
+
+export async function logInteraction(
+  entry: LogEntry,
+  // deno-lint-ignore no-explicit-any
+  supabase: any
 ): Promise<void> {
   try {
     await supabase.from('assistant_logs').insert({
-      user_id: userId,
-      input,
-      detected_intent: detectedIntent,
-      detection_method: detectionMethod,
-      response,
-      tokens_used: tokensUsed,
-      latency_ms: latencyMs,
-      source,
-      domain: domain || null,
-      tool_id: toolId || null,
+      user_id: entry.userId,
+      input: entry.input,
+      detected_intent: entry.detectedIntent,
+      detection_method: entry.detectionMethod,
+      response: entry.response,
+      tokens_used: entry.tokensUsed,
+      latency_ms: entry.latencyMs,
+      source: entry.source,
+      domain: entry.domain || null,
+      tool_id: entry.toolId || null,
+      routing_method: entry.routingMethod || null,
+      error_details: entry.errorDetails || null,
+      ai_calls: entry.aiCalls || [],
+      processing_steps: entry.processingSteps || [],
     })
   } catch {
     // Non-critical, don't throw
