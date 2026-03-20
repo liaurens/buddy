@@ -14,9 +14,10 @@
  */
 
 import type { AgentContext, AssistantResponse, Domain, RoutedCommand, ToolResult } from '../types.ts'
-import { parseSlashCommand, parseLegacyFlag, getAvailableCommands } from './command-parser.ts'
+import { parseSlashCommand, parseLegacyFlag } from './command-parser.ts'
 import { matchRules } from './rule-engine.ts'
 import { classifyWithAI } from './ai-classifier.ts'
+import { AICallCollector } from './ai-wrapper.ts'
 import { PipelineTracker, safeExecute } from './error-handler.ts'
 import { getManager } from '../managers/index.ts'
 import { logInteraction } from '../tools/learnings.tool.ts'
@@ -35,6 +36,7 @@ export async function handleRequest(
   aiConfig?: AIConfig
 ): Promise<{ response: AssistantResponse; tracker: PipelineTracker }> {
   const tracker = new PipelineTracker()
+  const aiCalls = new AICallCollector()
 
   // ─── Step 1: Route ────────────────────────────────────────────────────────
   tracker.startStep('routing')
@@ -60,7 +62,9 @@ export async function handleRequest(
       } else {
         // Tier 3: AI classification
         if (aiConfig?.key) {
-          routed = await classifyWithAI(input, aiConfig.key, aiConfig.provider)
+          const { routed: aiRouted, aiResult } = await classifyWithAI(input, aiConfig.key, aiConfig.provider)
+          routed = aiRouted
+          aiCalls.record(aiResult)
           tracker.endStep('success')
         } else {
           // No AI available — default to note creation
@@ -77,26 +81,7 @@ export async function handleRequest(
     }
   }
 
-  // ─── Step 2: Handle system commands ───────────────────────────────────────
-  if (routed.action === 'system.help') {
-    const commands = getAvailableCommands()
-    const helpText = commands
-      .map(c => `${c.command} — ${c.description}`)
-      .join('\n')
-
-    return {
-      response: {
-        success: true,
-        intent: 'system.help',
-        domain: 'extra',
-        action_taken: 'Available commands',
-        data: { commands, help: helpText },
-      },
-      tracker,
-    }
-  }
-
-  // ─── Step 3: Execute via domain manager ───────────────────────────────────
+  // ─── Step 2: Execute via domain manager ───────────────────────────────────
   tracker.startStep('execution')
   const manager = getManager(routed.domain)
 
@@ -116,12 +101,13 @@ export async function handleRequest(
   }
   tracker.endStep(result.success ? 'success' : 'error')
 
-  // ─── Step 4: Find which tool handled it ───────────────────────────────────
+  // ─── Step 3: Find which tool handled it ───────────────────────────────────
   const toolId = manager.tools.find(t =>
     t.actions.some(a => a.action === routed.action)
   )?.id
 
-  // ─── Step 5: Log (non-blocking) ──────────────────────────────────────────
+  // ─── Step 4: Log (non-blocking) ──────────────────────────────────────────
+  const totalTokens = aiCalls.getTotalTokens()
   logInteraction(
     context.userId,
     input,
@@ -129,14 +115,14 @@ export async function handleRequest(
     routed.routingMethod,
     result as unknown as Record<string, unknown>,
     context.source,
-    0,
+    totalTokens.input + totalTokens.output,
     tracker.getTotalDuration(),
     context.supabase as Parameters<typeof logInteraction>[8],
     routed.domain,
     toolId
   )
 
-  // ─── Step 6: Build response ───────────────────────────────────────────────
+  // ─── Step 5: Build response ───────────────────────────────────────────────
   const response: AssistantResponse = {
     success: result.success,
     intent: routed.action,

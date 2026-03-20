@@ -23,6 +23,9 @@ import { trackerTool } from './tracker.tool.ts'
 // Content domain
 import { notesTool } from './notes.tool.ts'
 
+// Extra / System domain
+import { systemTool } from './system.tool.ts'
+
 // ─── Add new tools here ─────────────────────────────────────────────────────
 // Mental domain (future)
 // import { moodTool } from './mood.tool.ts'
@@ -49,4 +52,7 @@ export const ALL_TOOLS: ToolDefinition[] = [
 
   // Content
   notesTool,
+
+  // Extra / System
+  systemTool,
 ]

@@ -114,6 +114,21 @@ const AssistantResponseCard: React.FC<AssistantResponseCardProps> = ({ response,
               )}
             </div>
           )}
+
+          {/* Help: command list */}
+          {typeof response.data.help === 'string' && (
+            <div className="mt-2 space-y-0.5">
+              {(response.data.help as string).split('\n').map((line, i) => {
+                const [cmd, ...desc] = line.split(' — ')
+                return (
+                  <div key={i} className="flex gap-2 text-xs">
+                    <span className="font-mono text-indigo-600 w-20 flex-shrink-0">{cmd}</span>
+                    <span className="text-slate-500">{desc.join(' — ')}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </>
       )}
 
