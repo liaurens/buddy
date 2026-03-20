@@ -15,7 +15,7 @@
 
 import type { AgentContext, AssistantResponse, Domain, RoutedCommand, ToolResult } from '../types.ts'
 import { parseSlashCommand, parseLegacyFlag } from './command-parser.ts'
-import { matchRules } from './rule-engine.ts'
+import { matchRules, matchDynamicRules, loadDynamicRules } from './rule-engine.ts'
 import { classifyWithAI } from './ai-classifier.ts'
 import { AICallCollector } from './ai-wrapper.ts'
 import { PipelineTracker, safeExecute } from './error-handler.ts'
@@ -60,8 +60,14 @@ export async function handleRequest(
         routed = ruleResult
         tracker.endStep('success')
       } else {
-        // Tier 3: AI classification
-        if (aiConfig?.key) {
+        // Tier 2b: Dynamic rules from database (trainer-generated)
+        const dynamicRules = await loadDynamicRules(context.userId, context.supabase)
+        const dynamicResult = matchDynamicRules(input, dynamicRules)
+        if (dynamicResult) {
+          routed = dynamicResult
+          tracker.endStep('success')
+        } else if (aiConfig?.key) {
+          // Tier 3: AI classification
           const { routed: aiRouted, aiResult } = await classifyWithAI(input, aiConfig.key, aiConfig.provider)
           routed = aiRouted
           aiCalls.record(aiResult)

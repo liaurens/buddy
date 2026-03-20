@@ -1,8 +1,11 @@
 /**
  * Rule Engine — Tier 2: Natural language pattern matching (no AI cost)
  *
- * Auto-collects rules from all registered tools and matches input
- * against them. Rules are checked in registration order.
+ * Two rule sources:
+ * 1. Static rules — auto-collected from registered tools at import time
+ * 2. Dynamic rules — loaded from assistant_rules table at runtime (trainer-generated)
+ *
+ * Static rules are checked first, then dynamic rules.
  */
 
 import type { Domain, Intent, RoutedCommand, RuleDefinition } from '../types.ts'
@@ -12,17 +15,26 @@ interface RegisteredRule extends RuleDefinition {
   domain: Domain
 }
 
-// Build rule list from all registered tools
-const ALL_RULES: RegisteredRule[] = ALL_TOOLS.flatMap(tool =>
+interface DynamicRule {
+  id: string
+  domain: string
+  pattern: string   // regex string from DB
+  action: string
+  confidence: number
+}
+
+// Build static rule list from all registered tools (at import time)
+const STATIC_RULES: RegisteredRule[] = ALL_TOOLS.flatMap(tool =>
   tool.rules.map(rule => ({ ...rule, domain: tool.domain }))
 )
 
 /**
- * Tries to match input against registered natural language rules.
+ * Tries to match input against static registered rules.
  * Returns null if no rule matches.
  */
 export function matchRules(input: string): RoutedCommand | null {
-  for (const rule of ALL_RULES) {
+  // Check static rules first
+  for (const rule of STATIC_RULES) {
     const match = rule.pattern.exec(input)
     if (match) {
       const params = rule.extractParams
@@ -42,8 +54,56 @@ export function matchRules(input: string): RoutedCommand | null {
 }
 
 /**
- * Get all registered rules (useful for debugging/HR agent).
+ * Match against dynamic rules loaded from the database.
+ * Called after static rules fail but before AI classification.
+ */
+export function matchDynamicRules(input: string, dynamicRules: DynamicRule[]): RoutedCommand | null {
+  for (const rule of dynamicRules) {
+    try {
+      const regex = new RegExp(rule.pattern, 'i')
+      if (regex.test(input)) {
+        return {
+          domain: rule.domain as Domain,
+          action: rule.action as Intent,
+          params: { content: input },
+          rawInput: input,
+          routingMethod: 'rule',
+        }
+      }
+    } catch {
+      // Invalid regex — skip this rule
+      console.error(`Invalid dynamic rule pattern: ${rule.pattern} (rule ${rule.id})`)
+    }
+  }
+  return null
+}
+
+/**
+ * Load active dynamic rules for a user from the database.
+ */
+export async function loadDynamicRules(
+  userId: string,
+  // deno-lint-ignore no-explicit-any
+  supabase: any
+): Promise<DynamicRule[]> {
+  const { data, error } = await supabase
+    .from('assistant_rules')
+    .select('id, domain, pattern, action, confidence')
+    .eq('user_id', userId)
+    .eq('active', true)
+    .order('confidence', { ascending: false })
+
+  if (error) {
+    console.error('Failed to load dynamic rules:', error.message)
+    return []
+  }
+
+  return data ?? []
+}
+
+/**
+ * Get all static rules (useful for debugging/HR agent).
  */
 export function getAllRules(): RegisteredRule[] {
-  return ALL_RULES
+  return STATIC_RULES
 }
