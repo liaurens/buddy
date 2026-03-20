@@ -1,5 +1,7 @@
 import { parseDateExpression } from '../date-parser.ts'
-import type { ToolResult } from '../types.ts'
+import type { ToolDefinition, ToolResult, AgentContext } from '../types.ts'
+
+// ─── Action Handlers ────────────────────────────────────────────────────────
 
 export async function createTask(
   title: string,
@@ -8,10 +10,8 @@ export async function createTask(
   supabase: any,
   options: { dueDate?: string; priority?: string; isReminder?: boolean } = {}
 ): Promise<ToolResult> {
-  // Parse date from title if not provided
   const dueDate = options.dueDate || parseDateExpression(title)
 
-  // Clean date expressions from title if date was extracted
   const cleanTitle = dueDate
     ? title
         .replace(/\b(morgen|tomorrow|overmorgen|volgende week|next week)\b/gi, '')
@@ -86,7 +86,6 @@ export async function completeTask(
   // deno-lint-ignore no-explicit-any
   supabase: any
 ): Promise<ToolResult> {
-  // First try exact title match
   let { data: task } = await supabase
     .from('todos')
     .select('id, title')
@@ -95,7 +94,6 @@ export async function completeTask(
     .ilike('title', titleOrId)
     .single()
 
-  // Fuzzy match: contains
   if (!task) {
     const { data: fuzzyTask } = await supabase
       .from('todos')
@@ -131,4 +129,72 @@ export async function completeTask(
     action_taken: `Task completed: "${task.title}"`,
     data: { task_id: task.id, title: task.title },
   }
+}
+
+// ─── Tool Definition ────────────────────────────────────────────────────────
+
+async function handleCreateTask(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  const content = (params.content as string) || ''
+  return createTask(content, context.userId, context.supabase, {
+    isReminder: params.isReminder as boolean,
+  })
+}
+
+async function handleListTasks(_params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  return listTasks(context.userId, context.supabase)
+}
+
+async function handleListTodayTasks(_params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  return listTasks(context.userId, context.supabase, { todayOnly: true })
+}
+
+async function handleCompleteTask(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  const target = (params.target as string) || (params.content as string) || ''
+  return completeTask(target, context.userId, context.supabase)
+}
+
+export const tasksTool: ToolDefinition = {
+  id: 'tasks',
+  domain: 'planning',
+  description: 'Create, list, and complete tasks',
+
+  actions: [
+    { action: 'task.create', description: 'Create a new task', handler: handleCreateTask },
+    { action: 'task.create.reminder', description: 'Create a task with reminder', handler: handleCreateTask },
+    { action: 'task.list', description: 'List open tasks', handler: handleListTasks },
+    { action: 'task.list.today', description: "List today's tasks", handler: handleListTodayTasks },
+    { action: 'task.complete', description: 'Mark a task as done', handler: handleCompleteTask },
+  ],
+
+  commands: [
+    { command: '/task', action: 'task.create', description: 'Create a task: /task Fix bike tire by friday' },
+    { command: '/task.list', action: 'task.list', description: 'List all open tasks' },
+    { command: '/today', action: 'task.list.today', description: "Show today's tasks" },
+    { command: '/done', action: 'task.complete', description: 'Complete a task: /done fix bike' },
+  ],
+
+  rules: [
+    // Reminder tasks
+    {
+      pattern: /^(?:herinner|remind me|remind|herinner me)/i,
+      action: 'task.create.reminder',
+      extractParams: (_m, input) => ({ content: input, isReminder: true }),
+    },
+    // Task creation
+    {
+      pattern: /(?:^-(?:task|todo|taak)\b|^(?:maak taak|create task|add task|nieuwe taak|new task)[:.  ])/i,
+      action: 'task.create',
+      extractParams: (_m, input) => ({ content: input }),
+    },
+    // Today's tasks
+    {
+      pattern: /\b(?:vandaag|today)\b.*\b(?:taken|tasks|todo|doen)\b/i,
+      action: 'task.list.today',
+    },
+    // Task list
+    {
+      pattern: /^(?:wat moet ik doen|show tasks|list tasks|mijn taken|toon taken)\b/i,
+      action: 'task.list',
+    },
+  ],
 }

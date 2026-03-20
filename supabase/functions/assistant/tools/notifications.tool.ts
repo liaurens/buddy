@@ -1,5 +1,7 @@
 import { parseTimeExpression } from '../date-parser.ts'
-import type { ToolResult } from '../types.ts'
+import type { ToolDefinition, ToolResult, AgentContext } from '../types.ts'
+
+// ─── Action Handler ─────────────────────────────────────────────────────────
 
 export async function scheduleNotification(
   input: string,
@@ -9,7 +11,6 @@ export async function scheduleNotification(
 ): Promise<ToolResult> {
   const time = parseTimeExpression(input)
 
-  // Extract the notification message (everything that isn't a time expression)
   const cleanMessage = input
     .replace(/\b(?:notificatie|herinnering|reminder|notification)\s*/gi, '')
     .replace(/\b(?:om|at)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?\b/gi, '')
@@ -55,4 +56,33 @@ export async function scheduleNotification(
     action_taken: `Reminder set for ${timeStr}: "${message}"`,
     data: { notification_id: notification.id, scheduled_for: scheduledFor.toISOString(), message },
   }
+}
+
+// ─── Tool Definition ────────────────────────────────────────────────────────
+
+async function handleScheduleNotification(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  const content = (params.content as string) || ''
+  return scheduleNotification(content, context.userId, context.supabase)
+}
+
+export const notificationsTool: ToolDefinition = {
+  id: 'notifications',
+  domain: 'planning',
+  description: 'Schedule reminders and notifications',
+
+  actions: [
+    { action: 'notification.schedule', description: 'Schedule a notification', handler: handleScheduleNotification },
+  ],
+
+  commands: [
+    { command: '/remind', action: 'notification.schedule', description: 'Set a reminder: /remind 14:00 call dentist' },
+  ],
+
+  rules: [
+    {
+      pattern: /\b(?:notificatie|herinnering|reminder|notification|herinner me om)\b/i,
+      action: 'notification.schedule',
+      extractParams: (_m, input) => ({ content: input }),
+    },
+  ],
 }

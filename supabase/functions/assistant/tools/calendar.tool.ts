@@ -1,4 +1,6 @@
-import type { ToolResult } from '../types.ts'
+import type { ToolDefinition, ToolResult, AgentContext } from '../types.ts'
+
+// ─── Internal Logic ─────────────────────────────────────────────────────────
 
 interface CalendarEvent {
   title: string
@@ -7,10 +9,6 @@ interface CalendarEvent {
   location?: string
 }
 
-/**
- * Parses an iCal feed and returns today's events.
- * Basic VEVENT parser — handles SUMMARY, DTSTART, DTEND, LOCATION.
- */
 function parseIcal(ical: string, targetDate: string): CalendarEvent[] {
   const events: CalendarEvent[] = []
   const eventBlocks = ical.split('BEGIN:VEVENT')
@@ -24,7 +22,6 @@ function parseIcal(ical: string, targetDate: string): CalendarEvent[] {
 
     if (!dtstart) continue
 
-    // Check if this event is on the target date
     const eventDate = dtstart.substring(0, 8)
     if (eventDate !== targetDate.replace(/-/g, '')) continue
 
@@ -46,12 +43,13 @@ function parseIcal(ical: string, targetDate: string): CalendarEvent[] {
   return events.sort((a, b) => a.start.localeCompare(b.start))
 }
 
+// ─── Action Handler ─────────────────────────────────────────────────────────
+
 export async function getTodayEvents(
   userId: string,
   // deno-lint-ignore no-explicit-any
   supabase: any
 ): Promise<ToolResult> {
-  // Get calendar URL from settings
   const { data: setting } = await supabase
     .from('settings')
     .select('value')
@@ -105,4 +103,31 @@ export async function getTodayEvents(
       data: { error: String(err) },
     }
   }
+}
+
+// ─── Tool Definition ────────────────────────────────────────────────────────
+
+async function handleTodayEvents(_params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  return getTodayEvents(context.userId, context.supabase)
+}
+
+export const calendarTool: ToolDefinition = {
+  id: 'calendar',
+  domain: 'planning',
+  description: "View today's calendar events",
+
+  actions: [
+    { action: 'calendar.today', description: "Show today's events", handler: handleTodayEvents },
+  ],
+
+  commands: [
+    { command: '/agenda', action: 'calendar.today', description: "Show today's calendar events" },
+  ],
+
+  rules: [
+    {
+      pattern: /\b(?:agenda|calendar|afspraken|events|schedule)\b/i,
+      action: 'calendar.today',
+    },
+  ],
 }

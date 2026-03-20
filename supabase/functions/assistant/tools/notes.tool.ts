@@ -1,9 +1,7 @@
-import type { ToolResult } from '../types.ts'
+import type { ToolDefinition, ToolResult, AgentContext } from '../types.ts'
 
-/**
- * Parses note content to extract flag and clean content.
- * Reuses the same logic as the quick-note function.
- */
+// ─── Internal Logic ─────────────────────────────────────────────────────────
+
 function parseNoteContent(content: string): { cleanContent: string; flag: string | null } {
   const flagMatch = content.match(/-(\w+)/)
   if (flagMatch) {
@@ -14,9 +12,6 @@ function parseNoteContent(content: string): { cleanContent: string; flag: string
   return { cleanContent: content, flag: null }
 }
 
-/**
- * Detects shopping intent from content.
- */
 function isShoppingNote(content: string, flag: string | null): boolean {
   const lower = content.toLowerCase()
   return (
@@ -31,6 +26,8 @@ function isShoppingNote(content: string, flag: string | null): boolean {
   )
 }
 
+// ─── Action Handlers ────────────────────────────────────────────────────────
+
 export async function createNote(
   content: string,
   userId: string,
@@ -39,11 +36,8 @@ export async function createNote(
   forceCategory?: string
 ): Promise<ToolResult> {
   const { cleanContent, flag } = parseNoteContent(content)
-
-  // Determine effective flag (from content or forced)
   const effectiveFlag = forceCategory || flag
 
-  // Find matching category
   let categoryId: string | null = null
   let categoryName = 'Inbox'
 
@@ -61,7 +55,6 @@ export async function createNote(
     }
   }
 
-  // If shopping but no matching category, try to find a shopping category
   if (!categoryId && isShoppingNote(content, flag)) {
     const { data: shopCat } = await supabase
       .from('note_categories')
@@ -130,4 +123,54 @@ export async function queryNotes(
     action_taken: `Found ${notes?.length ?? 0} notes`,
     data: { notes: notes ?? [] },
   }
+}
+
+// ─── Tool Definition ────────────────────────────────────────────────────────
+
+async function handleCreateNote(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  const content = (params.content as string) || ''
+  return createNote(content, context.userId, context.supabase)
+}
+
+async function handleCreateShoppingNote(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  const content = (params.content as string) || ''
+  return createNote(content, context.userId, context.supabase, 'shop')
+}
+
+async function handleQueryNotes(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  const query = (params.content as string) || ''
+  return queryNotes(query, context.userId, context.supabase)
+}
+
+export const notesTool: ToolDefinition = {
+  id: 'notes',
+  domain: 'content',
+  description: 'Create and search notes',
+
+  actions: [
+    { action: 'note.create', description: 'Create a new note', handler: handleCreateNote },
+    { action: 'note.create.shopping', description: 'Create a shopping note', handler: handleCreateShoppingNote },
+    { action: 'note.query', description: 'Search notes', handler: handleQueryNotes },
+  ],
+
+  commands: [
+    { command: '/note', action: 'note.create', description: 'Create a note: /note Buy new headphones' },
+    { command: '/shop', action: 'note.create.shopping', description: 'Add to shopping list: /shop Milk and cheese' },
+    { command: '/find', action: 'note.query', description: 'Search notes: /find machine learning' },
+  ],
+
+  rules: [
+    // Shopping notes
+    {
+      pattern: /(?:^-(?:shop|boodschap|boodschappen)\b|^(?:koop|buy|haal|boodschappen[: ]))/i,
+      action: 'note.create.shopping',
+      extractParams: (_m, input) => ({ content: input }),
+    },
+    // Generic note flags or note keywords
+    {
+      pattern: /(?:-\w+|^(?:note|notitie|schrijf|schrijf op)[: ])/i,
+      action: 'note.create',
+      extractParams: (_m, input) => ({ content: input }),
+    },
+  ],
 }

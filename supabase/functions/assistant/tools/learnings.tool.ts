@@ -60,13 +60,15 @@ export async function logInteraction(
   userId: string,
   input: string,
   detectedIntent: string,
-  detectionMethod: 'rule' | 'ai',
+  detectionMethod: string,
   response: Record<string, unknown>,
-  source: 'iphone' | 'web',
+  source: string,
   tokensUsed: number,
   latencyMs: number,
   // deno-lint-ignore no-explicit-any
-  supabase: any
+  supabase: any,
+  domain?: string,
+  toolId?: string
 ): Promise<void> {
   try {
     await supabase.from('assistant_logs').insert({
@@ -78,6 +80,8 @@ export async function logInteraction(
       tokens_used: tokensUsed,
       latency_ms: latencyMs,
       source,
+      domain: domain || null,
+      tool_id: toolId || null,
     })
   } catch {
     // Non-critical, don't throw

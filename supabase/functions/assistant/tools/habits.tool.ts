@@ -1,4 +1,6 @@
-import type { ToolResult } from '../types.ts'
+import type { ToolDefinition, ToolResult, AgentContext } from '../types.ts'
+
+// ─── Action Handler ─────────────────────────────────────────────────────────
 
 export async function getHabitsStatus(
   userId: string,
@@ -7,7 +9,6 @@ export async function getHabitsStatus(
 ): Promise<ToolResult> {
   const today = new Date().toISOString().split('T')[0]
 
-  // Fetch habit-type tasks (recurring/is_habit)
   const { data: habits, error } = await supabase
     .from('todos')
     .select('id, title, completed, due_date, created_at')
@@ -45,4 +46,31 @@ export async function getHabitsStatus(
     },
     suggestions: ['View in Tasks →'],
   }
+}
+
+// ─── Tool Definition ────────────────────────────────────────────────────────
+
+async function handleHabitsStatus(_params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  return getHabitsStatus(context.userId, context.supabase)
+}
+
+export const habitsTool: ToolDefinition = {
+  id: 'habits',
+  domain: 'planning',
+  description: 'Check habit streaks and status',
+
+  actions: [
+    { action: 'habits.status', description: 'Show habit/streak status', handler: handleHabitsStatus },
+  ],
+
+  commands: [
+    { command: '/habits', action: 'habits.status', description: 'Check your habit streaks and open tasks' },
+  ],
+
+  rules: [
+    {
+      pattern: /\b(?:streak|habit|gewoonte|gewoontes|consistency)\b/i,
+      action: 'habits.status',
+    },
+  ],
 }

@@ -1,8 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { authenticateRequest } from './auth.ts'
-import { resolveIntent } from './intent.ts'
-import { dispatch } from './dispatcher.ts'
-import { logInteraction } from './tools/learnings.tool.ts'
+import { handleRequest } from './core/general-manager.ts'
 import type { AssistantRequest, AssistantResponse } from './types.ts'
 
 const corsHeaders = {
@@ -15,8 +13,6 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
-
-  const startTime = Date.now()
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -59,40 +55,15 @@ Deno.serve(async (req) => {
     const aiProvider = aiConfig?.['ai_provider'] || 'anthropic'
     const aiKey = aiConfig?.['ai_api_key'] || ''
 
-    // Detect intent
-    const detected = await resolveIntent(
+    // Route and execute via General Manager
+    const source = body.source || 'web'
+    const { response } = await handleRequest(
       body.input.trim(),
+      { userId, supabase, source },
       aiKey ? { key: aiKey, provider: aiProvider } : undefined
     )
 
-    // Execute
-    const source = body.source || 'web'
-    const result = await dispatch(detected, { userId, supabase, source })
-
-    const latencyMs = Date.now() - startTime
-
-    // Log interaction (non-blocking)
-    logInteraction(
-      userId,
-      body.input,
-      detected.intent,
-      detected.method,
-      result as Record<string, unknown>,
-      source,
-      0, // tokens_used — would need to be tracked per AI call
-      latencyMs,
-      supabase
-    )
-
-    const response: AssistantResponse = {
-      success: result.success,
-      intent: detected.intent,
-      action_taken: result.action_taken,
-      data: result.data,
-      suggestions: result.suggestions,
-    }
-
-    return jsonResponse(response, result.success ? 200 : 422)
+    return jsonResponse(response, response.success ? 200 : 422)
   } catch (err) {
     console.error('Assistant error:', err)
     return jsonResponse(
