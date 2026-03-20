@@ -1,5 +1,5 @@
 import React from 'react'
-import { CheckCircle, XCircle, ListTodo, StickyNote, Calendar, Activity, Bell } from 'lucide-react'
+import { CheckCircle, XCircle, ListTodo, StickyNote, Calendar, Activity, Bell, Brain, BookOpen, FolderKanban, TrendingUp, HelpCircle } from 'lucide-react'
 import type { AssistantResponse } from '../types'
 
 interface AssistantResponseCardProps {
@@ -7,7 +7,15 @@ interface AssistantResponseCardProps {
   onNavigate?: (route: string) => void
 }
 
-function intentIcon(intent: string) {
+function intentIcon(intent: string, domain?: string) {
+  // Domain-based icons (preferred when available)
+  if (domain === 'mental') return <Brain size={16} className="text-purple-600" />
+  if (domain === 'studying') return <BookOpen size={16} className="text-teal-600" />
+  if (domain === 'projects') return <FolderKanban size={16} className="text-orange-600" />
+  if (domain === 'improvement') return <TrendingUp size={16} className="text-green-600" />
+  if (domain === 'extra') return <HelpCircle size={16} className="text-slate-500" />
+
+  // Intent-based icons (fallback)
   if (intent.startsWith('note')) return <StickyNote size={16} className="text-cyan-600" />
   if (intent.startsWith('task')) return <ListTodo size={16} className="text-indigo-600" />
   if (intent.startsWith('tracker')) return <Activity size={16} className="text-blue-600" />
@@ -17,7 +25,16 @@ function intentIcon(intent: string) {
   return null
 }
 
-function intentRoute(intent: string): string | null {
+function intentRoute(intent: string, domain?: string): string | null {
+  // Domain-based routing
+  if (domain === 'health') return 'health'
+  if (domain === 'planning') {
+    if (intent.startsWith('calendar')) return 'calendar'
+    return 'tasks'
+  }
+  if (domain === 'content') return 'notes'
+
+  // Intent-based fallback
   if (intent.startsWith('note')) return 'notes'
   if (intent.startsWith('task')) return 'tasks'
   if (intent.startsWith('tracker')) return 'health'
@@ -58,7 +75,7 @@ function EventList({ events }: { events: Array<{ title: string; start: string; e
 }
 
 const AssistantResponseCard: React.FC<AssistantResponseCardProps> = ({ response, onNavigate }) => {
-  const route = intentRoute(response.intent)
+  const route = intentRoute(response.intent, response.domain)
 
   return (
     <div
@@ -85,7 +102,7 @@ const AssistantResponseCard: React.FC<AssistantResponseCardProps> = ({ response,
             <p className="text-xs text-red-500 mt-0.5">{response.error}</p>
           )}
         </div>
-        <div className="flex-shrink-0">{intentIcon(response.intent)}</div>
+        <div className="flex-shrink-0">{intentIcon(response.intent, response.domain)}</div>
       </div>
 
       {/* Inline data display */}

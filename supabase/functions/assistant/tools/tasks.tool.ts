@@ -188,7 +188,7 @@ export const tasksTool: ToolDefinition = {
     },
     // Today's tasks
     {
-      pattern: /\b(?:vandaag|today)\b.*\b(?:taken|tasks|todo|doen)\b/i,
+      pattern: /(?:\b(?:vandaag|today)\b.*\b(?:taken|tasks|todo|doen)\b|\b(?:taken|tasks|todo|doen)\b.*\b(?:vandaag|today)\b)/i,
       action: 'task.list.today',
     },
     // Task list
