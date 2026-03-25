@@ -1,29 +1,27 @@
-import type { ToolResult } from '../types.ts'
+import type { ToolDefinition, ToolResult, AgentContext } from '../types.ts'
+
+// ─── Internal Logic ─────────────────────────────────────────────────────────
 
 interface CheckinValues {
   [metric: string]: number
 }
 
-/**
- * Parses a check-in string like "mood 4, energy 3, sleep 7.5"
- */
+const metricAliases: Record<string, string> = {
+  mood: 'mood', stemming: 'mood', gevoel: 'mood',
+  energy: 'energy', energie: 'energy',
+  sleep: 'sleep', slaap: 'sleep',
+  focus: 'focus', concentratie: 'focus',
+  stress: 'stress',
+  pain: 'pain', pijn: 'pain',
+  exercise: 'exercise', sport: 'exercise',
+  caffeine: 'caffeine', koffie: 'caffeine',
+  alcohol: 'alcohol',
+  water: 'water',
+  steps: 'steps', stappen: 'steps',
+}
+
 export function parseCheckinValues(input: string): CheckinValues {
   const values: CheckinValues = {}
-  const metricAliases: Record<string, string> = {
-    mood: 'mood', stemming: 'mood', gevoel: 'mood',
-    energy: 'energy', energie: 'energy',
-    sleep: 'sleep', slaap: 'sleep',
-    focus: 'focus', concentratie: 'focus',
-    stress: 'stress',
-    pain: 'pain', pijn: 'pain',
-    exercise: 'exercise', sport: 'exercise',
-    caffeine: 'caffeine', koffie: 'caffeine',
-    alcohol: 'alcohol',
-    water: 'water',
-    steps: 'steps', stappen: 'steps',
-  }
-
-  // Match patterns like "metric 4", "metric: 4", "metric=4"
   const pattern = /(\w+)\s*[:=]?\s*(\d+(?:\.\d+)?)/g
   let match
   while ((match = pattern.exec(input.toLowerCase())) !== null) {
@@ -34,9 +32,10 @@ export function parseCheckinValues(input: string): CheckinValues {
       values[canonical] = value
     }
   }
-
   return values
 }
+
+// ─── Action Handlers ────────────────────────────────────────────────────────
 
 export async function logCheckin(
   values: CheckinValues,
@@ -52,7 +51,6 @@ export async function logCheckin(
     }
   }
 
-  // Find tracker IDs for each metric name
   const { data: trackers } = await supabase
     .from('trackers')
     .select('id, name')
@@ -137,7 +135,6 @@ export async function queryTracker(
     }
   }
 
-  // Aggregate by metric
   const summary: Record<string, { avg: number; count: number; values: number[] }> = {}
   for (const entry of entries) {
     // deno-lint-ignore no-explicit-any
@@ -163,4 +160,48 @@ export async function queryTracker(
     action_taken: `Last ${days} days: ${summaryLines}`,
     data: { summary, days, entry_count: entries.length },
   }
+}
+
+// ─── Tool Definition ────────────────────────────────────────────────────────
+
+async function handleCheckin(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  const content = (params.content as string) || ''
+  const values = parseCheckinValues(content)
+  return logCheckin(values, context.userId, context.supabase)
+}
+
+async function handleQuery(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  const days = (params.days as number) || 7
+  return queryTracker(context.userId, context.supabase, days)
+}
+
+export const trackerTool: ToolDefinition = {
+  id: 'tracker',
+  domain: 'health',
+  description: 'Log and query health metrics (sleep, energy, exercise, etc.)',
+
+  actions: [
+    { action: 'tracker.checkin', description: 'Log a health check-in', handler: handleCheckin },
+    { action: 'tracker.query', description: 'Query health trends', handler: handleQuery },
+  ],
+
+  commands: [
+    { command: '/checkin', action: 'tracker.checkin', description: 'Log metrics: /checkin sleep 7 energy 3' },
+    { command: '/health', action: 'tracker.query', description: 'Query health: /health how was my sleep?' },
+  ],
+
+  rules: [
+    // Check-in with values
+    {
+      pattern: /(?:\bcheck[-\s]?in\b|\b(?:sleep|slaap|energy|energie|exercise|sport)\s+\d)/i,
+      action: 'tracker.checkin',
+      extractParams: (_m, input) => ({ content: input }),
+    },
+    // Health query (ends with ?)
+    {
+      pattern: /\b(?:sleep|slaap|energy|energie|focus|stress)\b.*\?$/i,
+      action: 'tracker.query',
+      extractParams: (_m, input) => ({ content: input }),
+    },
+  ],
 }

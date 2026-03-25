@@ -2,17 +2,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 /**
  * Authenticates a request using either:
- * 1. api_key in body (iPhone shortcut) — looks up quick_note_api_key in settings
+ * 1. api_key in body (iPhone shortcut / Siri) — looks up quick_note_api_key in settings
  * 2. Authorization: Bearer <jwt> header (website) — validates via Supabase auth
  *
  * Returns userId on success, throws on failure.
  */
 export async function authenticateRequest(
   req: Request,
-  body: { api_key?: string },
+  body: { api_key?: string; source?: string },
   supabase: ReturnType<typeof createClient>
 ): Promise<string> {
-  // Path 1: api_key in body (iPhone shortcut)
+  // Path 1: api_key in body (iPhone shortcut / Siri)
   if (body.api_key) {
     const { data: setting } = await supabase
       .from('settings')

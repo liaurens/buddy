@@ -8,6 +8,7 @@ export interface AssistantRequest {
 export interface AssistantResponse {
   success: boolean
   intent: string
+  domain?: string
   action_taken: string
   data: Record<string, unknown>
   suggestions?: string[]
