@@ -67,6 +67,12 @@ export interface CalendarSettings {
   showInPlanning: boolean;
   includeAllDayEvents: boolean;
   minEventDurationMinutes: number;
+  // Google Calendar OAuth
+  googleConnected: boolean;
+  googleEmail: string | null;
+  // Color-based task creation
+  importantColorId: number;
+  autoCreateTasksFromCalendar: boolean;
 }
 
 // ============================================================================
