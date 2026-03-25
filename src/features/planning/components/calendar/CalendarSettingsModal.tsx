@@ -10,7 +10,6 @@ import {
 import Modal from '../../../../components/ui/Modal';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const FRONTEND_URL = window.location.origin;
 
 // Google Calendar color palette (colorId 1–11)
 const GOOGLE_COLORS = [
