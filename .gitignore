@@ -36,3 +36,6 @@ nul
 
 # MCP configuration with database credentials
 .mcp.json
+
+# Supabase CLI temp files
+supabase/.temp/
