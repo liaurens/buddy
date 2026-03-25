@@ -69,6 +69,12 @@ export const calendarSettingsSchema = z.object({
   showInPlanning: z.boolean().default(true),
   includeAllDayEvents: z.boolean().default(true),
   minEventDurationMinutes: z.number().int().min(0).max(120).default(15),
+  // Google Calendar OAuth
+  googleConnected: z.boolean().default(false),
+  googleEmail: z.string().nullable().default(null),
+  // Color-based task creation: colorId 11 = Tomato (red) by default
+  importantColorId: z.number().int().min(1).max(11).default(11),
+  autoCreateTasksFromCalendar: z.boolean().default(true),
 });
 
 // ============================================================================
