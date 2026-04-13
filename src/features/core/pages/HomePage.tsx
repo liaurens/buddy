@@ -5,7 +5,7 @@ import { useExperiments } from '../../health-tracking/hooks/useExperiments';
 import { format, isSameDay } from 'date-fns';
 import {
     Zap, Calendar as CalendarIcon,
-    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer, ListChecks, ChevronDown, ChevronUp, MessageSquare
+    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer, ListChecks, ChevronDown, ChevronUp, MessageSquare, Trophy
 } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
 import type { Entry } from '../../health-tracking/types';
@@ -72,6 +72,13 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             icon: <CalendarIcon size={20} className="text-pink-600" />,
             color: 'bg-pink-50 text-pink-900',
             action: () => onNavigate('calendar')
+        },
+        {
+            id: 'growth',
+            title: 'Growth',
+            icon: <Trophy size={20} className="text-fuchsia-600" />,
+            color: 'bg-fuchsia-50 text-fuchsia-900',
+            action: () => onNavigate('growth')
         },
         {
             id: 'notes',

@@ -11,9 +11,11 @@ import { ChecklistsPage } from './features/checklists';
 import { ToolboxPage } from './features/toolbox';
 import PomodoroTimer from './features/focus/components/PomodoroTimer';
 import AssistantChat from './features/assistant/components/AssistantChat';
+import { GrowthPage } from './features/growth/pages/GrowthPage';
 import LoginScreen from './features/core/components/LoginScreen';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured } from './services/supabase';
+import { DevPortal } from './components/dev/DevPortal';
 
 // Settings Modals
 import TrackerSettingsModal from './features/health-tracking/components/tracker/TrackerSettingsModal';
@@ -112,6 +114,8 @@ const App: React.FC = () => {
             <AssistantChat onNavigate={handleNavigate} />
           </div>
         );
+      case 'growth':
+        return <GrowthPage />;
       default:
         return <HomePage onNavigate={handleNavigate} />;
     }
@@ -189,6 +193,7 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+      <DevPortal />
     </ToastProvider>
   );
 }
