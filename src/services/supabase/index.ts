@@ -49,3 +49,4 @@ export { initializeUserData } from './operations/seed';
 export { getExperimentLogs, addExperimentLog } from './operations/experiment-logs';
 export { getExperimentCheckins, saveExperimentCheckin, deleteExperimentCheckin } from './operations/experiment-checkins';
 export { getJournalEntry, saveJournalEntry, getJournalEntries } from './operations/daily-journal';
+export { saveFeedback, getFeedbackForPath } from './operations/site-feedback';

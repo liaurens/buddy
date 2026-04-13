@@ -1,8 +1,26 @@
 import { useEffect, useState } from 'react';
 
 interface InspectorOverlayProps {
-  onSelect: (html: string) => void;
+  onSelect: (html: string, selector: string) => void;
 }
+
+const generateSelector = (el: HTMLElement | null): string => {
+  if (!el || el.tagName.toLowerCase() === 'html') return '';
+  if (el.id) return `#${el.id}`;
+  
+  let str = el.tagName.toLowerCase();
+  
+  if (el.parentElement) {
+    const siblings = Array.from(el.parentElement.children);
+    const index = siblings.indexOf(el);
+    if (siblings.length > 1) {
+      str += `:nth-child(${index + 1})`;
+    }
+  }
+  
+  const parent = generateSelector(el.parentElement);
+  return parent ? parent + ' > ' + str : str;
+};
 
 export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
   const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
@@ -41,7 +59,7 @@ export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
       const target = e.target as HTMLElement;
       if (target) {
         // Ignore our UI elements
-        if (target.closest('.fixed.bottom-4.right-4') || target.closest('.dev-submit-btn') || target.id === 'dev-inspector-overlay') {
+        if (target.closest('.fixed.bottom-4.right-4') || target.closest('.dev-submit-btn') || target.id === 'dev-inspector-overlay' || target.closest('.dev-sticky-note')) {
           return;
         }
         e.preventDefault();
@@ -76,6 +94,11 @@ export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
   }, []);
 
   const handleReportSelected = () => {
+    if (selectedElements.length === 0) return;
+    
+    // We will bind the Sticky Note to the FIRST selected element
+    const anchorSelector = generateSelector(selectedElements[0]);
+
     const fullHtml = selectedElements.map((el, index) => {
       // Clone element to clean it up before saving
       const clone = el.cloneNode(true) as HTMLElement;
@@ -88,7 +111,7 @@ export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
     
     // Clear the selections locally before unmounting
     selectedElements.forEach(el => el.classList.remove('dev-selected-element'));
-    onSelect(fullHtml);
+    onSelect(fullHtml, anchorSelector);
   };
 
   return (

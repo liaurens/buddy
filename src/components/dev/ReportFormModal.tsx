@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
+import { saveFeedback } from '../../../services/supabase/operations/site-feedback';
 
 interface ReportFormModalProps {
   html: string;
+  selector: string | null;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function ReportFormModal({ html, onClose }: ReportFormModalProps) {
+export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFormModalProps) {
   const [description, setDescription] = useState('');
-  const [type, setType] = useState<'bug' | 'feature'>('bug');
+  const [type, setType] = useState<'bug' | 'feature' | 'note'>('bug');
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,22 +20,17 @@ export function ReportFormModal({ html, onClose }: ReportFormModalProps) {
 
     setStatus('submitting');
     try {
-      const response = await fetch('/__dev_report_bug', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          description,
-          code: html,
-          url: window.location.href,
-          date: new Date().toISOString(),
-          type,
-        }),
+      await saveFeedback({
+        type,
+        description,
+        html_snippet: html,
+        selector: selector || '',
+        pathname: window.location.pathname,
       });
 
-      if (!response.ok) throw new Error('Failed to submit');
-      
       setStatus('success');
       setTimeout(() => {
+        onSuccess && onSuccess();
         onClose();
       }, 1500);
     } catch (err) {
@@ -47,7 +45,7 @@ export function ReportFormModal({ html, onClose }: ReportFormModalProps) {
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <h2 className="text-xl font-semibold text-gray-800">Report Issue</h2>
+          <h2 className="text-xl font-semibold text-gray-800">Add Feedback or Note</h2>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200 transition-colors">
             <X size={20} />
           </button>
@@ -58,7 +56,7 @@ export function ReportFormModal({ html, onClose }: ReportFormModalProps) {
             
             {/* Type Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="radio" checked={type === 'bug'} onChange={() => setType('bug')} className="text-blue-600 focus:ring-blue-500" />
@@ -68,18 +66,22 @@ export function ReportFormModal({ html, onClose }: ReportFormModalProps) {
                   <input type="radio" checked={type === 'feature'} onChange={() => setType('feature')} className="text-blue-600 focus:ring-blue-500" />
                   <span className="text-sm text-gray-700">Change Request</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" checked={type === 'note'} onChange={() => setType('note')} className="text-blue-600 focus:ring-blue-500" />
+                  <span className="text-sm text-gray-700">Spatial Sticky Note</span>
+                </label>
               </div>
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Details / Note Content</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="What exactly needs to be fixed or changed here?"
+                placeholder={type === 'note' ? "Write a sticky note to attach to this element..." : "What needs to be fixed or changed here?"}
                 rows={4}
-                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border resize-none"
+                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border resize-none outline-none focus:ring-2"
                 required
                 autoFocus
               />
@@ -87,7 +89,12 @@ export function ReportFormModal({ html, onClose }: ReportFormModalProps) {
 
             {/* Code Snippet Preview */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Selected Element Code</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Selected Element</label>
+              {selector && (
+                <div className="mb-2 text-xs font-mono bg-blue-50 text-blue-800 p-2 rounded border border-blue-100">
+                  Selector: {selector}
+                </div>
+              )}
               <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                 <pre className="text-xs text-gray-300 font-mono">
                   <code>{html}</code>
@@ -109,9 +116,9 @@ export function ReportFormModal({ html, onClose }: ReportFormModalProps) {
             <button
               type="submit"
               disabled={status === 'submitting' || status === 'success' || !description.trim()}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium text-white border border-transparent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${type === 'note' ? 'bg-amber-500 hover:bg-amber-600 focus:ring-amber-500' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'}`}
             >
-              {status === 'submitting' ? 'Saving...' : status === 'success' ? <><Check size={16} /> Saved</> : 'Submit Report'}
+              {status === 'submitting' ? 'Saving...' : status === 'success' ? <><Check size={16} /> Saved</> : (type === 'note' ? 'Stick Note' : 'Submit Report')}
             </button>
           </div>
         </form>
