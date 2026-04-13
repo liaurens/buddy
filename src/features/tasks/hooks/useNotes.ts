@@ -12,6 +12,9 @@ import {
     type DbNoteCategory,
 } from '../../../services/supabase';
 
+// Flags that should instantly create a Task instead of a note
+const TASK_FLAGS = ['todo', 'td'];
+
 // Default categories to seed for new users
 const DEFAULT_CATEGORIES: Omit<NoteCategory, 'id' | 'createdAt'>[] = [
     { name: 'Groceries', flag: 'boodschap', emoji: '🛒', color: '#22c55e' },
@@ -98,11 +101,57 @@ export const useNotes = (): SmartNotesState => {
         enabled: !!userId,
     });
 
+    // Inserts a task directly into the todos table (used when a note flag is a task flag)
+    const addTaskFromNote = useCallback(async (title: string) => {
+        if (!userId) throw new Error('Not authenticated');
+        const { error } = await supabase.from('todos').insert({
+            id: uuidv4(),
+            user_id: userId,
+            title,
+            completed: false,
+            created_at: new Date().toISOString(),
+            priority: 'medium',
+            due_date: null,
+            due_time: null,
+            location: null,
+            labels: null,
+            estimated_time: null,
+            subtasks: null,
+            actual_minutes: null,
+            started_at: null,
+            completed_at: null,
+            historical_minutes: null,
+            recurrence: 'none',
+            recurrence_config: null,
+        });
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+    }, [userId, queryClient]);
+
+    // Converts an existing note to a task: creates the task then deletes the note
+    const convertNoteToTask = useCallback(async (note: import('../types').SmartNote) => {
+        if (!userId) throw new Error('Not authenticated');
+        await addTaskFromNote(note.content);
+        const { error } = await supabase
+            .from('smart_notes')
+            .delete()
+            .eq('id', note.id)
+            .eq('user_id', userId);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
+    }, [userId, addTaskFromNote, queryClient]);
+
     // Add a note with automatic flag detection and sorting
     const addNote = useCallback(async (content: string) => {
         if (!userId) throw new Error('Not authenticated');
 
         const { cleanContent, flag } = parseNoteContent(content);
+
+        // Task flags bypass note storage and create a task directly
+        if (flag && TASK_FLAGS.includes(flag)) {
+            await addTaskFromNote(cleanContent);
+            return;
+        }
 
         // Find matching category by flag
         let categoryId: string | undefined;
@@ -259,6 +308,7 @@ export const useNotes = (): SmartNotesState => {
         categories,
         isLoading,
         addNote,
+        convertNoteToTask,
         updateNote,
         deleteNote,
         moveToCategory,

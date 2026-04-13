@@ -18,11 +18,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { analyzeUnmatchedPatterns } from './analyzer.ts'
-import { analyzeErrorClusters } from './analyzer.ts'
-import { analyzeSlowRoutes } from './analyzer.ts'
-import { analyzeUsageTrends } from './analyzer.ts'
-import { analyzeAICost } from './analyzer.ts'
+import { analyzeUnmatchedPatterns, analyzeErrorClusters, analyzeSlowRoutes, analyzeUsageTrends, analyzeAICost, analyzeErrorLogs } from './analyzer.ts'
 import { writeFindings } from './findings-writer.ts'
 
 const corsHeaders = {
@@ -76,7 +72,21 @@ Deno.serve(async (req) => {
       })
     }
 
-    if (!logs || logs.length === 0) {
+    // Also fetch error logs for analysis
+    let errorQuery = supabase
+      .from('assistant_error_logs')
+      .select('*')
+      .gte('created_at', since.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(500)
+
+    if (userId) {
+      errorQuery = errorQuery.eq('user_id', userId)
+    }
+
+    const { data: errorLogs } = await errorQuery
+
+    if ((!logs || logs.length === 0) && (!errorLogs || errorLogs.length === 0)) {
       return new Response(JSON.stringify({ message: 'No logs to analyze', findings: 0 }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -85,21 +95,37 @@ Deno.serve(async (req) => {
 
     // Group logs by user for per-user analysis
     const logsByUser = new Map<string, typeof logs>()
-    for (const log of logs) {
+    for (const log of (logs || [])) {
       const uid = log.user_id
       if (!logsByUser.has(uid)) logsByUser.set(uid, [])
       logsByUser.get(uid)!.push(log)
     }
 
+    // Group error logs by user
+    // deno-lint-ignore no-explicit-any
+    const errorLogsByUser = new Map<string, any[]>()
+    for (const log of (errorLogs || [])) {
+      const uid = log.user_id
+      if (!errorLogsByUser.has(uid)) errorLogsByUser.set(uid, [])
+      errorLogsByUser.get(uid)!.push(log)
+    }
+
+    // Merge all user IDs
+    const allUserIds = new Set([...logsByUser.keys(), ...errorLogsByUser.keys()])
+
     let totalFindings = 0
 
-    for (const [uid, userLogs] of logsByUser) {
+    for (const uid of allUserIds) {
+      const userLogs = logsByUser.get(uid) || []
+      const userErrorLogs = errorLogsByUser.get(uid) || []
+
       const findings = [
         ...analyzeUnmatchedPatterns(userLogs),
         ...analyzeErrorClusters(userLogs),
         ...analyzeSlowRoutes(userLogs),
         ...analyzeUsageTrends(userLogs),
         ...analyzeAICost(userLogs),
+        ...analyzeErrorLogs(userErrorLogs),
       ]
 
       if (findings.length > 0) {
@@ -108,12 +134,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Trigger trainer agent if we found anything
+    if (totalFindings > 0) {
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/trainer-agent`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        })
+      } catch (err) {
+        console.error('Failed to trigger trainer agent:', err)
+      }
+    }
+
     return new Response(
       JSON.stringify({
         message: `Analysis complete`,
-        users_analyzed: logsByUser.size,
+        users_analyzed: allUserIds.size,
         findings: totalFindings,
         days_analyzed: days,
+        trainer_triggered: totalFindings > 0,
       }),
       {
         status: 200,

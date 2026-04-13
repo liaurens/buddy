@@ -3,11 +3,11 @@ import { useTasks } from '../hooks/useTasks';
 import { useTaskRecommendation } from '../hooks/useTaskRecommendation';
 import { useAuth } from '../../../hooks/useAuth';
 import { getCategorySettings, type TaskSettings } from '../../../services/settings';
-import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon, MapPin, Tag, Settings, Sparkles, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon, MapPin, Tag, Settings, Sparkles, ChevronDown, ChevronRight, Repeat } from 'lucide-react';
 import { format, isPast, isToday } from 'date-fns';
 import TaskSettingsModal from '../components/TaskSettingsModal';
 import AITaskSplitter from '../components/AITaskSplitter';
-import type { Task, Subtask } from '../types';
+import type { Task, Subtask, RecurrencePattern } from '../types';
 
 const TodoPage: React.FC = () => {
     const { user } = useAuth();
@@ -35,6 +35,8 @@ const TodoPage: React.FC = () => {
     const [dueTime, setDueTime] = useState('');
     const [location, setLocation] = useState('');
     const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
+    const [recurrence, setRecurrence] = useState<RecurrencePattern>('none');
+    const [recurrenceDays, setRecurrenceDays] = useState<number[]>([]);
     const [showSettings, setShowSettings] = useState(false);
     const [splittingTaskId, setSplittingTaskId] = useState<string | null>(null);
     const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
@@ -44,7 +46,10 @@ const TodoPage: React.FC = () => {
         if (!newTask.trim()) return;
 
         // Create task with new fields
-        await addTask(newTask, priority, undefined, dueDate || undefined);
+        const recurrenceConfig = recurrence === 'weekly' && recurrenceDays.length > 0
+            ? { daysOfWeek: recurrenceDays }
+            : undefined;
+        await addTask(newTask, priority, undefined, dueDate || undefined, recurrence !== 'none' ? recurrence : undefined, recurrenceConfig);
 
         // If we have additional fields, update the task immediately after creation
         if (dueTime || location || selectedLabels.length > 0) {
@@ -68,6 +73,8 @@ const TodoPage: React.FC = () => {
         setDueTime('');
         setLocation('');
         setSelectedLabels([]);
+        setRecurrence('none');
+        setRecurrenceDays([]);
     };
 
     const toggleLabel = (label: string) => {
@@ -160,7 +167,7 @@ const TodoPage: React.FC = () => {
                 </div>
 
                 {/* Details Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 [&>*:last-child]:col-span-full sm:[&>*:last-child]:col-span-1">
                     <select
                         value={priority}
                         onChange={e => setPriority(e.target.value as any)}
@@ -194,7 +201,44 @@ const TodoPage: React.FC = () => {
                         placeholder="Location"
                         className="bg-slate-50 border border-slate-200 text-sm font-medium text-slate-700 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-400"
                     />
+
+                    <select
+                        value={recurrence}
+                        onChange={e => { setRecurrence(e.target.value as RecurrencePattern); setRecurrenceDays([]); }}
+                        className="bg-slate-50 border border-slate-200 text-sm font-medium text-slate-700 rounded-lg px-3 py-2 cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="none">No repeat</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekdays">Weekdays</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
                 </div>
+
+                {/* Weekly day picker */}
+                {recurrence === 'weekly' && (
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-2">Repeat on</label>
+                        <div className="flex gap-1">
+                            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day, i) => (
+                                <button
+                                    key={day}
+                                    type="button"
+                                    onClick={() => setRecurrenceDays(prev =>
+                                        prev.includes(i) ? prev.filter(d => d !== i) : [...prev, i]
+                                    )}
+                                    className={`w-9 h-9 rounded-full text-xs font-medium transition-colors ${
+                                        recurrenceDays.includes(i)
+                                            ? 'bg-violet-600 text-white'
+                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
+                                >
+                                    {day}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Labels */}
                 {settings && settings.customLabels.length > 0 && (
@@ -284,6 +328,15 @@ const TodoPage: React.FC = () => {
                                                         {todo.subtasks && todo.subtasks.length > 0 && (
                                                             <span className="flex items-center gap-1 font-medium text-slate-400">
                                                                 {todo.subtasks.filter(st => st.completed).length}/{todo.subtasks.length} subtasks
+                                                            </span>
+                                                        )}
+                                                        {todo.recurrence && todo.recurrence !== 'none' && (
+                                                            <span className="flex items-center gap-1 font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded">
+                                                                <Repeat size={10} />
+                                                                {todo.recurrence === 'daily' ? 'Daily'
+                                                                    : todo.recurrence === 'weekdays' ? 'Weekdays'
+                                                                    : todo.recurrence === 'weekly' ? 'Weekly'
+                                                                    : 'Monthly'}
                                                             </span>
                                                         )}
                                                     </div>

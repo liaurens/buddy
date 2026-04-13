@@ -31,7 +31,11 @@ const AssistantChatBubble: React.FC<AssistantChatBubbleProps> = ({ message, onNa
         <span className="text-xs font-bold text-indigo-600">B</span>
       </div>
       <div className="max-w-[85%] space-y-1">
-        {message.response ? (
+        {message.response?.data?.isConversational ? (
+          <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm text-slate-700 shadow-sm whitespace-pre-wrap">
+            {message.response.action_taken || message.content}
+          </div>
+        ) : message.response ? (
           <AssistantResponseCard response={message.response} onNavigate={onNavigate} />
         ) : (
           <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm text-slate-700 shadow-sm">

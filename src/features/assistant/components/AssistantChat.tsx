@@ -1,8 +1,9 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
-import { Trash2, SendHorizontal, Loader2 } from 'lucide-react'
+import { Trash2, SendHorizontal, Loader2, BookOpen } from 'lucide-react'
 import { useAssistant } from '../hooks/useAssistant'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import AssistantChatBubble from './AssistantChatBubble'
+import AssistantGuide from './AssistantGuide'
 import type { AppRoute } from '../../../constants/routes'
 
 // Shared command list (same as PromptBar)
@@ -30,6 +31,7 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
   const [input, setInput] = useState('')
   const [showHints, setShowHints] = useState(false)
   const [selectedHint, setSelectedHint] = useState(0)
+  const [showGuide, setShowGuide] = useState(false)
   const { send, isLoading } = useAssistant()
   const { messages, addUserMessage, addAssistantMessage, clearHistory } = useAssistantHistory()
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -123,20 +125,34 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
             <p className="text-[10px] text-slate-400">AI-powered personal assistant</p>
           </div>
         </div>
-        {messages.length > 0 && (
+        <div className="flex items-center gap-1">
           <button
-            onClick={clearHistory}
-            aria-label="Clear chat history"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            onClick={() => setShowGuide(!showGuide)}
+            aria-label="Toggle guide"
+            className={`p-1.5 rounded-lg transition-colors ${
+              showGuide ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-indigo-500 hover:bg-indigo-50'
+            }`}
           >
-            <Trash2 size={15} />
+            <BookOpen size={15} />
           </button>
-        )}
+          {messages.length > 0 && (
+            <button
+              onClick={clearHistory}
+              aria-label="Clear chat history"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 size={15} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages list */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0">
-        {messages.length === 0 ? (
+        {showGuide && (
+          <AssistantGuide />
+        )}
+        {!showGuide && messages.length === 0 ? (
           <div className="text-center text-slate-400 text-sm py-12">
             <p className="font-medium text-slate-500 mb-1">Start a conversation</p>
             <p className="text-xs max-w-xs mx-auto leading-relaxed">
@@ -144,8 +160,14 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
               "Koop melk", "Wat moet ik vandaag doen?",
               or "Check-in: mood 4, sleep 7"
             </p>
+            <button
+              onClick={() => setShowGuide(true)}
+              className="mt-3 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+            >
+              View setup guide &rarr;
+            </button>
           </div>
-        ) : (
+        ) : !showGuide ? (
           messages.map(message => (
             <AssistantChatBubble
               key={message.id}
@@ -153,7 +175,7 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
               onNavigate={onNavigate as (route: string) => void}
             />
           ))
-        )}
+        ) : null}
         {isLoading && (
           <div className="flex justify-start gap-2 items-start">
             <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">

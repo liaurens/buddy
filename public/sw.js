@@ -7,8 +7,8 @@ const CACHE_NAME = 'buddy-app-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 // Install event - cache resources
@@ -54,7 +54,7 @@ self.addEventListener('push', (event) => {
     title: 'Buddy App',
     body: 'You have a new notification',
     icon: '/icon-192.png',
-    badge: '/icon-badge.png',
+    badge: '/icons/icon-192.png',
     data: {},
   };
 
@@ -205,7 +205,7 @@ self.addEventListener('message', (event) => {
     self.registration.showNotification(title, {
       body,
       icon: '/icon-192.png',
-      badge: '/icon-badge.png',
+      badge: '/icons/icon-192.png',
       data,
       vibrate: [200, 100, 200],
     });

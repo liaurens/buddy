@@ -2,7 +2,8 @@ import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../../../hooks/useAuth';
-import type { Task, TaskState } from '../types';
+import type { Task, TaskState, RecurrencePattern, RecurrenceConfig } from '../types';
+import { calculateNextDueDate } from '../utils/recurrence';
 import {
     supabase,
     dbToTodo,
@@ -32,7 +33,7 @@ export const useTasks = (): TaskState => {
         enabled: !!userId,
     });
 
-    const addTask = useCallback(async (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string) => {
+    const addTask = useCallback(async (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig) => {
         if (!userId) throw new Error('Not authenticated');
 
         const newTask: Task = {
@@ -43,7 +44,9 @@ export const useTasks = (): TaskState => {
             priority: priority || 'medium',
             estimatedTime,
             dueDate,
-            subtasks: []
+            subtasks: [],
+            recurrence: recurrence || 'none',
+            recurrenceConfig,
         };
 
         const dbTask = todoToDb(newTask, userId);
@@ -70,6 +73,27 @@ export const useTasks = (): TaskState => {
             .eq('user_id', userId);
 
         if (error) throw error;
+
+        // Spawn next occurrence for recurring tasks
+        if (nowCompleting && task.recurrence && task.recurrence !== 'none') {
+            const nextDue = calculateNextDueDate(task.dueDate, task.recurrence, task.recurrenceConfig);
+            const nextTask = todoToDb({
+                ...task,
+                id: uuidv4(),
+                completed: false,
+                createdAt: new Date().toISOString(),
+                dueDate: nextDue || undefined,
+                completedAt: undefined,
+                startedAt: undefined,
+                actualMinutes: undefined,
+            }, userId);
+            const { error: insertError } = await supabase.from('todos').insert({
+                ...nextTask,
+                created_at: new Date().toISOString(),
+            });
+            if (insertError) console.error('Failed to create next recurrence:', insertError);
+        }
+
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
     }, [userId, tasks, queryClient]);
 
@@ -97,6 +121,8 @@ export const useTasks = (): TaskState => {
             priority: updates.priority || null,
             estimated_time: updates.estimatedTime || null,
             subtasks: updates.subtasks || null,
+            recurrence: updates.recurrence || 'none',
+            recurrence_config: updates.recurrenceConfig || null,
         };
 
         const { error } = await supabase

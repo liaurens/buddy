@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTrackers } from '../../health-tracking/hooks/useTrackers';
-import { User, LogOut, Download, Upload, Trash2, Zap, Copy, RefreshCw, Check } from 'lucide-react';
+import { User, LogOut, Download, Upload, Trash2, Zap, Copy, RefreshCw, Check, Brain } from 'lucide-react';
+import AssistantDevPanel from '../../assistant/components/AssistantDevPanel';
 import { getSetting, setSetting, supabase } from '../../../services/supabase';
+import { getCategorySettings, updateCategorySettings, type AISettings } from '../../../services/settings';
 import { useToast } from '../../../components/ui/Toast';
 import { dataImportSchema } from '../../../lib/validation/schemas';
 import { v4 as uuidv4 } from 'uuid';
@@ -23,14 +25,35 @@ const AccountPage: React.FC = () => {
     const [apiKeyCopied, setApiKeyCopied] = useState(false);
     const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
-    // Load API key
+    // AI Settings State
+    const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
+    const [aiSaving, setAiSaving] = useState(false);
+
+    // Load API key and AI settings
     useEffect(() => {
         if (user?.id) {
             getSetting(user.id, 'quick_note_api_key').then(key => {
                 if (key) setApiKey(key);
             });
+            getCategorySettings(user.id, 'ai').then(settings => {
+                setAiSettings(settings);
+            });
         }
     }, [user?.id]);
+
+    const handleSaveAiSettings = async () => {
+        if (!user?.id || !aiSettings) return;
+        setAiSaving(true);
+        try {
+            await updateCategorySettings(user.id, 'ai', aiSettings);
+            toast.success('AI settings saved');
+        } catch (error) {
+            console.error('Failed to save AI settings:', error);
+            toast.error('Failed to save AI settings');
+        } finally {
+            setAiSaving(false);
+        }
+    };
 
     const handleLogout = async () => {
         try {
@@ -201,6 +224,69 @@ const AccountPage: React.FC = () => {
                 </div>
             </div>
 
+            {/* AI Provider Settings */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <div className="flex items-center gap-3 mb-4">
+                    <Brain className="text-purple-600" size={24} />
+                    <div>
+                        <h2 className="text-xl font-semibold text-slate-800">AI Provider</h2>
+                        <p className="text-xs text-slate-500">Powers the Buddy Assistant and AI planning</p>
+                    </div>
+                </div>
+
+                {aiSettings ? (
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Provider</label>
+                            <select
+                                value={aiSettings.aiProvider}
+                                onChange={(e) => setAiSettings({ ...aiSettings, aiProvider: e.target.value as AISettings['aiProvider'] })}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm"
+                            >
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="gemini">Google Gemini</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">API Key</label>
+                            <input
+                                type="password"
+                                placeholder="Enter your API key"
+                                value={aiSettings.aiApiKey || ''}
+                                onChange={(e) => setAiSettings({ ...aiSettings, aiApiKey: e.target.value || null })}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm"
+                            />
+                            <p className="text-xs text-slate-400 mt-1">
+                                Get a key from your provider's dashboard. Stored in your account settings.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Model (optional)</label>
+                            <input
+                                type="text"
+                                placeholder="Leave blank for default"
+                                value={aiSettings.aiModel || ''}
+                                onChange={(e) => setAiSettings({ ...aiSettings, aiModel: e.target.value || null })}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm"
+                            />
+                        </div>
+
+                        <button
+                            onClick={handleSaveAiSettings}
+                            disabled={aiSaving}
+                            className="w-full py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors text-sm"
+                        >
+                            {aiSaving ? 'Saving...' : 'Save AI Settings'}
+                        </button>
+                    </div>
+                ) : (
+                    <p className="text-sm text-slate-400">Loading...</p>
+                )}
+            </div>
+
             {/* Notifications Section */}
             {user?.id && (
                 <div className="space-y-3">
@@ -286,6 +372,9 @@ const AccountPage: React.FC = () => {
                     </button>
                 )}
             </div>
+
+            {/* AI Debug Panel */}
+            {user?.id && <AssistantDevPanel userId={user.id} />}
 
             {/* Data Management Section */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">

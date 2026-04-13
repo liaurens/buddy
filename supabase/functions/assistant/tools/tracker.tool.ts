@@ -93,7 +93,7 @@ export async function logCheckin(
     }
   }
 
-  const { error } = await supabase.from('tracker_entries').insert(entries)
+  const { error } = await supabase.from('entries').insert(entries)
 
   if (error) {
     return { success: false, action_taken: 'Failed to save check-in', data: { error: error.message } }
@@ -117,7 +117,7 @@ export async function queryTracker(
   since.setDate(since.getDate() - days)
 
   const { data: entries, error } = await supabase
-    .from('tracker_entries')
+    .from('entries')
     .select('tracker_id, value, timestamp, trackers(name)')
     .eq('user_id', userId)
     .gte('timestamp', since.toISOString())

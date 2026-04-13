@@ -1,5 +1,13 @@
 // Tasks Feature Types
 
+// Recurrence Types
+export type RecurrencePattern = 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays';
+
+export interface RecurrenceConfig {
+    daysOfWeek?: number[];  // 0=Sunday … 6=Saturday; used for 'weekly'
+    interval?: number;       // reserved for "every N days/weeks/months"
+}
+
 // Task Types
 export interface Subtask {
     id: string;
@@ -25,12 +33,16 @@ export interface Task {
     startedAt?: string;            // ISO timestamp when task was started
     completedAt?: string;          // ISO timestamp when task was completed
     historicalMinutes?: number[];  // Previous durations for similar tasks (learning data)
+
+    // Recurrence
+    recurrence?: RecurrencePattern;
+    recurrenceConfig?: RecurrenceConfig;
 }
 
 export interface TaskState {
     tasks: Task[];
     isLoading: boolean;
-    addTask: (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string) => void;
+    addTask: (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig) => void;
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
     updateTask: (task: Task) => void;
@@ -69,6 +81,7 @@ export interface SmartNotesState {
     isLoading: boolean;
 
     addNote: (content: string) => Promise<void>;
+    convertNoteToTask: (note: SmartNote) => Promise<void>;
     updateNote: (note: SmartNote) => Promise<void>;
     deleteNote: (id: string) => Promise<void>;
     moveToCategory: (noteId: string, categoryId: string | null) => Promise<void>;

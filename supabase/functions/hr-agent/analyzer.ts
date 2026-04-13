@@ -180,6 +180,46 @@ export function analyzeUsageTrends(logs: LogEntry[]): Finding[] {
 }
 
 /**
+ * Analyze error logs from assistant_error_logs table.
+ * Groups by error_type + step to find recurring issues.
+ */
+export function analyzeErrorLogs(errorLogs: LogEntry[]): Finding[] {
+  if (errorLogs.length < 3) return []
+
+  // Group by error_type + step
+  const byKey = new Map<string, LogEntry[]>()
+  for (const log of errorLogs) {
+    const key = `${log.error_type || 'unknown'}:${log.step || 'unknown'}`
+    if (!byKey.has(key)) byKey.set(key, [])
+    byKey.get(key)!.push(log)
+  }
+
+  const findings: Finding[] = []
+  for (const [key, logs] of byKey) {
+    if (logs.length >= 3) {
+      const [errorType, step] = key.split(':')
+      findings.push({
+        type: 'error_cluster',
+        severity: logs.length >= 10 ? 'critical' : 'warning',
+        data: {
+          summary: `${logs.length} "${errorType}" errors at "${step}" step`,
+          source: 'error_logs',
+          error_type: errorType,
+          step,
+          error_count: logs.length,
+          error_messages: logs.slice(0, 5).map(l => l.error_message || 'Unknown'),
+          examples: logs.slice(0, 5).map(l => l.input || ''),
+          domains: [...new Set(logs.map(l => l.domain).filter(Boolean))],
+          ai_providers: [...new Set(logs.map(l => l.ai_provider).filter(Boolean))],
+        },
+      })
+    }
+  }
+
+  return findings
+}
+
+/**
  * Analyze AI token usage and cost.
  */
 export function analyzeAICost(logs: LogEntry[]): Finding[] {

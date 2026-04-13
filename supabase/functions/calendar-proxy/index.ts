@@ -33,15 +33,43 @@ serve(async (req) => {
       normalizedUrl = normalizedUrl.replace('http://', 'https://')
     }
 
-    console.log('Fetching calendar from:', normalizedUrl)
+    // SSRF protection: block private/internal IP ranges
+    try {
+      const parsed = new URL(normalizedUrl)
+      const hostname = parsed.hostname
+      if (
+        hostname === 'localhost' ||
+        hostname.startsWith('127.') ||
+        hostname.startsWith('10.') ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('169.254.') ||
+        hostname.startsWith('172.') && parseInt(hostname.split('.')[1]) >= 16 && parseInt(hostname.split('.')[1]) <= 31 ||
+        hostname === '0.0.0.0' ||
+        hostname === '[::1]'
+      ) {
+        return new Response(
+          JSON.stringify({ error: 'URL not allowed' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Invalid URL' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Fetch the calendar data
+    // Fetch the calendar data with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15000)
     const response = await fetch(normalizedUrl, {
       headers: {
         'Accept': 'text/calendar, text/plain, */*',
         'User-Agent': 'BuddyApp/1.0 Calendar Sync',
       },
+      signal: controller.signal,
     })
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       console.error('Calendar fetch failed:', response.status, response.statusText)

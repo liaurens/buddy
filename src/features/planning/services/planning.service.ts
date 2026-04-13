@@ -184,7 +184,7 @@ export async function generateDailyPlan(
             .from('settings')
             .select('key, value')
             .eq('user_id', userId)
-            .in('key', ['ai_provider', 'ai_api_key', 'ai_model']);
+            .in('key', ['ai_aiProvider', 'ai_aiApiKey', 'ai_aiModel']);
 
         if (!settings || settings.length === 0) {
             throw new Error('AI not configured. Please configure AI in Settings.');
@@ -195,9 +195,9 @@ export async function generateDailyPlan(
             return acc;
         }, {} as Record<string, string>);
 
-        const provider = settingsMap['ai_provider'] as 'openai' | 'anthropic' | 'gemini';
-        const apiKey = settingsMap['ai_api_key'];
-        const model = settingsMap['ai_model'];
+        const provider = settingsMap['ai_aiProvider'] as 'openai' | 'anthropic' | 'gemini';
+        const apiKey = settingsMap['ai_aiApiKey'];
+        const model = settingsMap['ai_aiModel'];
 
         if (!provider || !apiKey) {
             throw new Error('AI provider or API key not configured');

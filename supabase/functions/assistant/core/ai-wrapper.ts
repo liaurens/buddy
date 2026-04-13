@@ -34,6 +34,7 @@ interface AIConfig {
 const DEFAULT_MODELS: Record<string, string> = {
   anthropic: 'claude-haiku-4-5-20251001',
   openai: 'gpt-4o-mini',
+  gemini: 'gemini-2.5-flash',
 }
 
 /**
@@ -48,10 +49,18 @@ export async function callAI(
   const startTime = Date.now()
   const model = options.model || DEFAULT_MODELS[config.provider] || DEFAULT_MODELS.anthropic
 
-  if (config.provider === 'anthropic') {
-    return callAnthropic(userMessage, config.key, model, options, startTime)
-  } else {
-    return callOpenAI(userMessage, config.key, model, options, startTime)
+  try {
+    if (config.provider === 'anthropic') {
+      return await callAnthropic(userMessage, config.key, model, options, startTime)
+    } else if (config.provider === 'gemini') {
+      return await callGemini(userMessage, config.key, model, options, startTime)
+    } else {
+      return await callOpenAI(userMessage, config.key, model, options, startTime)
+    }
+  } catch (err) {
+    // Re-throw with enriched context for upstream error loggers
+    const message = err instanceof Error ? err.message : String(err)
+    throw new Error(`AI call failed [${config.provider}/${model}] (purpose: ${options.purpose}): ${message}`)
   }
 }
 
@@ -98,6 +107,55 @@ async function callAnthropic(
     latencyMs: Date.now() - startTime,
     model,
     provider: 'anthropic',
+  }
+}
+
+async function callGemini(
+  userMessage: string,
+  apiKey: string,
+  model: string,
+  options: AICallOptions,
+  startTime: number
+): Promise<AICallResult> {
+  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [
+    { role: 'user', parts: [{ text: userMessage }] },
+  ]
+
+  const body: Record<string, unknown> = {
+    contents,
+    generationConfig: {
+      maxOutputTokens: options.maxTokens ?? 100,
+      ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+    },
+  }
+
+  if (options.systemPrompt) {
+    body.systemInstruction = { parts: [{ text: options.systemPrompt }] }
+  }
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }
+  )
+
+  if (!res.ok) {
+    throw new Error(`Gemini API error: ${res.status} ${await res.text()}`)
+  }
+
+  const data = await res.json()
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+
+  return {
+    content,
+    tokensIn: data.usageMetadata?.promptTokenCount ?? 0,
+    tokensOut: data.usageMetadata?.candidatesTokenCount ?? 0,
+    latencyMs: Date.now() - startTime,
+    model,
+    provider: 'gemini',
   }
 }
 

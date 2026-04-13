@@ -33,18 +33,22 @@ export type Intent =
   | 'tracker.query'
   // Mental
   | 'mood.log'
-  | 'journal.create'
-  | 'reflect.prompt'
+  | 'mood.query'
+  | 'journal.write'
+  | 'journal.reflect'
   // Improvement
   | 'goal.create'
+  | 'goal.list'
   | 'goal.progress'
+  | 'goal.complete'
   // Studying
   | 'study.log'
-  | 'flashcard.create'
-  | 'flashcard.review'
+  | 'study.stats'
   // Projects
   | 'project.create'
+  | 'project.list'
   | 'project.status'
+  | 'project.add'
   // Extra / System
   | 'general.question'
   | 'system.help'
@@ -125,4 +129,5 @@ export interface AgentContext {
   userId: string
   supabase: unknown // SupabaseClient
   source: 'iphone' | 'web' | 'siri'
+  aiConfig?: { key: string; provider: string; model?: string }
 }

@@ -1,0 +1,3 @@
+- generic [ref=e4]:
+  - heading "Configuration Error" [level=1] [ref=e5]
+  - paragraph [ref=e6]: Supabase environment variables are not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.

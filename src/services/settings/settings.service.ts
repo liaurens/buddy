@@ -72,6 +72,7 @@ export async function updateCategorySettings<T extends SettingCategory>(
   // Save each setting to database
   await Promise.all(
     Object.entries(validated).map(async ([key, value]) => {
+      if (value === null || value === undefined) return;
       const dbKey = `${category}_${key}`;
       const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
       await setSetting(userId, dbKey, stringValue);

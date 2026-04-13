@@ -21,19 +21,14 @@ import { AICallCollector } from './ai-wrapper.ts'
 import { PipelineTracker, safeExecute } from './error-handler.ts'
 import { getManager } from '../managers/index.ts'
 import { logInteraction } from '../tools/learnings.tool.ts'
-
-interface AIConfig {
-  key: string
-  provider: string
-}
+import { logError, extractError } from './error-logger.ts'
 
 /**
  * Main entry point: resolve input → route → execute → log → respond.
  */
 export async function handleRequest(
   input: string,
-  context: AgentContext,
-  aiConfig?: AIConfig
+  context: AgentContext
 ): Promise<{ response: AssistantResponse; tracker: PipelineTracker }> {
   const tracker = new PipelineTracker()
   const aiCalls = new AICallCollector()
@@ -66,17 +61,40 @@ export async function handleRequest(
         if (dynamicResult) {
           routed = dynamicResult
           tracker.endStep('success')
-        } else if (aiConfig?.key) {
+        } else if (context.aiConfig?.key) {
           // Tier 3: AI classification
-          const { routed: aiRouted, aiResult } = await classifyWithAI(input, aiConfig.key, aiConfig.provider)
-          routed = aiRouted
-          aiCalls.record(aiResult)
-          tracker.endStep('success')
+          try {
+            const { routed: aiRouted, aiResult } = await classifyWithAI(input, context.aiConfig.key, context.aiConfig.provider, context.aiConfig.model)
+            routed = aiRouted
+            aiCalls.record(aiResult)
+            tracker.endStep('success')
+          } catch (err) {
+            const { message, stack } = extractError(err)
+            logError({
+              userId: context.userId,
+              input,
+              errorType: 'ai_error',
+              errorMessage: message,
+              errorStack: stack,
+              step: 'ai_classification',
+              aiProvider: context.aiConfig.provider,
+              context: { tier: 3 },
+            }, context.supabase)
+            // Fall through to general.question on classification failure
+            routed = {
+              domain: 'extra',
+              action: 'general.question',
+              params: { content: input },
+              rawInput: input,
+              routingMethod: 'ai',
+            }
+            tracker.endStep('error', message)
+          }
         } else {
-          // No AI available — default to note creation
+          // No AI available — route to general.question (tells user to configure AI)
           routed = {
-            domain: 'content',
-            action: 'note.create',
+            domain: 'extra',
+            action: 'general.question',
             params: { content: input },
             rawInput: input,
             routingMethod: 'rule',
@@ -98,12 +116,38 @@ export async function handleRequest(
       `Failed to execute ${routed.action}`
     )
   } else {
-    // Action not found in target domain — fall back to note creation
-    const contentManager = getManager('content')
+    // Action not found in target domain — fall back to general.question
+    const extraManager = getManager('extra')
     result = await safeExecute(
-      () => contentManager.execute('note.create', { content: input }, context),
+      () => extraManager.execute('general.question', { content: input }, context),
       'Failed to process input'
     )
+    logError({
+      userId: context.userId,
+      input,
+      errorType: 'routing_error',
+      errorMessage: `Action "${routed.action}" not found in domain "${routed.domain}"`,
+      step: 'execution',
+      domain: routed.domain,
+      intent: routed.action,
+      routingMethod: routed.routingMethod,
+      context: { params: routed.params },
+    }, context.supabase)
+  }
+
+  // Log execution errors
+  if (!result.success) {
+    logError({
+      userId: context.userId,
+      input,
+      errorType: 'execution_error',
+      errorMessage: result.action_taken,
+      step: 'execution',
+      domain: routed.domain,
+      intent: routed.action,
+      routingMethod: routed.routingMethod,
+      context: { data: result.data, params: routed.params },
+    }, context.supabase)
   }
   tracker.endStep(result.success ? 'success' : 'error')
 

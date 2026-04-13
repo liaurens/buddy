@@ -22,6 +22,8 @@ export function dbToTodo(db: DbTodo): Task {
         startedAt: db.started_at || undefined,
         completedAt: db.completed_at || undefined,
         historicalMinutes: db.historical_minutes || undefined,
+        recurrence: (db.recurrence as Task['recurrence']) || 'none',
+        recurrenceConfig: db.recurrence_config || undefined,
     };
 }
 
@@ -43,5 +45,7 @@ export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: strin
         started_at: todo.startedAt || null,
         completed_at: todo.completedAt || null,
         historical_minutes: todo.historicalMinutes || null,
+        recurrence: todo.recurrence || 'none',
+        recurrence_config: todo.recurrenceConfig || null,
     };
 }

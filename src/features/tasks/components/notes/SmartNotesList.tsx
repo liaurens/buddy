@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Check, MoveRight, Inbox, Edit2, X, Save } from 'lucide-react';
+import { Trash2, Check, MoveRight, Inbox, Edit2, X, Save, ListChecks } from 'lucide-react';
 import { useNotes as useSmartNotes } from '../../hooks/useNotes';
 import type { SmartNote, NoteCategory } from '../../../../types';
 
@@ -12,7 +12,8 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
     categoryId,
     showCategoryBadge = true,
 }) => {
-    const { notes, categories, deleteNote, markProcessed, moveToCategory, updateNote } = useSmartNotes();
+    const { notes, categories, deleteNote, markProcessed, moveToCategory, updateNote, convertNoteToTask } = useSmartNotes();
+    const todoCategory = categories.find(c => c.flag === 'todo');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editContent, setEditContent] = useState('');
     const [movingId, setMovingId] = useState<string | null>(null);
@@ -108,6 +109,15 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                                         {note.content}
                                     </p>
                                     <div className="flex items-center gap-1 flex-shrink-0">
+                                        {!note.processed && todoCategory && note.categoryId === todoCategory.id && (
+                                            <button
+                                                onClick={() => convertNoteToTask(note)}
+                                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                                                title="Convert to Task"
+                                            >
+                                                <ListChecks className="w-4 h-4" />
+                                            </button>
+                                        )}
                                         {!note.processed && (
                                             <button
                                                 onClick={() => markProcessed(note.id)}

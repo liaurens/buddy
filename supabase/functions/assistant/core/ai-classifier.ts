@@ -55,11 +55,13 @@ export interface ClassifyResult {
 export async function classifyWithAI(
   input: string,
   aiKey: string,
-  aiProvider: string
+  aiProvider: string,
+  aiModel?: string
 ): Promise<ClassifyResult> {
   try {
     const aiResult = await callAI(input, { key: aiKey, provider: aiProvider }, {
       purpose: 'intent_classification',
+      model: aiModel,
       maxTokens: 100,
       temperature: 0,
       systemPrompt: SYSTEM_PROMPT,
@@ -77,12 +79,13 @@ export async function classifyWithAI(
       },
       aiResult,
     }
-  } catch {
-    // Fallback: create a note (safe default)
+  } catch (err) {
+    console.error('[ai-classifier] Classification failed:', err)
+    // Fallback: route to general.question instead of silently creating a note
     return {
       routed: {
-        domain: 'content',
-        action: 'note.create',
+        domain: 'extra',
+        action: 'general.question',
         params: { content: input },
         rawInput: input,
         routingMethod: 'ai',

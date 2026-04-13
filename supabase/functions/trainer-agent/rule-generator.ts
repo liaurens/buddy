@@ -30,6 +30,12 @@ export async function generateRules(
       return handleUnmatchedPattern(finding, supabase)
     case 'error_cluster':
       return handleErrorCluster(finding, supabase)
+    case 'slow_route':
+      return handleSlowRoute(finding, supabase)
+    case 'usage_trend':
+      return handleUsageTrend(finding, supabase)
+    case 'ai_cost':
+      return handleAICost(finding, supabase)
     default:
       return { rulesCreated: 0 }
   }
@@ -110,6 +116,78 @@ async function handleErrorCluster(
       },
     })
 
+  return { rulesCreated: 0 }
+}
+
+async function handleSlowRoute(
+  finding: Finding,
+  // deno-lint-ignore no-explicit-any
+  supabase: any
+): Promise<GenerateResult> {
+  const data = finding.data
+  await supabase
+    .from('assistant_learnings')
+    .insert({
+      user_id: finding.user_id,
+      type: 'behavior',
+      content: {
+        source: 'hr_agent',
+        finding_type: 'slow_route',
+        avg_latency_ms: data?.avg_latency_ms,
+        threshold_ms: data?.threshold_ms,
+        slow_count: data?.slow_count,
+        examples: data?.examples?.slice(0, 3),
+        finding_id: finding.id,
+      },
+    })
+  return { rulesCreated: 0 }
+}
+
+async function handleUsageTrend(
+  finding: Finding,
+  // deno-lint-ignore no-explicit-any
+  supabase: any
+): Promise<GenerateResult> {
+  const data = finding.data
+  await supabase
+    .from('assistant_learnings')
+    .insert({
+      user_id: finding.user_id,
+      type: 'note',
+      content: {
+        source: 'hr_agent',
+        finding_type: 'usage_trend',
+        total_requests: data?.total_requests,
+        domain_counts: data?.domain_counts,
+        command_counts: data?.command_counts,
+        method_counts: data?.method_counts,
+        finding_id: finding.id,
+      },
+    })
+  return { rulesCreated: 0 }
+}
+
+async function handleAICost(
+  finding: Finding,
+  // deno-lint-ignore no-explicit-any
+  supabase: any
+): Promise<GenerateResult> {
+  const data = finding.data
+  await supabase
+    .from('assistant_learnings')
+    .insert({
+      user_id: finding.user_id,
+      type: 'behavior',
+      content: {
+        source: 'hr_agent',
+        finding_type: 'ai_cost',
+        total_tokens: data?.total_tokens,
+        total_calls: data?.total_calls,
+        avg_tokens_per_call: data?.avg_tokens_per_call,
+        ai_percentage: data?.ai_percentage,
+        finding_id: finding.id,
+      },
+    })
   return { rulesCreated: 0 }
 }
 

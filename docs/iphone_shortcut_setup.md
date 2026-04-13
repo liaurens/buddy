@@ -60,10 +60,6 @@ supabase functions deploy quick-note
 
 4. Name the shortcut "Quick Note"
 
-### Option B: Import Shortcut
-
-Download the pre-made shortcut (coming soon) and update the URL and API key.
-
 ## Step 4: Set Up Back Tap
 
 1. Go to **Settings** > **Accessibility** > **Touch** > **Back Tap**

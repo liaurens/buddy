@@ -36,3 +36,9 @@ nul
 
 # MCP configuration with database credentials
 .mcp.json
+
+# Playwright MCP temp files
+.playwright-mcp/
+
+# Supabase CLI temp files
+supabase/.temp/

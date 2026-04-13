@@ -271,8 +271,8 @@ export async function showLocalNotification(
 
   await registration.showNotification(title, {
     body,
-    icon: '/icon-192.png',
-    badge: '/icon-badge.png',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
     data,
     tag: 'buddy-notification',
   });

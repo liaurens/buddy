@@ -26,19 +26,18 @@ import { notesTool } from './notes.tool.ts'
 // Extra / System domain
 import { systemTool } from './system.tool.ts'
 
-// ─── Add new tools here ─────────────────────────────────────────────────────
-// Mental domain (future)
-// import { moodTool } from './mood.tool.ts'
-// import { journalTool } from './journal.tool.ts'
+// Mental domain
+import { moodTool } from './mood.tool.ts'
+import { journalTool } from './journal.tool.ts'
 
-// Improvement domain (future)
-// import { goalsTool } from './goals.tool.ts'
+// Improvement domain
+import { goalsTool } from './goals.tool.ts'
 
-// Studying domain (future)
-// import { flashcardsTool } from './flashcards.tool.ts'
+// Studying domain
+import { studyTool } from './study.tool.ts'
 
-// Projects domain (future)
-// import { projectsTool } from './projects.tool.ts'
+// Projects domain
+import { projectsTool } from './projects.tool.ts'
 
 export const ALL_TOOLS: ToolDefinition[] = [
   // Planning
@@ -50,8 +49,21 @@ export const ALL_TOOLS: ToolDefinition[] = [
   // Health
   trackerTool,
 
+  // Mental
+  moodTool,
+  journalTool,
+
   // Content
   notesTool,
+
+  // Improvement
+  goalsTool,
+
+  // Studying
+  studyTool,
+
+  // Projects
+  projectsTool,
 
   // Extra / System
   systemTool,

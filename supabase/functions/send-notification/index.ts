@@ -185,7 +185,7 @@ serve(async (req) => {
       title,
       body,
       icon: icon || '/icon-192.png',
-      badge: badge || '/icon-badge.png',
+      badge: badge || '/icons/icon-192.png',
       tag: tag || 'buddy-notification',
       requireInteraction: requireInteraction || false,
       actions: actions || [],

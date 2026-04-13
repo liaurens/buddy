@@ -36,9 +36,11 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({ autoFocus = fals
     };
 
     // Detect if current input matches a flag
+    const TASK_FLAGS = ['todo', 'td'];
     const flagMatch = content.match(/-(\w+)/);
     const detectedFlag = flagMatch ? flagMatch[1].toLowerCase() : null;
-    const matchingCategory = detectedFlag
+    const isTaskFlag = detectedFlag !== null && TASK_FLAGS.includes(detectedFlag);
+    const matchingCategory = detectedFlag && !isTaskFlag
         ? categories.find(c => c.flag.toLowerCase() === detectedFlag)
         : null;
 
@@ -65,7 +67,14 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({ autoFocus = fals
             </div>
 
             {/* Flag detection indicator */}
-            {matchingCategory && (
+            {isTaskFlag && (
+                <div className="absolute -bottom-6 left-0 text-xs text-blue-600 flex items-center gap-1">
+                    <span>Will instantly create a</span>
+                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">Task</span>
+                </div>
+            )}
+
+            {!isTaskFlag && matchingCategory && (
                 <div className="absolute -bottom-6 left-0 text-xs text-slate-600 flex items-center gap-1">
                     <span>Will sort to:</span>
                     <span
@@ -77,7 +86,7 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({ autoFocus = fals
                 </div>
             )}
 
-            {detectedFlag && !matchingCategory && (
+            {detectedFlag && !isTaskFlag && !matchingCategory && (
                 <div className="absolute -bottom-6 left-0 text-xs text-amber-600">
                     Unknown flag "-{detectedFlag}" - will go to Inbox
                 </div>

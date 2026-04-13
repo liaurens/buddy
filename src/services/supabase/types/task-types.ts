@@ -19,4 +19,6 @@ export interface DbTodo {
     started_at: string | null;
     completed_at: string | null;
     historical_minutes: number[] | null;
+    recurrence: 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays';
+    recurrence_config: { daysOfWeek?: number[]; interval?: number } | null;
 }

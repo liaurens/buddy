@@ -5,7 +5,6 @@ import {
   updateCategorySettings,
   resetCategorySettings,
   type PlanningSettings,
-  type AISettings,
 } from '../../../../services/settings';
 import Modal from '../../../../components/ui/Modal';
 
@@ -14,17 +13,12 @@ interface PlanningSettingsModalProps {
   onClose: () => void;
 }
 
-interface CombinedSettings {
-  planning: PlanningSettings;
-  ai: AISettings;
-}
-
 const PlanningSettingsModal: React.FC<PlanningSettingsModalProps> = ({
   isOpen,
   onClose,
 }) => {
   const { user } = useAuth();
-  const [settings, setSettings] = useState<CombinedSettings | null>(null);
+  const [settings, setSettings] = useState<{ planning: PlanningSettings } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -38,13 +32,9 @@ const PlanningSettingsModal: React.FC<PlanningSettingsModalProps> = ({
     if (!user) return;
     setLoading(true);
     try {
-      const [planningData, aiData] = await Promise.all([
-        getCategorySettings(user.id, 'planning'),
-        getCategorySettings(user.id, 'ai'),
-      ]);
+      const planningData = await getCategorySettings(user.id, 'planning');
       setSettings({
         planning: planningData,
-        ai: aiData,
       });
     } catch (error) {
       console.error('Failed to load planning settings:', error);
@@ -57,10 +47,7 @@ const PlanningSettingsModal: React.FC<PlanningSettingsModalProps> = ({
     if (!user || !settings) return;
     setSaving(true);
     try {
-      await Promise.all([
-        updateCategorySettings(user.id, 'planning', settings.planning),
-        updateCategorySettings(user.id, 'ai', settings.ai),
-      ]);
+      await updateCategorySettings(user.id, 'planning', settings.planning);
       onClose();
     } catch (error) {
       console.error('Failed to save planning settings:', error);
@@ -71,13 +58,10 @@ const PlanningSettingsModal: React.FC<PlanningSettingsModalProps> = ({
 
   const handleReset = async () => {
     if (!user) return;
-    if (!confirm('Reset all planning and AI settings to defaults?')) return;
+    if (!confirm('Reset planning settings to defaults?')) return;
     setSaving(true);
     try {
-      await Promise.all([
-        resetCategorySettings(user.id, 'planning'),
-        resetCategorySettings(user.id, 'ai'),
-      ]);
+      await resetCategorySettings(user.id, 'planning');
       await loadSettings();
     } catch (error) {
       console.error('Failed to reset planning settings:', error);
@@ -94,18 +78,6 @@ const PlanningSettingsModal: React.FC<PlanningSettingsModalProps> = ({
       setSettings({
         ...settings,
         planning: { ...settings.planning, [key]: value },
-      });
-    }
-  };
-
-  const updateAISetting = <K extends keyof AISettings>(
-    key: K,
-    value: AISettings[K]
-  ) => {
-    if (settings) {
-      setSettings({
-        ...settings,
-        ai: { ...settings.ai, [key]: value },
       });
     }
   };
@@ -323,72 +295,6 @@ const PlanningSettingsModal: React.FC<PlanningSettingsModalProps> = ({
           </div>
         </div>
 
-        {/* AI Settings */}
-        <div>
-          <h3 className="text-lg font-medium text-slate-900 mb-4">
-            AI Provider
-          </h3>
-          <div className="space-y-4">
-            {/* AI Provider */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Provider
-              </label>
-              <select
-                value={settings.ai.aiProvider}
-                onChange={(e) =>
-                  updateAISetting(
-                    'aiProvider',
-                    e.target.value as 'openai' | 'anthropic' | 'gemini'
-                  )
-                }
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="gemini">Google Gemini</option>
-              </select>
-            </div>
-
-            {/* AI API Key */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                API Key
-              </label>
-              <input
-                type="password"
-                placeholder="Enter your API key"
-                value={settings.ai.aiApiKey || ''}
-                onChange={(e) =>
-                  updateAISetting(
-                    'aiApiKey',
-                    e.target.value || null
-                  )
-                }
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Your API key is stored securely
-              </p>
-            </div>
-
-            {/* AI Model */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Model
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., gpt-4, claude-3-sonnet, gemini-pro"
-                value={settings.ai.aiModel || ''}
-                onChange={(e) =>
-                  updateAISetting('aiModel', e.target.value || null)
-                }
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </Modal>
   );

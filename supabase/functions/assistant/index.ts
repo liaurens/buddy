@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { authenticateRequest } from './auth.ts'
 import { handleRequest } from './core/general-manager.ts'
+import { logError, extractError } from './core/error-logger.ts'
 import type { AssistantRequest, AssistantResponse } from './types.ts'
 
 const corsHeaders = {
@@ -14,10 +15,13 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  let supabase: ReturnType<typeof createClient> | undefined
+  let inputText = ''
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Parse body
     let body: AssistantRequest
@@ -26,6 +30,8 @@ Deno.serve(async (req) => {
     } catch {
       return jsonResponse({ success: false, error: 'Invalid JSON body', intent: 'unknown', action_taken: '', data: {} }, 400)
     }
+
+    inputText = body.input || ''
 
     // Validate input
     if (!body.input || body.input.trim() === '') {
@@ -36,7 +42,18 @@ Deno.serve(async (req) => {
     let userId: string
     try {
       userId = await authenticateRequest(req, body, supabase)
-    } catch {
+    } catch (err) {
+      const { message, stack } = extractError(err)
+      // Log auth error with whatever context we have
+      logError({
+        userId: 'unknown',
+        input: inputText,
+        errorType: 'auth_error',
+        errorMessage: message,
+        errorStack: stack,
+        step: 'auth',
+        requestMetadata: { source: body.source },
+      }, supabase)
       return jsonResponse({ success: false, error: 'Authentication failed', intent: 'unknown', action_taken: '', data: {} }, 401)
     }
 
@@ -45,27 +62,42 @@ Deno.serve(async (req) => {
       .from('settings')
       .select('key, value')
       .eq('user_id', userId)
-      .in('key', ['ai_provider', 'ai_api_key'])
+      .in('key', ['ai_aiProvider', 'ai_aiApiKey', 'ai_aiModel'])
 
     const aiConfig = aiSettings?.reduce((acc: Record<string, string>, s: { key: string; value: string }) => {
       acc[s.key] = s.value
       return acc
     }, {})
 
-    const aiProvider = aiConfig?.['ai_provider'] || 'anthropic'
-    const aiKey = aiConfig?.['ai_api_key'] || ''
+    const aiProvider = aiConfig?.['ai_aiProvider'] || 'anthropic'
+    const aiKey = aiConfig?.['ai_aiApiKey'] || ''
+    const rawModel = aiConfig?.['ai_aiModel']
+    const aiModel = (rawModel && rawModel !== 'null') ? rawModel : undefined
+    const resolvedAiConfig = aiKey ? { key: aiKey, provider: aiProvider, model: aiModel } : undefined
 
     // Route and execute via General Manager
     const source = body.source || 'web'
     const { response } = await handleRequest(
       body.input.trim(),
-      { userId, supabase, source },
-      aiKey ? { key: aiKey, provider: aiProvider } : undefined
+      { userId, supabase, source, aiConfig: resolvedAiConfig }
     )
 
     return jsonResponse(response, response.success ? 200 : 422)
   } catch (err) {
     console.error('Assistant error:', err)
+    const { message, stack } = extractError(err)
+    // Log unhandled errors
+    if (supabase) {
+      logError({
+        userId: 'unknown',
+        input: inputText,
+        errorType: 'execution_error',
+        errorMessage: message,
+        errorStack: stack,
+        step: 'execution',
+        requestMetadata: { unhandled: true },
+      }, supabase)
+    }
     return jsonResponse(
       { success: false, error: 'Internal server error', intent: 'unknown', action_taken: '', data: {} },
       500
