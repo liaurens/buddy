@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
-import { saveFeedback } from '../../../services/supabase/operations/site-feedback';
+import { saveFeedback } from '../../services/supabase/operations/site-feedback';
 
 interface ReportFormModalProps {
   html: string;

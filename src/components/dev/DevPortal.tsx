@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { InspectorOverlay } from './InspectorOverlay';
 import { ReportFormModal } from './ReportFormModal';
 import { Bug, X, FileText } from 'lucide-react';
-import { getFeedbackForPath, SiteFeedback } from '../../services/supabase/operations/site-feedback';
+import { getFeedbackForPath } from '../../services/supabase/operations/site-feedback';
+import type { SiteFeedback } from '../../services/supabase/operations/site-feedback';
 
 export function DevPortal() {
   const [isActive, setIsActive] = useState(false);
