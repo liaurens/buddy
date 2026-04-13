@@ -10,7 +10,7 @@ export type { DbTracker, DbEntry } from './tracker-types';
 export type { DbProtocol, DbCycle, DbDose } from './protocol-types';
 
 // Experiment and Correlation types
-export type { DbExperiment, DbCorrelation, DbExperimentLog } from './experiment-types';
+export type { DbExperiment, DbCorrelation, DbExperimentLog, DbExperimentCheckinEntry, DbDailyJournalEntry, DbExperimentAgentConversation } from './experiment-types';
 
 // Strategy types
 export type { DbStrategy } from './strategy-types';

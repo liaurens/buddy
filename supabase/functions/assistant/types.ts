@@ -31,6 +31,8 @@ export type Intent =
   // Health
   | 'tracker.checkin'
   | 'tracker.query'
+  | 'experiment.ask'
+  | 'experiment.list'
   // Mental
   | 'mood.log'
   | 'mood.query'

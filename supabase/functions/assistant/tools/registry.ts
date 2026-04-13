@@ -19,6 +19,7 @@ import { notificationsTool } from './notifications.tool.ts'
 
 // Health domain
 import { trackerTool } from './tracker.tool.ts'
+import { experimentAgentTool } from './experiment-agent.tool.ts'
 
 // Content domain
 import { notesTool } from './notes.tool.ts'
@@ -48,6 +49,7 @@ export const ALL_TOOLS: ToolDefinition[] = [
 
   // Health
   trackerTool,
+  experimentAgentTool,
 
   // Mental
   moodTool,

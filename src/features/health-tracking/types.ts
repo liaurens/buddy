@@ -101,17 +101,46 @@ export interface Dose {
 }
 
 // Experiment Types
+export interface ExperimentMetric {
+    id: string;
+    name: string;
+    emoji: string;
+    type: TrackerType;
+    unit?: string;
+    min?: number;
+    max?: number;
+    required?: boolean;
+    description?: string;
+}
+
+export interface ExperimentPhase {
+    id: string;
+    name: string;
+    startDate: string;
+    endDate?: string;
+    description?: string;
+    order: number;
+}
+
+export type ExperimentStatus = 'active' | 'paused' | 'completed' | 'archived';
+
 export interface Experiment {
     id: string;
     name: string;
     description?: string;
+    hypothesis?: string;
     tracker1Id: string;
     independentIds?: string[]; // Array of tracker/protocol IDs being tested (Causes)
     tracker2Id: string; // The dependent variable (Effect)
     startDate: string;
     endDate?: string;
-    active: boolean;
-    frequency?: 'daily' | 'weekly'; // Reminder frequency
+    active: boolean; // Derived from status for backward compat
+    status: ExperimentStatus;
+    phases: ExperimentPhase[];
+    customMetrics: ExperimentMetric[];
+    checkinSchedule: 'daily' | 'twice_daily' | 'weekly';
+    tags: string[];
+    frequency?: 'daily' | 'weekly'; // Legacy reminder frequency
 }
 
 export interface ExperimentLog {
@@ -121,6 +150,34 @@ export interface ExperimentLog {
     content: string;
     moodRating?: number;
     createdAt: string;
+}
+
+export interface ExperimentCheckinEntry {
+    id: string;
+    experimentId: string;
+    phaseId?: string;
+    date: string;
+    metricId: string;
+    value?: number;
+    textValue?: string;
+    createdAt: string;
+}
+
+export interface DailyJournalEntry {
+    id: string;
+    date: string;
+    prompts: JournalPromptResponse[];
+    moodRating?: number;
+    energyRating?: number;
+    wins: string[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface JournalPromptResponse {
+    promptId: string;
+    question: string;
+    answer: string;
 }
 
 // Analytics Types

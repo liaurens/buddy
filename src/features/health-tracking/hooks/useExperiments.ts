@@ -46,7 +46,7 @@ export const useExperiments = (): ExperimentContextType => {
         const newExperiment = {
             ...experiment,
             id,
-            active: true,
+            active: experiment.status === 'active',
         };
 
         const dbExperiment = experimentToDb(newExperiment, userId);
@@ -60,22 +60,13 @@ export const useExperiments = (): ExperimentContextType => {
     const updateExperiment = useCallback(async (experiment: Experiment) => {
         if (!userId) throw new Error('Not authenticated');
 
-        const { id, ...updates } = experiment;
-        const dbUpdates = {
-            name: updates.name,
-            description: updates.description || null,
-            tracker1_id: updates.tracker1Id || null,
-            tracker2_id: updates.tracker2Id || null,
-            start_date: updates.startDate || null,
-            end_date: updates.endDate || null,
-            active: updates.active,
-            frequency: updates.frequency || null,
-        };
+        const dbExp = experimentToDb(experiment, userId);
+        const { id: _id, user_id: _uid, ...updates } = dbExp as Record<string, unknown>;
 
         const { error } = await supabase
             .from('experiments')
-            .update(dbUpdates)
-            .eq('id', id)
+            .update(updates)
+            .eq('id', experiment.id)
             .eq('user_id', userId);
 
         if (error) throw error;
@@ -96,7 +87,7 @@ export const useExperiments = (): ExperimentContextType => {
     }, [userId, queryClient]);
 
     const getActiveExperiments = useCallback(() => {
-        return experiments.filter(e => e.active);
+        return experiments.filter(e => e.status === 'active');
     }, [experiments]);
 
     return {

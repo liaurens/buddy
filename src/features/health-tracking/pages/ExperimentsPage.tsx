@@ -36,6 +36,7 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
             <ExperimentDetails
                 experiment={selectedExperiment}
                 onBack={() => setSelectedExperiment(null)}
+                onRunAnalysis={() => handleRunAnalysis(selectedExperiment)}
             />
         );
     }

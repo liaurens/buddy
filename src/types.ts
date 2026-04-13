@@ -13,6 +13,12 @@ export type {
     Dose,
     Experiment,
     ExperimentLog,
+    ExperimentMetric,
+    ExperimentPhase,
+    ExperimentStatus,
+    ExperimentCheckinEntry,
+    DailyJournalEntry,
+    JournalPromptResponse,
     CorrelationResult,
     TLCCResult
 } from './features/health-tracking/types';

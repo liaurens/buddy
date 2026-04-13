@@ -1,35 +1,59 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Plus, Calendar as CalendarIcon, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar as CalendarIcon, Save, CheckSquare, BarChart3, Bot, Settings as SettingsIcon, FileText, Pause, Check, Archive } from 'lucide-react';
 import { format } from 'date-fns';
-import type { Experiment } from '../../../../types';
+import type { Experiment, ExperimentStatus } from '../../../../types';
 import { getExperimentLogs, addExperimentLog } from '../../../../services/supabase';
 import { useTrackers } from '../../hooks/useTrackers';
 import { useProtocols } from '../../hooks/useProtocols';
+import { useExperiments } from '../../hooks/useExperiments';
+import { useExperimentCheckins } from '../../hooks/useExperimentCheckins';
+import ExperimentCheckinForm from './ExperimentCheckinForm';
+import ExperimentPhaseTimeline from './ExperimentPhaseTimeline';
+import ExperimentAnalysisPanel from './ExperimentAnalysisPanel';
+import ExperimentMetricBuilder from './ExperimentMetricBuilder';
+import ExperimentAgentChat from './ExperimentAgentChat';
 
 interface ExperimentDetailsProps {
     experiment: Experiment;
     onBack: () => void;
+    onRunAnalysis?: () => void;
 }
 
-const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment, onBack }) => {
+type Tab = 'checkin' | 'notes' | 'analysis' | 'agent' | 'settings';
+
+const STATUS_CONFIG: Record<ExperimentStatus, { label: string; color: string }> = {
+    active: { label: 'Active', color: 'bg-emerald-100 text-emerald-700' },
+    paused: { label: 'Paused', color: 'bg-amber-100 text-amber-700' },
+    completed: { label: 'Completed', color: 'bg-indigo-100 text-indigo-700' },
+    archived: { label: 'Archived', color: 'bg-slate-100 text-slate-600' },
+};
+
+const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment: initialExperiment, onBack, onRunAnalysis }) => {
     const queryClient = useQueryClient();
     const { trackers } = useTrackers();
     const { protocols } = useProtocols();
+    const { experiments, updateExperiment } = useExperiments();
+    const { checkins, saveCheckin } = useExperimentCheckins(initialExperiment.id);
 
-    // Notes Form State
+    // Always read the latest experiment from the list in case it was updated
+    const experiment = experiments.find(e => e.id === initialExperiment.id) || initialExperiment;
+
+    const [activeTab, setActiveTab] = useState<Tab>('checkin');
+    const [checkinDate, setCheckinDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+
+    // Notes tab state
     const [isAddingNote, setIsAddingNote] = useState(false);
     const [noteDate, setNoteDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [noteContent, setNoteContent] = useState('');
     const [moodRating, setMoodRating] = useState<number | undefined>(undefined);
 
-    // Fetch Logs
-    const { data: logs = [], isLoading } = useQuery({
+    // Fetch notes
+    const { data: logs = [], isLoading: logsLoading } = useQuery({
         queryKey: ['experiment_logs', experiment.id],
         queryFn: () => getExperimentLogs(experiment.id),
     });
 
-    // Add Log Mutation
     const addLogMutation = useMutation({
         mutationFn: async () => {
             return await addExperimentLog({
@@ -50,144 +74,210 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment, onBac
 
     const getVariableName = (id: string) => {
         const t = trackers.find(t => t.id === id);
-        if (t) return t.name;
+        if (t) return `${t.emoji} ${t.name}`;
         const p = protocols.find(p => p.id === id);
-        if (p) return p.name;
+        if (p) return `💊 ${p.name}`;
         return 'Unknown';
     };
 
-    const independentNames = (experiment.independentIds || (experiment.tracker1Id ? [experiment.tracker1Id] : []))
-        .map(getVariableName)
-        .join(' + ');
+    const checkinsForDate = checkins.filter(c => c.date === checkinDate);
 
-    const dependentName = getVariableName(experiment.tracker2Id);
+    const daysActive = Math.floor(
+        (new Date().getTime() - new Date(experiment.startDate).getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    const handleStatusChange = async (status: ExperimentStatus) => {
+        await updateExperiment({ ...experiment, status, active: status === 'active' });
+    };
+
+    const statusInfo = STATUS_CONFIG[experiment.status] || STATUS_CONFIG.active;
+
+    const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+        { id: 'checkin', label: 'Check-in', icon: <CheckSquare size={16} /> },
+        { id: 'notes', label: 'Notes', icon: <FileText size={16} /> },
+        { id: 'analysis', label: 'Analysis', icon: <BarChart3 size={16} /> },
+        { id: 'agent', label: 'Agent', icon: <Bot size={16} /> },
+        { id: 'settings', label: 'Settings', icon: <SettingsIcon size={16} /> },
+    ];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* Header */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-start gap-3">
                 <button
                     onClick={onBack}
                     className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-800">{experiment.name}</h2>
-                    <p className="text-slate-500">
-                        Testing effect of <span className="font-medium text-indigo-600">{independentNames}</span> on <span className="font-medium text-indigo-600">{dependentName}</span>
-                    </p>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-2xl font-bold text-slate-800">{experiment.name}</h2>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusInfo.color}`}>
+                            {statusInfo.label}
+                        </span>
+                    </div>
+                    {experiment.hypothesis && (
+                        <p className="text-slate-500 text-sm mt-1">{experiment.hypothesis}</p>
+                    )}
+                    <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
+                        <span>Day {daysActive}</span>
+                        <span>·</span>
+                        <span>{checkins.length} check-ins</span>
+                        <span>·</span>
+                        <span>{logs.length} notes</span>
+                    </div>
                 </div>
             </div>
 
-            {/* Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Phase Timeline */}
+            {experiment.phases.length > 0 && (
+                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <ExperimentPhaseTimeline phases={experiment.phases} startDate={experiment.startDate} />
+                </div>
+            )}
 
-                {/* Main Content (Charts/Stats Placeholder + Logs) */}
-                <div className="lg:col-span-2 space-y-6">
+            {/* Tabs */}
+            <div className="flex gap-1 border-b border-slate-200 overflow-x-auto">
+                {tabs.map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                            activeTab === tab.id
+                                ? 'border-indigo-600 text-indigo-600'
+                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        {tab.icon}
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
 
-                    {/* Placeholder for Analysis/Chart */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                        <h3 className="font-semibold text-lg mb-4 text-slate-800">Quick Stats</h3>
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                            <div className="p-4 bg-slate-50 rounded-lg">
-                                <div className="text-2xl font-bold text-slate-700">{logs.length}</div>
-                                <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Logs</div>
-                            </div>
-                            <div className="p-4 bg-slate-50 rounded-lg">
-                                <div className="text-2xl font-bold text-slate-700">
-                                    {Math.floor((new Date().getTime() - new Date(experiment.startDate).getTime()) / (1000 * 60 * 60 * 24))}
-                                </div>
-                                <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Days Active</div>
-                            </div>
-                            <div className="p-4 bg-slate-50 rounded-lg">
-                                <div className="text-2xl font-bold text-slate-700">N/A</div>
-                                <div className="text-xs text-slate-500 uppercase tracking-wider mt-1">Pearson R</div>
-                            </div>
+            {/* Tab Content */}
+            <div className="bg-white rounded-xl border border-slate-200 p-5">
+                {activeTab === 'checkin' && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm text-slate-600">Date:</label>
+                            <input
+                                type="date"
+                                value={checkinDate}
+                                onChange={e => setCheckinDate(e.target.value)}
+                                className="p-1.5 border border-slate-200 rounded-lg text-sm"
+                            />
                         </div>
-                    </div>
+                        <ExperimentCheckinForm
+                            metrics={experiment.customMetrics}
+                            phases={experiment.phases}
+                            date={checkinDate}
+                            existingEntries={checkinsForDate}
+                            onSave={saveCheckin}
+                        />
 
-                    {/* Daily Notes Section */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        {/* Recent check-ins */}
+                        {checkins.length > 0 && (
+                            <div className="pt-4 mt-4 border-t border-slate-100">
+                                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Recent Check-ins</h4>
+                                <div className="space-y-1">
+                                    {Array.from(new Set(checkins.map(c => c.date))).slice(0, 7).map(date => {
+                                        const entries = checkins.filter(c => c.date === date);
+                                        return (
+                                            <button
+                                                key={date}
+                                                onClick={() => setCheckinDate(date)}
+                                                className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg text-sm"
+                                            >
+                                                <span className="text-slate-700">{format(new Date(date), 'EEE, MMM d')}</span>
+                                                <span className="text-xs text-slate-400">{entries.length} metrics</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'notes' && (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
                             <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                                 <CalendarIcon size={18} className="text-indigo-600" />
-                                Daily Logs
+                                Daily Notes
                             </h3>
                             <button
                                 onClick={() => setIsAddingNote(true)}
-                                className="text-sm bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:border-indigo-300 hover:text-indigo-600 transition-colors shadow-sm flex items-center gap-1.5"
+                                className="text-sm bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:border-indigo-300 hover:text-indigo-600 flex items-center gap-1.5"
                             >
                                 <Plus size={16} /> Add Note
                             </button>
                         </div>
 
                         {isAddingNote && (
-                            <div className="p-4 border-b border-slate-100 bg-indigo-50/50">
-                                <div className="space-y-3">
-                                    <div className="flex gap-3">
-                                        <input
-                                            type="date"
-                                            value={noteDate}
-                                            onChange={e => setNoteDate(e.target.value)}
-                                            className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
-                                        />
-                                        <select
-                                            value={moodRating || ''}
-                                            onChange={e => setMoodRating(e.target.value ? Number(e.target.value) : undefined)}
-                                            className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
-                                        >
-                                            <option value="">Mood Rating (Optional)</option>
-                                            {[1, 2, 3, 4, 5].map(r => (
-                                                <option key={r} value={r}>{r} - {['Awful', 'Bad', 'Okay', 'Good', 'Great'][r - 1]}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <textarea
-                                        value={noteContent}
-                                        onChange={e => setNoteContent(e.target.value)}
-                                        placeholder="What did you notice today? Any side effects? improvements?"
-                                        className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                                        rows={3}
+                            <div className="p-4 border border-indigo-200 rounded-xl bg-indigo-50/30 space-y-3">
+                                <div className="flex gap-3">
+                                    <input
+                                        type="date"
+                                        value={noteDate}
+                                        onChange={e => setNoteDate(e.target.value)}
+                                        className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
                                     />
-                                    <div className="flex justify-end gap-2">
-                                        <button
-                                            onClick={() => setIsAddingNote(false)}
-                                            className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            onClick={() => addLogMutation.mutate()}
-                                            disabled={!noteContent.trim() || addLogMutation.isPending}
-                                            className="px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
-                                        >
-                                            {addLogMutation.isPending ? 'Saving...' : <><Save size={14} /> Save Log</>}
-                                        </button>
-                                    </div>
+                                    <select
+                                        value={moodRating || ''}
+                                        onChange={e => setMoodRating(e.target.value ? Number(e.target.value) : undefined)}
+                                        className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
+                                    >
+                                        <option value="">Mood (optional)</option>
+                                        {[1, 2, 3, 4, 5].map(r => (
+                                            <option key={r} value={r}>{r} - {['Awful', 'Bad', 'Okay', 'Good', 'Great'][r - 1]}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <textarea
+                                    value={noteContent}
+                                    onChange={e => setNoteContent(e.target.value)}
+                                    placeholder="What did you notice today? Any observations?"
+                                    className="w-full border border-slate-200 rounded-lg p-3 text-sm resize-none"
+                                    rows={3}
+                                />
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        onClick={() => setIsAddingNote(false)}
+                                        className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => addLogMutation.mutate()}
+                                        disabled={!noteContent.trim() || addLogMutation.isPending}
+                                        className="px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {addLogMutation.isPending ? 'Saving...' : <><Save size={14} /> Save</>}
+                                    </button>
                                 </div>
                             </div>
                         )}
 
-                        <div className="divide-y divide-slate-100 max-h-[600px] overflow-y-auto">
-                            {isLoading ? (
-                                <div className="p-8 text-center text-slate-400">Loading logs...</div>
+                        <div className="divide-y divide-slate-100">
+                            {logsLoading ? (
+                                <div className="p-8 text-center text-slate-400">Loading...</div>
                             ) : logs.length === 0 ? (
-                                <div className="p-8 text-center text-slate-400 italic">
-                                    No logs yet. Record your daily observations!
-                                </div>
+                                <div className="p-8 text-center text-slate-400 italic">No notes yet.</div>
                             ) : (
                                 logs.map(log => (
-                                    <div key={log.id} className="p-4 hover:bg-slate-50 transition-colors group">
+                                    <div key={log.id} className="py-3">
                                         <div className="flex justify-between items-start mb-1">
                                             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                                 {format(new Date(log.date), 'EEE, MMM d')}
                                             </span>
                                             {log.moodRating && (
-                                                <span className={`text-xs px-2 py-0.5 rounded-full ${log.moodRating >= 4 ? 'bg-green-100 text-green-700' :
+                                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                                    log.moodRating >= 4 ? 'bg-green-100 text-green-700' :
                                                     log.moodRating <= 2 ? 'bg-red-100 text-red-700' :
-                                                        'bg-yellow-100 text-yellow-700'
-                                                    }`}>
+                                                    'bg-yellow-100 text-yellow-700'
+                                                }`}>
                                                     Mood: {log.moodRating}/5
                                                 </span>
                                             )}
@@ -198,46 +288,79 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment, onBac
                             )}
                         </div>
                     </div>
-                </div>
+                )}
 
-                {/* Sidebar (Details) */}
-                <div className="space-y-6">
-                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <h3 className="font-semibold text-sm text-slate-500 uppercase tracking-wider mb-4">Configuration</h3>
+                {activeTab === 'analysis' && (
+                    <ExperimentAnalysisPanel
+                        metrics={experiment.customMetrics}
+                        checkins={checkins}
+                        phases={experiment.phases}
+                        onRunFullAnalysis={onRunAnalysis}
+                    />
+                )}
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-xs text-slate-400 block mb-1">Independent Variables</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {(experiment.independentIds || (experiment.tracker1Id ? [experiment.tracker1Id] : [])).map(id => (
-                                        <span key={id} className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-sm border border-indigo-100">
-                                            {getVariableName(id)}
-                                        </span>
-                                    ))}
+                {activeTab === 'agent' && (
+                    <ExperimentAgentChat experimentId={experiment.id} experiment={experiment} />
+                )}
+
+                {activeTab === 'settings' && (
+                    <div className="space-y-5">
+                        <div>
+                            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Status</h4>
+                            <div className="flex gap-2 flex-wrap">
+                                {(['active', 'paused', 'completed', 'archived'] as ExperimentStatus[]).map(s => {
+                                    const isCurrent = experiment.status === s;
+                                    const icon = s === 'active' ? <Check size={14} /> : s === 'paused' ? <Pause size={14} /> : s === 'completed' ? <Check size={14} /> : <Archive size={14} />;
+                                    return (
+                                        <button
+                                            key={s}
+                                            onClick={() => handleStatusChange(s)}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                                isCurrent ? STATUS_CONFIG[s].color : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                            }`}
+                                        >
+                                            {icon}
+                                            {STATUS_CONFIG[s].label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Custom Metrics</h4>
+                            <ExperimentMetricBuilder
+                                metrics={experiment.customMetrics}
+                                onChange={async (customMetrics) => {
+                                    await updateExperiment({ ...experiment, customMetrics });
+                                }}
+                            />
+                        </div>
+
+                        <div>
+                            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Linked Trackers</h4>
+                            <div className="space-y-2">
+                                <div className="text-sm">
+                                    <span className="text-slate-500">Independent: </span>
+                                    <span className="text-slate-800">
+                                        {(experiment.independentIds || []).map(getVariableName).join(', ') || 'None'}
+                                    </span>
+                                </div>
+                                <div className="text-sm">
+                                    <span className="text-slate-500">Dependent: </span>
+                                    <span className="text-slate-800">
+                                        {experiment.tracker2Id ? getVariableName(experiment.tracker2Id) : 'None'}
+                                    </span>
                                 </div>
                             </div>
+                        </div>
 
-                            <div>
-                                <label className="text-xs text-slate-400 block mb-1">Dependent Variable</label>
-                                <span className="bg-emerald-50 text-emerald-700 px-2 py-1 rounded text-sm border border-emerald-100">
-                                    {dependentName}
-                                </span>
-                            </div>
-
-                            <div className="pt-4 border-t border-slate-100">
-                                <label className="text-xs text-slate-400 block mb-1">Start Date</label>
-                                <span className="text-slate-700 text-sm">{format(new Date(experiment.startDate), 'MMMM d, yyyy')}</span>
-                            </div>
-
-                            {experiment.description && (
-                                <div>
-                                    <label className="text-xs text-slate-400 block mb-1">Description</label>
-                                    <p className="text-slate-600 text-sm bg-slate-50 p-2 rounded-lg">{experiment.description}</p>
-                                </div>
-                            )}
+                        <div>
+                            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Start Date</h4>
+                            <span className="text-slate-700 text-sm">{format(new Date(experiment.startDate), 'MMMM d, yyyy')}</span>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

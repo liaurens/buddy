@@ -9,7 +9,7 @@ export { supabase, isSupabaseConfigured } from './client';
 export type {
     DbTracker, DbEntry,
     DbProtocol, DbCycle, DbDose,
-    DbExperiment, DbCorrelation, DbExperimentLog,
+    DbExperiment, DbCorrelation, DbExperimentLog, DbExperimentCheckinEntry, DbDailyJournalEntry, DbExperimentAgentConversation,
     DbStrategy,
     DbTodo,
     DbNoteCategory, DbSmartNote,
@@ -23,7 +23,7 @@ export { dbToTracker, trackerToDb, dbToEntry, entryToDb } from './converters/tra
 export { dbToProtocol, protocolToDb, dbToCycle, cycleToDb, dbToDose, doseToDb } from './converters/protocol';
 
 // Converters - Experiment
-export { dbToExperiment, experimentToDb, dbToExperimentLog, experimentLogToDb, dbToCorrelation } from './converters/experiment';
+export { dbToExperiment, experimentToDb, dbToExperimentLog, experimentLogToDb, dbToCorrelation, dbToExperimentCheckinEntry, dbToDailyJournalEntry } from './converters/experiment';
 
 // Converters - Strategy
 export { dbToStrategy, strategyToDb } from './converters/strategy';
@@ -47,3 +47,5 @@ export { getSetting, setSetting } from './operations/settings';
 export { exportAllData, importAllData } from './operations/backup';
 export { initializeUserData } from './operations/seed';
 export { getExperimentLogs, addExperimentLog } from './operations/experiment-logs';
+export { getExperimentCheckins, saveExperimentCheckin, deleteExperimentCheckin } from './operations/experiment-checkins';
+export { getJournalEntry, saveJournalEntry, getJournalEntries } from './operations/daily-journal';
