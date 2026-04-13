@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Skill, SkillLog, getRequiredXpForLevel } from '../types';
+import type { Skill, SkillLog } from '../types';
+import { getRequiredXpForLevel } from '../types';
 
 const STORAGE_KEY = 'buddy_growth_state';
 

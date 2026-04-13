@@ -1,6 +1,6 @@
-import React from 'react';
-import { Skill, getRequiredXpForLevel, calculateTitle } from '../types';
-import { Award, Zap, TrendingUp } from 'lucide-react';
+import type { Skill } from '../types';
+import { getRequiredXpForLevel, calculateTitle } from '../types';
+import { Award, Zap } from 'lucide-react';
 
 interface SkillCardProps {
   skill: Skill;

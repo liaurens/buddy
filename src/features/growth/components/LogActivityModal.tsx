@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Sparkles, TrendingUp } from 'lucide-react';
-import { Skill } from '../types';
+import type { Skill } from '../types';
 
 interface LogActivityModalProps {
   skill: Skill;

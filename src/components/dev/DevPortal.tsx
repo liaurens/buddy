@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { InspectorOverlay } from './InspectorOverlay';
 import { ReportFormModal } from './ReportFormModal';
 import { Bug, X } from 'lucide-react';
