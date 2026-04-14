@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
-import { Trash2, SendHorizontal, Loader2, BookOpen, Menu, Plus, MessageSquare, X, Edit2, Check } from 'lucide-react'
+import { Trash2, SendHorizontal, Loader2, BookOpen, Menu, Plus, MessageSquare, Edit2 } from 'lucide-react'
 import { useAssistant } from '../hooks/useAssistant'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import AssistantChatBubble from './AssistantChatBubble'
