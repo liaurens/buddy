@@ -40,7 +40,7 @@ export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFo
   };
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-4">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-4 dev-portal-ui">
       <div className="w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Header */}

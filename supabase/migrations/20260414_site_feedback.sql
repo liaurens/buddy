@@ -21,3 +21,6 @@ CREATE POLICY "Enable insert for all users" ON public.site_feedback
 
 CREATE POLICY "Enable select for all users" ON public.site_feedback
     FOR SELECT USING (true);
+
+CREATE POLICY "Enable delete for all users" ON public.site_feedback
+    FOR DELETE USING (true);

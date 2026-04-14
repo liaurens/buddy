@@ -54,3 +54,21 @@ export async function getFeedbackForPath(pathname: string): Promise<SiteFeedback
 
   return data || [];
 }
+
+export async function deleteFeedback(id: string): Promise<boolean> {
+  if (!isSupabaseConfigured) {
+    return false;
+  }
+
+  const { error } = await supabase
+    .from('site_feedback')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting feedback:', error);
+    return false;
+  }
+
+  return true;
+}

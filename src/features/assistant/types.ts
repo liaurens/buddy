@@ -28,3 +28,11 @@ export interface ChatMessage {
 }
 
 export type AssistantIntent = AssistantResponse['intent']
+
+export interface AssistantConversation {
+  id: string
+  title: string
+  messages: ChatMessage[]
+  updatedAt: number
+  createdAt: number
+}

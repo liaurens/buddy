@@ -5,7 +5,7 @@ import { useExperiments } from '../../health-tracking/hooks/useExperiments';
 import { format, isSameDay } from 'date-fns';
 import {
     Zap, Calendar as CalendarIcon,
-    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer, ListChecks, ChevronDown, ChevronUp, MessageSquare, Trophy, Brain
+    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer, ListChecks, ChevronDown, ChevronUp, MessageSquare, Trophy, Brain, Bell
 } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
 import type { Entry } from '../../health-tracking/types';
@@ -23,6 +23,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
     const [todayValues, setTodayValues] = useState<Entry[]>([]);
     const [toolsExpanded, setToolsExpanded] = useState(false);
+    const [actionItemsExpanded, setActionItemsExpanded] = useState(false);
 
     const activeProtocols = protocols.filter(p => p.active);
     const activeExperiments = getActiveExperiments();
@@ -131,86 +132,103 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         },
     ];
 
-    // Show first 4 tools when collapsed, all when expanded
     const visibleTools = toolsExpanded ? tools : tools.slice(0, 4);
+    const actionItemsCount = notifications.length + (!hasCheckin ? 1 : 0);
 
     return (
-        <div className="max-w-2xl mx-auto p-4 pb-24 space-y-6">
-            {/* Header */}
+        <div className="max-w-xl mx-auto p-4 pb-24 space-y-6">
             <header className="pt-2">
                 <p className="text-slate-500 text-sm font-medium">{format(today, 'EEEE, MMMM do')}</p>
             </header>
 
             {/* Assistant Prompt Bar */}
-            <AssistantPromptBar onNavigate={onNavigate} />
+            <div>
+              <AssistantPromptBar onNavigate={onNavigate} />
+              
+              <button
+                  onClick={() => onNavigate('assistant')}
+                  className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 transition-colors mt-2 pl-1"
+              >
+                  <MessageSquare size={13} />
+                  Open full chat
+              </button>
+            </div>
 
-            {/* Open full chat link */}
-            <button
-                onClick={() => onNavigate('assistant')}
-                className="flex items-center gap-1.5 text-xs text-indigo-500 hover:text-indigo-700 transition-colors -mt-2"
-            >
-                <MessageSquare size={13} />
-                Open full chat
-            </button>
-
-            {/* Habit Dashboard - The star of the show */}
+            {/* Habit Dashboard - Compact Edition */}
             <HabitDashboard onNavigateToTasks={() => onNavigate('tasks')} />
 
-            {/* Notifications */}
-            {notifications.length > 0 && (
-                <div className="space-y-2">
-                    {notifications.map(note => (
-                        <div key={note.id} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex gap-3">
-                            <div className="mt-0.5"><Zap size={16} className="text-amber-500" /></div>
-                            <div>
-                                <h4 className="font-bold text-slate-800 text-sm">{note.title}</h4>
-                                <p className="text-xs text-slate-500">{note.message}</p>
-                            </div>
+            {/* Action Items Accordion (Checkins & Notifications) */}
+            {actionItemsCount > 0 && (
+                <section className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                    <button 
+                        onClick={() => setActionItemsExpanded(!actionItemsExpanded)}
+                        className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Bell size={16} className="text-slate-500" />
+                            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Action Items</h3>
+                            <span className="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                {actionItemsCount} pending
+                            </span>
                         </div>
-                    ))}
-                </div>
-            )}
+                        {actionItemsExpanded ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                    </button>
+                    
+                    {actionItemsExpanded && (
+                        <div className="p-4 space-y-3 bg-white border-t border-slate-100">
+                            {/* Check-in */}
+                            {!hasCheckin && (
+                                <button
+                                    onClick={() => onNavigate('check-in')}
+                                    className="w-full bg-slate-50 rounded-xl p-3 border border-slate-200 shadow-sm flex items-center gap-3 hover:border-emerald-200 transition-colors text-left group"
+                                >
+                                    <div className="p-2 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors">
+                                        <BookOpen size={16} className="text-emerald-700" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="font-semibold text-slate-800 text-sm">Daily Check-in</p>
+                                        <p className="text-xs text-slate-500">Log your health metrics</p>
+                                    </div>
+                                </button>
+                            )}
 
-            {/* Daily Check-in Prompt */}
-            {!hasCheckin && (
-                <button
-                    onClick={() => onNavigate('check-in')}
-                    className="w-full bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center gap-3 hover:border-emerald-200 transition-colors text-left"
-                >
-                    <div className="p-2 bg-emerald-50 rounded-lg">
-                        <BookOpen size={18} className="text-emerald-600" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="font-semibold text-slate-800 text-sm">Daily Check-in</p>
-                        <p className="text-xs text-slate-500">Log your health metrics</p>
-                    </div>
-                    <span className="px-2 py-0.5 bg-rose-50 text-rose-500 text-[10px] font-bold uppercase tracking-wider rounded">Pending</span>
-                </button>
+                            {/* Notifications */}
+                            {notifications.map(note => (
+                                <div key={note.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm flex gap-3">
+                                    <div className="mt-0.5 p-1 rounded-md bg-amber-100/50"><Zap size={14} className="text-amber-600" /></div>
+                                    <div>
+                                        <h4 className="font-bold text-slate-800 text-sm leading-tight mb-0.5">{note.title}</h4>
+                                        <p className="text-xs text-slate-600">{note.message}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </section>
             )}
 
             {/* Tools Grid - Compact */}
             <section>
-                <button
-                    onClick={() => setToolsExpanded(!toolsExpanded)}
-                    className="flex items-center gap-2 mb-3 px-1 group"
-                >
+                <div className="flex items-center justify-between mb-3 px-1">
                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Tools</h3>
-                    {toolsExpanded
-                        ? <ChevronUp size={14} className="text-slate-400" />
-                        : <ChevronDown size={14} className="text-slate-400" />
-                    }
-                </button>
-                <div className="grid grid-cols-4 gap-2">
+                    <button
+                        onClick={() => setToolsExpanded(!toolsExpanded)}
+                        className="text-xs text-indigo-500 hover:text-indigo-700 font-medium"
+                    >
+                        {toolsExpanded ? 'Show less' : 'View all'}
+                    </button>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
                     {visibleTools.map(tool => (
                         <button
                             key={tool.id}
                             onClick={tool.action}
-                            className={`p-3 rounded-xl transition-all text-center group hover:scale-[1.02] hover:shadow-sm ${tool.color}`}
+                            className={`p-3 rounded-xl transition-all text-center flex flex-col items-center justify-center gap-2 group hover:scale-[1.02] hover:shadow-sm ${tool.color}`}
                         >
-                            <div className="mx-auto mb-1.5 w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center">
                                 {tool.icon}
                             </div>
-                            <div className="text-[11px] font-semibold leading-tight">{tool.title}</div>
+                            <div className="text-[10px] font-semibold leading-tight">{tool.title}</div>
                         </button>
                     ))}
                 </div>

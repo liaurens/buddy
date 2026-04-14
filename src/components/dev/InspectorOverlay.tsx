@@ -47,7 +47,7 @@ export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
       const target = e.target as HTMLElement;
       if (target) {
         // Ignore the DevPortal UI itself
-        if (target.closest('.fixed.bottom-4.right-4') || target.closest('.dev-submit-btn') || target.id === 'dev-inspector-overlay') {
+        if (target.closest('.dev-portal-ui') || target.closest('.fixed.bottom-4.right-4') || target.closest('.dev-submit-btn') || target.id === 'dev-inspector-overlay') {
           setHoverRect(null);
           return;
         }
@@ -59,7 +59,7 @@ export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
       const target = e.target as HTMLElement;
       if (target) {
         // Ignore our UI elements
-        if (target.closest('.fixed.bottom-4.right-4') || target.closest('.dev-submit-btn') || target.id === 'dev-inspector-overlay' || target.closest('.dev-sticky-note')) {
+        if (target.closest('.dev-portal-ui') || target.closest('.fixed.bottom-4.right-4') || target.closest('.dev-submit-btn') || target.id === 'dev-inspector-overlay' || target.closest('.dev-sticky-note')) {
           return;
         }
         e.preventDefault();
@@ -111,6 +111,7 @@ export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
     
     // Clear the selections locally before unmounting
     selectedElements.forEach(el => el.classList.remove('dev-selected-element'));
+    setSelectedElements([]);
     onSelect(fullHtml, anchorSelector);
   };
 

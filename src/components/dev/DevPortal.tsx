@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { InspectorOverlay } from './InspectorOverlay';
 import { ReportFormModal } from './ReportFormModal';
-import { Bug, X, FileText } from 'lucide-react';
+import { ReportListModal } from './ReportListModal';
+import { Bug, X, FileText, List } from 'lucide-react';
 import { getFeedbackForPath } from '../../services/supabase/operations/site-feedback';
 import type { SiteFeedback } from '../../services/supabase/operations/site-feedback';
 
 export function DevPortal() {
   const [isActive, setIsActive] = useState(false);
+  const [isListOpen, setIsListOpen] = useState(false);
   const [selectedElementHtml, setSelectedElementHtml] = useState<string | null>(null);
   const [selectedSelector, setSelectedSelector] = useState<string | null>(null);
   
@@ -15,13 +17,13 @@ export function DevPortal() {
 
   // Fetch feedback when portal is activated
   useEffect(() => {
-    if (isActive) {
+    if (isActive || isListOpen) {
       loadFeedback();
     } else {
       setFeedbackData([]);
       setRects({});
     }
-  }, [isActive]);
+  }, [isActive, isListOpen]);
 
   const loadFeedback = async () => {
     try {
@@ -93,15 +95,26 @@ export function DevPortal() {
             Inspector Mode Active - Click elements to inspect
           </div>
         )}
-        <button
-          onClick={() => setIsActive(!isActive)}
-          className={`p-3 rounded-full shadow-xl text-white pointer-events-auto transition-all ${
-            isActive ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-          title="Toggle Feedback & Notes Portal"
-        >
-          {isActive ? <X size={24} /> : <Bug size={24} />}
-        </button>
+        <div className="flex gap-2 pointer-events-auto">
+          {isActive && (
+            <button
+              onClick={() => setIsListOpen(true)}
+              className="p-3 rounded-full shadow-xl text-white bg-slate-700 hover:bg-slate-800 transition-all font-mono animate-in slide-in-from-right-4"
+              title="View all reported feedback"
+            >
+              <List size={24} />
+            </button>
+          )}
+          <button
+            onClick={() => setIsActive(!isActive)}
+            className={`p-3 rounded-full shadow-xl text-white transition-all ${
+              isActive ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+            title="Toggle Feedback & Notes Portal"
+          >
+            {isActive ? <X size={24} /> : <Bug size={24} />}
+          </button>
+        </div>
       </div>
 
       {isActive && <InspectorOverlay onSelect={handleElementSelect} />}
@@ -139,6 +152,14 @@ export function DevPortal() {
           selector={selectedSelector} 
           onClose={handleCloseModal}
           onSuccess={handleSuccess}
+        />
+      )}
+
+      {isListOpen && (
+        <ReportListModal
+          reports={feedbackData}
+          onClose={() => setIsListOpen(false)}
+          onRefresh={loadFeedback}
         />
       )}
     </>

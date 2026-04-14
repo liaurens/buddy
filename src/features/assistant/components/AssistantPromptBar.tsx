@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react'
 import { SendHorizontal, Loader2 } from 'lucide-react'
 import { useAssistant } from '../hooks/useAssistant'
+import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import AssistantResponseCard from './AssistantResponseCard'
 import type { AppRoute } from '../../../constants/routes'
 
@@ -36,6 +37,7 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
   const [showHints, setShowHints] = useState(false)
   const [selectedHint, setSelectedHint] = useState(0)
   const { send, isLoading, lastResponse, reset } = useAssistant()
+  const { addUserMessage, addAssistantMessage } = useAssistantHistory()
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Filter commands based on current input
@@ -57,9 +59,16 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
       onMessageSent?.(trimmed)
       setInput('')
       reset()
-      await send(trimmed)
+      
+      const userMsgId = addUserMessage(trimmed)
+      const response = await send(trimmed)
+      
+      if (response) {
+        const content = response.action_taken || (response.success ? 'Done.' : 'Something went wrong.')
+        addAssistantMessage(content, response, userMsgId)
+      }
     },
-    [input, isLoading, send, reset, onMessageSent]
+    [input, isLoading, send, reset, onMessageSent, addUserMessage, addAssistantMessage]
   )
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
