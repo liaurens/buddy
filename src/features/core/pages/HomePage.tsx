@@ -5,7 +5,7 @@ import { useExperiments } from '../../health-tracking/hooks/useExperiments';
 import { format, isSameDay } from 'date-fns';
 import {
     Zap, Calendar as CalendarIcon,
-    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer, ListChecks, ChevronDown, ChevronUp, MessageSquare, Trophy
+    BookOpen, CheckSquare, Lightbulb, BarChart2, Timer, ListChecks, ChevronDown, ChevronUp, MessageSquare, Trophy, Brain
 } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
 import type { Entry } from '../../health-tracking/types';
@@ -52,6 +52,13 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     ].filter((n): n is NonNullable<typeof n> => n !== null);
 
     const tools = [
+        {
+            id: 'planner',
+            title: 'Planner',
+            icon: <Brain size={20} className="text-indigo-600" />,
+            color: 'bg-indigo-50 text-indigo-900',
+            action: () => onNavigate('planner')
+        },
         {
             id: 'tasks',
             title: 'All Tasks',

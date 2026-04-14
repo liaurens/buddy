@@ -82,7 +82,7 @@ All tables live in the `public` schema with RLS enabled. Edge functions use the 
 | `trackers` | Health tracker definitions | Name, type, unit, goal config. |
 | `smart_notes` | Quick notes | Has `category_id` FK to `note_categories`. |
 | `note_categories` | Note category definitions | Flag-based routing (e.g. `shop`, `boodschap`). |
-| `daily_plans` | AI daily planning | One row per user per date. |
+| `daily_plans` | AI daily planning | One row per user per date. `user_context` JSONB holds planner-tool inputs (hours, feel, meds, focus_rating, mode). |
 | `time_blocks` | Planning time blocks | FK to `daily_plans`. Status: `pending/active/completed/skipped`. |
 | `activity_templates` | Recurring activity templates | Used by AI planner to schedule recurring activities. |
 | `calendar_events` | Calendar entries | Synced from external calendars via proxy. |

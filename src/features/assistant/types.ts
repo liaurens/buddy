@@ -3,6 +3,9 @@
 export interface AssistantRequest {
   input: string
   source?: 'web' | 'iphone'
+  action?: string
+  params?: Record<string, unknown>
+  domain?: string
 }
 
 export interface AssistantResponse {

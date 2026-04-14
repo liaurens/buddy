@@ -28,6 +28,10 @@ export type Intent =
   | 'calendar.today'
   | 'habits.status'
   | 'notification.schedule'
+  | 'plan.start'
+  | 'plan.generate'
+  | 'plan.review'
+  | 'plan.close'
   // Health
   | 'tracker.checkin'
   | 'tracker.query'
@@ -92,6 +96,11 @@ export interface AssistantRequest {
   input: string
   api_key?: string
   source?: 'iphone' | 'web' | 'siri'
+  // Direct-invoke path: when set, routing is skipped and the handler for
+  // (domain, action) is called with params. Used by dedicated UIs like the Planner page.
+  action?: Intent
+  params?: Record<string, unknown>
+  domain?: Domain
 }
 
 export interface AssistantResponse {

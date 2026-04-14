@@ -5,6 +5,7 @@ export * from './types';
 export { default as PlanPage } from './pages/PlanPage';
 export { default as CalendarPage } from './pages/CalendarPage';
 export { default as ReflectionPage } from './pages/ReflectionPage';
+export { default as PlannerPage } from './pages/PlannerPage';
 
 // Components
 export { default as PlanGenerator } from './components/PlanGenerator';

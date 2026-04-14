@@ -18,7 +18,8 @@ export type AppRoute =
     | 'focus'
     | 'account'
     | 'assistant'
-    | 'growth';
+    | 'growth'
+    | 'planner';
 
 export const HEALTH_HUB_ROUTES: AppRoute[] = ['health', 'protocols', 'experiments'];
 export const CALENDAR_HUB_ROUTES: AppRoute[] = ['calendar', 'planning', 'reflection'];

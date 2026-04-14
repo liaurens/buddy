@@ -19,6 +19,9 @@ const COMMAND_MAP = new Map([
   ['/agenda', { domain: 'planning', action: 'calendar.today' }],
   ['/habits', { domain: 'planning', action: 'habits.status' }],
   ['/remind', { domain: 'planning', action: 'notification.schedule' }],
+  ['/plan', { domain: 'planning', action: 'plan.start' }],
+  ['/plan.review', { domain: 'planning', action: 'plan.review' }],
+  ['/plan.close', { domain: 'planning', action: 'plan.close' }],
   ['/checkin', { domain: 'health', action: 'tracker.checkin' }],
   ['/health', { domain: 'health', action: 'tracker.query' }],
   ['/note', { domain: 'content', action: 'note.create' }],
@@ -179,6 +182,22 @@ describe('parseSlashCommand', () => {
     const result = parseSlashCommand('/remind 14:00 call dentist')
     expect(result!.action).toBe('notification.schedule')
     expect(result!.params).toEqual({ content: '14:00 call dentist' })
+  })
+
+  it('parses /plan', () => {
+    const result = parseSlashCommand('/plan')
+    expect(result!.domain).toBe('planning')
+    expect(result!.action).toBe('plan.start')
+  })
+
+  it('prefers /plan.review over /plan', () => {
+    const result = parseSlashCommand('/plan.review')
+    expect(result!.action).toBe('plan.review')
+  })
+
+  it('prefers /plan.close over /plan', () => {
+    const result = parseSlashCommand('/plan.close')
+    expect(result!.action).toBe('plan.close')
   })
 
   it('parses /help', () => {
