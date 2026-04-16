@@ -242,19 +242,18 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
     }
   }
 
-  // Verify all scheduled templates are health-category
+  // Verify all scheduled templates belong to this user
   const { data: templates } = await supabase
     .from('activity_templates')
     .select('id, name, category, default_minutes, historical_minutes, preferred_time_slot, preferred_start_time')
     .eq('user_id', context.userId)
     .in('id', scheduled_activity_template_ids)
   const tpls = (templates ?? []) as Sb[]
-  const nonHealth = tpls.filter(t => t.category !== 'health')
-  if (nonHealth.length > 0 || tpls.length !== scheduled_activity_template_ids.length) {
+  if (tpls.length !== scheduled_activity_template_ids.length) {
     return {
       success: false,
-      action_taken: 'All scheduled activities must be category="health" (gym, walk, run, etc.).',
-      data: { offending: nonHealth.map(t => t.name) },
+      action_taken: 'One or more selected activities could not be found.',
+      data: {},
     }
   }
 
