@@ -84,6 +84,7 @@ export const planningSettingsSchema = z.object({
   shortBreakInterval: z.number().int().min(30).max(180).default(90),
   shortBreakDuration: z.number().int().min(5).max(30).default(15),
   bufferBetweenBlocks: z.number().int().min(0).max(30).default(5),
+  activityCategories: z.array(z.string()).default(['health']),
 });
 
 export const aiSettingsSchema = z.object({

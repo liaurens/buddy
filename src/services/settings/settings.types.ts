@@ -82,6 +82,7 @@ export interface PlanningSettings {
   shortBreakInterval: number;
   shortBreakDuration: number;
   bufferBetweenBlocks: number;
+  activityCategories: string[];
 }
 
 export interface AISettings {

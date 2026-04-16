@@ -25,6 +25,7 @@ import CheckInSettingsModal from './features/health-tracking/components/checkin/
 import NoteSettingsModal from './features/tasks/components/notes/NoteSettingsModal';
 import CalendarSettingsModal from './features/planning/components/calendar/CalendarSettingsModal';
 import PlanningSettingsModal from './features/planning/components/plan/PlanningSettingsModal';
+import PlannerSettingsModal from './features/planning/components/plan/PlannerSettingsModal';
 import ReflectionSettingsModal from './features/planning/components/reflection/ReflectionSettingsModal';
 import TaskSettingsModal from './features/tasks/components/TaskSettingsModal';
 import PomodoroSettingsModal from './features/focus/components/PomodoroSettingsModal';
@@ -43,6 +44,7 @@ const SETTINGS_MODALS: Partial<Record<AppRoute, React.ComponentType<SettingsModa
   notes: NoteSettingsModal,
   calendar: CalendarSettingsModal,
   planning: PlanningSettingsModal,
+  planner: PlannerSettingsModal,
   reflection: ReflectionSettingsModal,
   tasks: TaskSettingsModal,
   focus: PomodoroSettingsModal,

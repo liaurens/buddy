@@ -4,6 +4,10 @@ import type { AssistantResponse } from '../../assistant'
 import { useAuth } from '../../../hooks/useAuth'
 import { useTimer } from '../../../hooks/useTimer'
 import { useToast } from '../../../components/ui/Toast'
+import { getCategorySettings } from '../../../services/settings'
+import { supabase, todoToDb } from '../../../services/supabase'
+import { v4 as uuidv4 } from 'uuid'
+import { useQueryClient } from '@tanstack/react-query'
 import {
     startBlock as startBlockSvc,
     completeBlock as completeBlockSvc,
@@ -119,6 +123,8 @@ const PlannerPage: React.FC = () => {
     const { user } = useAuth()
     const timer = useTimer()
     const toast = useToast()
+    const queryClient = useQueryClient()
+    const [activityCategories, setActivityCategories] = useState<string[]>(['health'])
 
     const [step, setStep] = useState<Step>('idle')
     const [loading, setLoading] = useState(false)
@@ -138,6 +144,14 @@ const PlannerPage: React.FC = () => {
     const [startTime, setStartTime] = useState<string>('09:00')
     const [taskEstimates, setTaskEstimates] = useState<Record<string, number>>({})
     const [activityDurations, setActivityDurations] = useState<Record<string, ActivityDurationEntry>>({})
+
+    // Inline Add Task form
+    const [addTaskOpen, setAddTaskOpen] = useState<boolean>(false)
+    const [newTaskTitle, setNewTaskTitle] = useState<string>('')
+    const [newTaskMinutes, setNewTaskMinutes] = useState<number>(30)
+    const [newTaskRecurrence, setNewTaskRecurrence] = useState<string>('none')
+    const [newTaskTimed, setNewTaskTimed] = useState<boolean>(false)
+    const [creatingTask, setCreatingTask] = useState<boolean>(false)
 
     // Step 2 output
     const [planId, setPlanId] = useState<string | null>(null)
@@ -203,6 +217,21 @@ const PlannerPage: React.FC = () => {
         }
     }, [])
 
+    // ─── Load category preference ───────────────────────────────────────────
+    useEffect(() => {
+        if (!user) return
+        void (async () => {
+            try {
+                const s = await getCategorySettings(user.id, 'planning')
+                if (Array.isArray(s.activityCategories) && s.activityCategories.length > 0) {
+                    setActivityCategories(s.activityCategories)
+                }
+            } catch {
+                /* fall back to default ['health'] */
+            }
+        })()
+    }, [user])
+
     // ─── Bootstrap: check for active plan today, else draft ─────────────────
     useEffect(() => {
         if (bootstrappedRef.current) return
@@ -255,7 +284,7 @@ const PlannerPage: React.FC = () => {
     }
 
     const handleStart = async (keepFormState = false) => {
-        await runAction('plan.start', {}, (res) => {
+        await runAction('plan.start', { activity_categories: activityCategories }, (res) => {
             const data = res.data as {
                 tasks: TaskRow[]
                 activity_templates: ActivityRow[]
@@ -400,7 +429,9 @@ const PlannerPage: React.FC = () => {
         if (!activeBlockId) return
         const block = reviewBlocks.find(b => b.id === activeBlockId)
         if (!block || !block.id) return
-        const isFixed = block.activity_template_id && fixedMap[block.activity_template_id]
+        const isFixed =
+            (block.activity_template_id && fixedMap[block.activity_template_id]) ||
+            (block.task_id && fixedMap[block.task_id])
         if (!isFixed) return
         const elapsedSec = timer.elapsedMinutes * 60 + timer.elapsedSeconds
         const targetSec = block.estimated_minutes * 60
@@ -483,6 +514,66 @@ const PlannerPage: React.FC = () => {
             })
             return next
         })
+    }
+
+    const handleAddInlineTask = async () => {
+        if (!user) return
+        const title = newTaskTitle.trim()
+        if (!title) {
+            toast.error('Task title is required')
+            return
+        }
+        const minutes = Math.max(1, Math.round(newTaskMinutes) || 30)
+        setCreatingTask(true)
+        try {
+            const id = uuidv4()
+            const dbRow = todoToDb(
+                {
+                    id,
+                    title,
+                    completed: false,
+                    createdAt: new Date().toISOString(),
+                    priority: 'medium',
+                    estimatedTime: minutes,
+                    subtasks: [],
+                    recurrence: (newTaskRecurrence as 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays') || 'none',
+                },
+                user.id
+            )
+            const { error: insertErr } = await supabase.from('todos').insert(dbRow)
+            if (insertErr) throw insertErr
+
+            const row: TaskRow = {
+                id,
+                title,
+                priority: 'medium',
+                estimated_minutes: minutes,
+                recurrence: newTaskRecurrence,
+            }
+            setTasks((prev) => [row, ...prev])
+            setSelectedTaskIds((prev) => {
+                const next = new Set(prev)
+                next.add(id)
+                return next
+            })
+            setTaskEstimates((prev) => ({ ...prev, [id]: minutes }))
+            if (newTaskTimed) {
+                const map = readFixedMap(todayISO())
+                map[id] = true
+                writeFixedMap(todayISO(), map)
+            }
+            queryClient.invalidateQueries({ queryKey: ['todos', user.id] })
+            toast.success(`Added "${title}"`)
+            setNewTaskTitle('')
+            setNewTaskMinutes(30)
+            setNewTaskRecurrence('none')
+            setNewTaskTimed(false)
+            setAddTaskOpen(false)
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to add task')
+        } finally {
+            setCreatingTask(false)
+        }
     }
 
     const toggleActivity = (a: ActivityRow) => {
@@ -589,6 +680,85 @@ const PlannerPage: React.FC = () => {
                     </Section>
 
                     <Section title={`Tasks to tackle (${selectedTaskIds.size} selected)`}>
+                        <div className="mb-3">
+                            {!addTaskOpen ? (
+                                <button
+                                    onClick={() => setAddTaskOpen(true)}
+                                    className="w-full text-left px-3 py-2 border border-dashed border-indigo-300 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition-colors"
+                                >
+                                    + Add task
+                                </button>
+                            ) : (
+                                <div className="space-y-2 p-3 border border-indigo-200 rounded-lg bg-indigo-50/40">
+                                    <input
+                                        type="text"
+                                        autoFocus
+                                        placeholder="Task title"
+                                        value={newTaskTitle}
+                                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                                        className="w-full border border-slate-200 rounded-md px-3 py-2 text-sm"
+                                    />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <label className="text-xs text-slate-600 flex items-center gap-1">
+                                            Est.
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                value={newTaskMinutes}
+                                                onChange={(e) => setNewTaskMinutes(Number(e.target.value))}
+                                                className="w-full border border-slate-200 rounded-md px-2 py-1 text-sm"
+                                            />
+                                            min
+                                        </label>
+                                        <label className="text-xs text-slate-600 flex items-center gap-1">
+                                            Repeat
+                                            <select
+                                                value={newTaskRecurrence}
+                                                onChange={(e) => setNewTaskRecurrence(e.target.value)}
+                                                className="w-full border border-slate-200 rounded-md px-2 py-1 text-sm"
+                                            >
+                                                <option value="none">None</option>
+                                                <option value="daily">Daily</option>
+                                                <option value="weekdays">Weekdays</option>
+                                                <option value="weekly">Weekly</option>
+                                                <option value="monthly">Monthly</option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                    <label className="flex items-center gap-2 text-xs text-slate-700">
+                                        <input
+                                            type="checkbox"
+                                            checked={newTaskTimed}
+                                            onChange={(e) => setNewTaskTimed(e.target.checked)}
+                                            className="rounded"
+                                        />
+                                        Timed (countdown auto-completes at target)
+                                    </label>
+                                    <div className="flex gap-2 pt-1">
+                                        <button
+                                            onClick={() => void handleAddInlineTask()}
+                                            disabled={creatingTask || !newTaskTitle.trim()}
+                                            className="flex-1 bg-indigo-600 text-white text-sm font-medium rounded-md py-2 hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                                        >
+                                            {creatingTask ? 'Adding…' : 'Add task'}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setAddTaskOpen(false)
+                                                setNewTaskTitle('')
+                                                setNewTaskMinutes(30)
+                                                setNewTaskRecurrence('none')
+                                                setNewTaskTimed(false)
+                                            }}
+                                            disabled={creatingTask}
+                                            className="px-3 text-sm text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         {tasks.length === 0 ? (
                             <p className="text-sm text-slate-500">No open tasks.</p>
                         ) : (
@@ -811,7 +981,9 @@ const PlannerPage: React.FC = () => {
                                 const isActive = timer.activeBlockId === b.id
                                 const isCompleted = b.status === 'completed'
                                 const isSkipped = b.status === 'skipped'
-                                const isFixed = b.activity_template_id ? fixedMap[b.activity_template_id] === true : false
+                                const isFixed =
+                                    (b.activity_template_id ? fixedMap[b.activity_template_id] === true : false) ||
+                                    (b.task_id ? fixedMap[b.task_id] === true : false)
                                 const elapsedSec = isActive ? timer.elapsedMinutes * 60 + timer.elapsedSeconds : 0
                                 const targetSec = b.estimated_minutes * 60
                                 const remaining = Math.max(0, targetSec - elapsedSec)

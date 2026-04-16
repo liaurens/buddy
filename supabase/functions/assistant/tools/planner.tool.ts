@@ -86,18 +86,20 @@ async function fetchOpenTodos(userId: string, supabase: Sb) {
   }))
 }
 
-async function fetchHealthActivityTemplates(userId: string, supabase: Sb) {
+async function fetchActiveActivityTemplates(userId: string, supabase: Sb, categories: string[]) {
+  const cats = Array.isArray(categories) && categories.length > 0 ? categories : ['health']
   const { data } = await supabase
     .from('activity_templates')
-    .select('id, name, emoji, default_minutes, historical_minutes, preferred_time_slot, preferred_start_time')
+    .select('id, name, emoji, default_minutes, historical_minutes, preferred_time_slot, preferred_start_time, category')
     .eq('user_id', userId)
-    .eq('category', 'health')
+    .in('category', cats)
     .eq('is_active', true)
     .order('name')
   return (data ?? []).map((t: Sb) => ({
     id: t.id,
     name: t.name,
     emoji: t.emoji,
+    category: t.category,
     default_minutes: t.default_minutes,
     average_minutes: avg(t.historical_minutes) ?? t.default_minutes,
     average_count: Array.isArray(t.historical_minutes) ? t.historical_minutes.length : 0,
@@ -172,11 +174,15 @@ Rules:
 
 // ─── Handlers ───────────────────────────────────────────────────────────────
 
-async function handlePlanStart(_params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+async function handlePlanStart(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
   const supabase = context.supabase as Sb
+  const rawCats = params.activity_categories
+  const categories = Array.isArray(rawCats)
+    ? rawCats.filter((c): c is string => typeof c === 'string' && c.length > 0)
+    : ['health']
   const [tasks, activities, learnings] = await Promise.all([
     fetchOpenTodos(context.userId, supabase),
-    fetchHealthActivityTemplates(context.userId, supabase),
+    fetchActiveActivityTemplates(context.userId, supabase, categories.length ? categories : ['health']),
     getLearnings(context.userId, supabase, 'behavior'),
   ])
 
