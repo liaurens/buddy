@@ -102,13 +102,13 @@ Deno.serve(async (req) => {
         action_taken: result.action_taken,
         data: result.data,
         suggestions: result.suggestions,
-      } as AssistantResponse, result.success ? 200 : 422)
+      } as AssistantResponse, 200)
     }
 
     // Route and execute via General Manager
     const { response } = await handleRequest(body.input.trim(), context)
 
-    return jsonResponse(response, response.success ? 200 : 422)
+    return jsonResponse(response, 200)
   } catch (err) {
     console.error('Assistant error:', err)
     const { message, stack } = extractError(err)

@@ -327,10 +327,11 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
     })
     aiContent = ai.content
   } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err)
     return {
       success: false,
-      action_taken: 'AI plan generation failed',
-      data: { error: err instanceof Error ? err.message : String(err) },
+      action_taken: `AI plan generation failed: ${detail}`,
+      data: { error: detail },
     }
   }
 
