@@ -153,6 +153,14 @@ const PlannerPage: React.FC = () => {
     const [newTaskTimed, setNewTaskTimed] = useState<boolean>(false)
     const [creatingTask, setCreatingTask] = useState<boolean>(false)
 
+    // Inline Add Activity form
+    const [addActivityOpen, setAddActivityOpen] = useState<boolean>(false)
+    const [newActivityName, setNewActivityName] = useState<string>('')
+    const [newActivityEmoji, setNewActivityEmoji] = useState<string>('💪')
+    const [newActivityCategory, setNewActivityCategory] = useState<string>('health')
+    const [newActivityMinutes, setNewActivityMinutes] = useState<number>(30)
+    const [creatingActivity, setCreatingActivity] = useState<boolean>(false)
+
     // Step 2 output
     const [planId, setPlanId] = useState<string | null>(null)
     const [planMode, setPlanMode] = useState<string | null>(null)
@@ -593,6 +601,58 @@ const PlannerPage: React.FC = () => {
         })
     }
 
+    const handleAddInlineActivity = async () => {
+        if (!user) return
+        const name = newActivityName.trim()
+        if (!name) {
+            toast.error('Activity name is required')
+            return
+        }
+        const minutes = Math.max(1, Math.round(newActivityMinutes) || 30)
+        setCreatingActivity(true)
+        try {
+            const id = uuidv4()
+            const category = newActivityCategory || activityCategories[0] || 'health'
+            const dbRow = {
+                id,
+                user_id: user.id,
+                name,
+                emoji: newActivityEmoji || '💪',
+                category,
+                default_minutes: minutes,
+                is_active: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            }
+            const { error: insertErr } = await supabase.from('activity_templates').insert(dbRow)
+            if (insertErr) throw insertErr
+
+            const row: ActivityRow = {
+                id,
+                name,
+                emoji: newActivityEmoji || '💪',
+                default_minutes: minutes,
+            }
+            setActivities((prev) => [row, ...prev])
+            setSelectedActivityIds((prev) => {
+                const next = new Set(prev)
+                next.add(id)
+                return next
+            })
+            setActivityDurations((prev) => ({ ...prev, [id]: { minutes, fixed: false } }))
+            
+            toast.success(`Added "${name}"`)
+            setNewActivityName('')
+            setNewActivityEmoji('💪')
+            setNewActivityMinutes(30)
+            setAddActivityOpen(false)
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to add activity')
+        } finally {
+            setCreatingActivity(false)
+        }
+    }
+
     const resetFlow = () => {
         setStep('idle')
         setError(null)
@@ -819,8 +879,87 @@ const PlannerPage: React.FC = () => {
                     </Section>
 
                     <Section title={`Active activities — pick ≥ 2 (${selectedActivityIds.size} selected)`}>
+                        <div className="mb-3">
+                            {!addActivityOpen ? (
+                                <button
+                                    onClick={() => setAddActivityOpen(true)}
+                                    className="w-full text-left px-3 py-2 border border-dashed border-emerald-300 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-50 transition-colors"
+                                >
+                                    + Add activity template
+                                </button>
+                            ) : (
+                                <div className="space-y-2 p-3 border border-emerald-200 rounded-lg bg-emerald-50/40">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Emoji (💪)"
+                                            value={newActivityEmoji}
+                                            onChange={(e) => setNewActivityEmoji(e.target.value)}
+                                            className="w-16 border border-slate-200 rounded-md px-3 py-2 text-sm text-center"
+                                            maxLength={2}
+                                        />
+                                        <input
+                                            type="text"
+                                            autoFocus
+                                            placeholder="Activity name (e.g. Morning Walk)"
+                                            value={newActivityName}
+                                            onChange={(e) => setNewActivityName(e.target.value)}
+                                            className="flex-1 border border-slate-200 rounded-md px-3 py-2 text-sm"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <label className="text-xs text-slate-600 flex items-center gap-1">
+                                            Est.
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                value={newActivityMinutes}
+                                                onChange={(e) => setNewActivityMinutes(Number(e.target.value))}
+                                                className="w-full border border-slate-200 rounded-md px-2 py-1 text-sm"
+                                            />
+                                            min
+                                        </label>
+                                        <label className="text-xs text-slate-600 flex items-center gap-1">
+                                            Category
+                                            <select
+                                                value={newActivityCategory}
+                                                onChange={(e) => setNewActivityCategory(e.target.value)}
+                                                className="w-full border border-slate-200 rounded-md px-2 py-1 text-sm text-slate-600"
+                                            >
+                                                <option value="health">Health</option>
+                                                <option value="routine">Routine</option>
+                                                <option value="chore">Chore</option>
+                                                <option value="work">Work</option>
+                                                <option value="leisure">Leisure</option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                    <div className="flex gap-2 pt-1">
+                                        <button
+                                            onClick={() => void handleAddInlineActivity()}
+                                            disabled={creatingActivity || !newActivityName.trim()}
+                                            className="flex-1 bg-emerald-600 text-white text-sm font-medium rounded-md py-2 hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                                        >
+                                            {creatingActivity ? 'Adding…' : 'Add activity'}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setAddActivityOpen(false)
+                                                setNewActivityName('')
+                                                setNewActivityEmoji('💪')
+                                                setNewActivityMinutes(30)
+                                            }}
+                                            disabled={creatingActivity}
+                                            className="px-3 text-sm text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         {activities.length === 0 ? (
-                            <p className="text-sm text-slate-500">No health-category activity templates. Add some in Planning Settings first.</p>
+                            <p className="text-sm text-slate-500">No health-category activity templates. Add some above, or edit Planning Settings.</p>
                         ) : (
                             <div className="space-y-2">
                                 {activities.map((a) => {
