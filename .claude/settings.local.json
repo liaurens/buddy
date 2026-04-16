@@ -63,7 +63,10 @@
       "mcp__claude_ai_Supabase__execute_sql",
       "Bash(python3 /tmp/check_imports.py)",
       "Bash(npm run:*)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(git stash:*)",
+      "Bash(git merge:*)",
+      "Bash(supabase functions:*)"
     ]
   },
   "enabledMcpjsonServers": [
