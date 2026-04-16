@@ -1,20 +1,34 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { invokeAssistantAction } from '../../assistant'
 import type { AssistantResponse } from '../../assistant'
+import { useAuth } from '../../../hooks/useAuth'
+import { useTimer } from '../../../hooks/useTimer'
+import { useToast } from '../../../components/ui/Toast'
+import {
+    startBlock as startBlockSvc,
+    completeBlock as completeBlockSvc,
+    skipBlock as skipBlockSvc,
+} from '../services/planning.service'
+import { recordBlockCompletion } from '../services/reflection.service'
 import {
     Sparkles,
     RefreshCcw,
     AlertCircle,
     CheckCircle2,
-    Timer,
+    Timer as TimerIcon,
     Brain,
     Dumbbell,
     ListChecks,
     PlayCircle,
+    Play,
+    Pause,
+    SkipForward,
     FileText,
+    Pencil,
+    Repeat,
 } from 'lucide-react'
 
-type Step = 'idle' | 'start' | 'generate' | 'review' | 'close' | 'done'
+type Step = 'idle' | 'start' | 'generate' | 'review' | 'done'
 
 interface TaskRow {
     id: string
@@ -23,6 +37,7 @@ interface TaskRow {
     due_date?: string | null
     estimated_minutes?: number | null
     average_minutes?: number | null
+    average_count?: number
     recurrence?: string | null
 }
 
@@ -32,6 +47,7 @@ interface ActivityRow {
     emoji?: string | null
     default_minutes?: number | null
     average_minutes?: number | null
+    average_count?: number
 }
 
 interface BlockRow {
@@ -47,6 +63,9 @@ interface BlockRow {
     status?: string
     variance_minutes?: number | null
     recurring?: boolean
+    is_recurring_or_activity?: boolean
+    average_minutes?: number | null
+    average_count?: number
 }
 
 interface BlockActual {
@@ -56,69 +75,161 @@ interface BlockActual {
     notes?: string
 }
 
+interface ActivityDurationEntry {
+    minutes: number
+    fixed: boolean
+}
+
+interface PlannerDraft {
+    hoursAvailable: number
+    feel: number
+    medicationTaken: boolean
+    startTime: string
+    selectedTaskIds: string[]
+    selectedActivityIds: string[]
+    taskEstimates: Record<string, number>
+    activityDurations: Record<string, ActivityDurationEntry>
+}
+
 function todayISO() {
     return new Date().toISOString().split('T')[0]
 }
 
+const draftKey = (date: string) => `planner_draft_${date}`
+const fixedMapKey = (date: string) => `planner_fixed_${date}`
+
+function readFixedMap(date: string): Record<string, boolean> {
+    try {
+        const raw = localStorage.getItem(fixedMapKey(date))
+        return raw ? (JSON.parse(raw) as Record<string, boolean>) : {}
+    } catch {
+        return {}
+    }
+}
+
+function writeFixedMap(date: string, map: Record<string, boolean>) {
+    try {
+        localStorage.setItem(fixedMapKey(date), JSON.stringify(map))
+    } catch {
+        /* ignore */
+    }
+}
+
 const PlannerPage: React.FC = () => {
+    const { user } = useAuth()
+    const timer = useTimer()
+    const toast = useToast()
+
     const [step, setStep] = useState<Step>('idle')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    // Step 1 (start) payload
+    // Step 1 inventory
     const [tasks, setTasks] = useState<TaskRow[]>([])
     const [activities, setActivities] = useState<ActivityRow[]>([])
     const [learnings, setLearnings] = useState<unknown[]>([])
 
-    // Step 2 (generate) inputs
+    // Step 1 inputs
     const [hoursAvailable, setHoursAvailable] = useState<number>(6)
     const [feel, setFeel] = useState<number>(7)
     const [medicationTaken, setMedicationTaken] = useState<boolean>(false)
     const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
     const [selectedActivityIds, setSelectedActivityIds] = useState<Set<string>>(new Set())
     const [startTime, setStartTime] = useState<string>('09:00')
+    const [taskEstimates, setTaskEstimates] = useState<Record<string, number>>({})
+    const [activityDurations, setActivityDurations] = useState<Record<string, ActivityDurationEntry>>({})
 
-    // Step 2 (generate) output
+    // Step 2 output
     const [planId, setPlanId] = useState<string | null>(null)
     const [planMode, setPlanMode] = useState<string | null>(null)
     const [planBlocks, setPlanBlocks] = useState<BlockRow[]>([])
     const [aiReasoning, setAiReasoning] = useState<string | null>(null)
     const [planWarnings, setPlanWarnings] = useState<string[]>([])
 
-    // Step 3 (review) state + Step 4 (close) inputs keyed by block id
+    // Step 3 state
     const [reviewBlocks, setReviewBlocks] = useState<BlockRow[]>([])
-    const [actualsByBlock, setActualsByBlock] = useState<Record<string, { actual_minutes: number; status: BlockActual['status']; notes?: string }>>({})
+    const [reviewStats, setReviewStats] = useState<{ completed: number; total: number; total_variance_minutes: number } | null>(null)
+    const [adjustingBlockId, setAdjustingBlockId] = useState<string | null>(null)
+    const [adjustValue, setAdjustValue] = useState<number>(0)
+
+    // Step 4 close inputs
     const [focusRating, setFocusRating] = useState<number>(7)
     const [planWorked, setPlanWorked] = useState<boolean>(true)
     const [closeNotes, setCloseNotes] = useState<string>('')
 
-    // Step 5 (done) output
+    // Step 5 done output
     const [retrospective, setRetrospective] = useState<Record<string, unknown> | null>(null)
     const [learningSummary, setLearningSummary] = useState<string | null>(null)
 
+    const autoCompleteFiredRef = useRef<Set<string>>(new Set())
+    const bootstrappedRef = useRef(false)
+
+    // ─── Draft persistence ──────────────────────────────────────────────────
     useEffect(() => {
-        // On mount, try to load any existing plan for today (review) silently.
-        void (async () => {
-            const res = await invokeAssistantAction('planning', 'plan.review', { date: todayISO() })
-            if (res.success && res.data && (res.data as { plan?: { id: string } }).plan) {
-                const data = res.data as { plan: { id: string }; blocks: BlockRow[] }
-                setPlanId(data.plan.id)
-                setReviewBlocks(data.blocks || [])
-                setStep('review')
-                // Seed actuals
-                const seed: typeof actualsByBlock = {}
-                for (const b of data.blocks || []) {
-                    if (!b.id) continue
-                    seed[b.id] = {
-                        actual_minutes: b.actual_minutes ?? b.estimated_minutes,
-                        status: (b.status as BlockActual['status']) || 'completed',
-                    }
-                }
-                setActualsByBlock(seed)
-            }
-        })()
+        if (step !== 'start') return
+        const draft: PlannerDraft = {
+            hoursAvailable,
+            feel,
+            medicationTaken,
+            startTime,
+            selectedTaskIds: Array.from(selectedTaskIds),
+            selectedActivityIds: Array.from(selectedActivityIds),
+            taskEstimates,
+            activityDurations,
+        }
+        try {
+            localStorage.setItem(draftKey(todayISO()), JSON.stringify(draft))
+        } catch {
+            /* ignore */
+        }
+    }, [step, hoursAvailable, feel, medicationTaken, startTime, selectedTaskIds, selectedActivityIds, taskEstimates, activityDurations])
+
+    const hydrateFromDraft = useCallback(() => {
+        try {
+            const raw = localStorage.getItem(draftKey(todayISO()))
+            if (!raw) return false
+            const d = JSON.parse(raw) as PlannerDraft
+            setHoursAvailable(d.hoursAvailable ?? 6)
+            setFeel(d.feel ?? 7)
+            setMedicationTaken(Boolean(d.medicationTaken))
+            setStartTime(d.startTime ?? '09:00')
+            setSelectedTaskIds(new Set(d.selectedTaskIds ?? []))
+            setSelectedActivityIds(new Set(d.selectedActivityIds ?? []))
+            setTaskEstimates(d.taskEstimates ?? {})
+            setActivityDurations(d.activityDurations ?? {})
+            return true
+        } catch {
+            return false
+        }
     }, [])
 
+    // ─── Bootstrap: check for active plan today, else draft ─────────────────
+    useEffect(() => {
+        if (bootstrappedRef.current) return
+        bootstrappedRef.current = true
+        void (async () => {
+            const res = await invokeAssistantAction('planning', 'plan.review', { date: todayISO() })
+            if (res.success && (res.data as { plan?: { id: string } }).plan) {
+                const data = res.data as {
+                    plan: { id: string }
+                    blocks: BlockRow[]
+                    stats?: { completed: number; total: number; total_variance_minutes: number }
+                }
+                setPlanId(data.plan.id)
+                setReviewBlocks(data.blocks || [])
+                setReviewStats(data.stats ?? null)
+                setStep('review')
+                return
+            }
+            // No plan — try to hydrate draft + jump into Step 1 (fetch inventory fresh)
+            const hadDraft = hydrateFromDraft()
+            if (hadDraft) {
+                await handleStart(true)
+            }
+        })()
+    }, [hydrateFromDraft]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ─── API helpers ────────────────────────────────────────────────────────
     const runAction = async (
         action: string,
         params: Record<string, unknown>,
@@ -129,19 +240,22 @@ const PlannerPage: React.FC = () => {
         try {
             const res = await invokeAssistantAction('planning', action, params)
             if (!res.success) {
-                setError(res.action_taken || res.error || 'Request failed')
+                const msg = res.action_taken || res.error || 'Request failed'
+                setError(msg)
                 return
             }
             onSuccess(res)
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Request failed')
+            const msg = err instanceof Error ? err.message : 'Request failed'
+            setError(msg)
+            toast.error(msg)
         } finally {
             setLoading(false)
         }
     }
 
-    const handleStart = () => {
-        void runAction('plan.start', {}, (res) => {
+    const handleStart = async (keepFormState = false) => {
+        await runAction('plan.start', {}, (res) => {
             const data = res.data as {
                 tasks: TaskRow[]
                 activity_templates: ActivityRow[]
@@ -150,8 +264,12 @@ const PlannerPage: React.FC = () => {
             setTasks(data.tasks || [])
             setActivities(data.activity_templates || [])
             setLearnings(data.recent_learnings || [])
-            setSelectedTaskIds(new Set())
-            setSelectedActivityIds(new Set())
+            if (!keepFormState) {
+                setSelectedTaskIds(new Set())
+                setSelectedActivityIds(new Set())
+                setTaskEstimates({})
+                setActivityDurations({})
+            }
             setStep('start')
         })
     }
@@ -161,6 +279,21 @@ const PlannerPage: React.FC = () => {
             setError('Pick at least 2 active activities (gym, walk, etc.).')
             return
         }
+        const activity_durations: Record<string, number> = {}
+        const fixedMap: Record<string, boolean> = {}
+        for (const id of selectedActivityIds) {
+            const entry = activityDurations[id]
+            if (entry?.minutes) activity_durations[id] = entry.minutes
+            if (entry?.fixed) fixedMap[id] = true
+        }
+        writeFixedMap(todayISO(), fixedMap)
+
+        const task_estimates: Record<string, number> = {}
+        for (const id of selectedTaskIds) {
+            const v = taskEstimates[id]
+            if (Number.isFinite(v) && v > 0) task_estimates[id] = v
+        }
+
         void runAction(
             'plan.generate',
             {
@@ -171,6 +304,8 @@ const PlannerPage: React.FC = () => {
                 medication_taken: medicationTaken,
                 selected_task_ids: Array.from(selectedTaskIds),
                 scheduled_activity_template_ids: Array.from(selectedActivityIds),
+                task_estimates,
+                activity_durations,
             },
             (res) => {
                 const data = res.data as {
@@ -186,43 +321,123 @@ const PlannerPage: React.FC = () => {
                 setAiReasoning(data.ai_reasoning)
                 setPlanWarnings(data.warnings || [])
                 setStep('generate')
+                toast.success(`Plan generated — ${(data.blocks || []).length} blocks (${data.mode}).`)
+                try {
+                    localStorage.removeItem(draftKey(todayISO()))
+                } catch {
+                    /* ignore */
+                }
             }
         )
     }
 
-    const handleLoadReview = () => {
-        void runAction('plan.review', { date: todayISO() }, (res) => {
-            const data = res.data as { plan: { id: string } | null; blocks: BlockRow[] }
+    const loadReview = useCallback(async () => {
+        await runAction('plan.review', { date: todayISO() }, (res) => {
+            const data = res.data as {
+                plan: { id: string } | null
+                blocks: BlockRow[]
+                stats?: { completed: number; total: number; total_variance_minutes: number }
+            }
             if (!data.plan) {
                 setError('No plan for today yet — start one first.')
                 return
             }
             setPlanId(data.plan.id)
             setReviewBlocks(data.blocks || [])
-            const seed: typeof actualsByBlock = {}
-            for (const b of data.blocks || []) {
-                if (!b.id) continue
-                seed[b.id] = {
-                    actual_minutes: b.actual_minutes ?? b.estimated_minutes,
-                    status: (b.status as BlockActual['status']) || 'completed',
-                }
-            }
-            setActualsByBlock(seed)
+            setReviewStats(data.stats ?? null)
             setStep('review')
         })
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ─── Live timer actions ─────────────────────────────────────────────────
+    const activeBlockId = timer.activeBlockId
+    const fixedMap = useMemo(() => readFixedMap(todayISO()), [reviewBlocks.length])
+
+    const handleStartBlock = async (block: BlockRow) => {
+        if (!user?.id || !block.id) return
+        if (timer.isRunning) {
+            toast.warning('Finish the current block first.')
+            return
+        }
+        try {
+            await startBlockSvc(user.id, block.id)
+            timer.start(block.id)
+            await loadReview()
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to start block')
+        }
     }
+
+    const handleCompleteBlock = useCallback(async (block: BlockRow, overrideMinutes?: number) => {
+        if (!user?.id || !block.id) return
+        const actual = overrideMinutes != null ? overrideMinutes : timer.stop()
+        try {
+            await completeBlockSvc(user.id, block.id, actual)
+            if (block.is_recurring_or_activity && block.task_id) {
+                await recordBlockCompletion(user.id, block.id, actual)
+            }
+            const avgHint = block.average_minutes ? `. Avg ${block.average_minutes}min` : ''
+            toast.success(`Logged ${actual}min${avgHint}`)
+            await loadReview()
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to complete block')
+        }
+    }, [user?.id, timer, toast, loadReview])
+
+    const handleSkipBlock = async (block: BlockRow) => {
+        if (!user?.id || !block.id) return
+        try {
+            if (timer.activeBlockId === block.id) timer.stop()
+            await skipBlockSvc(user.id, block.id)
+            await loadReview()
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to skip block')
+        }
+    }
+
+    // Fixed-duration auto-complete: when countdown hits zero, fire complete once.
+    useEffect(() => {
+        if (!activeBlockId) return
+        const block = reviewBlocks.find(b => b.id === activeBlockId)
+        if (!block || !block.id) return
+        const isFixed = block.activity_template_id && fixedMap[block.activity_template_id]
+        if (!isFixed) return
+        const elapsedSec = timer.elapsedMinutes * 60 + timer.elapsedSeconds
+        const targetSec = block.estimated_minutes * 60
+        if (elapsedSec >= targetSec && !autoCompleteFiredRef.current.has(block.id)) {
+            autoCompleteFiredRef.current.add(block.id)
+            void handleCompleteBlock(block, block.estimated_minutes)
+        }
+    }, [timer.elapsedMinutes, timer.elapsedSeconds, activeBlockId, reviewBlocks, fixedMap, handleCompleteBlock])
+
+    const handleAdjustSave = async (block: BlockRow) => {
+        if (!user?.id || !block.id) return
+        const next = Math.max(0, Math.round(adjustValue))
+        try {
+            await completeBlockSvc(user.id, block.id, next)
+            toast.success(`Updated to ${next}min`)
+            setAdjustingBlockId(null)
+            await loadReview()
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Failed to update block')
+        }
+    }
+
+    // ─── Close ──────────────────────────────────────────────────────────────
+    const allTimed = reviewBlocks.length > 0 && reviewBlocks.every(b => b.status !== 'pending' && b.status !== 'active')
 
     const handleClose = () => {
         if (!planId) {
-            setError('No plan loaded to close')
+            toast.error('No plan loaded to close')
             return
         }
-        const block_actuals: BlockActual[] = Object.entries(actualsByBlock).map(([block_id, v]) => ({
-            block_id,
-            actual_minutes: Number(v.actual_minutes) || 0,
-            status: v.status,
-            notes: v.notes,
-        }))
+        const block_actuals: BlockActual[] = reviewBlocks
+            .filter(b => b.id)
+            .map(b => ({
+                block_id: b.id!,
+                actual_minutes: Number(b.actual_minutes ?? b.estimated_minutes) || 0,
+                status: b.status === 'active' || !b.status ? 'pending' : (b.status as BlockActual['status']),
+            }))
         void runAction(
             'plan.close',
             {
@@ -240,8 +455,51 @@ const PlannerPage: React.FC = () => {
                 setRetrospective(data.retrospective)
                 setLearningSummary(data.learning_summary)
                 setStep('done')
+                toast.success('Day closed. Learning captured.')
             }
         )
+    }
+
+    // ─── UI helpers ─────────────────────────────────────────────────────────
+    const toggleInSet = (set: Set<string>, id: string): Set<string> => {
+        const next = new Set(set)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+    }
+
+    const toggleTask = (task: TaskRow) => {
+        setSelectedTaskIds((prev) => {
+            const next = toggleInSet(prev, task.id)
+            setTaskEstimates((est) => {
+                if (next.has(task.id) && est[task.id] == null) {
+                    return { ...est, [task.id]: task.average_minutes ?? task.estimated_minutes ?? 30 }
+                }
+                if (!next.has(task.id)) {
+                    const { [task.id]: _drop, ...rest } = est
+                    return rest
+                }
+                return est
+            })
+            return next
+        })
+    }
+
+    const toggleActivity = (a: ActivityRow) => {
+        setSelectedActivityIds((prev) => {
+            const next = toggleInSet(prev, a.id)
+            setActivityDurations((dur) => {
+                if (next.has(a.id) && !dur[a.id]) {
+                    return { ...dur, [a.id]: { minutes: a.average_minutes ?? a.default_minutes ?? 30, fixed: false } }
+                }
+                if (!next.has(a.id)) {
+                    const { [a.id]: _drop, ...rest } = dur
+                    return rest
+                }
+                return dur
+            })
+            return next
+        })
     }
 
     const resetFlow = () => {
@@ -254,13 +512,7 @@ const PlannerPage: React.FC = () => {
         setLearningSummary(null)
         setAiReasoning(null)
         setPlanWarnings([])
-    }
-
-    const toggleInSet = (set: Set<string>, id: string): Set<string> => {
-        const next = new Set(set)
-        if (next.has(id)) next.delete(id)
-        else next.add(id)
-        return next
+        autoCompleteFiredRef.current.clear()
     }
 
     return (
@@ -274,10 +526,7 @@ const PlannerPage: React.FC = () => {
                     <p className="text-sm text-slate-500">ADHD-aware: morning intake → plan → evening reflection → learning.</p>
                 </div>
                 {step !== 'idle' && (
-                    <button
-                        onClick={resetFlow}
-                        className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
-                    >
+                    <button onClick={resetFlow} className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1">
                         <RefreshCcw size={12} />
                         Restart
                     </button>
@@ -294,7 +543,7 @@ const PlannerPage: React.FC = () => {
             {step === 'idle' && (
                 <div className="space-y-3">
                     <button
-                        onClick={handleStart}
+                        onClick={() => void handleStart()}
                         disabled={loading}
                         className="w-full bg-indigo-600 text-white rounded-xl p-5 font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
@@ -302,7 +551,7 @@ const PlannerPage: React.FC = () => {
                         {loading ? 'Loading…' : 'Start Planning Today'}
                     </button>
                     <button
-                        onClick={handleLoadReview}
+                        onClick={() => void loadReview()}
                         disabled={loading}
                         className="w-full bg-white border border-slate-200 text-slate-700 rounded-xl p-4 font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
                     >
@@ -343,29 +592,58 @@ const PlannerPage: React.FC = () => {
                         {tasks.length === 0 ? (
                             <p className="text-sm text-slate-500">No open tasks.</p>
                         ) : (
-                            <div className="space-y-1 max-h-80 overflow-y-auto">
-                                {tasks.map((t) => (
-                                    <label
-                                        key={t.id}
-                                        className={`flex items-start gap-2 p-2 rounded-lg cursor-pointer hover:bg-slate-50 ${selectedTaskIds.has(t.id) ? 'bg-indigo-50' : ''}`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedTaskIds.has(t.id)}
-                                            onChange={() => setSelectedTaskIds(toggleInSet(selectedTaskIds, t.id))}
-                                            className="mt-0.5"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-medium text-slate-800 truncate">{t.title}</div>
-                                            <div className="text-xs text-slate-500">
-                                                {t.priority && <span className="mr-2">P: {t.priority}</span>}
-                                                {t.estimated_minutes != null && <span className="mr-2">~{t.estimated_minutes}min</span>}
-                                                {t.average_minutes != null && <span className="mr-2">avg {t.average_minutes}min</span>}
-                                                {t.recurrence && t.recurrence !== 'none' && <span className="text-amber-600">↻ {t.recurrence}</span>}
+                            <div className="space-y-1 max-h-96 overflow-y-auto">
+                                {tasks.map((t) => {
+                                    const checked = selectedTaskIds.has(t.id)
+                                    const preFilled = t.average_minutes != null
+                                    return (
+                                        <div
+                                            key={t.id}
+                                            className={`flex items-start gap-2 p-2 rounded-lg ${checked ? 'bg-indigo-50' : 'hover:bg-slate-50'}`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() => toggleTask(t)}
+                                                className="mt-1"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-sm font-medium text-slate-800 truncate">{t.title}</span>
+                                                    {t.recurrence && t.recurrence !== 'none' && (
+                                                        <Repeat size={12} className="text-amber-600 flex-shrink-0" aria-label="recurring" />
+                                                    )}
+                                                </div>
+                                                <div className="text-xs text-slate-500">
+                                                    {t.priority && <span className="mr-2">P: {t.priority}</span>}
+                                                    {t.estimated_minutes != null && <span className="mr-2">orig ~{t.estimated_minutes}min</span>}
+                                                </div>
+                                                {checked && (
+                                                    <div className="mt-1.5 flex items-center gap-2">
+                                                        <label className="text-xs text-slate-600 flex items-center gap-1">
+                                                            Est.
+                                                            <input
+                                                                type="number"
+                                                                min={1}
+                                                                value={taskEstimates[t.id] ?? ''}
+                                                                onChange={(e) =>
+                                                                    setTaskEstimates((prev) => ({ ...prev, [t.id]: Number(e.target.value) }))
+                                                                }
+                                                                className="w-20 border border-slate-200 rounded-md px-2 py-1 text-sm"
+                                                            />
+                                                            min
+                                                        </label>
+                                                        {preFilled && (
+                                                            <span className="text-[11px] text-indigo-600">
+                                                                avg of last {t.average_count ?? '?'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    </label>
-                                ))}
+                                    )
+                                })}
                             </div>
                         )}
                     </Section>
@@ -374,28 +652,62 @@ const PlannerPage: React.FC = () => {
                         {activities.length === 0 ? (
                             <p className="text-sm text-slate-500">No health-category activity templates. Add some in Planning Settings first.</p>
                         ) : (
-                            <div className="grid grid-cols-2 gap-2">
-                                {activities.map((a) => (
-                                    <label
-                                        key={a.id}
-                                        className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer ${selectedActivityIds.has(a.id) ? 'bg-emerald-50 border-emerald-300' : 'border-slate-200 hover:bg-slate-50'}`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedActivityIds.has(a.id)}
-                                            onChange={() => setSelectedActivityIds(toggleInSet(selectedActivityIds, a.id))}
-                                        />
-                                        <Dumbbell size={14} className="text-emerald-600" />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-sm font-medium text-slate-800 truncate">
-                                                {a.emoji} {a.name}
-                                            </div>
-                                            <div className="text-xs text-slate-500">
-                                                {(a.average_minutes ?? a.default_minutes) ?? '—'} min
-                                            </div>
+                            <div className="space-y-2">
+                                {activities.map((a) => {
+                                    const checked = selectedActivityIds.has(a.id)
+                                    const entry = activityDurations[a.id]
+                                    return (
+                                        <div
+                                            key={a.id}
+                                            className={`p-3 border rounded-lg ${checked ? 'bg-emerald-50 border-emerald-300' : 'border-slate-200 hover:bg-slate-50'}`}
+                                        >
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checked}
+                                                    onChange={() => toggleActivity(a)}
+                                                />
+                                                <Dumbbell size={14} className="text-emerald-600" />
+                                                <span className="text-sm font-medium text-slate-800 flex-1 min-w-0 truncate">
+                                                    {a.emoji} {a.name}
+                                                </span>
+                                            </label>
+                                            {checked && (
+                                                <div className="mt-2 ml-6 flex flex-wrap items-center gap-3">
+                                                    <label className="text-xs text-slate-600 flex items-center gap-1">
+                                                        Target
+                                                        <input
+                                                            type="number"
+                                                            min={1}
+                                                            value={entry?.minutes ?? ''}
+                                                            onChange={(e) =>
+                                                                setActivityDurations((prev) => ({
+                                                                    ...prev,
+                                                                    [a.id]: { minutes: Number(e.target.value), fixed: prev[a.id]?.fixed ?? false },
+                                                                }))
+                                                            }
+                                                            className="w-20 border border-slate-200 rounded-md px-2 py-1 text-sm"
+                                                        />
+                                                        min
+                                                    </label>
+                                                    <label className="text-xs text-slate-600 flex items-center gap-1.5">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={entry?.fixed ?? false}
+                                                            onChange={(e) =>
+                                                                setActivityDurations((prev) => ({
+                                                                    ...prev,
+                                                                    [a.id]: { minutes: prev[a.id]?.minutes ?? a.default_minutes ?? 30, fixed: e.target.checked },
+                                                                }))
+                                                            }
+                                                        />
+                                                        Fixed duration (countdown, auto-complete)
+                                                    </label>
+                                                </div>
+                                            )}
                                         </div>
-                                    </label>
-                                ))}
+                                    )
+                                })}
                             </div>
                         )}
                     </Section>
@@ -467,66 +779,178 @@ const PlannerPage: React.FC = () => {
                     </Section>
 
                     <button
-                        onClick={handleLoadReview}
-                        className="w-full bg-white border border-slate-200 text-slate-700 rounded-xl p-3 font-medium hover:bg-slate-50 flex items-center justify-center gap-2"
+                        onClick={() => void loadReview()}
+                        className="w-full bg-indigo-600 text-white rounded-xl p-4 font-semibold hover:bg-indigo-700 flex items-center justify-center gap-2"
                     >
-                        <ListChecks size={16} />
-                        Open review view
+                        <TimerIcon size={18} />
+                        Open live review
                     </button>
                 </div>
             )}
 
             {step === 'review' && (
                 <div className="space-y-5">
-                    <Section title="Log actuals for each block">
-                        <div className="space-y-3">
+                    {reviewStats && (
+                        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl p-3">
+                            <span className="text-sm text-slate-700">
+                                {reviewStats.completed} / {reviewStats.total} blocks done
+                            </span>
+                            <span
+                                className={`text-sm font-semibold ${reviewStats.total_variance_minutes > 0 ? 'text-rose-600' : reviewStats.total_variance_minutes < 0 ? 'text-emerald-600' : 'text-slate-600'}`}
+                            >
+                                {reviewStats.total_variance_minutes >= 0 ? '+' : ''}
+                                {reviewStats.total_variance_minutes} min vs plan
+                            </span>
+                        </div>
+                    )}
+
+                    <Section title="Today's blocks">
+                        <div className="space-y-2">
                             {reviewBlocks.map((b) => {
                                 if (!b.id) return null
-                                const actual = actualsByBlock[b.id]
+                                const isActive = timer.activeBlockId === b.id
+                                const isCompleted = b.status === 'completed'
+                                const isSkipped = b.status === 'skipped'
+                                const isFixed = b.activity_template_id ? fixedMap[b.activity_template_id] === true : false
+                                const elapsedSec = isActive ? timer.elapsedMinutes * 60 + timer.elapsedSeconds : 0
+                                const targetSec = b.estimated_minutes * 60
+                                const remaining = Math.max(0, targetSec - elapsedSec)
+                                const displayMinutes = isFixed && isActive
+                                    ? Math.floor(remaining / 60)
+                                    : timer.elapsedMinutes
+                                const displaySeconds = isFixed && isActive
+                                    ? remaining % 60
+                                    : timer.elapsedSeconds
+
                                 return (
-                                    <div key={b.id} className={`border rounded-lg p-3 ${b.recurring ? 'border-amber-200 bg-amber-50/30' : 'border-slate-200 bg-white'}`}>
-                                        <div className="flex items-baseline justify-between gap-2 mb-2">
-                                            <h4 className="font-semibold text-slate-900 text-sm">
+                                    <div
+                                        key={b.id}
+                                        className={`rounded-lg p-3 border ${
+                                            isActive
+                                                ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-200'
+                                                : isCompleted
+                                                    ? 'bg-green-50 border-green-200'
+                                                    : isSkipped
+                                                        ? 'bg-slate-100 border-slate-200 opacity-60'
+                                                        : b.recurring
+                                                            ? 'border-amber-200 bg-amber-50/30'
+                                                            : 'border-slate-200 bg-white'
+                                        }`}
+                                    >
+                                        <div className="flex items-baseline justify-between gap-2">
+                                            <h4 className="font-semibold text-slate-900 text-sm flex items-center gap-1.5">
                                                 {b.title}
-                                                {b.recurring && <span className="ml-2 text-xs text-amber-700">↻ recurring</span>}
+                                                {b.recurring && <Repeat size={12} className="text-amber-600" />}
+                                                {isFixed && <span className="text-[10px] uppercase tracking-wider text-emerald-700">fixed</span>}
                                             </h4>
                                             <span className="text-xs text-slate-500 flex-shrink-0">
                                                 {b.start_time} · planned {b.estimated_minutes}min
+                                                {b.average_minutes != null && ` · avg ${b.average_minutes}min`}
                                             </span>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <label className="text-xs text-slate-600">
-                                                Actual minutes
+
+                                        {isActive && (
+                                            <div className="mt-2 flex items-center gap-2">
+                                                <span className="font-mono text-lg font-semibold text-indigo-700">
+                                                    {String(displayMinutes).padStart(2, '0')}:{String(displaySeconds).padStart(2, '0')}
+                                                </span>
+                                                {timer.isPaused && <span className="text-xs text-amber-700 font-medium">PAUSED</span>}
+                                                {isFixed && <span className="text-xs text-slate-500">countdown</span>}
+                                            </div>
+                                        )}
+
+                                        {isCompleted && adjustingBlockId !== b.id && (
+                                            <div className="mt-1 flex items-center gap-2 text-sm text-green-800">
+                                                <CheckCircle2 size={14} />
+                                                <span>Logged {b.actual_minutes}min</span>
+                                                {b.variance_minutes != null && b.variance_minutes !== 0 && (
+                                                    <span className="text-xs text-slate-600">
+                                                        ({b.variance_minutes > 0 ? '+' : ''}{b.variance_minutes}min vs plan)
+                                                    </span>
+                                                )}
+                                                <button
+                                                    onClick={() => {
+                                                        setAdjustingBlockId(b.id!)
+                                                        setAdjustValue(b.actual_minutes ?? b.estimated_minutes)
+                                                    }}
+                                                    className="ml-auto text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                                                >
+                                                    <Pencil size={12} />
+                                                    Adjust
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {isCompleted && adjustingBlockId === b.id && (
+                                            <div className="mt-2 flex items-center gap-2">
                                                 <input
                                                     type="number"
                                                     min={0}
-                                                    value={actual?.actual_minutes ?? b.estimated_minutes}
-                                                    onChange={(e) =>
-                                                        setActualsByBlock((prev) => ({
-                                                            ...prev,
-                                                            [b.id!]: { ...(prev[b.id!] || { status: 'completed' }), actual_minutes: Number(e.target.value) },
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full border border-slate-200 rounded-md px-2 py-1.5 text-sm"
+                                                    value={adjustValue}
+                                                    onChange={(e) => setAdjustValue(Number(e.target.value))}
+                                                    className="w-24 border border-slate-200 rounded-md px-2 py-1 text-sm"
                                                 />
-                                            </label>
-                                            <label className="text-xs text-slate-600">
-                                                Status
-                                                <select
-                                                    value={actual?.status ?? 'completed'}
-                                                    onChange={(e) =>
-                                                        setActualsByBlock((prev) => ({
-                                                            ...prev,
-                                                            [b.id!]: { ...(prev[b.id!] || { actual_minutes: b.estimated_minutes }), status: e.target.value as BlockActual['status'] },
-                                                        }))
-                                                    }
-                                                    className="mt-1 w-full border border-slate-200 rounded-md px-2 py-1.5 text-sm"
+                                                <span className="text-xs text-slate-500">min</span>
+                                                <button
+                                                    onClick={() => void handleAdjustSave(b)}
+                                                    className="px-3 py-1 text-xs bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                                                 >
-                                                    <option value="completed">Completed</option>
-                                                    <option value="skipped">Skipped</option>
-                                                    <option value="pending">Pending</option>
-                                                </select>
-                                            </label>
+                                                    Save
+                                                </button>
+                                                <button
+                                                    onClick={() => setAdjustingBlockId(null)}
+                                                    className="px-3 py-1 text-xs bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        <div className="mt-2 flex gap-2 flex-wrap">
+                                            {b.status === 'pending' && !timer.isRunning && (
+                                                <button
+                                                    onClick={() => void handleStartBlock(b)}
+                                                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 flex items-center gap-1"
+                                                >
+                                                    <Play size={14} />
+                                                    Start
+                                                </button>
+                                            )}
+                                            {isActive && !timer.isPaused && (
+                                                <button
+                                                    onClick={timer.pause}
+                                                    className="px-3 py-1.5 bg-amber-600 text-white rounded-md text-sm font-medium hover:bg-amber-700 flex items-center gap-1"
+                                                >
+                                                    <Pause size={14} />
+                                                    Pause
+                                                </button>
+                                            )}
+                                            {isActive && timer.isPaused && (
+                                                <button
+                                                    onClick={timer.resume}
+                                                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700 flex items-center gap-1"
+                                                >
+                                                    <Play size={14} />
+                                                    Resume
+                                                </button>
+                                            )}
+                                            {isActive && (
+                                                <button
+                                                    onClick={() => void handleCompleteBlock(b)}
+                                                    className="px-3 py-1.5 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 flex items-center gap-1"
+                                                >
+                                                    <CheckCircle2 size={14} />
+                                                    Complete
+                                                </button>
+                                            )}
+                                            {(b.status === 'pending' || isActive) && (
+                                                <button
+                                                    onClick={() => void handleSkipBlock(b)}
+                                                    className="px-2 py-1.5 bg-slate-200 text-slate-700 rounded-md text-sm hover:bg-slate-300 flex items-center gap-1"
+                                                >
+                                                    <SkipForward size={14} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 )
@@ -557,6 +981,11 @@ const PlannerPage: React.FC = () => {
                                 placeholder="What threw off the plan? What helped?"
                             />
                         </label>
+                        {!allTimed && (
+                            <p className="text-xs text-slate-500 mt-2">
+                                Tip: use the Start button on each block during the day to auto-log actuals. Blocks still marked pending will be treated as such.
+                            </p>
+                        )}
                     </Section>
 
                     <button
@@ -606,7 +1035,7 @@ const PlannerPage: React.FC = () => {
                         onClick={resetFlow}
                         className="w-full bg-white border border-slate-200 text-slate-700 rounded-xl p-3 font-medium hover:bg-slate-50 flex items-center justify-center gap-2"
                     >
-                        <Timer size={16} />
+                        <TimerIcon size={16} />
                         Plan another day
                     </button>
                 </div>

@@ -81,6 +81,7 @@ async function fetchOpenTodos(userId: string, supabase: Sb) {
     due_date: t.due_date,
     estimated_minutes: t.estimated_time,
     average_minutes: avg(t.historical_minutes),
+    average_count: Array.isArray(t.historical_minutes) ? t.historical_minutes.length : 0,
     recurrence: t.recurrence,
   }))
 }
@@ -99,6 +100,7 @@ async function fetchHealthActivityTemplates(userId: string, supabase: Sb) {
     emoji: t.emoji,
     default_minutes: t.default_minutes,
     average_minutes: avg(t.historical_minutes) ?? t.default_minutes,
+    average_count: Array.isArray(t.historical_minutes) ? t.historical_minutes.length : 0,
     preferred_time_slot: t.preferred_time_slot,
     preferred_start_time: t.preferred_start_time,
   }))
@@ -122,7 +124,9 @@ Return ONLY valid JSON, no prose, no code fences. Schema:
 Rules that always apply:
 - Include every selected_task_id and every scheduled_activity_template_id exactly once.
 - Blocks cannot overlap; use a short (5-10 min) transition between non-trivial blocks.
-- Respect hours_available as the total focused work budget across task blocks.`
+- Respect hours_available as the total focused work budget across task blocks.
+- If a task has "user_estimated_minutes", set the block's estimated_minutes to exactly that value (you may split across multiple short blocks if the mode requires shorter blocks, but the SUM must equal user_estimated_minutes).
+- If an activity has "user_duration_minutes", the block's estimated_minutes MUST equal that value exactly — do not shorten or lengthen it.`
 
   if (mode === 'behavioral_activation') {
     return `${base}
@@ -206,6 +210,18 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
   const scheduled_activity_template_ids = (params.scheduled_activity_template_ids as string[]) || []
   const start_time = (params.start_time as string) || '09:00'
 
+  const normalizeMinutesMap = (raw: unknown): Record<string, number> => {
+    if (!raw || typeof raw !== 'object') return {}
+    const out: Record<string, number> = {}
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      const n = Number(v)
+      if (Number.isFinite(n) && n > 0) out[k] = Math.round(n)
+    }
+    return out
+  }
+  const task_estimates = normalizeMinutesMap(params.task_estimates)
+  const activity_durations = normalizeMinutesMap(params.activity_durations)
+
   if (!Number.isFinite(hours_available) || hours_available <= 0) {
     return { success: false, action_taken: 'hours_available must be a positive number', data: {} }
   }
@@ -271,6 +287,7 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
       title: t.title,
       priority: t.priority,
       estimated_minutes: t.estimated_time,
+      user_estimated_minutes: task_estimates[t.id] ?? null,
       average_actual_minutes: avg(t.historical_minutes),
       recurrence: t.recurrence,
     })),
@@ -278,6 +295,7 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
       id: t.id,
       name: t.name,
       default_minutes: t.default_minutes,
+      user_duration_minutes: activity_durations[t.id] ?? null,
       average_minutes: avg(t.historical_minutes) ?? t.default_minutes,
       preferred_time_slot: t.preferred_time_slot,
       preferred_start_time: t.preferred_start_time,
@@ -429,21 +447,55 @@ async function handlePlanReview(params: Record<string, unknown>, context: AgentC
 
   // Mark recurring blocks: any block whose task has recurrence != 'none' OR any activity_template block
   const taskIds = rows.map(b => b.task_id).filter(Boolean)
-  let recurringTaskIds = new Set<string>()
+  const recurringTaskIds = new Set<string>()
+  const taskHistory = new Map<string, { avg: number | null; count: number }>()
   if (taskIds.length) {
     const { data: trs } = await supabase
       .from('todos')
-      .select('id, recurrence')
+      .select('id, recurrence, historical_minutes')
       .in('id', taskIds)
     for (const t of (trs ?? []) as Sb[]) {
       if (t.recurrence && t.recurrence !== 'none') recurringTaskIds.add(t.id)
+      taskHistory.set(t.id, {
+        avg: avg(t.historical_minutes),
+        count: Array.isArray(t.historical_minutes) ? t.historical_minutes.length : 0,
+      })
+    }
+  }
+
+  const templateIds = rows.map(b => b.activity_template_id).filter(Boolean)
+  const templateHistory = new Map<string, { avg: number | null; count: number }>()
+  if (templateIds.length) {
+    const { data: tps } = await supabase
+      .from('activity_templates')
+      .select('id, average_minutes, historical_minutes, default_minutes')
+      .in('id', templateIds)
+    for (const t of (tps ?? []) as Sb[]) {
+      templateHistory.set(t.id, {
+        avg: t.average_minutes ?? avg(t.historical_minutes) ?? t.default_minutes,
+        count: Array.isArray(t.historical_minutes) ? t.historical_minutes.length : 0,
+      })
     }
   }
 
   const enriched = rows.map(b => {
     const variance = b.actual_minutes != null ? b.actual_minutes - b.estimated_minutes : null
-    const recurring = Boolean(b.activity_template_id) || (b.task_id && recurringTaskIds.has(b.task_id))
-    return { ...b, variance_minutes: variance, recurring }
+    const isActivity = Boolean(b.activity_template_id)
+    const taskIsRecurring = b.task_id ? recurringTaskIds.has(b.task_id) : false
+    const recurring = isActivity || taskIsRecurring
+    const hist = isActivity
+      ? templateHistory.get(b.activity_template_id) ?? { avg: null, count: 0 }
+      : b.task_id
+        ? taskHistory.get(b.task_id) ?? { avg: null, count: 0 }
+        : { avg: null, count: 0 }
+    return {
+      ...b,
+      variance_minutes: variance,
+      recurring,
+      is_recurring_or_activity: recurring,
+      average_minutes: hist.avg,
+      average_count: hist.count,
+    }
   })
 
   const completed = enriched.filter(b => b.status === 'completed').length
@@ -525,13 +577,14 @@ async function handlePlanClose(params: Record<string, unknown>, context: AgentCo
     if (b.task_id) {
       const { data: t } = await supabase
         .from('todos')
-        .select('historical_minutes, completed')
+        .select('historical_minutes, completed, recurrence')
         .eq('id', b.task_id)
         .maybeSingle()
-      const hist = Array.isArray(t?.historical_minutes) ? [...t.historical_minutes, actual] : [actual]
-      const patch: Sb = {
-        historical_minutes: hist.slice(-20),
-        actual_minutes: actual,
+      const isRecurring = t?.recurrence && t.recurrence !== 'none'
+      const patch: Sb = { actual_minutes: actual }
+      if (isRecurring) {
+        const hist = Array.isArray(t?.historical_minutes) ? [...t.historical_minutes, actual] : [actual]
+        patch.historical_minutes = hist.slice(-20)
       }
       if (a.status === 'completed' && !t?.completed) {
         patch.completed = true
