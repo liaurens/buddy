@@ -87,6 +87,7 @@ interface ActivityDurationEntry {
 interface PlannerDraft {
     hoursAvailable: number
     feel: number
+    energy: number
     medicationTaken: boolean
     startTime: string
     selectedTaskIds: string[]
@@ -138,6 +139,7 @@ const PlannerPage: React.FC = () => {
     // Step 1 inputs
     const [hoursAvailable, setHoursAvailable] = useState<number>(6)
     const [feel, setFeel] = useState<number>(7)
+    const [energy, setEnergy] = useState<number>(6)
     const [medicationTaken, setMedicationTaken] = useState<boolean>(false)
     const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
     const [selectedActivityIds, setSelectedActivityIds] = useState<Set<string>>(new Set())
@@ -192,6 +194,7 @@ const PlannerPage: React.FC = () => {
         const draft: PlannerDraft = {
             hoursAvailable,
             feel,
+            energy,
             medicationTaken,
             startTime,
             selectedTaskIds: Array.from(selectedTaskIds),
@@ -204,7 +207,7 @@ const PlannerPage: React.FC = () => {
         } catch {
             /* ignore */
         }
-    }, [step, hoursAvailable, feel, medicationTaken, startTime, selectedTaskIds, selectedActivityIds, taskEstimates, activityDurations])
+    }, [step, hoursAvailable, feel, energy, medicationTaken, startTime, selectedTaskIds, selectedActivityIds, taskEstimates, activityDurations])
 
     const hydrateFromDraft = useCallback(() => {
         try {
@@ -213,6 +216,7 @@ const PlannerPage: React.FC = () => {
             const d = JSON.parse(raw) as PlannerDraft
             setHoursAvailable(d.hoursAvailable ?? 6)
             setFeel(d.feel ?? 7)
+            setEnergy(d.energy ?? 6)
             setMedicationTaken(Boolean(d.medicationTaken))
             setStartTime(d.startTime ?? '09:00')
             setSelectedTaskIds(new Set(d.selectedTaskIds ?? []))
@@ -338,6 +342,7 @@ const PlannerPage: React.FC = () => {
                 start_time: startTime,
                 hours_available: hoursAvailable,
                 feel,
+                energy,
                 medication_taken: medicationTaken,
                 selected_task_ids: Array.from(selectedTaskIds),
                 scheduled_activity_template_ids: Array.from(selectedActivityIds),
@@ -715,9 +720,10 @@ const PlannerPage: React.FC = () => {
             {step === 'start' && (
                 <div className="space-y-5">
                     <Section title="How you feel">
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-3">
                             <NumberField label="Hours available" value={hoursAvailable} onChange={setHoursAvailable} min={0.5} step={0.5} />
                             <NumberField label="Feel (1–10)" value={feel} onChange={setFeel} min={1} max={10} />
+                            <NumberField label="Energy (1–10)" value={energy} onChange={setEnergy} min={1} max={10} />
                         </div>
                         <label className="flex items-center gap-2 text-sm text-slate-700 mt-3">
                             <input

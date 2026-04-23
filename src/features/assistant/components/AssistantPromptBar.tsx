@@ -1,26 +1,10 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import { SendHorizontal, Loader2 } from 'lucide-react'
 import { useAssistant } from '../hooks/useAssistant'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import AssistantResponseCard from './AssistantResponseCard'
+import { COMMANDS, PRIMARY_COMMANDS } from '../constants/commands'
 import type { AppRoute } from '../../../constants/routes'
-
-// All available slash commands with descriptions
-const COMMANDS = [
-  { command: '/task', description: 'Create a task', example: '/task Fix bike tire by friday' },
-  { command: '/done', description: 'Complete a task', example: '/done fix bike' },
-  { command: '/today', description: "Today's tasks", example: '/today' },
-  { command: '/task.list', description: 'List all tasks', example: '/task.list' },
-  { command: '/note', description: 'Create a note', example: '/note Meeting notes from today' },
-  { command: '/shop', description: 'Shopping list', example: '/shop Milk and cheese' },
-  { command: '/find', description: 'Search notes', example: '/find machine learning' },
-  { command: '/checkin', description: 'Log health', example: '/checkin mood 4 energy 3' },
-  { command: '/health', description: 'Health query', example: '/health how was my sleep?' },
-  { command: '/agenda', description: "Today's events", example: '/agenda' },
-  { command: '/habits', description: 'Habit status', example: '/habits' },
-  { command: '/remind', description: 'Set reminder', example: '/remind 14:00 call dentist' },
-  { command: '/help', description: 'Show all commands', example: '/help' },
-]
 
 interface AssistantPromptBarProps {
   onNavigate?: (route: AppRoute) => void
@@ -30,24 +14,64 @@ interface AssistantPromptBarProps {
 
 const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
   onNavigate,
-  placeholder = 'Type / for commands or ask anything…',
+  placeholder = 'Capture anything — type / for commands…',
   onMessageSent,
 }) => {
-  const [input, setInput] = useState('')
+  // Seed from CaptureFAB voice draft on first render. Lazy initializer avoids
+  // the setState-in-effect pattern. We don't auto-submit — speech recognition
+  // errors are common and the user should confirm the transcript first.
+  const [input, setInput] = useState<string>(() => {
+    try {
+      const draft = sessionStorage.getItem('captureFAB.voiceDraft')
+      if (draft) {
+        sessionStorage.removeItem('captureFAB.voiceDraft')
+        return draft
+      }
+    } catch {
+      // sessionStorage may be unavailable (private mode, etc.)
+    }
+    return ''
+  })
   const [showHints, setShowHints] = useState(false)
+  const [showAllHints, setShowAllHints] = useState(false)
   const [selectedHint, setSelectedHint] = useState(0)
   const { send, isLoading, lastResponse, reset } = useAssistant()
   const { addUserMessage, addAssistantMessage } = useAssistantHistory()
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Filter commands based on current input
   const filteredCommands = useMemo(() => {
     if (!input.startsWith('/')) return []
     const query = input.toLowerCase()
-    return COMMANDS.filter(
+    const matches = COMMANDS.filter(
       c => c.command.startsWith(query) || c.command.includes(query)
     )
+    return matches
   }, [input])
+
+  // Top-4 by default to avoid overwhelming the picker.
+  const visibleHints = useMemo(() => {
+    if (input.length > 1) return filteredCommands
+    return showAllHints ? COMMANDS : PRIMARY_COMMANDS
+  }, [filteredCommands, input, showAllHints])
+
+  // Auto-grow textarea
+  useEffect(() => {
+    const ta = textareaRef.current
+    if (!ta) return
+    ta.style.height = 'auto'
+    ta.style.height = Math.min(ta.scrollHeight, 200) + 'px'
+  }, [input])
+
+  // If seeded from voice draft, focus the textarea with caret at end.
+  useEffect(() => {
+    if (!input) return
+    const ta = textareaRef.current
+    if (!ta) return
+    ta.focus()
+    ta.setSelectionRange(input.length, input.length)
+    // Only run on mount; subsequent input changes shouldn't steal focus.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSubmit = useCallback(
     async (e?: React.FormEvent) => {
@@ -59,19 +83,24 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
       onMessageSent?.(trimmed)
       setInput('')
       reset()
-      
-      const userMsgId = addUserMessage(trimmed)
-      const response = await send(trimmed)
-      
-      if (response) {
-        const content = response.action_taken || (response.success ? 'Done.' : 'Something went wrong.')
-        addAssistantMessage(content, response, userMsgId)
+
+      // Brain dump support: split on blank lines, send each non-empty chunk.
+      const chunks = trimmed.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean)
+      const captures = chunks.length > 1 ? chunks : [trimmed]
+
+      for (const chunk of captures) {
+        const userMsgId = addUserMessage(chunk)
+        const response = await send(chunk)
+        if (response) {
+          const content = response.action_taken || (response.success ? 'Done.' : 'Something went wrong.')
+          addAssistantMessage(content, response, userMsgId)
+        }
       }
     },
     [input, isLoading, send, reset, onMessageSent, addUserMessage, addAssistantMessage]
   )
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
     setInput(value)
     setShowHints(value.startsWith('/') && value.length < 20)
@@ -81,14 +110,14 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
   const handleSelectCommand = (command: string) => {
     setInput(command + ' ')
     setShowHints(false)
-    inputRef.current?.focus()
+    textareaRef.current?.focus()
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (showHints && filteredCommands.length > 0) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (showHints && visibleHints.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setSelectedHint(prev => Math.min(prev + 1, filteredCommands.length - 1))
+        setSelectedHint(prev => Math.min(prev + 1, visibleHints.length - 1))
         return
       }
       if (e.key === 'ArrowUp') {
@@ -98,14 +127,15 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
       }
       if (e.key === 'Tab') {
         e.preventDefault()
-        handleSelectCommand(filteredCommands[selectedHint].command)
+        handleSelectCommand(visibleHints[selectedHint].command)
         return
       }
     }
+    // Enter submits, Shift+Enter inserts newline.
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      if (showHints && filteredCommands.length > 0 && input === filteredCommands[selectedHint]?.command) {
-        handleSelectCommand(filteredCommands[selectedHint].command)
+      if (showHints && visibleHints.length > 0 && input === visibleHints[selectedHint]?.command) {
+        handleSelectCommand(visibleHints[selectedHint].command)
       } else {
         handleSubmit()
       }
@@ -117,12 +147,10 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Input row */}
       <form onSubmit={handleSubmit} className="relative">
-        <div className="flex gap-2 items-center">
-          <input
-            ref={inputRef}
-            type="text"
+        <div className="flex gap-2 items-end">
+          <textarea
+            ref={textareaRef}
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
@@ -132,7 +160,8 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
             disabled={isLoading}
             aria-label="Assistant input"
             autoComplete="off"
-            className="flex-1 min-w-0 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent disabled:opacity-50 shadow-sm"
+            rows={1}
+            className="flex-1 min-w-0 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent disabled:opacity-50 shadow-sm resize-none leading-snug"
           />
           <button
             type="submit"
@@ -140,18 +169,13 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
             aria-label="Send"
             className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 text-white rounded-xl transition-colors shadow-sm"
           >
-            {isLoading ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <SendHorizontal size={18} />
-            )}
+            {isLoading ? <Loader2 size={18} className="animate-spin" /> : <SendHorizontal size={18} />}
           </button>
         </div>
 
-        {/* Command hints dropdown */}
-        {showHints && filteredCommands.length > 0 && (
+        {showHints && visibleHints.length > 0 && (
           <div className="absolute left-0 right-12 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50">
-            {filteredCommands.slice(0, 6).map((cmd, i) => (
+            {visibleHints.map((cmd, i) => (
               <button
                 key={cmd.command}
                 type="button"
@@ -169,11 +193,19 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
                 <span className="text-slate-500 truncate">{cmd.description}</span>
               </button>
             ))}
+            {!showAllHints && input.length <= 1 && visibleHints.length < COMMANDS.length && (
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); setShowAllHints(true) }}
+                className="w-full text-left px-3 py-2 text-xs text-indigo-600 hover:bg-slate-50 border-t border-slate-100"
+              >
+                Show all commands…
+              </button>
+            )}
           </div>
         )}
       </form>
 
-      {/* Response card */}
       {lastResponse && (
         <AssistantResponseCard
           response={lastResponse}

@@ -120,6 +120,7 @@ export interface ExperimentPhase {
     endDate?: string;
     description?: string;
     order: number;
+    isBaseline?: boolean;
 }
 
 export type ExperimentStatus = 'active' | 'paused' | 'completed' | 'archived';

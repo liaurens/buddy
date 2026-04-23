@@ -3,6 +3,8 @@ import Dashboard from '../components/tracker/Dashboard';
 import EntryForm from '../components/tracker/EntryForm';
 import Analysis from '../components/tracker/Analysis';
 import CreateTrackerModal from '../components/tracker/CreateTrackerModal';
+import TopCorrelationsCard from '../components/tracker/TopCorrelationsCard';
+import SegmentComparePanel from '../components/tracker/SegmentComparePanel';
 import type { TrackerDefinition } from '../types';
 import { Plus } from 'lucide-react';
 
@@ -20,13 +22,25 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
     );
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingTracker, setEditingTracker] = useState<TrackerDefinition | undefined>(undefined);
+    const [analysisPair, setAnalysisPair] = useState<{ xId?: string; yId?: string }>({
+        xId: initialParams?.xId,
+        yId: initialParams?.yId,
+    });
 
     // Reset subtab if params change (optional, but good for navigation)
     useEffect(() => {
         if (initialParams?.subTab) {
             setTrackerSubTab(initialParams.subTab);
         }
+        if (initialParams?.xId || initialParams?.yId) {
+            setAnalysisPair({ xId: initialParams.xId, yId: initialParams.yId });
+        }
     }, [initialParams]);
+
+    const openPair = (xId: string, yId: string) => {
+        setAnalysisPair({ xId, yId });
+        setTrackerSubTab('analysis');
+    };
 
     return (
         <div className="space-y-6">
@@ -74,19 +88,26 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
             </div>
 
             {trackerSubTab === 'dashboard' && (
-                <Dashboard
-                    onEditTracker={(tracker) => {
-                        setEditingTracker(tracker);
-                        setIsCreateModalOpen(true);
-                    }}
-                />
+                <>
+                    <Dashboard
+                        onEditTracker={(tracker) => {
+                            setEditingTracker(tracker);
+                            setIsCreateModalOpen(true);
+                        }}
+                    />
+                    <TopCorrelationsCard onOpenPair={openPair} />
+                </>
             )}
             {trackerSubTab === 'add' && <EntryForm />}
             {trackerSubTab === 'analysis' && (
-                <Analysis
-                    initialX={initialParams?.xId}
-                    initialY={initialParams?.yId}
-                />
+                <>
+                    <Analysis
+                        key={`${analysisPair.xId ?? ''}-${analysisPair.yId ?? ''}`}
+                        initialX={analysisPair.xId}
+                        initialY={analysisPair.yId}
+                    />
+                    <SegmentComparePanel />
+                </>
             )}
 
             <CreateTrackerModal

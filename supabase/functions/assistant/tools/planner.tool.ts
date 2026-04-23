@@ -10,6 +10,7 @@ type PlanMode = 'chronobiological' | 'behavioral_activation' | 'standard'
 interface UserContext {
   hours_available: number
   feel: number
+  energy?: number
   medication_taken: boolean
   focus_rating?: number
   mode?: PlanMode
@@ -38,19 +39,39 @@ function chooseMode(medicated: boolean, feel: number): PlanMode {
   return 'standard'
 }
 
-function parseJson<T = unknown>(text: string): T | null {
-  const trimmed = text.trim().replace(/^```(?:json)?\s*|\s*```$/g, '')
-  try {
-    return JSON.parse(trimmed) as T
-  } catch {
-    const match = trimmed.match(/\{[\s\S]*\}/)
-    if (!match) return null
-    try {
-      return JSON.parse(match[0]) as T
-    } catch {
-      return null
-    }
+function extractJsonObject(text: string): string | null {
+  const start = text.indexOf('{')
+  if (start === -1) return null
+  let depth = 0
+  let inString = false
+  let escape = false
+  for (let i = start; i < text.length; i++) {
+    const c = text[i]
+    if (escape) { escape = false; continue }
+    if (c === '\\' && inString) { escape = true; continue }
+    if (c === '"') { inString = !inString; continue }
+    if (inString) continue
+    if (c === '{') depth++
+    else if (c === '}') { depth--; if (depth === 0) return text.slice(start, i + 1) }
   }
+  return null
+}
+
+function parseJson<T = unknown>(text: string): T | null {
+  // Strategy 1: direct parse
+  try { return JSON.parse(text.trim()) as T } catch { /* fall through */ }
+
+  // Strategy 2: strip markdown code fences
+  const stripped = text.trim().replace(/^```(?:json)?\s*/m, '').replace(/\s*```[\s\S]*$/m, '').trim()
+  try { return JSON.parse(stripped) as T } catch { /* fall through */ }
+
+  // Strategy 3: extract balanced { } block (handles preamble and postamble)
+  const extracted = extractJsonObject(text)
+  if (extracted) {
+    try { return JSON.parse(extracted) as T } catch { /* fall through */ }
+  }
+
+  return null
 }
 
 function minutesBetween(start: string, end: string): number {
@@ -84,6 +105,55 @@ async function fetchOpenTodos(userId: string, supabase: Sb) {
     average_count: Array.isArray(t.historical_minutes) ? t.historical_minutes.length : 0,
     recurrence: t.recurrence,
   }))
+}
+
+async function fetchYesterdayPlan(userId: string, supabase: Sb, today: string) {
+  const y = new Date(today)
+  y.setDate(y.getDate() - 1)
+  const yIso = y.toISOString().split('T')[0]
+  const { data } = await supabase
+    .from('daily_plans')
+    .select('user_context, ai_reasoning, status')
+    .eq('user_id', userId)
+    .eq('date', yIso)
+    .maybeSingle()
+  if (!data) return null
+  const ctx = (data.user_context ?? {}) as Record<string, unknown>
+  return {
+    date: yIso,
+    feel: ctx.feel ?? null,
+    energy: ctx.energy ?? null,
+    medication_taken: ctx.medication_taken ?? null,
+    focus_rating: ctx.focus_rating ?? null,
+    plan_worked: ctx.plan_worked ?? null,
+    mode: ctx.mode ?? null,
+    status: data.status,
+  }
+}
+
+async function fetchRecentReflection(userId: string, supabase: Sb) {
+  // Pull assistant_learnings written in the last 24h with subtype in
+  // reflection_priority / reflection_blocker (stored as type='note',
+  // content.subtype).
+  const sinceIso = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString()
+  const { data } = await supabase
+    .from('assistant_learnings')
+    .select('content, created_at')
+    .eq('user_id', userId)
+    .eq('type', 'note')
+    .eq('active', true)
+    .gte('created_at', sinceIso)
+    .order('created_at', { ascending: false })
+  let priority: string | null = null
+  let blocker: string | null = null
+  for (const row of (data ?? []) as Sb[]) {
+    const c = row.content as Record<string, unknown> | null
+    if (!c || c.source !== 'reflection') continue
+    if (!priority && c.subtype === 'reflection_priority' && typeof c.text === 'string') priority = c.text
+    if (!blocker && c.subtype === 'reflection_blocker' && typeof c.text === 'string') blocker = c.text
+    if (priority && blocker) break
+  }
+  return { priority, blocker }
 }
 
 async function fetchActiveActivityTemplates(userId: string, supabase: Sb, categories: string[]) {
@@ -128,7 +198,11 @@ Rules that always apply:
 - Blocks cannot overlap; use a short (5-10 min) transition between non-trivial blocks.
 - Respect hours_available as the total focused work budget across task blocks.
 - If a task has "user_estimated_minutes", set the block's estimated_minutes to exactly that value (you may split across multiple short blocks if the mode requires shorter blocks, but the SUM must equal user_estimated_minutes).
-- If an activity has "user_duration_minutes", the block's estimated_minutes MUST equal that value exactly — do not shorten or lengthen it.`
+- If an activity has "user_duration_minutes", the block's estimated_minutes MUST equal that value exactly — do not shorten or lengthen it.
+- If "reflection_priority" is non-null, that is the user's one-thing for the day. Place a block backing that priority in the first 2 focus windows and reference it in reasoning.
+- If "reflection_blocker" is non-null, design around it: shift, shorten, or scaffold the affected work; call out the adjustment in reasoning.
+- Weight task priority: urgent/high tasks go in the first 2 focus blocks unless the user deselected them.
+- If "yesterday_context.plan_worked" is false or "yesterday_context.focus_rating" <= 3, reduce total task load by ~20% and bias toward shorter blocks.`
 
   if (mode === 'behavioral_activation') {
     return `${base}
@@ -211,6 +285,8 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
   const date = (params.date as string) || todayISO()
   const hours_available = Number(params.hours_available)
   const feel = Number(params.feel)
+  const energyRaw = Number(params.energy)
+  const energy = Number.isFinite(energyRaw) && energyRaw >= 1 && energyRaw <= 10 ? energyRaw : undefined
   const medication_taken = Boolean(params.medication_taken)
   const selected_task_ids = (params.selected_task_ids as string[]) || []
   const scheduled_activity_template_ids = (params.scheduled_activity_template_ids as string[]) || []
@@ -268,6 +344,12 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
 
   const mode = chooseMode(medication_taken, feel)
 
+  // Yesterday's plan context + last-24h reflection capture drive memory.
+  const [yesterday, reflection] = await Promise.all([
+    fetchYesterdayPlan(context.userId, supabase, date),
+    fetchRecentReflection(context.userId, supabase),
+  ])
+
   // Fetch learnings and filter to ones whose applies_when matches today
   const allLearnings = await getLearnings(context.userId, supabase, 'behavior')
   const relevantLearnings = allLearnings
@@ -285,6 +367,7 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
     start_time,
     hours_available,
     feel,
+    energy: energy ?? null,
     medication_taken,
     mode,
     tasks: (selectedTasks ?? []).map((t: Sb) => ({
@@ -306,6 +389,9 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
       preferred_start_time: t.preferred_start_time,
     })),
     learnings: relevantLearnings,
+    yesterday_context: yesterday,
+    reflection_priority: reflection.priority,
+    reflection_blocker: reflection.blocker,
   }
 
   if (!context.aiConfig?.key) {
@@ -321,9 +407,10 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
     const ai = await callAI(JSON.stringify(aiInput), context.aiConfig, {
       purpose: 'planner_generate',
       model: context.aiConfig.model,
-      maxTokens: 2000,
+      maxTokens: 4000,
       temperature: 0.3,
       systemPrompt: buildGeneratorSystemPrompt(mode, medication_taken),
+      responseFormat: 'json',
     })
     aiContent = ai.content
   } catch (err) {
@@ -337,15 +424,16 @@ async function handlePlanGenerate(params: Record<string, unknown>, context: Agen
 
   const parsed = parseJson<{ blocks: GeneratedBlock[]; reasoning: string; warnings?: string[] }>(aiContent)
   if (!parsed || !Array.isArray(parsed.blocks) || parsed.blocks.length === 0) {
+    console.error('Plan parse failure. Raw AI content:', JSON.stringify(aiContent).slice(0, 2000))
     return {
       success: false,
-      action_taken: 'AI returned an unparseable plan',
+      action_taken: `AI returned an unparseable plan. Raw: ${aiContent.slice(0, 300)}`,
       data: { raw: aiContent },
     }
   }
 
   // Upsert daily_plans row (UNIQUE on user_id, date)
-  const userContext: UserContext = { hours_available, feel, medication_taken, mode }
+  const userContext: UserContext = { hours_available, feel, energy, medication_taken, mode }
   const { data: existing } = await supabase
     .from('daily_plans')
     .select('id')
@@ -676,9 +764,10 @@ async function handlePlanClose(params: Record<string, unknown>, context: AgentCo
       const ai = await callAI(JSON.stringify(aiInput), context.aiConfig, {
         purpose: 'planner_close_learning',
         model: context.aiConfig.model,
-        maxTokens: 400,
+        maxTokens: 600,
         temperature: 0.4,
         systemPrompt: CLOSE_LEARNING_SYSTEM_PROMPT,
+        responseFormat: 'json',
       })
       const parsed = parseJson<Sb>(ai.content)
       if (parsed && typeof parsed === 'object') {

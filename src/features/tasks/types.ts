@@ -50,6 +50,11 @@ export interface TaskState {
     // Time tracking methods for daily planning
     startTask: (id: string) => void;
     completeTaskWithDuration: (id: string, actualMinutes: number) => void;
+
+    // Bulk actions
+    rescheduleMany: (ids: string[], isoDate: string) => Promise<void>;
+    completeMany: (ids: string[]) => Promise<void>;
+    deleteMany: (ids: string[]) => Promise<void>;
 }
 
 // Todo is an alias for Task - used by database for backward compatibility

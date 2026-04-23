@@ -39,14 +39,45 @@ ${buildIntentList()}
 If the input doesn't clearly match any intent, use:
 - intent: "general.question", domain: "extra"
 
+Also report confidence in [0, 1]. Lower confidence (< 0.5) when:
+- The input is a short fragment (1–2 words) that could fit multiple domains
+- Multiple intents seem equally plausible
+- The input is ambiguous between e.g. task / note / shopping / tracker check-in
+
+When confidence is < 0.5, include 2–3 "alternatives" (never the same as the top pick) so the user can disambiguate.
+
 Reply with ONLY valid JSON in this format:
-{"intent": "...", "domain": "...", "params": {"content": "..."}}
+{"intent": "...", "domain": "...", "params": {"content": "..."}, "confidence": 0.0, "alternatives": [{"intent": "...", "domain": "...", "label": "short user-facing label"}]}
 
 Do not include any other text.`
+
+export interface ClarifyCandidate {
+  intent: Intent
+  domain: Domain
+  label: string
+}
 
 export interface ClassifyResult {
   routed: RoutedCommand
   aiResult: AICallResult
+  confidence: number
+  alternatives: ClarifyCandidate[]
+}
+
+function normalizeAlternatives(raw: unknown): ClarifyCandidate[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((a): ClarifyCandidate | null => {
+      if (!a || typeof a !== 'object') return null
+      const obj = a as Record<string, unknown>
+      const intent = typeof obj.intent === 'string' ? obj.intent as Intent : null
+      const domain = typeof obj.domain === 'string' ? obj.domain as Domain : null
+      const label = typeof obj.label === 'string' ? obj.label : null
+      if (!intent || !domain || !label) return null
+      return { intent, domain, label }
+    })
+    .filter((a): a is ClarifyCandidate => a !== null)
+    .slice(0, 3)
 }
 
 /**
@@ -62,12 +93,13 @@ export async function classifyWithAI(
     const aiResult = await callAI(input, { key: aiKey, provider: aiProvider }, {
       purpose: 'intent_classification',
       model: aiModel,
-      maxTokens: 100,
+      maxTokens: 200,
       temperature: 0,
       systemPrompt: SYSTEM_PROMPT,
     })
 
     const parsed = JSON.parse(aiResult.content || '{}')
+    const confidence = typeof parsed.confidence === 'number' ? parsed.confidence : 1
 
     return {
       routed: {
@@ -78,6 +110,8 @@ export async function classifyWithAI(
         routingMethod: 'ai',
       },
       aiResult,
+      confidence,
+      alternatives: normalizeAlternatives(parsed.alternatives),
     }
   } catch (err) {
     console.error('[ai-classifier] Classification failed:', err)
@@ -98,6 +132,8 @@ export async function classifyWithAI(
         model: 'fallback',
         provider: aiProvider,
       },
+      confidence: 1,
+      alternatives: [],
     }
   }
 }

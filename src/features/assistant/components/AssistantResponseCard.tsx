@@ -1,10 +1,60 @@
-import React from 'react'
-import { CheckCircle, XCircle, ListTodo, StickyNote, Calendar, Activity, Bell, Brain, BookOpen, FolderKanban, TrendingUp, HelpCircle } from 'lucide-react'
+import React, { useState } from 'react'
+import { CheckCircle, XCircle, ListTodo, StickyNote, Calendar, Activity, Bell, Brain, BookOpen, FolderKanban, TrendingUp, HelpCircle, HelpingHand } from 'lucide-react'
 import type { AssistantResponse } from '../types'
+import { invokeAssistantAction } from '../services/assistant.service'
 
 interface AssistantResponseCardProps {
   response: AssistantResponse
   onNavigate?: (route: string) => void
+}
+
+interface ClarifyCandidate {
+  intent: string
+  domain: string
+  label: string
+}
+
+function ClarifyCandidates({ response }: { response: AssistantResponse }) {
+  const candidates = (response.data?.candidates as ClarifyCandidate[] | undefined) ?? []
+  const original = typeof response.data?.original === 'string' ? response.data.original : ''
+  const [resolved, setResolved] = useState<{ label: string; ok: boolean; message: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  if (resolved) {
+    return (
+      <p className="mt-2 text-xs text-slate-600">
+        Routed as <span className="font-medium text-slate-800">{resolved.label}</span>
+        {resolved.message ? ` — ${resolved.message}` : ''}.
+      </p>
+    )
+  }
+
+  const pick = async (c: ClarifyCandidate) => {
+    if (busy) return
+    setBusy(true)
+    const result = await invokeAssistantAction(c.domain, c.intent, { content: original })
+    setResolved({
+      label: c.label,
+      ok: result.success,
+      message: result.action_taken || (result.success ? 'Done' : 'Something went wrong'),
+    })
+    setBusy(false)
+  }
+
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {candidates.map(c => (
+        <button
+          key={`${c.domain}:${c.intent}`}
+          onClick={() => pick(c)}
+          disabled={busy}
+          className="px-3 py-1.5 text-xs font-medium rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 transition-colors"
+        >
+          {c.label}
+        </button>
+      ))}
+    </div>
+  )
 }
 
 function intentIcon(intent: string, domain?: string) {
@@ -76,13 +126,16 @@ function EventList({ events }: { events: Array<{ title: string; start: string; e
 
 const AssistantResponseCard: React.FC<AssistantResponseCardProps> = ({ response, onNavigate }) => {
   const route = intentRoute(response.intent, response.domain)
+  const isClarify = response.data?.clarify === true
 
   return (
     <div
       role="status"
       aria-live="polite"
       className={`rounded-xl border p-4 shadow-sm text-sm transition-all ${
-        response.success
+        isClarify
+          ? 'bg-amber-50 border-amber-100'
+          : response.success
           ? 'bg-white border-slate-100'
           : 'bg-red-50 border-red-100'
       }`}
@@ -90,7 +143,9 @@ const AssistantResponseCard: React.FC<AssistantResponseCardProps> = ({ response,
       {/* Header row */}
       <div className="flex items-start gap-2">
         <div className="mt-0.5 flex-shrink-0">
-          {response.success ? (
+          {isClarify ? (
+            <HelpingHand size={16} className="text-amber-600" />
+          ) : response.success ? (
             <CheckCircle size={16} className="text-emerald-500" />
           ) : (
             <XCircle size={16} className="text-red-500" />
@@ -104,6 +159,8 @@ const AssistantResponseCard: React.FC<AssistantResponseCardProps> = ({ response,
         </div>
         <div className="flex-shrink-0">{intentIcon(response.intent, response.domain)}</div>
       </div>
+
+      {isClarify && <ClarifyCandidates response={response} />}
 
       {/* Inline data display */}
       {response.success && response.data && (

@@ -66,14 +66,20 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
     const addPhase = () => {
         const lastPhase = phases[phases.length - 1];
         const phaseStart = lastPhase?.endDate || startDate;
+        const isFirst = phases.length === 0;
         const newPhase: ExperimentPhase = {
             id: uuidv4(),
-            name: `Phase ${phases.length + 1}`,
+            name: isFirst ? 'Baseline' : `Phase ${phases.length + 1}`,
             startDate: phaseStart,
             endDate: format(addWeeks(new Date(phaseStart), 1), 'yyyy-MM-dd'),
             order: phases.length,
+            isBaseline: isFirst,
         };
         setPhases([...phases, newPhase]);
+    };
+
+    const setBaselinePhase = (id: string) => {
+        setPhases(phases.map(p => ({ ...p, isBaseline: p.id === id })));
     };
 
     const updatePhase = (id: string, updates: Partial<ExperimentPhase>) => {
@@ -361,6 +367,16 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                                     className="flex-1 p-1.5 border border-slate-200 rounded-lg text-xs"
                                                 />
                                             </div>
+                                            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="baseline-phase"
+                                                    checked={!!phase.isBaseline}
+                                                    onChange={() => setBaselinePhase(phase.id)}
+                                                    className="accent-indigo-600"
+                                                />
+                                                <span>Baseline phase (used as comparison in analysis)</span>
+                                            </label>
                                         </div>
                                     ))}
                                 </div>

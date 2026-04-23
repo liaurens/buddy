@@ -64,9 +64,27 @@ export async function handleRequest(
         } else if (context.aiConfig?.key) {
           // Tier 3: AI classification
           try {
-            const { routed: aiRouted, aiResult } = await classifyWithAI(input, context.aiConfig.key, context.aiConfig.provider, context.aiConfig.model)
-            routed = aiRouted
+            const { routed: aiRouted, aiResult, confidence, alternatives } = await classifyWithAI(input, context.aiConfig.key, context.aiConfig.provider, context.aiConfig.model)
             aiCalls.record(aiResult)
+
+            // Low-confidence gate: surface candidates instead of routing blind.
+            if (confidence < 0.5 && alternatives.length >= 2) {
+              tracker.endStep('success')
+              const candidates = [
+                { intent: aiRouted.action, domain: aiRouted.domain, label: `${aiRouted.action}` },
+                ...alternatives,
+              ].slice(0, 3)
+              const response: AssistantResponse = {
+                success: true,
+                intent: 'general.clarify',
+                domain: 'extra',
+                action_taken: 'Not sure which one — pick one?',
+                data: { clarify: true, candidates, original: input },
+              }
+              return { response, tracker }
+            }
+
+            routed = aiRouted
             tracker.endStep('success')
           } catch (err) {
             const { message, stack } = extractError(err)

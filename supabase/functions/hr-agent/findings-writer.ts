@@ -12,12 +12,18 @@ export async function writeFindings(
 ): Promise<void> {
   if (findings.length === 0) return
 
+  // User-facing types surface on the Now screen's Insight card.
+  // Dev-facing diagnostics (unmatched_pattern / error_cluster / slow_route / usage_trend / ai_cost)
+  // stay hidden and are viewed via the Dev Panel in the Me tab.
+  const USER_VISIBLE_TYPES = new Set<string>(['habit_trend', 'overdue_cluster'])
+
   const rows = findings.map(f => ({
     user_id: userId,
     type: f.type,
     severity: f.severity,
     data: f.data,
     status: 'new',
+    user_visible: USER_VISIBLE_TYPES.has(f.type),
   }))
 
   const { error } = await supabase

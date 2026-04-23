@@ -8,12 +8,12 @@ import {
     interpretCorrelation,
     calculateTLCC,
     findOptimalLag,
-    calculatePValue,
-    calculateConfidenceInterval,
+    calculateCorrelationPValue as calculatePValue,
+    calculateCorrelationCI as calculateConfidenceInterval,
     getDataQualityWarnings,
     interpretPValue,
     getCorrelationColor
-} from '../../../../utils/analysis';
+} from '../../utils/stats';
 import { TrendingUp, AlertTriangle, Zap, Clock } from 'lucide-react';
 
 interface AnalysisProps {

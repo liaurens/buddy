@@ -5,8 +5,8 @@
  */
 
 export interface Finding {
-  type: 'unmatched_pattern' | 'error_cluster' | 'slow_route' | 'usage_trend' | 'ai_cost'
-  severity: 'info' | 'warning' | 'critical'
+  type: 'unmatched_pattern' | 'error_cluster' | 'slow_route' | 'usage_trend' | 'ai_cost' | 'habit_trend' | 'overdue_cluster'
+  severity: 'info' | 'warning' | 'critical' | 'nudge' | 'urgent'
   data: Record<string, unknown>
 }
 
@@ -217,6 +217,93 @@ export function analyzeErrorLogs(errorLogs: LogEntry[]): Finding[] {
   }
 
   return findings
+}
+
+/**
+ * Check-in habit trend — compare last 7 days of `entries` rows against the prior 7.
+ * Emits a user-facing finding if the user went from a consistent habit to a drop-off,
+ * or from near-zero to consistent (both are worth celebrating/nudging).
+ */
+export async function analyzeHabitTrend(
+  userId: string,
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+): Promise<Finding[]> {
+  const now = new Date()
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
+
+  const { data, error } = await supabase
+    .from('entries')
+    .select('entry_date')
+    .eq('user_id', userId)
+    .gte('entry_date', fourteenDaysAgo.toISOString().slice(0, 10))
+
+  if (error || !data) return []
+
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const cutoff = sevenDaysAgo.toISOString().slice(0, 10)
+
+  const recentDays = new Set<string>()
+  const priorDays = new Set<string>()
+  for (const row of data) {
+    const d = row.entry_date as string
+    if (d >= cutoff) recentDays.add(d)
+    else priorDays.add(d)
+  }
+
+  const recent = recentDays.size
+  const prior = priorDays.size
+
+  // Only emit if there's a meaningful shift and enough history to compare.
+  if (prior < 3) return []
+  const drop = prior - recent
+  if (drop < 2) return []
+
+  return [{
+    type: 'habit_trend',
+    severity: drop >= 4 ? 'nudge' : 'info',
+    data: {
+      summary: `Check-ins ${recent}/7 this week, down from ${prior}/7 last week`,
+      recent_days: recent,
+      prior_days: prior,
+    },
+  }]
+}
+
+/**
+ * Overdue cluster — count todos past due by more than 7 days that are still incomplete.
+ * Cluster of 3+ is worth surfacing as a nudge so the user can bulk-archive or reschedule.
+ */
+export async function analyzeOverdueCluster(
+  userId: string,
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+): Promise<Finding[]> {
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+  const { data, error } = await supabase
+    .from('todos')
+    .select('id, title, due_date, completed')
+    .eq('user_id', userId)
+    .eq('completed', false)
+    .lt('due_date', weekAgo)
+    .not('due_date', 'is', null)
+    .limit(50)
+
+  if (error || !data || data.length < 3) return []
+
+  return [{
+    type: 'overdue_cluster',
+    severity: 'nudge',
+    data: {
+      summary: `${data.length} tasks overdue by more than a week — archive or reschedule?`,
+      count: data.length,
+      examples: data.slice(0, 5).map((t: { title: string; due_date: string }) => ({
+        title: t.title,
+        due_date: t.due_date,
+      })),
+    },
+  }]
 }
 
 /**

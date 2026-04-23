@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Bug, Brain, Play, RefreshCw, ChevronDown, ChevronRight, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Bug, Brain, Play, RefreshCw, ChevronDown, ChevronRight, ToggleLeft, ToggleRight, TrendingUp } from 'lucide-react';
 import { supabase } from '../../../services/supabase';
 
 type Tab = 'errors' | 'findings' | 'rules' | 'learnings';
@@ -24,6 +24,7 @@ const AssistantDevPanel: React.FC<Props> = ({ userId }) => {
   // Agent trigger state
   const [hrRunning, setHrRunning] = useState(false);
   const [trainerRunning, setTrainerRunning] = useState(false);
+  const [corrRunning, setCorrRunning] = useState(false);
   const [agentResult, setAgentResult] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -105,6 +106,22 @@ const AssistantDevPanel: React.FC<Props> = ({ userId }) => {
     }
   };
 
+  const runCorrelationsAgent = async () => {
+    setCorrRunning(true);
+    setAgentResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('correlations-agent', {
+        body: { user_id: userId },
+      });
+      if (error) throw error;
+      setAgentResult(`Correlations: ${data?.rows_written || 0} pairs written (${data?.pairs_evaluated || 0} evaluated, ${data?.trackers || 0} trackers)`);
+    } catch (err: any) {
+      setAgentResult(`Correlations error: ${err.message || err}`);
+    } finally {
+      setCorrRunning(false);
+    }
+  };
+
   const toggleRule = async (ruleId: string, currentActive: boolean) => {
     await supabase
       .from('assistant_rules')
@@ -161,6 +178,14 @@ const AssistantDevPanel: React.FC<Props> = ({ userId }) => {
           >
             {trainerRunning ? <RefreshCw size={12} className="animate-spin" /> : <Brain size={12} />}
             Run Trainer
+          </button>
+          <button
+            onClick={runCorrelationsAgent}
+            disabled={corrRunning}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors text-xs font-medium disabled:opacity-50"
+          >
+            {corrRunning ? <RefreshCw size={12} className="animate-spin" /> : <TrendingUp size={12} />}
+            Recompute correlations
           </button>
         </div>
         {agentResult && (

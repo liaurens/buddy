@@ -15,6 +15,7 @@ export interface AICallOptions {
   maxTokens?: number
   temperature?: number
   systemPrompt?: string
+  responseFormat?: 'json' | 'text'
 }
 
 export interface AICallResult {
@@ -126,6 +127,7 @@ async function callGemini(
     generationConfig: {
       maxOutputTokens: options.maxTokens ?? 100,
       ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+      ...(options.responseFormat === 'json' ? { responseMimeType: 'application/json' } : {}),
     },
   }
 
@@ -179,6 +181,9 @@ async function callOpenAI(
   }
   if (options.temperature !== undefined) {
     body.temperature = options.temperature
+  }
+  if (options.responseFormat === 'json') {
+    body.response_format = { type: 'json_object' }
   }
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {

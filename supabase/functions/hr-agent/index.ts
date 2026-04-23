@@ -18,7 +18,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { analyzeUnmatchedPatterns, analyzeErrorClusters, analyzeSlowRoutes, analyzeUsageTrends, analyzeAICost, analyzeErrorLogs } from './analyzer.ts'
+import { analyzeUnmatchedPatterns, analyzeErrorClusters, analyzeSlowRoutes, analyzeUsageTrends, analyzeAICost, analyzeErrorLogs, analyzeHabitTrend, analyzeOverdueCluster } from './analyzer.ts'
 import { writeFindings } from './findings-writer.ts'
 
 const corsHeaders = {
@@ -119,6 +119,11 @@ Deno.serve(async (req) => {
       const userLogs = logsByUser.get(uid) || []
       const userErrorLogs = errorLogsByUser.get(uid) || []
 
+      const [habitFindings, overdueFindings] = await Promise.all([
+        analyzeHabitTrend(uid, supabase),
+        analyzeOverdueCluster(uid, supabase),
+      ])
+
       const findings = [
         ...analyzeUnmatchedPatterns(userLogs),
         ...analyzeErrorClusters(userLogs),
@@ -126,6 +131,8 @@ Deno.serve(async (req) => {
         ...analyzeUsageTrends(userLogs),
         ...analyzeAICost(userLogs),
         ...analyzeErrorLogs(userErrorLogs),
+        ...habitFindings,
+        ...overdueFindings,
       ]
 
       if (findings.length > 0) {

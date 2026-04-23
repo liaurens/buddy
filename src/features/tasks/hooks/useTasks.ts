@@ -173,5 +173,60 @@ export const useTasks = (): TaskState => {
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
     }, [userId, tasks, queryClient]);
 
-    return { tasks, isLoading, addTask, toggleTask, deleteTask, updateTask, startTask, completeTaskWithDuration };
+    const rescheduleMany = useCallback(async (ids: string[], isoDate: string) => {
+        if (!userId || ids.length === 0) return;
+        const { error } = await supabase
+            .from('todos')
+            .update({ due_date: isoDate })
+            .in('id', ids)
+            .eq('user_id', userId);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+    }, [userId, queryClient]);
+
+    const completeMany = useCallback(async (ids: string[]) => {
+        if (!userId || ids.length === 0) return;
+        const nowIso = new Date().toISOString();
+        const { error } = await supabase
+            .from('todos')
+            .update({ completed: true, completed_at: nowIso })
+            .in('id', ids)
+            .eq('user_id', userId);
+        if (error) throw error;
+
+        // Spawn next occurrence for any recurring tasks we just completed
+        const completed = tasks.filter(t => ids.includes(t.id) && t.recurrence && t.recurrence !== 'none');
+        if (completed.length > 0) {
+            const rows = completed.map(task => ({
+                ...todoToDb({
+                    ...task,
+                    id: uuidv4(),
+                    completed: false,
+                    createdAt: new Date().toISOString(),
+                    dueDate: calculateNextDueDate(task.dueDate, task.recurrence!, task.recurrenceConfig) || undefined,
+                    completedAt: undefined,
+                    startedAt: undefined,
+                    actualMinutes: undefined,
+                }, userId),
+                created_at: new Date().toISOString(),
+            }));
+            const { error: insertError } = await supabase.from('todos').insert(rows);
+            if (insertError) console.error('Failed to create next recurrences:', insertError);
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+    }, [userId, tasks, queryClient]);
+
+    const deleteMany = useCallback(async (ids: string[]) => {
+        if (!userId || ids.length === 0) return;
+        const { error } = await supabase
+            .from('todos')
+            .delete()
+            .in('id', ids)
+            .eq('user_id', userId);
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+    }, [userId, queryClient]);
+
+    return { tasks, isLoading, addTask, toggleTask, deleteTask, updateTask, startTask, completeTaskWithDuration, rescheduleMany, completeMany, deleteMany };
 };

@@ -4,23 +4,8 @@ import { useAssistant } from '../hooks/useAssistant'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import AssistantChatBubble from './AssistantChatBubble'
 import AssistantGuide from './AssistantGuide'
+import { COMMANDS } from '../constants/commands'
 import type { AppRoute } from '../../../constants/routes'
-
-const COMMANDS = [
-  { command: '/task', description: 'Create a task' },
-  { command: '/done', description: 'Complete a task' },
-  { command: '/today', description: "Today's tasks" },
-  { command: '/task.list', description: 'List all tasks' },
-  { command: '/note', description: 'Create a note' },
-  { command: '/shop', description: 'Shopping list' },
-  { command: '/find', description: 'Search notes' },
-  { command: '/checkin', description: 'Log health' },
-  { command: '/health', description: 'Health query' },
-  { command: '/agenda', description: "Today's events" },
-  { command: '/habits', description: 'Habit status' },
-  { command: '/remind', description: 'Set reminder' },
-  { command: '/help', description: 'Show all commands' },
-]
 
 interface AssistantChatProps {
   onNavigate?: (route: AppRoute) => void
