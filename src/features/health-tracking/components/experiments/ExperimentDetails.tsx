@@ -34,7 +34,7 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment: initi
     const { trackers } = useTrackers();
     const { protocols } = useProtocols();
     const { experiments, updateExperiment } = useExperiments();
-    const { checkins, saveCheckin } = useExperimentCheckins(initialExperiment.id);
+    const { checkins, saveCheckin, removeCheckinForDate } = useExperimentCheckins(initialExperiment.id);
 
     // Always read the latest experiment from the list in case it was updated
     const experiment = experiments.find(e => e.id === initialExperiment.id) || initialExperiment;
@@ -174,6 +174,7 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment: initi
                             date={checkinDate}
                             existingEntries={checkinsForDate}
                             onSave={saveCheckin}
+                            onDelete={removeCheckinForDate}
                         />
 
                         {/* Recent check-ins */}

@@ -6,13 +6,15 @@ import { supabase } from '../../../services/supabase';
 import { dbToGoal, dbToGoalLog, type Goal, type GoalType, type GoalLog } from '../../../services/supabase/converters/goal';
 import type { DbGoal, DbGoalLog } from '../../../services/supabase/types/goal-types';
 
-export function useGoals(statusFilter: Goal['status'] | 'all' = 'active') {
+const EMPTY_ARRAY: any[] = [];
+
+export function useGoals(statusFilter: Goal['status'] | 'all' = 'active', targetDate?: string) {
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const userId = user?.id;
-    const today = format(new Date(), 'yyyy-MM-dd');
+    const today = targetDate || format(new Date(), 'yyyy-MM-dd');
 
-    const { data: goals = [], isLoading } = useQuery({
+    const { data: goals = EMPTY_ARRAY as Goal[], isLoading } = useQuery({
         queryKey: ['goals', userId, statusFilter],
         queryFn: async () => {
             if (!userId) return [];
@@ -25,7 +27,7 @@ export function useGoals(statusFilter: Goal['status'] | 'all' = 'active') {
         enabled: !!userId,
     });
 
-    const { data: todayLogs = [] } = useQuery({
+    const { data: todayLogs = EMPTY_ARRAY as GoalLog[] } = useQuery({
         queryKey: ['goal_logs', userId, today],
         queryFn: async () => {
             if (!userId) return [];
@@ -111,6 +113,14 @@ export function useGoals(statusFilter: Goal['status'] | 'all' = 'active') {
             await supabase.from('goals').update({
                 streak_count: newStreak,
                 last_completed_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            }).eq('id', goalId).eq('user_id', userId);
+        }
+
+        // For action goals: complete permanently
+        if (goal?.goalType === 'action' && entry.completed) {
+            await supabase.from('goals').update({
+                status: 'completed',
                 updated_at: new Date().toISOString(),
             }).eq('id', goalId).eq('user_id', userId);
         }

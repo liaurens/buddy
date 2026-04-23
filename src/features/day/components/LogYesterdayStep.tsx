@@ -28,7 +28,7 @@ const LogYesterdayStep: React.FC<LogYesterdayStepProps> = ({ onNavigate }) => {
 
     const yesterdayEntries = useMemo(
         () => entries.filter((e: Entry) => isSameDay(new Date(e.timestamp), yesterday)),
-        [entries, yesterday]
+        [entries, yesterday.getTime()]
     );
 
     return (

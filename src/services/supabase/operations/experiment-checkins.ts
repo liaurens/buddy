@@ -61,3 +61,14 @@ export async function deleteExperimentCheckin(id: string): Promise<void> {
 
     if (error) throw error;
 }
+
+export async function deleteExperimentCheckinByDate(experimentId: string, date: string): Promise<void> {
+    const { error } = await supabase
+        .from('experiment_checkin_entries')
+        .delete()
+        .eq('experiment_id', experimentId)
+        .eq('date', date);
+
+    if (error) throw error;
+}
+

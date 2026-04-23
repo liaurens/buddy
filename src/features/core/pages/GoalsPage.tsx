@@ -224,10 +224,14 @@ const GoalsPage: React.FC = () => {
                                         <div className="flex items-center gap-1">
                                             {goal.status === 'active' && (
                                                 <button
-                                                    onClick={() => updateGoalStatus(goal.id, 'completed')}
-                                                    className="text-xs px-2 py-1 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                                                    onClick={() => {
+                                                        if (window.confirm('Are you sure you want to finish and archive this goal?')) {
+                                                            updateGoalStatus(goal.id, 'completed');
+                                                        }
+                                                    }}
+                                                    className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
                                                 >
-                                                    Done
+                                                    Finish goal
                                                 </button>
                                             )}
                                             <button

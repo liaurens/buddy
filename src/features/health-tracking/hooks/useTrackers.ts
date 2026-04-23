@@ -15,13 +15,15 @@ import {
     type DbEntry,
 } from '../../../services/supabase';
 
+const EMPTY_ARRAY: any[] = [];
+
 export const useTrackers = (): TrackerState => {
     const { user } = useAuth();
     const queryClient = useQueryClient();
     const userId = user?.id;
 
     // Fetch entries
-    const { data: entries = [] } = useQuery({
+    const { data: entries = EMPTY_ARRAY as Entry[] } = useQuery({
         queryKey: ['entries', userId],
         queryFn: async () => {
             if (!userId) return [];
@@ -38,7 +40,7 @@ export const useTrackers = (): TrackerState => {
     });
 
     // Fetch trackers
-    const { data: trackers = [] } = useQuery({
+    const { data: trackers = EMPTY_ARRAY as TrackerDefinition[] } = useQuery({
         queryKey: ['trackers', userId],
         queryFn: async () => {
             if (!userId) return [];

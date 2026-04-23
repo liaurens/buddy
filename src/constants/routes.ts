@@ -7,7 +7,6 @@ export type AppRoute =
     | 'health'
     | 'protocols'
     | 'experiments'
-    | 'check-in'
     | 'planning'
     | 'calendar'
     | 'reflection'

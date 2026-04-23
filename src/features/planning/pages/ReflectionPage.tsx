@@ -20,7 +20,7 @@ import MoodEnergySparkline from '../components/reflection/MoodEnergySparkline';
 import type { DayReflection, LearningPattern } from '../services/reflection.service';
 import {
     TrendingUp, TrendingDown, Target, Clock, CheckCircle, AlertCircle,
-    Lightbulb, Settings, ChevronDown, ChevronRight, Sparkles, Flag, Compass,
+    Lightbulb, Settings, ChevronDown, ChevronRight, Sparkles, Flag, Compass, Heart, Mountain
 } from 'lucide-react';
 
 const ReflectionPage: React.FC = () => {
@@ -34,15 +34,16 @@ const ReflectionPage: React.FC = () => {
     const [metricsOpen, setMetricsOpen] = useState(false);
 
     // Reflection capture state
-    const [wins, setWins] = useState<string[]>(['', '', '']);
-    const [blocker, setBlocker] = useState('');
+    const [memory, setMemory] = useState('');
+    const [gratitude, setGratitude] = useState('');
+    const [challenge, setChallenge] = useState('');
     const [priority, setPriority] = useState('');
     const [saving, setSaving] = useState(false);
     const [savedAt, setSavedAt] = useState<string | null>(null);
     const [captureError, setCaptureError] = useState<string | null>(null);
 
     const { data: historyPoints = [] } = useReflectionHistory(14);
-    const { goals, todayLogs, logGoalToday } = useGoals('active');
+    const { goals, todayLogs, logGoalToday } = useGoals('active', selectedDate);
     type GoalEntry = { completed?: boolean; minutesSpent?: number; progressDelta?: number };
     const [goalEntries, setGoalEntries] = useState<Record<string, GoalEntry>>({});
 
@@ -86,12 +87,11 @@ const ReflectionPage: React.FC = () => {
     const loadCapture = useCallback(async () => {
         if (!user?.id) return;
         const existing = await loadReflectionForDate(user.id, selectedDate);
-        const paddedWins = [...existing.wins.slice(0, 3)];
-        while (paddedWins.length < 3) paddedWins.push('');
-        setWins(paddedWins);
-        setBlocker(existing.blocker);
-        setPriority(existing.priority);
-        setSavedAt(existing.wins.length + (existing.blocker ? 1 : 0) + (existing.priority ? 1 : 0) > 0 ? 'loaded' : null);
+        setMemory(existing.memory || existing.wins[0] || '');
+        setGratitude(existing.gratitude || existing.wins[1] || '');
+        setChallenge(existing.challenge || existing.blocker || '');
+        setPriority(existing.priority || '');
+        setSavedAt((existing.memory || existing.gratitude || existing.challenge || existing.priority || existing.wins.length > 0 || existing.blocker) ? 'loaded' : null);
     }, [user?.id, selectedDate]);
 
     useEffect(() => {
@@ -108,8 +108,9 @@ const ReflectionPage: React.FC = () => {
         setCaptureError(null);
         try {
             await saveReflectionItems(user.id, selectedDate, [
-                ...wins.map(text => ({ subtype: 'reflection_win' as const, text })),
-                { subtype: 'reflection_blocker' as const, text: blocker },
+                { subtype: 'reflection_memory' as const, text: memory },
+                { subtype: 'reflection_gratitude' as const, text: gratitude },
+                { subtype: 'reflection_challenge' as const, text: challenge },
                 { subtype: 'reflection_priority' as const, text: priority },
             ]);
             // Persist goal check-ins for today
@@ -170,45 +171,56 @@ const ReflectionPage: React.FC = () => {
                 </div>
 
                 {/* Capture form */}
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-5">
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-6">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                            <Sparkles size={18} className="text-amber-500" /> Three good things today
+                            <Sparkles size={18} className="text-amber-500" /> Today's Core Memory
                         </h2>
                         <p className="text-xs text-slate-500 mt-1">
-                            Anything that went well — a kind moment, a finished task, a meal you enjoyed.
+                            A single cool memory, funny moment, or highlight you want to remember.
                         </p>
-                        <div className="mt-3 space-y-2">
-                            {[0, 1, 2].map(i => (
-                                <textarea
-                                    key={i}
-                                    value={wins[i] ?? ''}
-                                    onChange={e => setWins(prev => prev.map((w, idx) => idx === i ? e.target.value : w))}
-                                    rows={1}
-                                    placeholder={`Win ${i + 1}…`}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-y"
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    <div>
-                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                            <Flag size={18} className="text-rose-500" /> One blocker
-                        </h2>
-                        <p className="text-xs text-slate-500 mt-1">What got in the way today? (leave blank if nothing stood out)</p>
                         <textarea
-                            value={blocker}
-                            onChange={e => setBlocker(e.target.value)}
-                            rows={2}
-                            placeholder="Something that slowed you down…"
-                            className="mt-2 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-rose-400 focus:border-transparent resize-y"
+                            value={memory}
+                            onChange={e => setMemory(e.target.value)}
+                            rows={1}
+                            placeholder="What was one cool memory from today?"
+                            className="mt-3 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-y"
                         />
                     </div>
 
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                            <Compass size={18} className="text-indigo-500" /> Tomorrow's one thing
+                            <Heart size={18} className="text-rose-400" /> Gratitude
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-1">
+                            What is one thing you are truly grateful for today?
+                        </p>
+                        <textarea
+                            value={gratitude}
+                            onChange={e => setGratitude(e.target.value)}
+                            rows={1}
+                            placeholder="Something big or small..."
+                            className="mt-3 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-rose-400 focus:border-transparent resize-y"
+                        />
+                    </div>
+
+                    <div>
+                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                            <Mountain size={18} className="text-emerald-500" /> Challenge & Growth
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-1">What challenged you today, and how did you handle it?</p>
+                        <textarea
+                            value={challenge}
+                            onChange={e => setChallenge(e.target.value)}
+                            rows={2}
+                            placeholder="A difficult moment and what I learned..."
+                            className="mt-3 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent resize-y"
+                        />
+                    </div>
+
+                    <div>
+                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                            <Compass size={18} className="text-indigo-500" /> Tomorrow's Focus
                         </h2>
                         <p className="text-xs text-slate-500 mt-1">
                             If you only do one thing tomorrow, what is it? (planner reads this next morning)
@@ -218,7 +230,7 @@ const ReflectionPage: React.FC = () => {
                             onChange={e => setPriority(e.target.value)}
                             rows={2}
                             placeholder="The one thing that would make tomorrow a win…"
-                            className="mt-2 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-y"
+                            className="mt-3 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-y"
                         />
                     </div>
 

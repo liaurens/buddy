@@ -4,7 +4,7 @@ import MainLayout from './layouts/MainLayout';
 // Feature imports
 import { HomePage } from './features/core';
 import AccountPage from './features/core/pages/AccountPage';
-import { TrackerPage, ProtocolsPage, ExperimentsPage, CheckInPage } from './features/health-tracking';
+import { TrackerPage, ProtocolsPage, ExperimentsPage } from './features/health-tracking';
 import { PlanPage, CalendarPage, ReflectionPage, PlannerPage } from './features/planning';
 import { TodoPage, NotesPage } from './features/tasks';
 import { ChecklistsPage } from './features/checklists';
@@ -64,8 +64,6 @@ const App: React.FC = () => {
         return <AccountPage />;
       case 'experiments':
         return <ExperimentsPage onNavigate={handleNavigate} />;
-      case 'check-in':
-        return <CheckInPage />;
       case 'notes':
         return <NotesPage />;
       case 'focus':

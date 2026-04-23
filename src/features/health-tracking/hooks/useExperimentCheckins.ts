@@ -5,6 +5,7 @@ import {
     getExperimentCheckins,
     saveExperimentCheckin,
     deleteExperimentCheckin,
+    deleteExperimentCheckinByDate,
 } from '../../../services/supabase';
 
 export const useExperimentCheckins = (experimentId: string) => {
@@ -29,6 +30,11 @@ export const useExperimentCheckins = (experimentId: string) => {
         queryClient.invalidateQueries({ queryKey: ['experiment-checkins', experimentId] });
     }, [experimentId, queryClient]);
 
+    const removeCheckinForDate = useCallback(async (date: string) => {
+        await deleteExperimentCheckinByDate(experimentId, date);
+        queryClient.invalidateQueries({ queryKey: ['experiment-checkins', experimentId] });
+    }, [experimentId, queryClient]);
+
     // Group checkins by date
     const checkinsByDate = checkins.reduce<Record<string, ExperimentCheckinEntry[]>>((acc, entry) => {
         if (!acc[entry.date]) acc[entry.date] = [];
@@ -42,5 +48,6 @@ export const useExperimentCheckins = (experimentId: string) => {
         isLoading,
         saveCheckin,
         removeCheckin,
+        removeCheckinForDate,
     };
 };

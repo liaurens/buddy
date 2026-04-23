@@ -28,7 +28,6 @@ const ITEMS: Array<{ tab: AppRoute; label: string; Icon: React.ComponentType<{ s
     { tab: 'growth', label: 'Goals & Projects', Icon: TrendingUp, group: 'Stuff' },
 
     { tab: 'health', label: 'Trackers', Icon: Activity, group: 'Health' },
-    { tab: 'check-in', label: 'Check-in', Icon: Heart, group: 'Health' },
     { tab: 'protocols', label: 'Protocols', Icon: Pill, group: 'Health' },
     { tab: 'experiments', label: 'Experiments', Icon: FlaskConical, group: 'Health' },
 

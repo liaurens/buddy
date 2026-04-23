@@ -130,7 +130,7 @@ export async function generateDayReflection(
             .select('id')
             .eq('user_id', userId)
             .eq('date', date)
-            .single();
+            .maybeSingle();
 
         if (!plan) {
             throw new Error('No plan found for this date');

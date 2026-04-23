@@ -17,6 +17,8 @@ import {
     type DbDose,
 } from '../../../services/supabase';
 
+const EMPTY_ARRAY: any[] = [];
+
 interface ProtocolContextType {
     protocols: Protocol[];
     cycles: Cycle[];
@@ -49,7 +51,7 @@ export function useProtocols(): ProtocolContextType {
     const userId = user?.id;
 
     // Fetch protocols
-    const { data: protocols = [] } = useQuery({
+    const { data: protocols = EMPTY_ARRAY as Protocol[] } = useQuery({
         queryKey: ['protocols', userId],
         queryFn: async () => {
             if (!userId) return [];
@@ -65,7 +67,7 @@ export function useProtocols(): ProtocolContextType {
     });
 
     // Fetch cycles
-    const { data: cycles = [] } = useQuery({
+    const { data: cycles = EMPTY_ARRAY as Cycle[] } = useQuery({
         queryKey: ['cycles', userId],
         queryFn: async () => {
             if (!userId) return [];
@@ -82,7 +84,7 @@ export function useProtocols(): ProtocolContextType {
     });
 
     // Fetch doses
-    const { data: doses = [] } = useQuery({
+    const { data: doses = EMPTY_ARRAY as Dose[] } = useQuery({
         queryKey: ['doses', userId],
         queryFn: async () => {
             if (!userId) return [];
