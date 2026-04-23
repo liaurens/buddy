@@ -35,7 +35,7 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
   const [showHints, setShowHints] = useState(false)
   const [showAllHints, setShowAllHints] = useState(false)
   const [selectedHint, setSelectedHint] = useState(0)
-  const { send, isLoading, lastResponse, reset } = useAssistant()
+  const { send, isLoading, lastResponse, error, reset } = useAssistant()
   const { addUserMessage, addAssistantMessage } = useAssistantHistory()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -211,6 +211,9 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
           response={lastResponse}
           onNavigate={onNavigate as (route: string) => void}
         />
+      )}
+      {error && !lastResponse && (
+        <p className="text-xs text-red-500 px-1">{error}</p>
       )}
     </div>
   )

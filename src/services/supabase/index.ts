@@ -31,6 +31,9 @@ export { dbToStrategy, strategyToDb } from './converters/strategy';
 // Converters - Todo
 export { dbToTodo, todoToDb } from './converters/todo';
 
+// Converters - Goal
+export { dbToGoal, goalToDb, dbToGoalLog, type Goal, type GoalLog, type GoalType } from './converters/goal';
+
 // Converters - Notes
 export { dbToNoteCategory, dbToSmartNote, smartNoteToDb } from './converters/notes';
 

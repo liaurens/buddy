@@ -15,14 +15,15 @@ import type { JournalPromptResponse } from '../types';
 
 interface DailyJournalPageProps {
     onNavigate?: (tab: AppRoute, params?: Record<string, unknown>) => void;
+    initialDate?: string;
 }
 
-const DailyJournalPage: React.FC<DailyJournalPageProps> = ({ onNavigate }) => {
+const DailyJournalPage: React.FC<DailyJournalPageProps> = ({ onNavigate, initialDate }) => {
     const { trackers, entries } = useTrackers();
     const { doses } = useProtocols();
     const { experiments } = useExperiments();
 
-    const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [selectedDate, setSelectedDate] = useState(initialDate ?? format(new Date(), 'yyyy-MM-dd'));
     const { journalEntry, save } = useDailyJournal(selectedDate);
 
     const [isCheckinOpen, setIsCheckinOpen] = useState(false);

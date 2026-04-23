@@ -22,7 +22,8 @@ export type AppRoute =
     | 'planner'
     | 'browse'
     | 'me'
-    | 'today';
+    | 'today'
+    | 'goals';
 
 export const HEALTH_HUB_ROUTES: AppRoute[] = ['health', 'protocols', 'experiments'];
 export const CALENDAR_HUB_ROUTES: AppRoute[] = ['calendar', 'planning', 'reflection'];

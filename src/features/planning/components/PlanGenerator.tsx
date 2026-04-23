@@ -30,10 +30,11 @@ import {
 interface PlanGeneratorProps {
     date: string;
     onPlanGenerated: () => void;
-    hasExistingPlan?: boolean; // Whether there's already a plan for this date
+    hasExistingPlan?: boolean;
+    selectedTaskIds?: string[];
 }
 
-const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated, hasExistingPlan = false }) => {
+const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated, hasExistingPlan = false, selectedTaskIds }) => {
     const { user } = useAuth();
 
     // User state
@@ -115,7 +116,8 @@ const PlanGenerator: React.FC<PlanGeneratorProps> = ({ date, onPlanGenerated, ha
                     lunchDuration,
                     includeShortBreaks,
                     shortBreakInterval,
-                }
+                },
+                selectedTaskIds
             );
 
             // Generate plan

@@ -16,6 +16,7 @@ import LoginScreen from './features/core/components/LoginScreen';
 import MePage from './features/me/pages/MePage';
 import BrowsePage from './features/browse/pages/BrowsePage';
 import DayPage from './features/day/pages/DayPage';
+import GoalsPage from './features/core/pages/GoalsPage';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured } from './services/supabase';
 import { DevPortal } from './components/dev/DevPortal';
@@ -90,7 +91,9 @@ const App: React.FC = () => {
       case 'me':
         return <MePage />;
       case 'today':
-        return <DayPage />;
+        return <DayPage onNavigate={handleNavigate} />;
+      case 'goals':
+        return <GoalsPage />;
       default:
         return <HomePage onNavigate={handleNavigate} />;
     }

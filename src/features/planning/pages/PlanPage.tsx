@@ -30,7 +30,11 @@ import {
     Settings
 } from 'lucide-react';
 
-const PlanPage: React.FC = () => {
+interface PlanPageProps {
+    selectedTaskIds?: string[];
+}
+
+const PlanPage: React.FC<PlanPageProps> = ({ selectedTaskIds }) => {
     const { user } = useAuth();
     const timer = useTimer();
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -228,7 +232,7 @@ const PlanPage: React.FC = () => {
 
                     {/* Empty State */}
                     {isToday ? (
-                        <PlanGenerator date={selectedDate} onPlanGenerated={loadPlan} />
+                        <PlanGenerator date={selectedDate} onPlanGenerated={loadPlan} selectedTaskIds={selectedTaskIds} />
                     ) : (
                         <div className="text-center py-12">
                             <Sparkles className="mx-auto text-slate-400 mb-4" size={64} />

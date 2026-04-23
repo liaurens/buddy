@@ -42,7 +42,7 @@ export interface Task {
 export interface TaskState {
     tasks: Task[];
     isLoading: boolean;
-    addTask: (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig) => void;
+    addTask: (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig, dueTime?: string) => void;
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
     updateTask: (task: Task) => void;

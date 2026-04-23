@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Sun, Sunrise, Moon } from 'lucide-react';
-import { CheckInPage } from '../../health-tracking';
-import { PlanPage, ReflectionPage } from '../../planning';
+import { ReflectionPage } from '../../planning';
+import MorningRoutine from '../components/MorningRoutine';
+import MiddayRoutine from '../components/MiddayRoutine';
 
 type Mode = 'morning' | 'midday' | 'night';
 
@@ -24,7 +25,11 @@ const TABS: Array<{ key: Mode; label: string; Icon: typeof Sun }> = [
  * requires auditing PlannerPage.tsx; until that audit, this thin shell collapses
  * the four daily-loop destinations into one IA destination.
  */
-const DayPage: React.FC = () => {
+interface DayPageProps {
+    onNavigate?: (tab: import('../../../constants/routes').AppRoute) => void;
+}
+
+const DayPage: React.FC<DayPageProps> = ({ onNavigate }) => {
     const today = new Date();
     const [mode, setMode] = useState<Mode>(modeForHour(today.getHours()));
 
@@ -50,8 +55,8 @@ const DayPage: React.FC = () => {
                 ))}
             </div>
 
-            {mode === 'morning' && <PlanPage />}
-            {mode === 'midday' && <CheckInPage />}
+            {mode === 'morning' && <MorningRoutine onNavigate={onNavigate} />}
+            {mode === 'midday' && <MiddayRoutine />}
             {mode === 'night' && <ReflectionPage />}
         </div>
     );

@@ -162,6 +162,23 @@ export const accountSettingsSchema = z.object({
 });
 
 // ============================================================================
+// COMMS SCHEMAS
+// ============================================================================
+
+const commsItemSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  daysOfWeek: z.array(z.number().int().min(0).max(6)).nullable().default(null),
+});
+
+export const commsSettingsSchema = z.object({
+  items: z.array(commsItemSchema).default([
+    { id: 'emails', label: 'Check important emails', daysOfWeek: null },
+    { id: 'whatsapp', label: 'Check WhatsApp', daysOfWeek: null },
+  ]),
+});
+
+// ============================================================================
 // SCHEMA MAPPING
 // ============================================================================
 
@@ -179,4 +196,5 @@ export const settingsSchemas = {
   pomodoro: pomodoroSettingsSchema,
   toolbox: toolboxSettingsSchema,
   account: accountSettingsSchema,
+  comms: commsSettingsSchema,
 } as const;

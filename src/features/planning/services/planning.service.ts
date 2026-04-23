@@ -129,7 +129,8 @@ export async function buildPlanningContext(
         lunchDuration?: number;
         includeShortBreaks?: boolean;
         shortBreakInterval?: number;
-    }
+    },
+    selectedTaskIds?: string[]
 ): Promise<PlanGenerationContext> {
     const [calendarEvents, tasks, activityTemplates, learningPatterns] = await Promise.all([
         getCalendarEventsForDate(userId, date),
@@ -138,13 +139,18 @@ export async function buildPlanningContext(
         getLearningPatternsForPlanning(userId, 5),
     ]);
 
-    // Format tasks for planning context
-    const formattedTasks = tasks.map(t => ({
+    // Format tasks for planning context — filter to selected if provided
+    const tasksToInclude = selectedTaskIds?.length
+        ? tasks.filter(t => selectedTaskIds.includes(t.id as string))
+        : tasks;
+
+    const formattedTasks = tasksToInclude.map(t => ({
         id: t.id,
         title: t.title,
         priority: t.priority || 'medium',
         estimatedTime: t.estimatedTime,
         deadline: t.dueDate,
+        mustFinishBy: t.dueTime || undefined,
     }));
 
     return {
@@ -486,4 +492,92 @@ export async function completeBlock(
  */
 export async function skipBlock(userId: string, blockId: string): Promise<void> {
     await updateBlockStatus(userId, blockId, 'skipped');
+}
+
+/**
+ * Update a block's timing, title or sort order (for midday replan)
+ */
+export async function updateBlock(
+    userId: string,
+    blockId: string,
+    updates: Partial<Pick<TimeBlock, 'title' | 'startTime' | 'endTime' | 'estimatedMinutes' | 'sortOrder'>>
+): Promise<void> {
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.startTime !== undefined) dbUpdates.start_time = updates.startTime;
+    if (updates.endTime !== undefined) dbUpdates.end_time = updates.endTime;
+    if (updates.estimatedMinutes !== undefined) dbUpdates.estimated_minutes = updates.estimatedMinutes;
+    if (updates.sortOrder !== undefined) dbUpdates.sort_order = updates.sortOrder;
+
+    const { error } = await supabase
+        .from('time_blocks')
+        .update(dbUpdates)
+        .eq('id', blockId)
+        .eq('user_id', userId);
+
+    if (error) throw error;
+}
+
+/**
+ * Delete a time block entirely
+ */
+export async function deleteBlock(userId: string, blockId: string): Promise<void> {
+    const { error } = await supabase
+        .from('time_blocks')
+        .delete()
+        .eq('id', blockId)
+        .eq('user_id', userId);
+
+    if (error) throw error;
+}
+
+/**
+ * Move a block to tomorrow: skip it today and create a todo for tomorrow
+ */
+export async function moveBlockToTomorrow(userId: string, blockId: string, block: TimeBlock): Promise<void> {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    const { v4: uuidv4 } = await import('uuid');
+    await Promise.all([
+        updateBlockStatus(userId, blockId, 'skipped'),
+        supabase.from('todos').insert({
+            id: uuidv4(),
+            user_id: userId,
+            title: block.title,
+            completed: false,
+            due_date: tomorrowStr,
+            priority: 'medium',
+            estimated_time: block.estimatedMinutes,
+            subtasks: null,
+            recurrence: 'none',
+            recurrence_config: null,
+            created_at: new Date().toISOString(),
+        }),
+    ]);
+}
+
+/**
+ * Add a new block to today's plan
+ */
+export async function addBlockToPlan(
+    userId: string,
+    planId: string,
+    block: { title: string; startTime: string; endTime: string; estimatedMinutes: number; sortOrder: number }
+): Promise<void> {
+    const { v4: uuidv4 } = await import('uuid');
+    const { error } = await supabase.from('time_blocks').insert({
+        id: uuidv4(),
+        plan_id: planId,
+        user_id: userId,
+        title: block.title,
+        start_time: block.startTime,
+        end_time: block.endTime,
+        estimated_minutes: block.estimatedMinutes,
+        actual_minutes: null,
+        status: 'pending',
+        sort_order: block.sortOrder,
+    });
+    if (error) throw error;
 }

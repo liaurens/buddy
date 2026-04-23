@@ -13,6 +13,8 @@ import { useAuth } from '../../../hooks/useAuth';
 import { generateDayReflection, detectPatterns } from '../services/reflection.service';
 import { saveReflectionItems, loadReflectionForDate } from '../services/reflectionCapture';
 import { useReflectionHistory } from '../hooks/useReflectionHistory';
+import { useGoals } from '../../../features/core/hooks/useGoals';
+import type { Goal } from '../../../features/core/hooks/useGoals';
 import ReflectionSettingsModal from '../components/reflection/ReflectionSettingsModal';
 import MoodEnergySparkline from '../components/reflection/MoodEnergySparkline';
 import type { DayReflection, LearningPattern } from '../services/reflection.service';
@@ -40,6 +42,21 @@ const ReflectionPage: React.FC = () => {
     const [captureError, setCaptureError] = useState<string | null>(null);
 
     const { data: historyPoints = [] } = useReflectionHistory(14);
+    const { goals, todayLogs, logGoalToday } = useGoals('active');
+    type GoalEntry = { completed?: boolean; minutesSpent?: number; progressDelta?: number };
+    const [goalEntries, setGoalEntries] = useState<Record<string, GoalEntry>>({});
+
+    useEffect(() => {
+        const initial: Record<string, GoalEntry> = {};
+        todayLogs.forEach(log => {
+            initial[log.goalId] = {
+                completed: log.completed,
+                minutesSpent: log.minutesSpent ?? undefined,
+                progressDelta: log.progressDelta ?? undefined,
+            };
+        });
+        setGoalEntries(initial);
+    }, [todayLogs]);
 
     const loadReflection = useCallback(async () => {
         if (!user?.id) return;
@@ -95,6 +112,12 @@ const ReflectionPage: React.FC = () => {
                 { subtype: 'reflection_blocker' as const, text: blocker },
                 { subtype: 'reflection_priority' as const, text: priority },
             ]);
+            // Persist goal check-ins for today
+            await Promise.all(
+                goals
+                    .filter(g => goalEntries[g.id] !== undefined)
+                    .map(g => logGoalToday(g.id, goalEntries[g.id]))
+            );
             setSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
         } catch (err) {
             setCaptureError(err instanceof Error ? err.message : 'Failed to save');
@@ -213,6 +236,79 @@ const ReflectionPage: React.FC = () => {
                         </button>
                     </div>
                 </div>
+
+                {/* Goals check-in */}
+                {goals.length > 0 && (
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-4">
+                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                            <Target size={18} className="text-emerald-500" /> Today's goals
+                        </h2>
+                        <p className="text-xs text-slate-500 -mt-2">Log how your goals went today.</p>
+                        <ul className="space-y-4">
+                            {goals.map((goal: Goal) => {
+                                const entry = goalEntries[goal.id] ?? {};
+                                const update = (patch: GoalEntry) =>
+                                    setGoalEntries(prev => ({ ...prev, [goal.id]: { ...prev[goal.id], ...patch } }));
+                                return (
+                                    <li key={goal.id} className="space-y-2">
+                                        <p className="text-sm font-medium text-slate-800">{goal.title}</p>
+                                        {goal.goalType === 'action' && (
+                                            <div className="flex gap-2">
+                                                {(['Done', 'Not done'] as const).map(label => (
+                                                    <button key={label} type="button"
+                                                        onClick={() => update({ completed: label === 'Done' })}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                            (label === 'Done' ? entry.completed : entry.completed === false)
+                                                                ? label === 'Done' ? 'bg-green-500 text-white' : 'bg-slate-500 text-white'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                        }`}>
+                                                        {label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {goal.goalType === 'habit' && (
+                                            <div className="flex gap-2">
+                                                {(['Yes', 'No'] as const).map(label => (
+                                                    <button key={label} type="button"
+                                                        onClick={() => update({ completed: label === 'Yes' })}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                            (label === 'Yes' ? entry.completed : entry.completed === false)
+                                                                ? label === 'Yes' ? 'bg-orange-500 text-white' : 'bg-slate-500 text-white'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                        }`}>
+                                                        {label === 'Yes' ? '🔥 Did it' : 'Skipped'}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {goal.goalType === 'time' && (
+                                            <div className="flex items-center gap-2">
+                                                <input type="number" min={0} placeholder="0"
+                                                    value={entry.minutesSpent ?? ''}
+                                                    onChange={e => update({ minutesSpent: Number(e.target.value) })}
+                                                    className="w-20 px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                                                <span className="text-xs text-slate-500">
+                                                    min spent{goal.targetMinutes ? ` / ${goal.targetMinutes} target` : ''}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {goal.goalType === 'progress' && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-slate-500">Progress added:</span>
+                                                <input type="number" min={0} max={100} placeholder="0"
+                                                    value={entry.progressDelta ?? ''}
+                                                    onChange={e => update({ progressDelta: Number(e.target.value) })}
+                                                    className="w-16 px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                                                <span className="text-xs text-slate-500">%</span>
+                                            </div>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                )}
 
                 {/* Collapsible day metrics */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100">

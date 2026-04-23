@@ -156,6 +156,20 @@ export interface AccountSettings {
 }
 
 // ============================================================================
+// COMMS SETTINGS
+// ============================================================================
+
+export interface CommsItem {
+  id: string;
+  label: string;
+  daysOfWeek: number[] | null; // null = every day; 0=Sun 1=Mon … 6=Sat
+}
+
+export interface CommsSettings {
+  items: CommsItem[];
+}
+
+// ============================================================================
 // COMBINED SETTINGS TYPE
 // ============================================================================
 
@@ -173,6 +187,7 @@ export interface AllSettings {
   pomodoro: PomodoroSettings;
   toolbox: ToolboxSettings;
   account: AccountSettings;
+  comms: CommsSettings;
 }
 
 export type SettingCategory = keyof AllSettings;

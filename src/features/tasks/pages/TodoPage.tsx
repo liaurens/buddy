@@ -74,7 +74,7 @@ const TodoPage: React.FC = () => {
         overdue: false,
         today: false,
         week: false,
-        later: true,
+        later: false,
     });
 
     const toggleCollapse = (id: BucketId) =>
