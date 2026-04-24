@@ -25,6 +25,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({ onClose, onAdd }) => {
     const [description, setDescription] = useState('');
     const [targetMinutes, setTargetMinutes] = useState('');
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const finalCategory = category === '__custom' ? customCategory : category;
 
@@ -32,6 +33,7 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({ onClose, onAdd }) => {
         e.preventDefault();
         if (!title.trim()) return;
         setSaving(true);
+        setError(null);
         try {
             await onAdd({
                 title: title.trim(),
@@ -41,6 +43,9 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({ onClose, onAdd }) => {
                 targetMinutes: goalType === 'time' && targetMinutes ? Number(targetMinutes) : undefined,
             });
             onClose();
+        } catch (err) {
+            console.error('Failed to save goal:', err);
+            setError(err instanceof Error ? err.message : 'Could not save goal. Try again.');
         } finally {
             setSaving(false);
         }
@@ -120,6 +125,9 @@ const AddGoalModal: React.FC<AddGoalModalProps> = ({ onClose, onAdd }) => {
                             className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none" />
                     </div>
 
+                    {error && (
+                        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+                    )}
                     <button type="submit" disabled={saving || !title.trim()}
                         className="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors">
                         {saving ? 'Adding…' : 'Add goal'}

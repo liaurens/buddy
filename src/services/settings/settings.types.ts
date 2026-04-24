@@ -170,6 +170,24 @@ export interface CommsSettings {
 }
 
 // ============================================================================
+// NOTIFICATIONS SETTINGS
+// ============================================================================
+
+export interface NotificationsSettings {
+  pushEnabled: boolean;
+  morningEnabled: boolean;
+  morningTime: string;   // HH:MM
+  middayEnabled: boolean;
+  middayTime: string;    // HH:MM
+  nightEnabled: boolean;
+  nightTime: string;     // HH:MM
+  taskDueEnabled: boolean;
+  taskDueAdvanceMinutes: number;
+  calendarEventEnabled: boolean;
+  calendarEventAdvanceMinutes: number;
+}
+
+// ============================================================================
 // COMBINED SETTINGS TYPE
 // ============================================================================
 
@@ -188,6 +206,7 @@ export interface AllSettings {
   toolbox: ToolboxSettings;
   account: AccountSettings;
   comms: CommsSettings;
+  notifications: NotificationsSettings;
 }
 
 export type SettingCategory = keyof AllSettings;

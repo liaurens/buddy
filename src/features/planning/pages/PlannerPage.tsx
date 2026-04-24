@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { format } from 'date-fns'
 import { invokeAssistantAction } from '../../assistant'
 import type { AssistantResponse } from '../../assistant'
 import { useAuth } from '../../../hooks/useAuth'
@@ -97,7 +98,7 @@ interface PlannerDraft {
 }
 
 function todayISO() {
-    return new Date().toISOString().split('T')[0]
+    return format(new Date(), 'yyyy-MM-dd')
 }
 
 const draftKey = (date: string) => `planner_draft_${date}`

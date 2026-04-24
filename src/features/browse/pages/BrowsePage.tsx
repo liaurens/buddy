@@ -11,8 +11,8 @@ import {
     CheckSquare,
     LayoutGrid,
     Timer,
-    Heart,
     CalendarClock,
+    Bell,
 } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
 
@@ -36,6 +36,8 @@ const ITEMS: Array<{ tab: AppRoute; label: string; Icon: React.ComponentType<{ s
     { tab: 'planner', label: 'AI Planner', Icon: LayoutGrid, group: 'Time' },
     { tab: 'reflection', label: 'Reflect', Icon: TrendingUp, group: 'Time' },
     { tab: 'focus', label: 'Focus Timer', Icon: Timer, group: 'Time' },
+
+    { tab: 'notifications', label: 'Notifications', Icon: Bell, group: 'Settings' },
 ];
 
 const BrowsePage: React.FC<BrowsePageProps> = ({ onNavigate }) => {

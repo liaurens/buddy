@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
+import { format } from 'date-fns';
 import type { Protocol, Cycle, Dose } from '../types';
 import { useAuth } from '../../../hooks/useAuth';
 import {
@@ -187,7 +188,7 @@ export function useProtocols(): ProtocolContextType {
             id,
             protocolId,
             cycleNumber,
-            startDate: new Date().toISOString().split('T')[0],
+            startDate: format(new Date(), 'yyyy-MM-dd'),
             plannedEndDate,
             offCycleDays,
             status: 'active',
@@ -208,7 +209,7 @@ export function useProtocols(): ProtocolContextType {
             .from('cycles')
             .update({
                 status: 'completed',
-                actual_end_date: new Date().toISOString().split('T')[0],
+                actual_end_date: format(new Date(), 'yyyy-MM-dd'),
             })
             .eq('id', cycleId)
             .eq('user_id', userId);
@@ -224,7 +225,7 @@ export function useProtocols(): ProtocolContextType {
             .from('cycles')
             .update({
                 status: 'aborted',
-                actual_end_date: new Date().toISOString().split('T')[0],
+                actual_end_date: format(new Date(), 'yyyy-MM-dd'),
                 notes,
             })
             .eq('id', cycleId)

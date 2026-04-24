@@ -32,6 +32,10 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
     const [newTaskDue, setNewTaskDue] = useState('');
     const [newTaskEstimate, setNewTaskEstimate] = useState('');
     const [newTaskDueTime, setNewTaskDueTime] = useState('');
+    const [commsError, setCommsError] = useState<string | null>(null);
+    const [calendarError, setCalendarError] = useState<string | null>(null);
+    const [addTaskError, setAddTaskError] = useState<string | null>(null);
+    const [addingTask, setAddingTask] = useState(false);
     const { user } = useAuth();
     const { tasks, addTask } = useTasks();
 
@@ -40,13 +44,19 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
     // Load comms items from settings
     const loadComms = () => {
         if (!user?.id) return;
-        getCategorySettings(user.id, 'comms').then(s => {
-            const dayOfWeek = new Date().getDay();
-            const filtered = s.items.filter(
-                item => item.daysOfWeek === null || item.daysOfWeek.includes(dayOfWeek)
-            );
-            setCommsItems(filtered);
-        });
+        setCommsError(null);
+        getCategorySettings(user.id, 'comms')
+            .then(s => {
+                const dayOfWeek = new Date().getDay();
+                const filtered = s.items.filter(
+                    item => item.daysOfWeek === null || item.daysOfWeek.includes(dayOfWeek)
+                );
+                setCommsItems(filtered);
+            })
+            .catch(err => {
+                console.error('Failed to load comms items:', err);
+                setCommsError('Could not load comms items. Check your connection.');
+            });
     };
 
     useEffect(() => { loadComms(); }, [user?.id]);
@@ -56,6 +66,7 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
         if (!user?.id) return;
         const start = new Date(today); start.setHours(0, 0, 0, 0);
         const end = new Date(today); end.setHours(23, 59, 59, 999);
+        setCalendarError(null);
         supabase
             .from('calendar_events')
             .select('*')
@@ -63,7 +74,12 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
             .gte('start_time', start.toISOString())
             .lte('start_time', end.toISOString())
             .order('start_time', { ascending: true })
-            .then(({ data }) => {
+            .then(({ data, error }) => {
+                if (error) {
+                    console.error('Failed to load calendar events:', error);
+                    setCalendarError('Could not load calendar. Check your connection.');
+                    return;
+                }
                 if (data) setTodayEvents((data as DbCalendarEvent[]).map(dbToCalendarEvent));
             });
     }, [user?.id]);
@@ -82,20 +98,29 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
 
     const handleAddTask = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newTaskTitle.trim()) return;
-        await addTask(
-            newTaskTitle.trim(),
-            'medium',
-            newTaskEstimate ? Number(newTaskEstimate) : undefined,
-            newTaskDue || undefined,
-            undefined,
-            undefined,
-            newTaskDueTime || undefined
-        );
-        setNewTaskTitle('');
-        setNewTaskDue('');
-        setNewTaskEstimate('');
-        setNewTaskDueTime('');
+        if (!newTaskTitle.trim() || addingTask) return;
+        setAddingTask(true);
+        setAddTaskError(null);
+        try {
+            await addTask(
+                newTaskTitle.trim(),
+                'medium',
+                newTaskEstimate ? Number(newTaskEstimate) : undefined,
+                newTaskDue || undefined,
+                undefined,
+                undefined,
+                newTaskDueTime || undefined
+            );
+            setNewTaskTitle('');
+            setNewTaskDue('');
+            setNewTaskEstimate('');
+            setNewTaskDueTime('');
+        } catch (err) {
+            console.error('Failed to add task:', err);
+            setAddTaskError('Could not save task. Try again.');
+        } finally {
+            setAddingTask(false);
+        }
     };
 
     const selectedIds = Array.from(selectedTaskIds);
@@ -142,9 +167,12 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
                         </button>
                     </div>
                     <p className="text-sm text-slate-500">Check these before diving into your day.</p>
-                    {commsItems.length === 0 ? (
+                    {commsError && (
+                        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{commsError}</p>
+                    )}
+                    {!commsError && commsItems.length === 0 ? (
                         <p className="text-sm text-slate-400">No items for today. Add some in settings.</p>
-                    ) : (
+                    ) : !commsError && (
                         <ul className="space-y-2">
                             {commsItems.map(item => (
                                 <li key={item.id}>
@@ -189,7 +217,9 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
                             <Calendar size={18} className="text-indigo-600" />
                             Today's calendar
                         </h2>
-                        {todayEvents.length === 0 ? (
+                        {calendarError ? (
+                            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{calendarError}</p>
+                        ) : todayEvents.length === 0 ? (
                             <p className="text-sm text-slate-400">No calendar events today.</p>
                         ) : (
                             <ul className="space-y-2">
@@ -198,9 +228,9 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
                                         <div className="text-xs text-slate-500 w-12 flex-shrink-0 pt-0.5 font-mono">
                                             {format(new Date(ev.startTime), 'HH:mm')}
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-medium text-slate-800">{ev.title}</p>
-                                            {ev.location && <p className="text-xs text-slate-400">{ev.location}</p>}
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-medium text-slate-800 truncate">{ev.title}</p>
+                                            {ev.location && <p className="text-xs text-slate-400 truncate">{ev.location}</p>}
                                         </div>
                                     </li>
                                 ))}
@@ -292,12 +322,15 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
                                 />
                                 <button
                                     type="submit"
-                                    disabled={!newTaskTitle.trim()}
+                                    disabled={!newTaskTitle.trim() || addingTask}
                                     className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 disabled:opacity-40 transition-colors flex items-center gap-1"
                                 >
-                                    <Plus size={13} /> Add
+                                    <Plus size={13} /> {addingTask ? 'Adding…' : 'Add'}
                                 </button>
                             </div>
+                            {addTaskError && (
+                                <p className="text-xs text-red-600">{addTaskError}</p>
+                            )}
                         </form>
                     </div>
                 </div>

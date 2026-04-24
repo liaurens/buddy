@@ -8,6 +8,7 @@
  * - Plan retrieval and updates
  */
 
+import { format } from 'date-fns';
 import { supabase } from '../../../services/supabase';
 import { initializeAIService } from './ai.service';
 import { generateDailyPlanSystemPrompt, generateDailyPlanUserPrompt } from './ai-prompts';
@@ -537,7 +538,7 @@ export async function deleteBlock(userId: string, blockId: string): Promise<void
 export async function moveBlockToTomorrow(userId: string, blockId: string, block: TimeBlock): Promise<void> {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const tomorrowStr = format(tomorrow, 'yyyy-MM-dd');
 
     const { v4: uuidv4 } = await import('uuid');
     await Promise.all([

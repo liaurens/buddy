@@ -122,12 +122,11 @@ serve(async (req) => {
 
     // Process each user's notifications
     for (const [userId, userNotifications] of Object.entries(notificationsByUser)) {
-      // Get active subscriptions for this user
+      // Get subscriptions for this user (all rows are active; invalid ones get deleted)
       const { data: subscriptions } = await supabase
         .from('notification_subscriptions')
         .select('*')
-        .eq('user_id', userId)
-        .eq('is_active', true);
+        .eq('user_id', userId);
 
       if (!subscriptions || subscriptions.length === 0) {
         // Mark notifications as failed (no active subscriptions)

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTrackers } from '../../hooks/useTrackers';
 import { useProtocols } from '../../hooks/useProtocols';
-import { CheckCircle, Pill, Moon, Calendar, Settings } from 'lucide-react';
+import { CheckCircle, Pill, Calendar, Settings } from 'lucide-react';
 import type { TrackerDefinition, Entry, Dose } from '../../../../types';
 import { format } from 'date-fns';
 

@@ -61,7 +61,7 @@ export async function loadReflectionForDate(
 
   if (error) {
     console.error('load reflection failed', error)
-    return { wins: [], blocker: '', priority: '' }
+    return { memory: '', gratitude: '', challenge: '', priority: '', wins: [], blocker: '' }
   }
 
   let memory = ''

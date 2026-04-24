@@ -179,6 +179,24 @@ export const commsSettingsSchema = z.object({
 });
 
 // ============================================================================
+// NOTIFICATIONS SCHEMAS
+// ============================================================================
+
+export const notificationsSettingsSchema = z.object({
+  pushEnabled: z.boolean().default(false),
+  morningEnabled: z.boolean().default(true),
+  morningTime: z.string().default('08:00'),
+  middayEnabled: z.boolean().default(true),
+  middayTime: z.string().default('13:00'),
+  nightEnabled: z.boolean().default(true),
+  nightTime: z.string().default('21:00'),
+  taskDueEnabled: z.boolean().default(true),
+  taskDueAdvanceMinutes: z.number().int().min(0).max(240).default(15),
+  calendarEventEnabled: z.boolean().default(true),
+  calendarEventAdvanceMinutes: z.number().int().min(0).max(240).default(15),
+});
+
+// ============================================================================
 // SCHEMA MAPPING
 // ============================================================================
 
@@ -197,4 +215,5 @@ export const settingsSchemas = {
   toolbox: toolboxSettingsSchema,
   account: accountSettingsSchema,
   comms: commsSettingsSchema,
+  notifications: notificationsSettingsSchema,
 } as const;

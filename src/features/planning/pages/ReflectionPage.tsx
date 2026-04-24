@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { format } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import { generateDayReflection, detectPatterns } from '../services/reflection.service';
 import { saveReflectionItems, loadReflectionForDate } from '../services/reflectionCapture';
@@ -20,12 +21,12 @@ import MoodEnergySparkline from '../components/reflection/MoodEnergySparkline';
 import type { DayReflection, LearningPattern } from '../services/reflection.service';
 import {
     TrendingUp, TrendingDown, Target, Clock, CheckCircle, AlertCircle,
-    Lightbulb, Settings, ChevronDown, ChevronRight, Sparkles, Flag, Compass, Heart, Mountain
+    Lightbulb, Settings, ChevronDown, ChevronRight, Sparkles, Compass, Heart, Mountain
 } from 'lucide-react';
 
 const ReflectionPage: React.FC = () => {
     const { user } = useAuth();
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [reflection, setReflection] = useState<DayReflection | null>(null);
     const [patterns, setPatterns] = useState<LearningPattern[]>([]);
     const [loading, setLoading] = useState(false);

@@ -25,6 +25,7 @@ export type {
   AccountSettings,
   CommsItem,
   CommsSettings,
+  NotificationsSettings,
 } from './settings.types';
 
 // Export schemas

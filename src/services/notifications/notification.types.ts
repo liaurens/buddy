@@ -14,7 +14,10 @@ export type ToolCategory =
   | 'planning'
   | 'reflection'
   | 'pomodoro'
-  | 'toolbox';
+  | 'toolbox'
+  | 'routine_morning'
+  | 'routine_midday'
+  | 'routine_night';
 
 export type NotificationType =
   | 'tracker_reminder'
@@ -24,6 +27,7 @@ export type NotificationType =
   | 'pomodoro_complete'
   | 'experiment_complete'
   | 'calendar_event'
+  | 'routine_reminder'
   | 'custom';
 
 export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'cancelled';

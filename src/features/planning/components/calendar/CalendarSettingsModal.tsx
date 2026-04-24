@@ -7,6 +7,7 @@ import {
   type CalendarSettings,
 } from '../../../../services/settings';
 import Modal from '../../../../components/ui/Modal';
+import { syncCalendar, type SyncResult } from '../../services/calendar-sync.service';
 
 interface CalendarSettingsModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
   const [settings, setSettings] = useState<CalendarSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
   // Load settings when modal opens
   useEffect(() => {
@@ -52,6 +55,26 @@ const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
       console.error('Failed to save calendar settings:', error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSyncNow = async () => {
+    if (!user || !settings) return;
+    // Save first so the latest URL is used
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      if (settings.calendarUrl) {
+        await updateCategorySettings(user.id, 'calendar', { calendarUrl: settings.calendarUrl });
+      }
+      const result = await syncCalendar(user.id);
+      setSyncResult(result);
+      // Reload to show new lastSyncTime
+      await loadSettings();
+    } catch (e) {
+      setSyncResult({ eventsFound: 0, eventsUpserted: 0, skipped: 0, error: e instanceof Error ? e.message : 'Unknown error' });
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -148,6 +171,21 @@ const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
               <p className="text-xs text-slate-500 mt-1">
                 Calendar feed URL or iCal link
               </p>
+              <button
+                type="button"
+                onClick={handleSyncNow}
+                disabled={syncing || !settings.calendarUrl}
+                className="mt-2 px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors disabled:opacity-50"
+              >
+                {syncing ? 'Syncing…' : 'Sync now'}
+              </button>
+              {syncResult && (
+                <p className={`text-xs mt-2 ${syncResult.error ? 'text-red-600' : 'text-emerald-700'}`}>
+                  {syncResult.error
+                    ? `Sync failed: ${syncResult.error}`
+                    : `Synced ${syncResult.eventsUpserted} event${syncResult.eventsUpserted === 1 ? '' : 's'}${syncResult.skipped > 0 ? ` (${syncResult.skipped} skipped)` : ''}.`}
+                </p>
+              )}
             </div>
 
             {/* Calendar Name */}

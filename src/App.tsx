@@ -17,6 +17,9 @@ import MePage from './features/me/pages/MePage';
 import BrowsePage from './features/browse/pages/BrowsePage';
 import DayPage from './features/day/pages/DayPage';
 import GoalsPage from './features/core/pages/GoalsPage';
+import { NotificationsPage } from './features/notifications';
+import InAppReminderBanner from './components/notifications/InAppReminderBanner';
+import { syncCalendarIfStale } from './features/planning/services/calendar-sync.service';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured } from './services/supabase';
 import { DevPortal } from './components/dev/DevPortal';
@@ -29,7 +32,7 @@ const App: React.FC = () => {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   // Check if user is logged in
-  const { isLoggedIn, isLoading } = useAuth();
+  const { isLoggedIn, isLoading, user } = useAuth();
 
   // Timeout for loading state
   useEffect(() => {
@@ -40,6 +43,12 @@ const App: React.FC = () => {
     }, LOADING_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [isLoading]);
+
+  // Auto-sync calendar on login (fires only if URL configured and last sync > 60 min ago)
+  useEffect(() => {
+    if (!user?.id) return;
+    syncCalendarIfStale(user.id).catch(err => console.warn('Calendar auto-sync skipped:', err));
+  }, [user?.id]);
 
   const handleNavigate = (tab: typeof activeTab, params?: Record<string, unknown>) => {
     setActiveTab(tab);
@@ -92,6 +101,8 @@ const App: React.FC = () => {
         return <DayPage onNavigate={handleNavigate} />;
       case 'goals':
         return <GoalsPage />;
+      case 'notifications':
+        return <NotificationsPage />;
       default:
         return <HomePage onNavigate={handleNavigate} />;
     }
@@ -141,6 +152,7 @@ const App: React.FC = () => {
       <MainLayout activeTab={activeTab} setActiveTab={setActiveTab}>
         {renderContent()}
       </MainLayout>
+      <InAppReminderBanner onNavigate={handleNavigate} />
       <DevPortal />
     </ToastProvider>
   );

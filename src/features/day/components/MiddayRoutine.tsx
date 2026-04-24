@@ -27,6 +27,7 @@ const MiddayRoutine: React.FC = () => {
     const [newStart, setNewStart] = useState('');
     const [newEnd, setNewEnd] = useState('');
     const [newEstimate, setNewEstimate] = useState('');
+    const [addBlockError, setAddBlockError] = useState<string | null>(null);
 
     const loadPlan = useCallback(async () => {
         if (!user?.id) return;
@@ -54,32 +55,40 @@ const MiddayRoutine: React.FC = () => {
 
     const moveUp = (index: number) => {
         if (index === 0) return;
+        const above = blocks[index - 1];
+        const current = blocks[index];
         setBlocks(prev => {
             const next = [...prev];
             [next[index - 1], next[index]] = [next[index], next[index - 1]];
             return next.map((b, i) => ({ ...b, sortOrder: i }));
         });
-        setPendingEdits(prev => {
-            const updated = { ...prev };
-            blocks.slice(Math.max(0, index - 1), index + 1).forEach((b, i) => {
-                const newOrder = index - 1 + i;
-                updated[b.id] = { ...updated[b.id], sortOrder: newOrder };
-            });
-            return updated;
-        });
+        setPendingEdits(prev => ({
+            ...prev,
+            [current.id]: { ...prev[current.id], sortOrder: index - 1 },
+            [above.id]: { ...prev[above.id], sortOrder: index },
+        }));
     };
 
     const moveDown = (index: number) => {
         if (index === blocks.length - 1) return;
+        const current = blocks[index];
+        const below = blocks[index + 1];
         setBlocks(prev => {
             const next = [...prev];
             [next[index], next[index + 1]] = [next[index + 1], next[index]];
             return next.map((b, i) => ({ ...b, sortOrder: i }));
         });
+        setPendingEdits(prev => ({
+            ...prev,
+            [current.id]: { ...prev[current.id], sortOrder: index + 1 },
+            [below.id]: { ...prev[below.id], sortOrder: index },
+        }));
     };
 
     const handleDelete = async (block: TimeBlock) => {
         if (!user?.id) return;
+        const ok = window.confirm(`Delete "${block.title}"?`);
+        if (!ok) return;
         setBlocks(prev => prev.filter(b => b.id !== block.id));
         setPendingEdits(prev => { const next = { ...prev }; delete next[block.id]; return next; });
         await deleteBlock(user.id, block.id);
@@ -109,18 +118,32 @@ const MiddayRoutine: React.FC = () => {
     const handleAddBlock = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user?.id || !plan || !newTitle.trim() || !newStart || !newEnd) return;
+        if (newStart >= newEnd) {
+            setAddBlockError('End time must be after start time.');
+            return;
+        }
         const estimate = Number(newEstimate) || 30;
+        if (estimate < 1) {
+            setAddBlockError('Estimate must be at least 1 minute.');
+            return;
+        }
+        setAddBlockError(null);
         const sortOrder = blocks.length;
-        await addBlockToPlan(user.id, plan.id, {
-            title: newTitle.trim(),
-            startTime: newStart,
-            endTime: newEnd,
-            estimatedMinutes: estimate,
-            sortOrder,
-        });
-        setNewTitle(''); setNewStart(''); setNewEnd(''); setNewEstimate('');
-        setShowAddForm(false);
-        await loadPlan();
+        try {
+            await addBlockToPlan(user.id, plan.id, {
+                title: newTitle.trim(),
+                startTime: newStart,
+                endTime: newEnd,
+                estimatedMinutes: estimate,
+                sortOrder,
+            });
+            setNewTitle(''); setNewStart(''); setNewEnd(''); setNewEstimate('');
+            setShowAddForm(false);
+            await loadPlan();
+        } catch (err) {
+            console.error('Failed to add block:', err);
+            setAddBlockError('Could not save block. Try again.');
+        }
     };
 
     const hasPendingEdits = Object.keys(pendingEdits).length > 0;
@@ -144,16 +167,19 @@ const MiddayRoutine: React.FC = () => {
                     <h2 className="font-semibold text-slate-900">Midday replan</h2>
                     <p className="text-sm text-slate-500">Adjust your afternoon — reorder, edit times, add or remove blocks.</p>
                 </div>
-                {hasPendingEdits && (
+            </div>
+            {hasPendingEdits && (
+                <div className="sticky top-2 z-10 flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 shadow-sm">
+                    <p className="text-sm text-amber-800 font-medium">You have unsaved changes</p>
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors flex-shrink-0"
                     >
-                        <Save size={15} /> {saving ? 'Saving…' : 'Save changes'}
+                        <Save size={14} /> {saving ? 'Saving…' : 'Save'}
                     </button>
-                )}
-            </div>
+                </div>
+            )}
 
             <ul className="space-y-2">
                 {blocks.map((block, index) => (
@@ -174,7 +200,8 @@ const MiddayRoutine: React.FC = () => {
                                 <input
                                     value={block.title}
                                     onChange={e => updateLocal(block.id, 'title', e.target.value)}
-                                    className="w-full text-sm font-medium text-slate-800 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-indigo-300 focus:outline-none pb-0.5 transition-colors"
+                                    aria-label="Block title"
+                                    className="w-full text-sm font-medium text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-1 hover:border-indigo-200 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 focus:outline-none transition-colors"
                                 />
 
                                 {/* Time fields */}
@@ -241,9 +268,12 @@ const MiddayRoutine: React.FC = () => {
                             placeholder="Est. min" min={1}
                             className="w-20 border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" />
                     </div>
+                    {addBlockError && (
+                        <p className="text-xs text-red-600">{addBlockError}</p>
+                    )}
                     <div className="flex gap-2">
                         <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors">Add</button>
-                        <button type="button" onClick={() => setShowAddForm(false)} className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-sm hover:bg-slate-50 transition-colors">Cancel</button>
+                        <button type="button" onClick={() => { setShowAddForm(false); setAddBlockError(null); }} className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-sm hover:bg-slate-50 transition-colors">Cancel</button>
                     </div>
                 </form>
             ) : (
