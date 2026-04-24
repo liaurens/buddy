@@ -10,7 +10,7 @@ export async function getSetting(userId: string, key: string): Promise<string | 
         .select('value')
         .eq('user_id', userId)
         .eq('key', key)
-        .single();
+        .maybeSingle();
 
     return data?.value;
 }

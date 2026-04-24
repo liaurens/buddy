@@ -31,6 +31,9 @@ export { dbToStrategy, strategyToDb } from './converters/strategy';
 // Converters - Todo
 export { dbToTodo, todoToDb } from './converters/todo';
 
+// Converters - Goal
+export { dbToGoal, goalToDb, dbToGoalLog, type Goal, type GoalLog, type GoalType } from './converters/goal';
+
 // Converters - Notes
 export { dbToNoteCategory, dbToSmartNote, smartNoteToDb } from './converters/notes';
 
@@ -46,7 +49,13 @@ export {
 export { getSetting, setSetting } from './operations/settings';
 export { exportAllData, importAllData } from './operations/backup';
 export { initializeUserData } from './operations/seed';
+
 export { getExperimentLogs, addExperimentLog } from './operations/experiment-logs';
-export { getExperimentCheckins, saveExperimentCheckin, deleteExperimentCheckin } from './operations/experiment-checkins';
+export {
+    getExperimentCheckins,
+    saveExperimentCheckin,
+    deleteExperimentCheckin,
+    deleteExperimentCheckinByDate,
+} from './operations/experiment-checkins';
 export { getJournalEntry, saveJournalEntry, getJournalEntries } from './operations/daily-journal';
 export { saveFeedback, getFeedbackForPath } from './operations/site-feedback';

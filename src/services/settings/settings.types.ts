@@ -156,6 +156,38 @@ export interface AccountSettings {
 }
 
 // ============================================================================
+// COMMS SETTINGS
+// ============================================================================
+
+export interface CommsItem {
+  id: string;
+  label: string;
+  daysOfWeek: number[] | null; // null = every day; 0=Sun 1=Mon … 6=Sat
+}
+
+export interface CommsSettings {
+  items: CommsItem[];
+}
+
+// ============================================================================
+// NOTIFICATIONS SETTINGS
+// ============================================================================
+
+export interface NotificationsSettings {
+  pushEnabled: boolean;
+  morningEnabled: boolean;
+  morningTime: string;   // HH:MM
+  middayEnabled: boolean;
+  middayTime: string;    // HH:MM
+  nightEnabled: boolean;
+  nightTime: string;     // HH:MM
+  taskDueEnabled: boolean;
+  taskDueAdvanceMinutes: number;
+  calendarEventEnabled: boolean;
+  calendarEventAdvanceMinutes: number;
+}
+
+// ============================================================================
 // COMBINED SETTINGS TYPE
 // ============================================================================
 
@@ -173,6 +205,8 @@ export interface AllSettings {
   pomodoro: PomodoroSettings;
   toolbox: ToolboxSettings;
   account: AccountSettings;
+  comms: CommsSettings;
+  notifications: NotificationsSettings;
 }
 
 export type SettingCategory = keyof AllSettings;

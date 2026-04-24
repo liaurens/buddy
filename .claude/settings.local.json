@@ -67,7 +67,12 @@
       "Bash(git stash:*)",
       "Bash(git merge:*)",
       "Bash(supabase functions:*)",
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "mcp__claude_ai_Supabase__list_migrations",
+      "Bash(npx --version)",
+      "Bash(npx *)"
     ]
   },
   "enabledMcpjsonServers": [

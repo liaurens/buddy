@@ -33,7 +33,7 @@ export const useTasks = (): TaskState => {
         enabled: !!userId,
     });
 
-    const addTask = useCallback(async (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig) => {
+    const addTask = useCallback(async (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig, dueTime?: string) => {
         if (!userId) throw new Error('Not authenticated');
 
         const newTask: Task = {
@@ -44,6 +44,7 @@ export const useTasks = (): TaskState => {
             priority: priority || 'medium',
             estimatedTime,
             dueDate,
+            dueTime,
             subtasks: [],
             recurrence: recurrence || 'none',
             recurrenceConfig,

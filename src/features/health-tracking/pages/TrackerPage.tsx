@@ -98,7 +98,14 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
                     <TopCorrelationsCard onOpenPair={openPair} />
                 </>
             )}
-            {trackerSubTab === 'add' && <EntryForm />}
+            {trackerSubTab === 'add' && (
+                <EntryForm 
+                    onManageTrackers={() => {
+                        setEditingTracker(undefined);
+                        setIsCreateModalOpen(true);
+                    }} 
+                />
+            )}
             {trackerSubTab === 'analysis' && (
                 <>
                     <Analysis

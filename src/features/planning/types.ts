@@ -136,6 +136,7 @@ export interface PlanGenerationContext {
         priority: string;
         estimatedTime?: number;
         deadline?: string;
+        mustFinishBy?: string;    // HH:MM — task must be scheduled to end before this time
     }>;
 
     calendarEvents: CalendarEvent[];

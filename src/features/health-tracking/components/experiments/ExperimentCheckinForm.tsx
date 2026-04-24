@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, Calendar } from 'lucide-react';
+import { CheckCircle, Calendar, Trash2 } from 'lucide-react';
 import type { ExperimentMetric, ExperimentCheckinEntry, ExperimentPhase } from '../../types';
 import { format } from 'date-fns';
 import { getCurrentPhaseForDate } from './ExperimentPhaseTimeline';
@@ -10,10 +10,11 @@ interface ExperimentCheckinFormProps {
     date: string;
     existingEntries?: ExperimentCheckinEntry[];
     onSave: (date: string, entries: { metricId: string; value?: number; textValue?: string; phaseId?: string }[]) => Promise<void>;
+    onDelete?: (date: string) => Promise<void>;
 }
 
 const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
-    metrics, phases, date, existingEntries = [], onSave,
+    metrics, phases, date, existingEntries = [], onSave, onDelete,
 }) => {
     const [values, setValues] = useState<Record<string, number | string>>({});
     const [saving, setSaving] = useState(false);
@@ -94,23 +95,46 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
                 ))}
             </div>
 
-            <button
-                onClick={handleSave}
-                disabled={saving || !requiredFilled}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all ${
-                    saved
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50'
-                }`}
-            >
-                {saved ? (
-                    <><CheckCircle size={18} /> Saved</>
-                ) : saving ? (
-                    'Saving...'
-                ) : (
-                    'Save Check-in'
+            <div className="flex gap-3">
+                {existingEntries.length > 0 && onDelete && (
+                    <button
+                        onClick={async () => {
+                            if (window.confirm('Delete check-in for this date?')) {
+                                setSaving(true);
+                                try {
+                                    await onDelete(date);
+                                    setValues({});
+                                    setSaved(false);
+                                } finally {
+                                    setSaving(false);
+                                }
+                            }
+                        }}
+                        disabled={saving}
+                        className="px-4 py-3 rounded-xl font-medium transition-all bg-rose-50 text-rose-600 hover:bg-rose-100 disabled:opacity-50 flex items-center justify-center"
+                        title="Delete check-in for this date"
+                    >
+                        <Trash2 size={18} />
+                    </button>
                 )}
-            </button>
+                <button
+                    onClick={handleSave}
+                    disabled={saving || !requiredFilled}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all ${
+                        saved
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50'
+                    }`}
+                >
+                    {saved ? (
+                        <><CheckCircle size={18} /> Saved</>
+                    ) : saving ? (
+                        'Saving...'
+                    ) : (
+                        'Save Check-in'
+                    )}
+                </button>
+            </div>
         </div>
     );
 };

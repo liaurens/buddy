@@ -1,64 +1,37 @@
+/* eslint-disable no-undef */
 /**
- * Service Worker
- * Handles push notifications and offline functionality
+ * Service Worker — Buddy App
+ *
+ * - Uses Workbox (via CDN importScripts) for precaching and offline routing.
+ * - `self.__WB_MANIFEST` is injected at build time by vite-plugin-pwa
+ *   (`injectManifest` strategy configured in vite.config.ts).
+ * - Keeps native Web Push handlers so push notifications display on iOS
+ *   (installed PWA) and Android / desktop Chrome.
  */
 
-const CACHE_NAME = 'buddy-app-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-];
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js');
 
-// Install event - cache resources
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
-  );
-  self.skipWaiting();
-});
+// Precache assets (manifest injected at build)
+if (self.workbox) {
+  self.workbox.core.skipWaiting();
+  self.workbox.core.clientsClaim();
+  self.workbox.precaching.precacheAndRoute(self.__WB_MANIFEST || []);
+}
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
-});
+// ─── Push notifications ──────────────────────────────────────────────────────
 
-// Fetch event - serve from cache when offline
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
-});
-
-// Push event - handle incoming push notifications
 self.addEventListener('push', (event) => {
-  console.log('Push notification received:', event);
-
   let data = {
     title: 'Buddy App',
     body: 'You have a new notification',
-    icon: '/icon-192.png',
+    icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
+    tag: 'buddy-notification',
     data: {},
+    requireInteraction: false,
+    actions: [],
   };
 
-  // Parse notification data from push event
   if (event.data) {
     try {
       const payload = event.data.json();
@@ -67,8 +40,8 @@ self.addEventListener('push', (event) => {
         body: payload.body || data.body,
         icon: payload.icon || data.icon,
         badge: payload.badge || data.badge,
-        data: payload.data || data.data,
-        tag: payload.tag || 'buddy-notification',
+        tag: payload.tag || data.tag,
+        data: payload.data || {},
         requireInteraction: payload.requireInteraction || false,
         actions: payload.actions || [],
       };
@@ -78,133 +51,55 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  // Show notification
-  const notificationPromise = self.registration.showNotification(data.title, {
-    body: data.body,
-    icon: data.icon,
-    badge: data.badge,
-    tag: data.tag,
-    data: data.data,
-    requireInteraction: data.requireInteraction,
-    actions: data.actions,
-    vibrate: [200, 100, 200],
-    timestamp: Date.now(),
-  });
-
-  event.waitUntil(notificationPromise);
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon,
+      badge: data.badge,
+      tag: data.tag,
+      data: data.data,
+      requireInteraction: data.requireInteraction,
+      actions: data.actions,
+      vibrate: [200, 100, 200],
+      timestamp: Date.now(),
+    })
+  );
 });
 
-// Notification click event - handle user interaction
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event);
-
   event.notification.close();
 
-  // Get notification data
   const data = event.notification.data || {};
-  const action = event.action;
-
-  // Determine URL to open based on notification data
   let urlToOpen = '/';
+  if (data.route) urlToOpen = `/?route=${encodeURIComponent(data.route)}`;
 
-  if (data.toolCategory) {
-    // Map tool categories to routes
-    const toolRoutes = {
-      tracker: '/health',
-      protocol: '/protocols',
-      checkin: '/check-in',
-      experiment: '/experiments',
-      tasks: '/tasks',
-      notes: '/notes',
-      calendar: '/calendar',
-      planning: '/planning',
-      reflection: '/reflection',
-      pomodoro: '/focus',
-      toolbox: '/toolbox',
-    };
-
-    urlToOpen = toolRoutes[data.toolCategory] || '/';
-  }
-
-  // Handle notification actions
-  if (action === 'open') {
-    urlToOpen = data.url || urlToOpen;
-  } else if (action === 'dismiss') {
-    // Just close the notification
-    return;
-  }
-
-  // Open the app or focus existing window
-  const openApp = clients
-    .matchAll({ type: 'window', includeUncontrolled: true })
-    .then((clientList) => {
-      // Check if app is already open
-      for (let client of clientList) {
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          // Navigate to the target URL
-          client.navigate(urlToOpen);
+          if ('navigate' in client) client.navigate(urlToOpen);
           return client.focus();
         }
       }
-
-      // If app not open, open new window
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    });
-
-  event.waitUntil(openApp);
+      if (clients.openWindow) return clients.openWindow(urlToOpen);
+    })
+  );
 });
 
-// Notification close event - track dismissals
-self.addEventListener('notificationclose', (event) => {
-  console.log('Notification closed:', event.notification);
-
-  // Optional: Send analytics event for notification dismissal
-  const data = event.notification.data || {};
-
-  if (data.notificationId) {
-    // Could send to analytics endpoint
-    // fetch('/api/notifications/log', {
-    //   method: 'POST',
-    //   body: JSON.stringify({
-    //     notificationId: data.notificationId,
-    //     action: 'dismissed'
-    //   })
-    // });
-  }
+self.addEventListener('notificationclose', () => {
+  // Intentionally empty — hook left for future analytics.
 });
 
-// Sync event - for background sync (future enhancement)
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-notifications') {
-    event.waitUntil(
-      // Sync pending notifications with server
-      fetch('/api/notifications/sync')
-        .then((response) => response.json())
-        .then((data) => {
-          console.log('Notifications synced:', data);
-        })
-        .catch((error) => {
-          console.error('Sync failed:', error);
-        })
-    );
-  }
-});
-
-// Message event - handle messages from app
+// Allow the app to ask the SW to show a local notification via postMessage
 self.addEventListener('message', (event) => {
-  console.log('Service worker received message:', event.data);
-
+  if (!event.data) return;
   if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
-  }
-
-  if (event.data.type === 'SHOW_NOTIFICATION') {
+  } else if (event.data.type === 'SHOW_NOTIFICATION') {
     const { title, body, data } = event.data;
     self.registration.showNotification(title, {
       body,
-      icon: '/icon-192.png',
+      icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       data,
       vibrate: [200, 100, 200],

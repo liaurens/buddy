@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTimer } from '../../../hooks/useTimer';
 import { loadPlanForDate, startBlock, completeBlock, skipBlock } from '../services/planning.service';
@@ -30,10 +31,14 @@ import {
     Settings
 } from 'lucide-react';
 
-const PlanPage: React.FC = () => {
+interface PlanPageProps {
+    selectedTaskIds?: string[];
+}
+
+const PlanPage: React.FC<PlanPageProps> = ({ selectedTaskIds }) => {
     const { user } = useAuth();
     const timer = useTimer();
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [plan, setPlan] = useState<DailyPlan | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -140,10 +145,10 @@ const PlanPage: React.FC = () => {
     const handleDateChange = (days: number) => {
         const date = new Date(selectedDate);
         date.setDate(date.getDate() + days);
-        setSelectedDate(date.toISOString().split('T')[0]);
+        setSelectedDate(format(date, 'yyyy-MM-dd'));
     };
 
-    const isToday = selectedDate === new Date().toISOString().split('T')[0];
+    const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
 
     const getBlockStatusColor = (block: TimeBlock): string => {
         if (block.status === 'completed') return 'bg-green-50 border-green-200';
@@ -228,7 +233,7 @@ const PlanPage: React.FC = () => {
 
                     {/* Empty State */}
                     {isToday ? (
-                        <PlanGenerator date={selectedDate} onPlanGenerated={loadPlan} />
+                        <PlanGenerator date={selectedDate} onPlanGenerated={loadPlan} selectedTaskIds={selectedTaskIds} />
                     ) : (
                         <div className="text-center py-12">
                             <Sparkles className="mx-auto text-slate-400 mb-4" size={64} />

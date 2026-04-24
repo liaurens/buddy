@@ -1,20 +1,31 @@
 /**
  * Send Notification Edge Function
- * Sends push notifications using Web Push protocol
+ *
+ * Sends a single Web Push notification using proper VAPID JWT (ES256) signing
+ * and AES128GCM payload encryption via the `web-push` npm package.
+ *
+ * Called by:
+ *   - `schedule-notifications` (cron-driven) to flush pending notifications
+ *   - Directly (not currently; see scheduler.service.ts for usage)
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import webpush from 'npm:web-push@3.6.7';
 
 const VAPID_PRIVATE_KEY = Deno.env.get('VAPID_PRIVATE_KEY') || '';
 const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY') || '';
 const VAPID_EMAIL = Deno.env.get('VAPID_EMAIL') || 'mailto:noreply@buddy-app.com';
 
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+}
+
 interface NotificationPayload {
   subscriptionId: string;
   title: string;
   body: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   icon?: string;
   badge?: string;
   tag?: string;
@@ -22,211 +33,113 @@ interface NotificationPayload {
   actions?: Array<{ action: string; title: string; icon?: string }>;
 }
 
-interface PushSubscription {
-  endpoint: string;
-  keys: {
-    p256dh: string;
-    auth: string;
-  };
-}
-
-/**
- * Generate VAPID Authorization header
- */
-async function generateVAPIDAuth(
-  endpoint: string,
-  vapidPublicKey: string,
-  vapidPrivateKey: string,
-  vapidEmail: string
-): Promise<string> {
-  // Web Push VAPID implementation
-  // This is a simplified version - in production use web-push library
-  const urlParts = new URL(endpoint);
-  const audience = `${urlParts.protocol}//${urlParts.host}`;
-
-  // JWT header
-  const header = {
-    typ: 'JWT',
-    alg: 'ES256',
-  };
-
-  // JWT payload
-  const payload = {
-    aud: audience,
-    exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60, // 12 hours
-    sub: vapidEmail,
-  };
-
-  // Base64 URL encode
-  const base64UrlEncode = (str: string) => {
-    return btoa(str)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-  };
-
-  const headerEncoded = base64UrlEncode(JSON.stringify(header));
-  const payloadEncoded = base64UrlEncode(JSON.stringify(payload));
-
-  // Note: Actual signing requires crypto library
-  // For production, use web-push npm package
-  const token = `${headerEncoded}.${payloadEncoded}.SIGNATURE`;
-
-  return `vapid t=${token}, k=${vapidPublicKey}`;
-}
-
-/**
- * Send push notification to a single subscription
- */
-async function sendPushNotification(
-  subscription: PushSubscription,
-  payload: string
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const vapidAuth = await generateVAPIDAuth(
-      subscription.endpoint,
-      VAPID_PUBLIC_KEY,
-      VAPID_PRIVATE_KEY,
-      VAPID_EMAIL
-    );
-
-    // Encrypt payload (simplified - production needs proper encryption)
-    const response = await fetch(subscription.endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/octet-stream',
-        'Content-Encoding': 'aes128gcm',
-        Authorization: vapidAuth,
-        TTL: '86400', // 24 hours
-      },
-      body: payload,
-    });
-
-    if (response.ok || response.status === 201) {
-      return { success: true };
-    }
-
-    // Handle subscription expiration
-    if (response.status === 404 || response.status === 410) {
-      return {
-        success: false,
-        error: 'subscription_expired',
-      };
-    }
-
-    return {
-      success: false,
-      error: `Push service error: ${response.status}`,
-    };
-  } catch (error) {
-    console.error('Push send error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
-  // CORS headers
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  };
-
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  try {
-    // Get request body
-    const { subscriptionId, title, body, data, icon, badge, tag, requireInteraction, actions } =
-      (await req.json()) as NotificationPayload;
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    return new Response(
+      JSON.stringify({ error: 'VAPID keys not configured (set VAPID_PUBLIC_KEY + VAPID_PRIVATE_KEY on this function)' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 
-    // Validate required fields
+  try {
+    const payload = (await req.json()) as NotificationPayload;
+    const { subscriptionId, title, body } = payload;
+
     if (!subscriptionId || !title || !body) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
+        JSON.stringify({ error: 'Missing required fields (subscriptionId, title, body)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get subscription details
     const { data: subscription, error: fetchError } = await supabase
       .from('notification_subscriptions')
-      .select('*')
+      .select('id, user_id, endpoint, p256dh, auth')
       .eq('id', subscriptionId)
       .single();
 
     if (fetchError || !subscription) {
       return new Response(
-        JSON.stringify({ error: 'Subscription not found' }),
+        JSON.stringify({ error: 'Subscription not found', details: fetchError?.message }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Prepare push subscription object
-    const pushSubscription: PushSubscription = {
-      endpoint: subscription.endpoint,
+    const pushSubscription = {
+      endpoint: subscription.endpoint as string,
       keys: {
-        p256dh: subscription.p256dh,
-        auth: subscription.auth,
+        p256dh: subscription.p256dh as string,
+        auth: subscription.auth as string,
       },
     };
 
-    // Prepare notification payload
     const notificationPayload = JSON.stringify({
       title,
       body,
-      icon: icon || '/icon-192.png',
-      badge: badge || '/icons/icon-192.png',
-      tag: tag || 'buddy-notification',
-      requireInteraction: requireInteraction || false,
-      actions: actions || [],
-      data: data || {},
+      icon: payload.icon || '/icons/icon-192.png',
+      badge: payload.badge || '/icons/icon-192.png',
+      tag: payload.tag || 'buddy-notification',
+      requireInteraction: payload.requireInteraction || false,
+      actions: payload.actions || [],
+      data: payload.data || {},
     });
 
-    // Send push notification
-    const result = await sendPushNotification(pushSubscription, notificationPayload);
+    try {
+      await webpush.sendNotification(pushSubscription, notificationPayload, { TTL: 86400 });
 
-    // Log the notification
-    await supabase.from('notification_logs').insert({
-      subscription_id: subscriptionId,
-      status: result.success ? 'sent' : 'failed',
-      error_message: result.error,
-      sent_at: new Date().toISOString(),
-    });
+      await supabase.from('notification_logs').insert({
+        subscription_id: subscriptionId,
+        user_id: subscription.user_id,
+        status: 'sent',
+      });
 
-    // If subscription expired, mark as inactive
-    if (result.error === 'subscription_expired') {
-      await supabase
-        .from('notification_subscriptions')
-        .update({ is_active: false })
-        .eq('id', subscriptionId);
-    }
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (pushError) {
+      // web-push throws WebPushError with .statusCode
+      const statusCode = (pushError as { statusCode?: number }).statusCode;
+      const errMessage = pushError instanceof Error ? pushError.message : 'Unknown push error';
 
-    return new Response(
-      JSON.stringify({
-        success: result.success,
-        error: result.error,
-      }),
-      {
-        status: result.success ? 200 : 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      // 404 Not Found / 410 Gone → subscription is permanently invalid; remove it.
+      if (statusCode === 404 || statusCode === 410) {
+        await supabase
+          .from('notification_subscriptions')
+          .delete()
+          .eq('id', subscriptionId);
       }
-    );
+
+      await supabase.from('notification_logs').insert({
+        subscription_id: subscriptionId,
+        user_id: subscription.user_id,
+        status: 'failed',
+        error_message: `[${statusCode ?? 'n/a'}] ${errMessage}`,
+      });
+
+      return new Response(
+        JSON.stringify({ success: false, error: errMessage, statusCode }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
   } catch (error) {
-    console.error('Function error:', error);
+    const errMessage = error instanceof Error ? error.message : 'Internal server error';
+    console.error('Function error:', errMessage);
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal server error',
-      }),
+      JSON.stringify({ error: errMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

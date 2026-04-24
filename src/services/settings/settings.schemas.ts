@@ -162,6 +162,41 @@ export const accountSettingsSchema = z.object({
 });
 
 // ============================================================================
+// COMMS SCHEMAS
+// ============================================================================
+
+const commsItemSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  daysOfWeek: z.array(z.number().int().min(0).max(6)).nullable().default(null),
+});
+
+export const commsSettingsSchema = z.object({
+  items: z.array(commsItemSchema).default([
+    { id: 'emails', label: 'Check important emails', daysOfWeek: null },
+    { id: 'whatsapp', label: 'Check WhatsApp', daysOfWeek: null },
+  ]),
+});
+
+// ============================================================================
+// NOTIFICATIONS SCHEMAS
+// ============================================================================
+
+export const notificationsSettingsSchema = z.object({
+  pushEnabled: z.boolean().default(false),
+  morningEnabled: z.boolean().default(true),
+  morningTime: z.string().default('08:00'),
+  middayEnabled: z.boolean().default(true),
+  middayTime: z.string().default('13:00'),
+  nightEnabled: z.boolean().default(true),
+  nightTime: z.string().default('21:00'),
+  taskDueEnabled: z.boolean().default(true),
+  taskDueAdvanceMinutes: z.number().int().min(0).max(240).default(15),
+  calendarEventEnabled: z.boolean().default(true),
+  calendarEventAdvanceMinutes: z.number().int().min(0).max(240).default(15),
+});
+
+// ============================================================================
 // SCHEMA MAPPING
 // ============================================================================
 
@@ -179,4 +214,6 @@ export const settingsSchemas = {
   pomodoro: pomodoroSettingsSchema,
   toolbox: toolboxSettingsSchema,
   account: accountSettingsSchema,
+  comms: commsSettingsSchema,
+  notifications: notificationsSettingsSchema,
 } as const;

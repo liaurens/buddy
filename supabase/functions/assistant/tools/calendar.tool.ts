@@ -54,7 +54,7 @@ export async function getTodayEvents(
     .from('settings')
     .select('value')
     .eq('user_id', userId)
-    .eq('key', 'calendar_url')
+    .eq('key', 'calendar_calendarUrl')
     .single()
 
   if (!setting?.value) {

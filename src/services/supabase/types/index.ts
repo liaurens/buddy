@@ -28,3 +28,6 @@ export type {
     DbActivityTemplate,
     DbCalendarEvent
 } from './planning-types';
+
+// Goal types
+export type { DbGoal, DbGoalLog } from './goal-types';

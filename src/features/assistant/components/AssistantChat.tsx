@@ -6,6 +6,7 @@ import AssistantChatBubble from './AssistantChatBubble'
 import AssistantGuide from './AssistantGuide'
 import { COMMANDS } from '../constants/commands'
 import type { AppRoute } from '../../../constants/routes'
+import type { AssistantResponse } from '../types'
 
 interface AssistantChatProps {
   onNavigate?: (route: AppRoute) => void
@@ -70,6 +71,9 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
       if (response) {
         const content = response.action_taken || (response.success ? 'Done.' : 'Something went wrong.')
         addAssistantMessage(content, response, userMsgId)
+      } else {
+        const errorResponse: AssistantResponse = { success: false, intent: 'unknown', action_taken: 'Request failed. Check your AI settings in Account.', data: {} }
+        addAssistantMessage(errorResponse.action_taken, errorResponse, userMsgId)
       }
     },
     [input, isLoading, send, addUserMessage, addAssistantMessage]

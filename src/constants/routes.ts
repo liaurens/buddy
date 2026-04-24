@@ -7,7 +7,6 @@ export type AppRoute =
     | 'health'
     | 'protocols'
     | 'experiments'
-    | 'check-in'
     | 'planning'
     | 'calendar'
     | 'reflection'
@@ -22,7 +21,9 @@ export type AppRoute =
     | 'planner'
     | 'browse'
     | 'me'
-    | 'today';
+    | 'today'
+    | 'goals'
+    | 'notifications';
 
 export const HEALTH_HUB_ROUTES: AppRoute[] = ['health', 'protocols', 'experiments'];
 export const CALENDAR_HUB_ROUTES: AppRoute[] = ['calendar', 'planning', 'reflection'];

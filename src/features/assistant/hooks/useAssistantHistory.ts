@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import type { ChatMessage, AssistantResponse, AssistantConversation } from '../types'
 
 const STORAGE_KEY = 'assistant_conversations'
@@ -52,10 +52,6 @@ export function useAssistantHistory() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(
     conversations.length > 0 ? conversations[0].id : null
   )
-
-  useEffect(() => {
-    saveConversations(conversations)
-  }, [conversations])
 
   // Get current active conversation, or create a temporary one if none exists
   const activeConversation = useMemo(() => {
@@ -115,22 +111,24 @@ export function useAssistantHistory() {
       timestamp: Date.now(),
     }
     
-    setConversations(prev => prev.map(c => {
-      if (c.id === convoId) {
-        // Auto-generate title if this is the first message and it's named "New Conversation" or "Imported Conversation"
-        const isUntitled = c.title === 'New Conversation' || c.messages.length === 0
-        const title = isUntitled ? (content.substring(0, 30) + (content.length > 30 ? '...' : '')) : c.title
-        
-        return {
-          ...c,
-          title,
-          messages: [...c.messages, message].slice(-MAX_MESSAGES_PER_CONVO),
-          updatedAt: Date.now()
+    setConversations(prev => {
+      const updated = prev.map(c => {
+        if (c.id === convoId) {
+          const isUntitled = c.title === 'New Conversation' || c.messages.length === 0
+          const title = isUntitled ? (content.substring(0, 30) + (content.length > 30 ? '...' : '')) : c.title
+          return {
+            ...c,
+            title,
+            messages: [...c.messages, message].slice(-MAX_MESSAGES_PER_CONVO),
+            updatedAt: Date.now()
+          }
         }
-      }
-      return c
-    }))
-    
+        return c
+      })
+      saveConversations(updated)
+      return updated
+    })
+
     return id
   }, [ensureActiveConversation])
 
@@ -145,16 +143,20 @@ export function useAssistantHistory() {
         timestamp: Date.now(),
       }
       
-      setConversations(prev => prev.map(c => {
-        if (c.id === convoId) {
-          return {
-            ...c,
-            messages: [...c.messages, message].slice(-MAX_MESSAGES_PER_CONVO),
-            updatedAt: Date.now()
+      setConversations(prev => {
+        const updated = prev.map(c => {
+          if (c.id === convoId) {
+            return {
+              ...c,
+              messages: [...c.messages, message].slice(-MAX_MESSAGES_PER_CONVO),
+              updatedAt: Date.now()
+            }
           }
-        }
-        return c
-      }))
+          return c
+        })
+        saveConversations(updated)
+        return updated
+      })
     },
     [ensureActiveConversation]
   )

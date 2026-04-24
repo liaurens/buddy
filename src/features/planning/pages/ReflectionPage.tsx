@@ -9,21 +9,24 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { format } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import { generateDayReflection, detectPatterns } from '../services/reflection.service';
 import { saveReflectionItems, loadReflectionForDate } from '../services/reflectionCapture';
 import { useReflectionHistory } from '../hooks/useReflectionHistory';
+import { useGoals } from '../../../features/core/hooks/useGoals';
+import type { Goal } from '../../../features/core/hooks/useGoals';
 import ReflectionSettingsModal from '../components/reflection/ReflectionSettingsModal';
 import MoodEnergySparkline from '../components/reflection/MoodEnergySparkline';
 import type { DayReflection, LearningPattern } from '../services/reflection.service';
 import {
     TrendingUp, TrendingDown, Target, Clock, CheckCircle, AlertCircle,
-    Lightbulb, Settings, ChevronDown, ChevronRight, Sparkles, Flag, Compass,
+    Lightbulb, Settings, ChevronDown, ChevronRight, Sparkles, Compass, Heart, Mountain
 } from 'lucide-react';
 
 const ReflectionPage: React.FC = () => {
     const { user } = useAuth();
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [reflection, setReflection] = useState<DayReflection | null>(null);
     const [patterns, setPatterns] = useState<LearningPattern[]>([]);
     const [loading, setLoading] = useState(false);
@@ -32,14 +35,30 @@ const ReflectionPage: React.FC = () => {
     const [metricsOpen, setMetricsOpen] = useState(false);
 
     // Reflection capture state
-    const [wins, setWins] = useState<string[]>(['', '', '']);
-    const [blocker, setBlocker] = useState('');
+    const [memory, setMemory] = useState('');
+    const [gratitude, setGratitude] = useState('');
+    const [challenge, setChallenge] = useState('');
     const [priority, setPriority] = useState('');
     const [saving, setSaving] = useState(false);
     const [savedAt, setSavedAt] = useState<string | null>(null);
     const [captureError, setCaptureError] = useState<string | null>(null);
 
     const { data: historyPoints = [] } = useReflectionHistory(14);
+    const { goals, todayLogs, logGoalToday } = useGoals('active', selectedDate);
+    type GoalEntry = { completed?: boolean; minutesSpent?: number; progressDelta?: number };
+    const [goalEntries, setGoalEntries] = useState<Record<string, GoalEntry>>({});
+
+    useEffect(() => {
+        const initial: Record<string, GoalEntry> = {};
+        todayLogs.forEach(log => {
+            initial[log.goalId] = {
+                completed: log.completed,
+                minutesSpent: log.minutesSpent ?? undefined,
+                progressDelta: log.progressDelta ?? undefined,
+            };
+        });
+        setGoalEntries(initial);
+    }, [todayLogs]);
 
     const loadReflection = useCallback(async () => {
         if (!user?.id) return;
@@ -69,12 +88,11 @@ const ReflectionPage: React.FC = () => {
     const loadCapture = useCallback(async () => {
         if (!user?.id) return;
         const existing = await loadReflectionForDate(user.id, selectedDate);
-        const paddedWins = [...existing.wins.slice(0, 3)];
-        while (paddedWins.length < 3) paddedWins.push('');
-        setWins(paddedWins);
-        setBlocker(existing.blocker);
-        setPriority(existing.priority);
-        setSavedAt(existing.wins.length + (existing.blocker ? 1 : 0) + (existing.priority ? 1 : 0) > 0 ? 'loaded' : null);
+        setMemory(existing.memory || existing.wins[0] || '');
+        setGratitude(existing.gratitude || existing.wins[1] || '');
+        setChallenge(existing.challenge || existing.blocker || '');
+        setPriority(existing.priority || '');
+        setSavedAt((existing.memory || existing.gratitude || existing.challenge || existing.priority || existing.wins.length > 0 || existing.blocker) ? 'loaded' : null);
     }, [user?.id, selectedDate]);
 
     useEffect(() => {
@@ -91,10 +109,17 @@ const ReflectionPage: React.FC = () => {
         setCaptureError(null);
         try {
             await saveReflectionItems(user.id, selectedDate, [
-                ...wins.map(text => ({ subtype: 'reflection_win' as const, text })),
-                { subtype: 'reflection_blocker' as const, text: blocker },
+                { subtype: 'reflection_memory' as const, text: memory },
+                { subtype: 'reflection_gratitude' as const, text: gratitude },
+                { subtype: 'reflection_challenge' as const, text: challenge },
                 { subtype: 'reflection_priority' as const, text: priority },
             ]);
+            // Persist goal check-ins for today
+            await Promise.all(
+                goals
+                    .filter(g => goalEntries[g.id] !== undefined)
+                    .map(g => logGoalToday(g.id, goalEntries[g.id]))
+            );
             setSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
         } catch (err) {
             setCaptureError(err instanceof Error ? err.message : 'Failed to save');
@@ -147,45 +172,56 @@ const ReflectionPage: React.FC = () => {
                 </div>
 
                 {/* Capture form */}
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-5">
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-6">
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                            <Sparkles size={18} className="text-amber-500" /> Three good things today
+                            <Sparkles size={18} className="text-amber-500" /> Today's Core Memory
                         </h2>
                         <p className="text-xs text-slate-500 mt-1">
-                            Anything that went well — a kind moment, a finished task, a meal you enjoyed.
+                            A single cool memory, funny moment, or highlight you want to remember.
                         </p>
-                        <div className="mt-3 space-y-2">
-                            {[0, 1, 2].map(i => (
-                                <textarea
-                                    key={i}
-                                    value={wins[i] ?? ''}
-                                    onChange={e => setWins(prev => prev.map((w, idx) => idx === i ? e.target.value : w))}
-                                    rows={1}
-                                    placeholder={`Win ${i + 1}…`}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-y"
-                                />
-                            ))}
-                        </div>
-                    </div>
-
-                    <div>
-                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                            <Flag size={18} className="text-rose-500" /> One blocker
-                        </h2>
-                        <p className="text-xs text-slate-500 mt-1">What got in the way today? (leave blank if nothing stood out)</p>
                         <textarea
-                            value={blocker}
-                            onChange={e => setBlocker(e.target.value)}
-                            rows={2}
-                            placeholder="Something that slowed you down…"
-                            className="mt-2 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-rose-400 focus:border-transparent resize-y"
+                            value={memory}
+                            onChange={e => setMemory(e.target.value)}
+                            rows={1}
+                            placeholder="What was one cool memory from today?"
+                            className="mt-3 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-y"
                         />
                     </div>
 
                     <div>
                         <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                            <Compass size={18} className="text-indigo-500" /> Tomorrow's one thing
+                            <Heart size={18} className="text-rose-400" /> Gratitude
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-1">
+                            What is one thing you are truly grateful for today?
+                        </p>
+                        <textarea
+                            value={gratitude}
+                            onChange={e => setGratitude(e.target.value)}
+                            rows={1}
+                            placeholder="Something big or small..."
+                            className="mt-3 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-rose-400 focus:border-transparent resize-y"
+                        />
+                    </div>
+
+                    <div>
+                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                            <Mountain size={18} className="text-emerald-500" /> Challenge & Growth
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-1">What challenged you today, and how did you handle it?</p>
+                        <textarea
+                            value={challenge}
+                            onChange={e => setChallenge(e.target.value)}
+                            rows={2}
+                            placeholder="A difficult moment and what I learned..."
+                            className="mt-3 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent resize-y"
+                        />
+                    </div>
+
+                    <div>
+                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                            <Compass size={18} className="text-indigo-500" /> Tomorrow's Focus
                         </h2>
                         <p className="text-xs text-slate-500 mt-1">
                             If you only do one thing tomorrow, what is it? (planner reads this next morning)
@@ -195,7 +231,7 @@ const ReflectionPage: React.FC = () => {
                             onChange={e => setPriority(e.target.value)}
                             rows={2}
                             placeholder="The one thing that would make tomorrow a win…"
-                            className="mt-2 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-y"
+                            className="mt-3 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-y"
                         />
                     </div>
 
@@ -213,6 +249,79 @@ const ReflectionPage: React.FC = () => {
                         </button>
                     </div>
                 </div>
+
+                {/* Goals check-in */}
+                {goals.length > 0 && (
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-4">
+                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                            <Target size={18} className="text-emerald-500" /> Today's goals
+                        </h2>
+                        <p className="text-xs text-slate-500 -mt-2">Log how your goals went today.</p>
+                        <ul className="space-y-4">
+                            {goals.map((goal: Goal) => {
+                                const entry = goalEntries[goal.id] ?? {};
+                                const update = (patch: GoalEntry) =>
+                                    setGoalEntries(prev => ({ ...prev, [goal.id]: { ...prev[goal.id], ...patch } }));
+                                return (
+                                    <li key={goal.id} className="space-y-2">
+                                        <p className="text-sm font-medium text-slate-800">{goal.title}</p>
+                                        {goal.goalType === 'action' && (
+                                            <div className="flex gap-2">
+                                                {(['Done', 'Not done'] as const).map(label => (
+                                                    <button key={label} type="button"
+                                                        onClick={() => update({ completed: label === 'Done' })}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                            (label === 'Done' ? entry.completed : entry.completed === false)
+                                                                ? label === 'Done' ? 'bg-green-500 text-white' : 'bg-slate-500 text-white'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                        }`}>
+                                                        {label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {goal.goalType === 'habit' && (
+                                            <div className="flex gap-2">
+                                                {(['Yes', 'No'] as const).map(label => (
+                                                    <button key={label} type="button"
+                                                        onClick={() => update({ completed: label === 'Yes' })}
+                                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                            (label === 'Yes' ? entry.completed : entry.completed === false)
+                                                                ? label === 'Yes' ? 'bg-orange-500 text-white' : 'bg-slate-500 text-white'
+                                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                        }`}>
+                                                        {label === 'Yes' ? '🔥 Did it' : 'Skipped'}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {goal.goalType === 'time' && (
+                                            <div className="flex items-center gap-2">
+                                                <input type="number" min={0} placeholder="0"
+                                                    value={entry.minutesSpent ?? ''}
+                                                    onChange={e => update({ minutesSpent: Number(e.target.value) })}
+                                                    className="w-20 px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                                                <span className="text-xs text-slate-500">
+                                                    min spent{goal.targetMinutes ? ` / ${goal.targetMinutes} target` : ''}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {goal.goalType === 'progress' && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-slate-500">Progress added:</span>
+                                                <input type="number" min={0} max={100} placeholder="0"
+                                                    value={entry.progressDelta ?? ''}
+                                                    onChange={e => update({ progressDelta: Number(e.target.value) })}
+                                                    className="w-16 px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                                                <span className="text-xs text-slate-500">%</span>
+                                            </div>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                )}
 
                 {/* Collapsible day metrics */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100">

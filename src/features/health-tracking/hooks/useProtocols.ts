@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
+import { format } from 'date-fns';
 import type { Protocol, Cycle, Dose } from '../types';
 import { useAuth } from '../../../hooks/useAuth';
 import {
@@ -16,6 +17,8 @@ import {
     type DbCycle,
     type DbDose,
 } from '../../../services/supabase';
+
+const EMPTY_ARRAY: any[] = [];
 
 interface ProtocolContextType {
     protocols: Protocol[];
@@ -49,7 +52,7 @@ export function useProtocols(): ProtocolContextType {
     const userId = user?.id;
 
     // Fetch protocols
-    const { data: protocols = [] } = useQuery({
+    const { data: protocols = EMPTY_ARRAY as Protocol[] } = useQuery({
         queryKey: ['protocols', userId],
         queryFn: async () => {
             if (!userId) return [];
@@ -65,7 +68,7 @@ export function useProtocols(): ProtocolContextType {
     });
 
     // Fetch cycles
-    const { data: cycles = [] } = useQuery({
+    const { data: cycles = EMPTY_ARRAY as Cycle[] } = useQuery({
         queryKey: ['cycles', userId],
         queryFn: async () => {
             if (!userId) return [];
@@ -82,7 +85,7 @@ export function useProtocols(): ProtocolContextType {
     });
 
     // Fetch doses
-    const { data: doses = [] } = useQuery({
+    const { data: doses = EMPTY_ARRAY as Dose[] } = useQuery({
         queryKey: ['doses', userId],
         queryFn: async () => {
             if (!userId) return [];
@@ -185,7 +188,7 @@ export function useProtocols(): ProtocolContextType {
             id,
             protocolId,
             cycleNumber,
-            startDate: new Date().toISOString().split('T')[0],
+            startDate: format(new Date(), 'yyyy-MM-dd'),
             plannedEndDate,
             offCycleDays,
             status: 'active',
@@ -206,7 +209,7 @@ export function useProtocols(): ProtocolContextType {
             .from('cycles')
             .update({
                 status: 'completed',
-                actual_end_date: new Date().toISOString().split('T')[0],
+                actual_end_date: format(new Date(), 'yyyy-MM-dd'),
             })
             .eq('id', cycleId)
             .eq('user_id', userId);
@@ -222,7 +225,7 @@ export function useProtocols(): ProtocolContextType {
             .from('cycles')
             .update({
                 status: 'aborted',
-                actual_end_date: new Date().toISOString().split('T')[0],
+                actual_end_date: format(new Date(), 'yyyy-MM-dd'),
                 notes,
             })
             .eq('id', cycleId)

@@ -23,6 +23,9 @@ export type {
   PomodoroSettings,
   ToolboxSettings,
   AccountSettings,
+  CommsItem,
+  CommsSettings,
+  NotificationsSettings,
 } from './settings.types';
 
 // Export schemas
