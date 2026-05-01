@@ -51,6 +51,21 @@ self.addEventListener('push', (event) => {
     }
   }
 
+  // Auto-attach action buttons for task-source reminders if the payload didn't
+  // include any. Mark-done + snooze keep iOS lock-screen interactions snappy.
+  let actions = data.actions || [];
+  if ((!actions || actions.length === 0) && data.data && data.data.sourceType === 'task') {
+    actions = [
+      { action: 'done', title: 'Mark done' },
+      { action: 'snooze', title: 'Snooze 15m' },
+    ];
+  }
+
+  // Best-effort badge update on platforms that support it.
+  if ('setAppBadge' in self.navigator && typeof data.data?.badge === 'number') {
+    try { self.navigator.setAppBadge(data.data.badge); } catch (_) { /* ignore */ }
+  }
+
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
@@ -59,7 +74,7 @@ self.addEventListener('push', (event) => {
       tag: data.tag,
       data: data.data,
       requireInteraction: data.requireInteraction,
-      actions: data.actions,
+      actions,
       vibrate: [200, 100, 200],
       timestamp: Date.now(),
     })
@@ -67,11 +82,24 @@ self.addEventListener('push', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
+  const action = event.action;
   event.notification.close();
 
   const data = event.notification.data || {};
   let urlToOpen = '/';
   if (data.route) urlToOpen = `/?route=${encodeURIComponent(data.route)}`;
+
+  // For task action buttons, route to the todo page with intent params so the
+  // app can complete or snooze the task on focus.
+  if (data.sourceType === 'task' && data.taskId) {
+    if (action === 'done') {
+      urlToOpen = `/?route=tasks&intent=complete&taskId=${encodeURIComponent(data.taskId)}`;
+    } else if (action === 'snooze') {
+      urlToOpen = `/?route=tasks&intent=snooze&taskId=${encodeURIComponent(data.taskId)}`;
+    } else {
+      urlToOpen = `/?route=tasks&taskId=${encodeURIComponent(data.taskId)}`;
+    }
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

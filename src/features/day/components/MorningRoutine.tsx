@@ -17,14 +17,32 @@ type Step = 0 | 1 | 2 | 3;
 const STEP_LABELS = ['Comms', 'Log Yesterday', 'Tasks & Calendar', 'Plan Day'];
 const STEP_ICONS = [Mail, Activity, Calendar, Sparkles];
 
+const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+
 interface MorningRoutineProps {
     onNavigate?: (tab: import('../../../constants/routes').AppRoute) => void;
 }
 
 const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
-    const [step, setStep] = useState<Step>(0);
+    const today = new Date();
+    const dateKey = format(today, 'yyyy-MM-dd');
+    const todayStr = dateKey;
+
+    const [step, setStep] = useState<Step>(() => {
+        try {
+            const saved = sessionStorage.getItem(`morning_step_${dateKey}`);
+            return (saved !== null ? (Number(saved) as Step) : 0);
+        } catch { return 0; }
+    });
+
     const [commsItems, setCommsItems] = useState<CommsItem[]>([]);
-    const [commsChecked, setCommsChecked] = useState<Record<string, boolean>>({});
+    const [commsChecked, setCommsChecked] = useState<Record<string, boolean>>(() => {
+        try {
+            const saved = sessionStorage.getItem(`morning_comms_${dateKey}`);
+            return saved ? (JSON.parse(saved) as Record<string, boolean>) : {};
+        } catch { return {}; }
+    });
+
     const [showCommsSettings, setShowCommsSettings] = useState(false);
     const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([]);
     const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
@@ -39,9 +57,16 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
     const { user } = useAuth();
     const { tasks, addTask } = useTasks();
 
-    const today = new Date();
+    // Persist step to sessionStorage
+    useEffect(() => {
+        try { sessionStorage.setItem(`morning_step_${dateKey}`, String(step)); } catch { /* ignore */ }
+    }, [step, dateKey]);
 
-    // Load comms items from settings
+    // Persist comms checks to sessionStorage
+    useEffect(() => {
+        try { sessionStorage.setItem(`morning_comms_${dateKey}`, JSON.stringify(commsChecked)); } catch { /* ignore */ }
+    }, [commsChecked, dateKey]);
+
     const loadComms = () => {
         if (!user?.id) return;
         setCommsError(null);
@@ -61,7 +86,6 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
 
     useEffect(() => { loadComms(); }, [user?.id]);
 
-    // Load today's calendar events
     useEffect(() => {
         if (!user?.id) return;
         const start = new Date(today); start.setHours(0, 0, 0, 0);
@@ -84,7 +108,36 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
             });
     }, [user?.id]);
 
-    const incompleteTasks = useMemo(() => tasks.filter(t => !t.completed), [tasks]);
+    // Tasks sorted: overdue/due today first, then by priority, then by due date
+    const incompleteTasks = useMemo(() => {
+        return tasks
+            .filter(t => !t.completed)
+            .sort((a, b) => {
+                const aUrgent = a.dueDate && a.dueDate <= todayStr ? 0 : 1;
+                const bUrgent = b.dueDate && b.dueDate <= todayStr ? 0 : 1;
+                if (aUrgent !== bUrgent) return aUrgent - bUrgent;
+                const ap = PRIORITY_ORDER[a.priority ?? 'medium'] ?? 2;
+                const bp = PRIORITY_ORDER[b.priority ?? 'medium'] ?? 2;
+                if (ap !== bp) return ap - bp;
+                if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+                if (a.dueDate) return -1;
+                if (b.dueDate) return 1;
+                return 0;
+            });
+    }, [tasks, todayStr]);
+
+    const dueTodayIds = useMemo(
+        () => incompleteTasks.filter(t => t.dueDate === todayStr).map(t => t.id),
+        [incompleteTasks, todayStr]
+    );
+
+    const selectedTimeTotal = useMemo(
+        () => Array.from(selectedTaskIds).reduce((sum, id) => {
+            const task = tasks.find(t => t.id === id);
+            return sum + (task?.estimatedTime ?? 0);
+        }, 0),
+        [selectedTaskIds, tasks]
+    );
 
     const toggleComms = (id: string) =>
         setCommsChecked(prev => ({ ...prev, [id]: !prev[id] }));
@@ -96,13 +149,21 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
             return next;
         });
 
+    const handleSelectDueToday = () => {
+        setSelectedTaskIds(prev => {
+            const next = new Set(prev);
+            dueTodayIds.forEach(id => next.add(id));
+            return next;
+        });
+    };
+
     const handleAddTask = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newTaskTitle.trim() || addingTask) return;
         setAddingTask(true);
         setAddTaskError(null);
         try {
-            await addTask(
+            const newId = await addTask(
                 newTaskTitle.trim(),
                 'medium',
                 newTaskEstimate ? Number(newTaskEstimate) : undefined,
@@ -111,6 +172,7 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
                 undefined,
                 newTaskDueTime || undefined
             );
+            setSelectedTaskIds(prev => new Set([...prev, newId]));
             setNewTaskTitle('');
             setNewTaskDue('');
             setNewTaskEstimate('');
@@ -240,52 +302,78 @@ const MorningRoutine: React.FC<MorningRoutineProps> = ({ onNavigate }) => {
 
                     {/* Tasks */}
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-                        <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-                            Select tasks for today
-                            <span className="ml-auto text-xs text-slate-400 font-normal">
-                                {selectedTaskIds.size} selected
-                            </span>
-                        </h2>
+                        <div className="flex items-center justify-between">
+                            <h2 className="font-semibold text-slate-900">
+                                Select tasks for today
+                            </h2>
+                            <div className="flex items-center gap-2">
+                                {dueTodayIds.length > 0 && (
+                                    <button
+                                        onClick={handleSelectDueToday}
+                                        className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+                                    >
+                                        Select due today
+                                    </button>
+                                )}
+                                <span className="text-xs text-slate-400 font-normal">
+                                    {selectedTaskIds.size} selected
+                                    {selectedTimeTotal > 0 && ` · ${selectedTimeTotal}m`}
+                                </span>
+                            </div>
+                        </div>
                         {incompleteTasks.length === 0 ? (
                             <p className="text-sm text-slate-400">No open tasks.</p>
                         ) : (
                             <ul className="space-y-1 max-h-64 overflow-y-auto">
-                                {incompleteTasks.map(task => (
-                                    <li key={task.id}>
-                                        <button
-                                            onClick={() => toggleTask(task.id)}
-                                            className={`w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left transition-colors ${
-                                                selectedTaskIds.has(task.id)
-                                                    ? 'bg-indigo-50'
-                                                    : 'hover:bg-slate-50'
-                                            }`}
-                                        >
-                                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                                                selectedTaskIds.has(task.id)
-                                                    ? 'border-indigo-600 bg-indigo-600'
-                                                    : 'border-slate-300'
-                                            }`}>
-                                                {selectedTaskIds.has(task.id) && <Check size={11} className="text-white" />}
-                                            </div>
-                                            <span className="text-sm text-slate-800 flex-1">{task.title}</span>
-                                            {task.dueTime && (
-                                                <span className="text-xs text-amber-600 font-medium flex-shrink-0 bg-amber-50 px-1.5 py-0.5 rounded">
-                                                    before {task.dueTime}
+                                {incompleteTasks.map(task => {
+                                    const isOverdue = task.dueDate && task.dueDate < todayStr;
+                                    const isDueToday = task.dueDate === todayStr;
+                                    return (
+                                        <li key={task.id}>
+                                            <button
+                                                onClick={() => toggleTask(task.id)}
+                                                className={`w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left transition-colors ${
+                                                    selectedTaskIds.has(task.id)
+                                                        ? 'bg-indigo-50'
+                                                        : 'hover:bg-slate-50'
+                                                }`}
+                                            >
+                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                                                    selectedTaskIds.has(task.id)
+                                                        ? 'border-indigo-600 bg-indigo-600'
+                                                        : 'border-slate-300'
+                                                }`}>
+                                                    {selectedTaskIds.has(task.id) && <Check size={11} className="text-white" />}
+                                                </div>
+                                                <span className={`text-sm flex-1 ${isOverdue ? 'text-red-700' : 'text-slate-800'}`}>
+                                                    {task.title}
                                                 </span>
-                                            )}
-                                            {task.dueDate && (
-                                                <span className="text-xs text-slate-400 flex-shrink-0">
-                                                    {format(new Date(task.dueDate), 'MMM d')}
-                                                </span>
-                                            )}
-                                            {task.estimatedTime && (
-                                                <span className="text-xs text-slate-400 flex-shrink-0">
-                                                    {task.estimatedTime}m
-                                                </span>
-                                            )}
-                                        </button>
-                                    </li>
-                                ))}
+                                                {task.priority && (task.priority === 'urgent' || task.priority === 'high') && (
+                                                    <span className={`text-xs font-medium flex-shrink-0 px-1.5 py-0.5 rounded ${
+                                                        task.priority === 'urgent' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
+                                                    }`}>
+                                                        {task.priority}
+                                                    </span>
+                                                )}
+                                                {task.dueTime && (
+                                                    <span className="text-xs text-amber-600 font-medium flex-shrink-0 bg-amber-50 px-1.5 py-0.5 rounded">
+                                                        before {task.dueTime}
+                                                    </span>
+                                                )}
+                                                {task.dueDate && (
+                                                    <span className={`text-xs flex-shrink-0 ${isOverdue ? 'text-red-600 font-medium' : isDueToday ? 'text-amber-600 font-medium' : 'text-slate-400'}`}>
+                                                        {isOverdue ? 'overdue' : isDueToday ? 'today' : format(new Date(task.dueDate), 'MMM d')}
+                                                    </span>
+                                                )}
+                                                {task.estimatedTime && (
+                                                    <span className="text-xs text-slate-400 flex-shrink-0">
+                                                        {task.estimatedTime}m
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         )}
 

@@ -2,26 +2,34 @@ import { useState } from 'react';
 import { X, Sparkles, TrendingUp } from 'lucide-react';
 import type { Skill } from '../types';
 
+type LogResult = { xp: number; critical: boolean; levelUp: boolean; oldLevel: number; newLevel: number };
+
 interface LogActivityModalProps {
   skill: Skill;
   onClose: () => void;
-  onSubmit: (minutes: number, note: string) => { xp: number; critical: boolean; levelUp: boolean; oldLevel: number; newLevel: number };
+  onSubmit: (minutes: number, note: string) => Promise<LogResult> | LogResult;
 }
 
 export function LogActivityModal({ skill, onClose, onSubmit }: LogActivityModalProps) {
   const [minutes, setMinutes] = useState(30);
   const [note, setNote] = useState('');
-  const [result, setResult] = useState<{ xp: number; critical: boolean; levelUp: boolean; oldLevel: number; newLevel: number } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<LogResult | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = onSubmit(minutes, note);
-    setResult(res);
-
-    if (!res.levelUp) {
-      setTimeout(() => {
-        onClose();
-      }, 1500);
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await onSubmit(minutes, note);
+      setResult(res);
+      if (!res.levelUp) {
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -106,9 +114,10 @@ export function LogActivityModal({ skill, onClose, onSubmit }: LogActivityModalP
 
               <button
                 type="submit"
-                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 focus:ring-4 focus:ring-slate-200 transition-all transform active:scale-95"
+                disabled={submitting}
+                className="w-full flex justify-center items-center gap-2 py-3.5 px-4 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 disabled:opacity-50 focus:ring-4 focus:ring-slate-200 transition-all transform active:scale-95"
               >
-                Log XP
+                {submitting ? 'Logging…' : 'Log XP'}
               </button>
             </form>
           )}

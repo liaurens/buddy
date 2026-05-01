@@ -17,7 +17,8 @@ export type ToolCategory =
   | 'toolbox'
   | 'routine_morning'
   | 'routine_midday'
-  | 'routine_night';
+  | 'routine_night'
+  | 'off_track';
 
 export type NotificationType =
   | 'tracker_reminder'
@@ -28,6 +29,11 @@ export type NotificationType =
   | 'experiment_complete'
   | 'calendar_event'
   | 'routine_reminder'
+  | 'task_reminder'
+  | 'task_overdue'
+  | 'off_track_routine'
+  | 'off_track_checkin'
+  | 'off_track_idle'
   | 'custom';
 
 export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'cancelled';
@@ -129,6 +135,9 @@ export interface ScheduleNotificationRequest {
   title: string;
   body: string;
   data?: Record<string, any>;
+  sourceType?: string;
+  sourceId?: string;
+  dedupKey?: string;
 }
 
 // Notification preferences (loaded from settings)

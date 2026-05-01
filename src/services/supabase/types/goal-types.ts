@@ -11,6 +11,7 @@ export interface DbGoal {
     target_minutes: number | null;
     streak_count: number;
     last_completed_at: string | null;
+    project_id: string | null;
     created_at: string;
     updated_at: string;
 }

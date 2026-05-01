@@ -49,6 +49,7 @@ export function useGoals(statusFilter: Goal['status'] | 'all' = 'active', target
         description?: string;
         targetDate?: string;
         targetMinutes?: number;
+        projectId?: string | null;
     }) => {
         if (!userId) throw new Error('Not authenticated');
         const { error } = await supabase.from('goals').insert({
@@ -63,7 +64,18 @@ export function useGoals(statusFilter: Goal['status'] | 'all' = 'active', target
             target_minutes: params.targetMinutes ?? null,
             streak_count: 0,
             last_completed_at: null,
+            project_id: params.projectId ?? null,
         });
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['goals', userId] });
+    }, [userId, queryClient]);
+
+    const updateGoalProject = useCallback(async (id: string, projectId: string | null) => {
+        if (!userId) throw new Error('Not authenticated');
+        const { error } = await supabase
+            .from('goals')
+            .update({ project_id: projectId, updated_at: new Date().toISOString() })
+            .eq('id', id).eq('user_id', userId);
         if (error) throw error;
         queryClient.invalidateQueries({ queryKey: ['goals', userId] });
     }, [userId, queryClient]);
@@ -117,14 +129,6 @@ export function useGoals(statusFilter: Goal['status'] | 'all' = 'active', target
             }).eq('id', goalId).eq('user_id', userId);
         }
 
-        // For action goals: complete permanently
-        if (goal?.goalType === 'action' && entry.completed) {
-            await supabase.from('goals').update({
-                status: 'completed',
-                updated_at: new Date().toISOString(),
-            }).eq('id', goalId).eq('user_id', userId);
-        }
-
         // For progress goals: bump overall progress
         if (goal?.goalType === 'progress' && entry.progressDelta) {
             const newProgress = Math.min(100, (goal.progress ?? 0) + entry.progressDelta);
@@ -145,7 +149,7 @@ export function useGoals(statusFilter: Goal['status'] | 'all' = 'active', target
         queryClient.invalidateQueries({ queryKey: ['goals', userId] });
     }, [userId, queryClient]);
 
-    return { goals, todayLogs, isLoading, addGoal, updateGoalProgress, updateGoalStatus, logGoalToday, deleteGoal };
+    return { goals, todayLogs, isLoading, addGoal, updateGoalProgress, updateGoalStatus, updateGoalProject, logGoalToday, deleteGoal };
 }
 
 export type { Goal, GoalLog, GoalType };

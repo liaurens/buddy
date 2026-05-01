@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { useTasks } from '../hooks/useTasks';
 import { useTaskRecommendation } from '../hooks/useTaskRecommendation';
 import { useAuth } from '../../../hooks/useAuth';
 import { getCategorySettings, type TaskSettings } from '../../../services/settings';
-import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon, MapPin, Tag, Settings, Sparkles, ChevronDown, ChevronRight, Repeat } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, Calendar as CalendarIcon, MapPin, Tag, Settings, Sparkles, ChevronDown, ChevronRight, Repeat, Search, Filter, X, Bell } from 'lucide-react';
 import { format, isPast, isToday, differenceInCalendarDays, addDays } from 'date-fns';
 import TaskSettingsModal from '../components/TaskSettingsModal';
 import AITaskSplitter from '../components/AITaskSplitter';
 import TaskBulkActionBar from '../components/TaskBulkActionBar';
 import { calculateNextDueDate } from '../utils/recurrence';
-import type { Task, Subtask, RecurrencePattern } from '../types';
+import type { Task, Subtask, RecurrencePattern, ReminderCadence } from '../types';
 
 type BucketId = 'overdue' | 'today' | 'week' | 'later';
 
@@ -20,7 +21,11 @@ const BUCKET_LABELS: Record<BucketId, string> = {
     later: 'Later / no due date',
 };
 
-const TodoPage: React.FC = () => {
+interface TodoPageProps {
+    initialParams?: Record<string, unknown> | null;
+}
+
+const TodoPage: React.FC<TodoPageProps> = ({ initialParams }) => {
     const { user } = useAuth();
     const { tasks: allTodos, isLoading, addTask, toggleTask, deleteTask, updateTask, rescheduleMany, completeMany, deleteMany } = useTasks();
     const { ranked } = useTaskRecommendation();
@@ -34,7 +39,51 @@ const TodoPage: React.FC = () => {
         }
     }, [user]);
 
+    // Handle deep-link intents from notification action buttons (Mark done, Snooze 15m).
+    const intentHandledRef = React.useRef<string | null>(null);
+    useEffect(() => {
+        if (!initialParams || !user) return;
+        const intent = initialParams.intent as string | undefined;
+        const taskId = initialParams.taskId as string | undefined;
+        if (!intent || !taskId) return;
+        const key = `${intent}:${taskId}`;
+        if (intentHandledRef.current === key) return;
+        intentHandledRef.current = key;
+
+        const task = allTodos.find(t => t.id === taskId);
+        if (!task) return;
+
+        if (intent === 'complete' && !task.completed) {
+            toggleTask(taskId);
+        } else if (intent === 'snooze') {
+            const newDue = new Date(Date.now() + 15 * 60_000);
+            const newDueDate = newDue.toISOString().slice(0, 10);
+            const newDueTime = `${String(newDue.getHours()).padStart(2, '0')}:${String(newDue.getMinutes()).padStart(2, '0')}`;
+            updateTask({ ...task, dueDate: newDueDate, dueTime: newDueTime });
+        }
+    }, [initialParams, user, allTodos, toggleTask, updateTask]);
+
     const completedTodos = allTodos.filter(t => t.completed).slice(0, settings?.showCompletedCount || 10);
+
+    // Search & filter state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterPriority, setFilterPriority] = useState<string>('all');
+    const [filterLabel, setFilterLabel] = useState<string>('all');
+    const [showFilters, setShowFilters] = useState(false);
+
+    const matchesFilters = (task: Task): boolean => {
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            const hit =
+                task.title.toLowerCase().includes(q) ||
+                task.location?.toLowerCase().includes(q) ||
+                task.labels?.some(l => l.toLowerCase().includes(q));
+            if (!hit) return false;
+        }
+        if (filterPriority !== 'all' && task.priority !== filterPriority) return false;
+        if (filterLabel !== 'all' && !task.labels?.includes(filterLabel)) return false;
+        return true;
+    };
 
     // Score is kept from useTaskRecommendation, but we group by due-date bucket first.
     const bucketed = useMemo(() => {
@@ -44,6 +93,7 @@ const TodoPage: React.FC = () => {
 
         for (const task of allTodos) {
             if (task.completed) continue;
+            if (!matchesFilters(task)) continue;
             if (!task.dueDate) {
                 buckets.later.push(task);
                 continue;
@@ -66,7 +116,48 @@ const TodoPage: React.FC = () => {
         (Object.keys(buckets) as BucketId[]).forEach(k => buckets[k].sort(byScore));
 
         return buckets;
-    }, [allTodos, ranked]);
+    }, [allTodos, ranked, searchQuery, filterPriority, filterLabel]);
+
+    // Alternative grouping: by label (when settings.groupByLabel is on)
+    const labelGrouped = useMemo(() => {
+        if (!settings?.groupByLabel) return null;
+        const scoreById = new Map(ranked.map(r => [r.task.id, r.score]));
+        const groups: Record<string, Task[]> = {};
+        const highPriority: Task[] = [];
+        const unlabeled: Task[] = [];
+
+        for (const task of allTodos) {
+            if (task.completed) continue;
+            if (!matchesFilters(task)) continue;
+            if (settings.keepHighPrioritySeparate && (task.priority === 'high' || task.priority === 'urgent')) {
+                highPriority.push(task);
+                continue;
+            }
+            if (task.labels && task.labels.length > 0) {
+                for (const label of task.labels) {
+                    if (!groups[label]) groups[label] = [];
+                    groups[label].push(task);
+                }
+            } else {
+                unlabeled.push(task);
+            }
+        }
+        const byScore = (a: Task, b: Task) => (scoreById.get(b.id) ?? 0) - (scoreById.get(a.id) ?? 0);
+        Object.values(groups).forEach(arr => arr.sort(byScore));
+        highPriority.sort(byScore);
+        unlabeled.sort(byScore);
+        return { groups, highPriority, unlabeled };
+    }, [allTodos, ranked, settings?.groupByLabel, settings?.keepHighPrioritySeparate, searchQuery, filterPriority, filterLabel]);
+
+    // All labels currently in use (for the filter dropdown)
+    const allLabels = useMemo(() => {
+        const labels = new Set<string>();
+        allTodos.forEach(t => { if (!t.completed) t.labels?.forEach(l => labels.add(l)); });
+        return Array.from(labels).sort();
+    }, [allTodos]);
+
+    const hasActiveFilters = !!searchQuery.trim() || filterPriority !== 'all' || filterLabel !== 'all';
+    const clearFilters = () => { setSearchQuery(''); setFilterPriority('all'); setFilterLabel('all'); };
 
     const topPickId = ranked[0]?.task.id;
 
@@ -100,9 +191,17 @@ const TodoPage: React.FC = () => {
     const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
     const [recurrence, setRecurrence] = useState<RecurrencePattern>('none');
     const [recurrenceDays, setRecurrenceDays] = useState<number[]>([]);
+
+    // Reminders (per-task)
+    const [reminderEnabled, setReminderEnabled] = useState(false);
+    const [reminderMode, setReminderMode] = useState<'before' | 'absolute'>('before');
+    const [reminderOffsetMinutes, setReminderOffsetMinutes] = useState<number>(15);
+    const [reminderAt, setReminderAt] = useState<string>('');
+    const [reminderCadence, setReminderCadence] = useState<ReminderCadence>('smart');
     const [showSettings, setShowSettings] = useState(false);
     const [splittingTaskId, setSplittingTaskId] = useState<string | null>(null);
     const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+    const [newSubtaskText, setNewSubtaskText] = useState('');
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -113,7 +212,12 @@ const TodoPage: React.FC = () => {
             : undefined;
         await addTask(newTask, priority, undefined, dueDate || undefined, recurrence !== 'none' ? recurrence : undefined, recurrenceConfig);
 
-        if (dueTime || location || selectedLabels.length > 0) {
+        const hasReminderConfig = reminderEnabled && (
+            (reminderMode === 'before' && (dueDate)) ||
+            (reminderMode === 'absolute' && reminderAt)
+        );
+
+        if (dueTime || location || selectedLabels.length > 0 || hasReminderConfig) {
             setTimeout(async () => {
                 const justCreated = allTodos.find(t => t.title === newTask && !t.dueTime && !t.location && !t.labels);
                 if (justCreated) {
@@ -122,6 +226,10 @@ const TodoPage: React.FC = () => {
                         dueTime: dueTime || undefined,
                         location: location || undefined,
                         labels: selectedLabels.length > 0 ? selectedLabels : undefined,
+                        reminderEnabled: reminderEnabled,
+                        reminderOffsetMinutes: reminderMode === 'before' ? reminderOffsetMinutes : undefined,
+                        reminderAt: reminderMode === 'absolute' && reminderAt ? new Date(reminderAt).toISOString() : undefined,
+                        reminderCadence: reminderEnabled ? reminderCadence : undefined,
                     });
                 }
             }, 100);
@@ -135,6 +243,11 @@ const TodoPage: React.FC = () => {
         setSelectedLabels([]);
         setRecurrence('none');
         setRecurrenceDays([]);
+        setReminderEnabled(false);
+        setReminderMode('before');
+        setReminderOffsetMinutes(15);
+        setReminderAt('');
+        setReminderCadence('smart');
     };
 
     const toggleLabel = (label: string) => {
@@ -157,12 +270,21 @@ const TodoPage: React.FC = () => {
         const updatedSubtasks = task.subtasks?.map(st =>
             st.id === subtaskId ? { ...st, completed: !st.completed } : st
         ) || [];
-        const allDone = updatedSubtasks.every(st => st.completed);
+        const allDone = updatedSubtasks.length > 0 && updatedSubtasks.every(st => st.completed);
+        const anyUndone = updatedSubtasks.some(st => !st.completed);
         await updateTask({
             ...task,
             subtasks: updatedSubtasks,
-            completed: allDone ? true : task.completed,
+            completed: allDone ? true : (anyUndone ? false : task.completed),
         });
+    };
+
+    const handleAddSubtask = async (task: Task) => {
+        const text = newSubtaskText.trim();
+        if (!text) return;
+        const newSubtask: Subtask = { id: uuidv4(), title: text, completed: false };
+        await updateTask({ ...task, subtasks: [...(task.subtasks || []), newSubtask] });
+        setNewSubtaskText('');
     };
 
     const handleAISplit = async (task: Task, subtasks: Subtask[]) => {
@@ -258,6 +380,11 @@ const TodoPage: React.FC = () => {
                                         <Repeat size={10} /> {recLabel}
                                     </span>
                                 )}
+                                {todo.reminderEnabled && (
+                                    <span className="flex items-center gap-1 font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                                        <Bell size={10} /> Reminder
+                                    </span>
+                                )}
                             </div>
                         </div>
                         <div className="flex items-center gap-1">
@@ -270,22 +397,23 @@ const TodoPage: React.FC = () => {
                                     <Sparkles size={16} />
                                 </button>
                             )}
-                            {todo.subtasks && todo.subtasks.length > 0 && (
-                                <button
-                                    onClick={() => setExpandedTaskId(expandedTaskId === todo.id ? null : todo.id)}
-                                    className="p-2 text-slate-300 hover:text-indigo-500 transition-colors"
-                                >
-                                    {expandedTaskId === todo.id ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                </button>
-                            )}
+                            <button
+                                onClick={() => setExpandedTaskId(expandedTaskId === todo.id ? null : todo.id)}
+                                className={`p-2 text-slate-300 hover:text-indigo-500 transition-colors ${
+                                    todo.subtasks && todo.subtasks.length > 0 ? '' : 'opacity-0 group-hover:opacity-100'
+                                }`}
+                                title={todo.subtasks && todo.subtasks.length > 0 ? 'Show subtasks' : 'Add subtask'}
+                            >
+                                {expandedTaskId === todo.id ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                            </button>
                             <button onClick={() => handleDelete(todo.id)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-rose-500 transition-opacity">
                                 <Trash2 size={18} />
                             </button>
                         </div>
                     </div>
-                    {expandedTaskId === todo.id && todo.subtasks && todo.subtasks.length > 0 && (
+                    {expandedTaskId === todo.id && (
                         <div className="ml-9 mt-3 space-y-1.5 border-l-2 border-slate-100 pl-3">
-                            {todo.subtasks.map(st => (
+                            {todo.subtasks?.map(st => (
                                 <button
                                     key={st.id}
                                     onClick={() => handleSubtaskToggle(todo, st.id)}
@@ -301,6 +429,22 @@ const TodoPage: React.FC = () => {
                                     </span>
                                 </button>
                             ))}
+                            <div className="flex items-center gap-2 pt-1">
+                                <Plus size={14} className="text-slate-300 flex-shrink-0" />
+                                <input
+                                    type="text"
+                                    value={newSubtaskText}
+                                    onChange={e => setNewSubtaskText(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleAddSubtask(todo);
+                                        }
+                                    }}
+                                    placeholder="Add subtask…"
+                                    className="flex-1 text-sm bg-transparent outline-none text-slate-700 placeholder:text-slate-300"
+                                />
+                            </div>
                         </div>
                     )}
                 </div>
@@ -452,6 +596,98 @@ const TodoPage: React.FC = () => {
                     </div>
                 )}
 
+                <div className="border-t border-slate-100 pt-3">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={reminderEnabled}
+                            onChange={e => setReminderEnabled(e.target.checked)}
+                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <Bell size={14} className="text-indigo-500" />
+                        <span className="text-sm font-medium text-slate-700">Remind me</span>
+                    </label>
+
+                    {reminderEnabled && (
+                        <div className="mt-3 space-y-2 pl-6">
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setReminderMode('before')}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                        reminderMode === 'before' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
+                                >
+                                    Before due
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setReminderMode('absolute')}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                        reminderMode === 'absolute' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
+                                >
+                                    Specific time
+                                </button>
+                            </div>
+
+                            {reminderMode === 'before' ? (
+                                <div className="flex flex-wrap gap-1.5 items-center">
+                                    {[15, 60, 240, 1440].map(m => (
+                                        <button
+                                            key={m}
+                                            type="button"
+                                            onClick={() => setReminderOffsetMinutes(m)}
+                                            className={`px-2.5 py-1 rounded text-xs font-medium ${
+                                                reminderOffsetMinutes === m ? 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-300' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                            }`}
+                                        >
+                                            {m === 15 ? '15 min' : m === 60 ? '1 hr' : m === 240 ? '4 hr' : '1 day'}
+                                        </button>
+                                    ))}
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={10080}
+                                        value={reminderOffsetMinutes}
+                                        onChange={e => setReminderOffsetMinutes(Number(e.target.value) || 15)}
+                                        className="w-20 px-2 py-1 text-xs border border-slate-200 rounded"
+                                    />
+                                    <span className="text-xs text-slate-500">min before due</span>
+                                </div>
+                            ) : (
+                                <input
+                                    type="datetime-local"
+                                    value={reminderAt}
+                                    onChange={e => setReminderAt(e.target.value)}
+                                    className="px-2 py-1.5 text-sm border border-slate-200 rounded-lg"
+                                />
+                            )}
+
+                            <div className="flex gap-1.5 items-center">
+                                <span className="text-xs text-slate-500">Cadence:</span>
+                                {(['single', 'smart', 'aggressive'] as ReminderCadence[]).map(c => (
+                                    <button
+                                        key={c}
+                                        type="button"
+                                        onClick={() => setReminderCadence(c)}
+                                        className={`px-2.5 py-1 rounded text-xs font-medium capitalize ${
+                                            reminderCadence === c ? 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-300' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                        }`}
+                                    >
+                                        {c}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-[11px] text-slate-400">
+                                {reminderCadence === 'single' && 'One reminder.'}
+                                {reminderCadence === 'smart' && 'Reminder + at due + 15m + 1h late.'}
+                                {reminderCadence === 'aggressive' && 'Reminder + at due + 15/30/60/120m late.'}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
                 {settings && settings.customLabels.length > 0 && (
                     <div>
                         <label className="block text-xs font-medium text-slate-600 mb-2">Labels</label>
@@ -475,6 +711,74 @@ const TodoPage: React.FC = () => {
                 )}
             </form>
 
+            {allTodos.some(t => !t.completed) && (
+                <div className="space-y-2">
+                    <div className="flex gap-2 items-center">
+                        <div className="flex-1 relative">
+                            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                placeholder="Search tasks…"
+                                className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowFilters(v => !v)}
+                            className={`p-2 rounded-lg border transition-colors ${
+                                hasActiveFilters || showFilters
+                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
+                                    : 'bg-white border-slate-200 text-slate-400 hover:text-slate-600'
+                            }`}
+                            aria-label="Filter tasks"
+                            title="Filter tasks"
+                        >
+                            <Filter size={16} />
+                        </button>
+                        {hasActiveFilters && (
+                            <button
+                                type="button"
+                                onClick={clearFilters}
+                                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg"
+                                aria-label="Clear filters"
+                                title="Clear filters"
+                            >
+                                <X size={16} />
+                            </button>
+                        )}
+                    </div>
+                    {showFilters && (
+                        <div className="flex flex-wrap gap-2 bg-white p-3 rounded-lg border border-slate-200">
+                            <select
+                                value={filterPriority}
+                                onChange={e => setFilterPriority(e.target.value)}
+                                className="text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                                <option value="all">All priorities</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                            {allLabels.length > 0 && (
+                                <select
+                                    value={filterLabel}
+                                    onChange={e => setFilterLabel(e.target.value)}
+                                    className="text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    <option value="all">All labels</option>
+                                    {allLabels.map(label => (
+                                        <option key={label} value={label}>{label}</option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
             <div className="space-y-6">
                 {isLoading ? (
                     <div className="space-y-2">
@@ -484,12 +788,58 @@ const TodoPage: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {(['overdue', 'today', 'week', 'later'] as BucketId[]).map(renderBucket)}
+                        {labelGrouped ? (
+                            <>
+                                {labelGrouped.highPriority.length > 0 && (
+                                    <section className="space-y-2">
+                                        <div className="flex items-center gap-2 pl-1">
+                                            <span className="w-2 h-2 rounded-full bg-rose-500" />
+                                            <h3 className="text-xs font-bold text-rose-600 uppercase tracking-wider">
+                                                High priority <span className="text-slate-400">({labelGrouped.highPriority.length})</span>
+                                            </h3>
+                                        </div>
+                                        <div className="space-y-2">{labelGrouped.highPriority.map(renderTask)}</div>
+                                    </section>
+                                )}
+                                {Object.entries(labelGrouped.groups).sort(([a], [b]) => a.localeCompare(b)).map(([label, tasks]) => (
+                                    <section key={label} className="space-y-2">
+                                        <div className="flex items-center gap-2 pl-1">
+                                            <Tag size={12} className="text-purple-500" />
+                                            <h3 className="text-xs font-bold text-purple-600 uppercase tracking-wider">
+                                                {label} <span className="text-slate-400">({tasks.length})</span>
+                                            </h3>
+                                        </div>
+                                        <div className="space-y-2">{tasks.map(renderTask)}</div>
+                                    </section>
+                                ))}
+                                {labelGrouped.unlabeled.length > 0 && (
+                                    <section className="space-y-2">
+                                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-1">
+                                            Unlabeled <span className="text-slate-400">({labelGrouped.unlabeled.length})</span>
+                                        </h3>
+                                        <div className="space-y-2">{labelGrouped.unlabeled.map(renderTask)}</div>
+                                    </section>
+                                )}
+                            </>
+                        ) : (
+                            (['overdue', 'today', 'week', 'later'] as BucketId[]).map(renderBucket)
+                        )}
 
                         {allTodos.filter(t => !t.completed).length === 0 && (
                             <div className="text-center py-12">
                                 <p className="text-slate-400">No active tasks. Enjoy your day!</p>
                             </div>
+                        )}
+
+                        {allTodos.some(t => !t.completed) && hasActiveFilters && (
+                            (labelGrouped
+                                ? labelGrouped.highPriority.length === 0 && labelGrouped.unlabeled.length === 0 && Object.keys(labelGrouped.groups).length === 0
+                                : (['overdue','today','week','later'] as BucketId[]).every(k => bucketed[k].length === 0)
+                            ) && (
+                                <div className="text-center py-8">
+                                    <p className="text-slate-400">No tasks match your filters</p>
+                                </div>
+                            )
                         )}
 
                         {completedTodos.length > 0 && (
@@ -525,7 +875,10 @@ const TodoPage: React.FC = () => {
 
             <TaskSettingsModal
                 isOpen={showSettings}
-                onClose={() => setShowSettings(false)}
+                onClose={() => {
+                    setShowSettings(false);
+                    if (user) getCategorySettings(user.id, 'task').then(setSettings);
+                }}
             />
         </div>
     );

@@ -24,6 +24,11 @@ export function dbToTodo(db: DbTodo): Task {
         historicalMinutes: db.historical_minutes || undefined,
         recurrence: (db.recurrence as Task['recurrence']) || 'none',
         recurrenceConfig: db.recurrence_config || undefined,
+        reminderEnabled: db.reminder_enabled || false,
+        reminderOffsetMinutes: db.reminder_offset_minutes ?? undefined,
+        reminderAt: db.reminder_at || undefined,
+        reminderCadence: (db.reminder_cadence as Task['reminderCadence']) || undefined,
+        lastRemindedAt: db.last_reminded_at || undefined,
     };
 }
 
@@ -47,5 +52,10 @@ export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: strin
         historical_minutes: todo.historicalMinutes || null,
         recurrence: todo.recurrence || 'none',
         recurrence_config: todo.recurrenceConfig || null,
+        reminder_enabled: todo.reminderEnabled || false,
+        reminder_offset_minutes: todo.reminderOffsetMinutes ?? null,
+        reminder_at: todo.reminderAt || null,
+        reminder_cadence: todo.reminderCadence || null,
+        last_reminded_at: todo.lastRemindedAt || null,
     };
 }

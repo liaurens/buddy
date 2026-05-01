@@ -6,6 +6,7 @@
 import {
   scheduleNotification,
   cancelToolNotifications,
+  cancelNotificationsBySource,
   getPendingNotifications,
 } from './notification.service';
 import type {
@@ -14,6 +15,19 @@ import type {
   ToolCategory,
   NotificationType,
 } from './notification.types';
+
+export type ReminderCadence = 'single' | 'smart' | 'aggressive';
+
+export interface TaskReminderInput {
+  userId: string;
+  taskId: string;
+  taskTitle: string;
+  dueAt?: Date;                     // resolved due date+time
+  offsetMinutes?: number;           // minutes before dueAt
+  absoluteAt?: Date;                // overrides offset
+  cadence?: ReminderCadence;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+}
 
 /**
  * Schedule a notification for a specific time
@@ -38,6 +52,38 @@ export async function scheduleNotificationAt(
   };
 
   return scheduleNotification(request);
+}
+
+/**
+ * Schedule a notification with source tracking (for cancellation/dedup).
+ */
+export async function scheduleNotificationWithSource(
+  userId: string,
+  toolCategory: ToolCategory,
+  notificationType: NotificationType,
+  scheduledFor: Date,
+  title: string,
+  body: string,
+  options: {
+    data?: Record<string, any>;
+    sourceType?: string;
+    sourceId?: string;
+    dedupKey?: string;
+  } = {}
+): Promise<ScheduledNotification | null> {
+  if (scheduledFor.getTime() <= Date.now()) return null;
+  return scheduleNotification({
+    userId,
+    toolCategory,
+    notificationType,
+    scheduledFor,
+    title,
+    body,
+    data: options.data,
+    sourceType: options.sourceType,
+    sourceId: options.sourceId,
+    dedupKey: options.dedupKey,
+  });
 }
 
 /**
@@ -245,7 +291,7 @@ export async function scheduleCheckInReminder(
 }
 
 /**
- * Task-specific: Schedule task due notification
+ * Task-specific: Schedule task due notification (legacy, single-shot).
  */
 export async function scheduleTaskDue(
   userId: string,
@@ -267,6 +313,108 @@ export async function scheduleTaskDue(
     body,
     { taskTitle, dueDate: dueDate.toISOString() }
   );
+}
+
+/**
+ * Cancel all pending reminders for a task.
+ */
+export async function cancelTaskReminders(userId: string, taskId: string): Promise<boolean> {
+  return cancelNotificationsBySource(userId, 'task', taskId);
+}
+
+/**
+ * Compute the firing times for a task reminder based on cadence + due/absolute.
+ */
+export function computeTaskReminderFireTimes(input: TaskReminderInput): Array<{ at: Date; type: 'pre' | 'at' | 'late'; lateMinutes?: number }> {
+  const cadence = input.cadence || 'smart';
+  const fires: Array<{ at: Date; type: 'pre' | 'at' | 'late'; lateMinutes?: number }> = [];
+
+  // Absolute mode: a single explicit datetime, no escalation.
+  if (input.absoluteAt) {
+    fires.push({ at: input.absoluteAt, type: 'at' });
+    return fires;
+  }
+
+  if (!input.dueAt) return fires;
+
+  const offset = input.offsetMinutes ?? 15;
+  const preTime = new Date(input.dueAt.getTime() - offset * 60_000);
+
+  if (cadence === 'single') {
+    fires.push({ at: preTime, type: 'pre' });
+    return fires;
+  }
+
+  // smart + aggressive both include pre + at
+  fires.push({ at: preTime, type: 'pre' });
+  fires.push({ at: input.dueAt, type: 'at' });
+
+  if (cadence === 'smart') {
+    fires.push({ at: new Date(input.dueAt.getTime() + 15 * 60_000), type: 'late', lateMinutes: 15 });
+    fires.push({ at: new Date(input.dueAt.getTime() + 60 * 60_000), type: 'late', lateMinutes: 60 });
+  } else {
+    // aggressive
+    fires.push({ at: new Date(input.dueAt.getTime() + 15 * 60_000), type: 'late', lateMinutes: 15 });
+    fires.push({ at: new Date(input.dueAt.getTime() + 30 * 60_000), type: 'late', lateMinutes: 30 });
+    fires.push({ at: new Date(input.dueAt.getTime() + 60 * 60_000), type: 'late', lateMinutes: 60 });
+    fires.push({ at: new Date(input.dueAt.getTime() + 120 * 60_000), type: 'late', lateMinutes: 120 });
+  }
+
+  return fires;
+}
+
+/**
+ * Schedule per-task reminders with cadence.
+ * Cancels any existing pending reminders for this task, then enqueues fresh rows.
+ */
+export async function scheduleTaskReminders(input: TaskReminderInput): Promise<ScheduledNotification[]> {
+  // Always cancel existing first so updates don't pile up.
+  await cancelTaskReminders(input.userId, input.taskId);
+
+  const fires = computeTaskReminderFireTimes(input);
+  if (fires.length === 0) return [];
+
+  const results: ScheduledNotification[] = [];
+  for (const fire of fires) {
+    let title: string;
+    let body: string;
+    if (fire.type === 'pre') {
+      title = 'Task coming up';
+      body = `"${input.taskTitle}" is due soon`;
+    } else if (fire.type === 'at') {
+      title = 'Task due now';
+      body = `Time to do: "${input.taskTitle}"`;
+    } else {
+      title = 'Still need to do this';
+      body = `"${input.taskTitle}" is ${fire.lateMinutes} min overdue`;
+    }
+
+    const result = await scheduleNotificationWithSource(
+      input.userId,
+      'tasks',
+      'task_reminder',
+      fire.at,
+      title,
+      body,
+      {
+        data: {
+          taskId: input.taskId,
+          taskTitle: input.taskTitle,
+          fireType: fire.type,
+          route: 'tasks',
+          sourceType: 'task',
+          actions: [
+            { action: 'done', title: 'Mark done' },
+            { action: 'snooze', title: 'Snooze 15m' },
+          ],
+        },
+        sourceType: 'task',
+        sourceId: input.taskId,
+      }
+    );
+    if (result) results.push(result);
+  }
+  return results;
 }
 
 /**

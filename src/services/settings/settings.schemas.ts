@@ -194,6 +194,14 @@ export const notificationsSettingsSchema = z.object({
   taskDueAdvanceMinutes: z.number().int().min(0).max(240).default(15),
   calendarEventEnabled: z.boolean().default(true),
   calendarEventAdvanceMinutes: z.number().int().min(0).max(240).default(15),
+  offTrackEnabled: z.boolean().default(true),
+  offTrackOverdueTasks: z.boolean().default(true),
+  offTrackMissedRoutines: z.boolean().default(true),
+  offTrackSkippedCheckin: z.boolean().default(true),
+  offTrackIdle: z.boolean().default(false),
+  quietHoursStart: z.string().default('22:00'),
+  quietHoursEnd: z.string().default('07:00'),
+  maxRemindersPerHour: z.number().int().min(1).max(20).default(3),
 });
 
 // ============================================================================

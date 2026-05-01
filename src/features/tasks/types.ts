@@ -37,12 +37,21 @@ export interface Task {
     // Recurrence
     recurrence?: RecurrencePattern;
     recurrenceConfig?: RecurrenceConfig;
+
+    // Per-task reminders
+    reminderEnabled?: boolean;
+    reminderOffsetMinutes?: number;   // minutes before due
+    reminderAt?: string;              // ISO datetime, absolute mode (takes precedence)
+    reminderCadence?: ReminderCadence;
+    lastRemindedAt?: string;
 }
+
+export type ReminderCadence = 'single' | 'smart' | 'aggressive';
 
 export interface TaskState {
     tasks: Task[];
     isLoading: boolean;
-    addTask: (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig, dueTime?: string) => void;
+    addTask: (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig, dueTime?: string) => Promise<string>;
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
     updateTask: (task: Task) => void;

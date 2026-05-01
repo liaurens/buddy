@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Bell, Check, AlertCircle, Sun, CloudSun, Moon, CheckSquare, Calendar, Smartphone } from 'lucide-react';
+import { Bell, Check, AlertCircle, Sun, CloudSun, Moon, CheckSquare, Calendar, Smartphone, AlertTriangle, MoonStar, Share } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import {
     getCategorySettings,
@@ -36,6 +36,15 @@ const NotificationsPage: React.FC = () => {
     const [pushSubscribed, setPushSubscribed] = useState(false);
     const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
     const pushSupported = isPushSupported();
+
+    // iOS-specific install hint: only show if user is on iOS Safari and app is not installed.
+    const isIOSStandalone = typeof navigator !== 'undefined' && (
+        // @ts-expect-error iOS-only Safari property
+        navigator.standalone === true
+        || (typeof window !== 'undefined' && window.matchMedia?.('(display-mode: standalone)').matches)
+    );
+    const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const showIOSInstallHint = isIOS && !isIOSStandalone;
 
     useEffect(() => {
         if (!user?.id) return;
@@ -127,6 +136,20 @@ const NotificationsPage: React.FC = () => {
                 </h1>
                 <p className="text-sm text-slate-500">Reminders for your routines, tasks, and calendar.</p>
             </header>
+
+            {/* iOS install hint (shown when not running as installed PWA) */}
+            {showIOSInstallHint && (
+                <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-900 font-semibold text-sm">
+                        <Share size={16} /> Install on your iPhone for push
+                    </div>
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                        iOS only allows push notifications when the app is added to your Home Screen.
+                        Tap the <span className="font-semibold">Share</span> icon in Safari, then
+                        choose <span className="font-semibold">"Add to Home Screen"</span>. Open the app from the new icon and come back here to enable push.
+                    </p>
+                </section>
+            )}
 
             {/* Push status */}
             <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
@@ -244,6 +267,78 @@ const NotificationsPage: React.FC = () => {
                 )}
             </section>
 
+            {/* Off-track escalation */}
+            <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <AlertTriangle size={18} className="text-orange-500" />
+                        <h2 className="font-semibold text-slate-900">Off-track nudges</h2>
+                    </div>
+                    <ToggleSwitch checked={settings.offTrackEnabled} onChange={v => update('offTrackEnabled', v)} />
+                </div>
+                <p className="text-xs text-slate-500">Get a reminder when you fall behind on what matters.</p>
+                {settings.offTrackEnabled && (
+                    <div className="space-y-2 pt-1">
+                        <CheckRow
+                            label="Overdue high-priority tasks"
+                            checked={settings.offTrackOverdueTasks}
+                            onChange={v => update('offTrackOverdueTasks', v)}
+                        />
+                        <CheckRow
+                            label="Missed morning / midday / night routine"
+                            checked={settings.offTrackMissedRoutines}
+                            onChange={v => update('offTrackMissedRoutines', v)}
+                        />
+                        <CheckRow
+                            label="No tracker check-in by evening"
+                            checked={settings.offTrackSkippedCheckin}
+                            onChange={v => update('offTrackSkippedCheckin', v)}
+                        />
+                        <CheckRow
+                            label="Haven't opened the app for hours during the day"
+                            checked={settings.offTrackIdle}
+                            onChange={v => update('offTrackIdle', v)}
+                        />
+                    </div>
+                )}
+            </section>
+
+            {/* Quiet hours + rate limit */}
+            <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                    <MoonStar size={18} className="text-indigo-500" />
+                    <h2 className="font-semibold text-slate-900">Quiet hours & rate limit</h2>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                    Quiet from
+                    <input
+                        type="time"
+                        value={settings.quietHoursStart}
+                        onChange={e => update('quietHoursStart', e.target.value)}
+                        className="px-2 py-1 border border-slate-200 rounded-lg"
+                    />
+                    to
+                    <input
+                        type="time"
+                        value={settings.quietHoursEnd}
+                        onChange={e => update('quietHoursEnd', e.target.value)}
+                        className="px-2 py-1 border border-slate-200 rounded-lg"
+                    />
+                </div>
+                <label className="flex items-center gap-3 text-sm text-slate-600">
+                    Max
+                    <input
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={settings.maxRemindersPerHour}
+                        onChange={e => update('maxRemindersPerHour', Number(e.target.value))}
+                        className="w-20 px-2 py-1 border border-slate-200 rounded-lg"
+                    />
+                    reminders per hour
+                </label>
+            </section>
+
             {/* Feedback + Save */}
             {error && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-start gap-2">
@@ -289,6 +384,18 @@ const RoutineRow: React.FC<{
         />
         <ToggleSwitch checked={enabled} onChange={onToggle} />
     </div>
+);
+
+const CheckRow: React.FC<{ label: string; checked: boolean; onChange: (v: boolean) => void }> = ({ label, checked, onChange }) => (
+    <label className="flex items-center gap-3 text-sm text-slate-700 cursor-pointer">
+        <input
+            type="checkbox"
+            checked={checked}
+            onChange={e => onChange(e.target.checked)}
+            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+        />
+        {label}
+    </label>
 );
 
 const ToggleSwitch: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = ({ checked, onChange }) => (

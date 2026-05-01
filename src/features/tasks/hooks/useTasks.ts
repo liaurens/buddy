@@ -10,6 +10,50 @@ import {
     todoToDb,
     type DbTodo,
 } from '../../../services/supabase';
+import {
+    scheduleTaskReminders,
+    cancelTaskReminders,
+} from '../../../services/notifications/scheduler.service';
+
+/** Build the absolute due moment from dueDate (YYYY-MM-DD) + optional dueTime (HH:MM). */
+function resolveDueAt(dueDate?: string, dueTime?: string): Date | undefined {
+    if (!dueDate) return undefined;
+    const time = dueTime || '09:00';
+    const dt = new Date(`${dueDate}T${time}:00`);
+    return isNaN(dt.getTime()) ? undefined : dt;
+}
+
+/** Push a task's reminder configuration to scheduled_notifications. */
+async function syncTaskReminders(userId: string, task: Task): Promise<void> {
+    try {
+        if (task.completed) {
+            await cancelTaskReminders(userId, task.id);
+            return;
+        }
+        if (!task.reminderEnabled) {
+            await cancelTaskReminders(userId, task.id);
+            return;
+        }
+        const absoluteAt = task.reminderAt ? new Date(task.reminderAt) : undefined;
+        const dueAt = resolveDueAt(task.dueDate, task.dueTime);
+        if (!absoluteAt && !dueAt) {
+            await cancelTaskReminders(userId, task.id);
+            return;
+        }
+        await scheduleTaskReminders({
+            userId,
+            taskId: task.id,
+            taskTitle: task.title,
+            dueAt,
+            absoluteAt,
+            offsetMinutes: task.reminderOffsetMinutes,
+            cadence: task.reminderCadence || 'smart',
+            priority: task.priority,
+        });
+    } catch (e) {
+        console.error('Failed to sync task reminders:', e);
+    }
+}
 
 export const useTasks = (): TaskState => {
     const { user } = useAuth();
@@ -54,7 +98,9 @@ export const useTasks = (): TaskState => {
         const { error } = await supabase.from('todos').insert(dbTask);
 
         if (error) throw error;
+        await syncTaskReminders(userId, newTask);
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        return newTask.id;
     }, [userId, queryClient]);
 
     const toggleTask = useCallback(async (id: string) => {
@@ -74,6 +120,11 @@ export const useTasks = (): TaskState => {
             .eq('user_id', userId);
 
         if (error) throw error;
+
+        // Cancel reminders when completing; nothing to do when uncompleting (caller can resave to reschedule).
+        if (nowCompleting) {
+            await cancelTaskReminders(userId, id);
+        }
 
         // Spawn next occurrence for recurring tasks
         if (nowCompleting && task.recurrence && task.recurrence !== 'none') {
@@ -108,6 +159,7 @@ export const useTasks = (): TaskState => {
             .eq('user_id', userId);
 
         if (error) throw error;
+        await cancelTaskReminders(userId, id);
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
     }, [userId, queryClient]);
 
@@ -119,11 +171,18 @@ export const useTasks = (): TaskState => {
             title: updates.title,
             completed: updates.completed,
             due_date: updates.dueDate || null,
+            due_time: updates.dueTime || null,
+            location: updates.location || null,
+            labels: updates.labels || null,
             priority: updates.priority || null,
             estimated_time: updates.estimatedTime || null,
             subtasks: updates.subtasks || null,
             recurrence: updates.recurrence || 'none',
             recurrence_config: updates.recurrenceConfig || null,
+            reminder_enabled: updates.reminderEnabled || false,
+            reminder_offset_minutes: updates.reminderOffsetMinutes ?? null,
+            reminder_at: updates.reminderAt || null,
+            reminder_cadence: updates.reminderCadence || null,
         };
 
         const { error } = await supabase
@@ -133,6 +192,7 @@ export const useTasks = (): TaskState => {
             .eq('user_id', userId);
 
         if (error) throw error;
+        await syncTaskReminders(userId, updatedTask);
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
     }, [userId, queryClient]);
 
@@ -194,6 +254,7 @@ export const useTasks = (): TaskState => {
             .in('id', ids)
             .eq('user_id', userId);
         if (error) throw error;
+        await Promise.all(ids.map(id => cancelTaskReminders(userId, id)));
 
         // Spawn next occurrence for any recurring tasks we just completed
         const completed = tasks.filter(t => ids.includes(t.id) && t.recurrence && t.recurrence !== 'none');
@@ -226,6 +287,7 @@ export const useTasks = (): TaskState => {
             .in('id', ids)
             .eq('user_id', userId);
         if (error) throw error;
+        await Promise.all(ids.map(id => cancelTaskReminders(userId, id)));
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
     }, [userId, queryClient]);
 

@@ -11,12 +11,11 @@ import { ChecklistsPage } from './features/checklists';
 import { ToolboxPage } from './features/toolbox';
 import PomodoroTimer from './features/focus/components/PomodoroTimer';
 import AssistantChat from './features/assistant/components/AssistantChat';
-import { GrowthPage } from './features/growth/pages/GrowthPage';
+import GrowthHubPage from './features/growth/pages/GrowthHubPage';
 import LoginScreen from './features/core/components/LoginScreen';
 import MePage from './features/me/pages/MePage';
 import BrowsePage from './features/browse/pages/BrowsePage';
 import DayPage from './features/day/pages/DayPage';
-import GoalsPage from './features/core/pages/GoalsPage';
 import { NotificationsPage } from './features/notifications';
 import InAppReminderBanner from './components/notifications/InAppReminderBanner';
 import { syncCalendarIfStale } from './features/planning/services/calendar-sync.service';
@@ -50,6 +49,25 @@ const App: React.FC = () => {
     syncCalendarIfStale(user.id).catch(err => console.warn('Calendar auto-sync skipped:', err));
   }, [user?.id]);
 
+  // Handle deep-links from notifications (?route=tasks&intent=complete&taskId=…)
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const params = new URLSearchParams(window.location.search);
+    const route = params.get('route') as AppRoute | null;
+    if (route) {
+      setActiveTab(route);
+      const intent = params.get('intent');
+      const taskId = params.get('taskId');
+      if (intent && taskId) {
+        setNavParams({ intent, taskId });
+      }
+      // Clear the query so a refresh doesn't re-fire the intent.
+      const url = new URL(window.location.href);
+      url.search = '';
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [isLoggedIn]);
+
   const handleNavigate = (tab: typeof activeTab, params?: Record<string, unknown>) => {
     setActiveTab(tab);
     setNavParams(params ?? null);
@@ -66,7 +84,7 @@ const App: React.FC = () => {
       case 'toolbox':
         return <ToolboxPage />;
       case 'tasks':
-        return <TodoPage />;
+        return <TodoPage initialParams={navParams} />;
       case 'calendar':
         return <CalendarPage />;
       case 'account':
@@ -92,7 +110,7 @@ const App: React.FC = () => {
           </div>
         );
       case 'growth':
-        return <GrowthPage />;
+        return <GrowthHubPage initialParams={navParams} />;
       case 'browse':
         return <BrowsePage onNavigate={handleNavigate} />;
       case 'me':
@@ -100,7 +118,7 @@ const App: React.FC = () => {
       case 'today':
         return <DayPage onNavigate={handleNavigate} />;
       case 'goals':
-        return <GoalsPage />;
+        return <GrowthHubPage initialParams={{ tab: 'goals' }} />;
       case 'notifications':
         return <NotificationsPage />;
       default:

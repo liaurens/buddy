@@ -12,17 +12,32 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import { generateDayReflection, detectPatterns } from '../services/reflection.service';
-import { saveReflectionItems, loadReflectionForDate } from '../services/reflectionCapture';
+import {
+    saveReflectionItems,
+    loadReflectionForDate,
+    saveReflectionFocus,
+    loadReflectionFocus,
+    type ReflectionFocusPick,
+} from '../services/reflectionCapture';
 import { useReflectionHistory } from '../hooks/useReflectionHistory';
 import { useGoals } from '../../../features/core/hooks/useGoals';
 import type { Goal } from '../../../features/core/hooks/useGoals';
+import { useSkills } from '../../growth/hooks/useSkills';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../../services/supabase';
 import ReflectionSettingsModal from '../components/reflection/ReflectionSettingsModal';
 import MoodEnergySparkline from '../components/reflection/MoodEnergySparkline';
 import type { DayReflection, LearningPattern } from '../services/reflection.service';
 import {
     TrendingUp, TrendingDown, Target, Clock, CheckCircle, AlertCircle,
-    Lightbulb, Settings, ChevronDown, ChevronRight, Sparkles, Compass, Heart, Mountain
+    Lightbulb, Settings, ChevronDown, ChevronRight, Sparkles, Compass, Heart, Mountain,
+    Plus, Trash2, Rocket
 } from 'lucide-react';
+
+interface ActiveProject {
+    id: string;
+    name: string;
+}
 
 const ReflectionPage: React.FC = () => {
     const { user } = useAuth();
@@ -41,12 +56,33 @@ const ReflectionPage: React.FC = () => {
     const [priority, setPriority] = useState('');
     const [saving, setSaving] = useState(false);
     const [savedAt, setSavedAt] = useState<string | null>(null);
+    const [hasExistingData, setHasExistingData] = useState(false);
     const [captureError, setCaptureError] = useState<string | null>(null);
 
     const { data: historyPoints = [] } = useReflectionHistory(14);
     const { goals, todayLogs, logGoalToday } = useGoals('active', selectedDate);
     type GoalEntry = { completed?: boolean; minutesSpent?: number; progressDelta?: number };
     const [goalEntries, setGoalEntries] = useState<Record<string, GoalEntry>>({});
+
+    const { data: activeProjects = [] as ActiveProject[] } = useQuery({
+        queryKey: ['projects', user?.id, 'active'],
+        queryFn: async () => {
+            if (!user?.id) return [] as ActiveProject[];
+            const { data, error } = await supabase
+                .from('projects')
+                .select('id, name')
+                .eq('user_id', user.id)
+                .eq('status', 'active')
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return (data ?? []) as ActiveProject[];
+        },
+        enabled: !!user?.id,
+    });
+
+    const { skills } = useSkills();
+
+    const [focusPicks, setFocusPicks] = useState<ReflectionFocusPick[]>([]);
 
     useEffect(() => {
         const initial: Record<string, GoalEntry> = {};
@@ -87,12 +123,16 @@ const ReflectionPage: React.FC = () => {
 
     const loadCapture = useCallback(async () => {
         if (!user?.id) return;
-        const existing = await loadReflectionForDate(user.id, selectedDate);
+        const [existing, picks] = await Promise.all([
+            loadReflectionForDate(user.id, selectedDate),
+            loadReflectionFocus(user.id, selectedDate),
+        ]);
         setMemory(existing.memory || existing.wins[0] || '');
         setGratitude(existing.gratitude || existing.wins[1] || '');
         setChallenge(existing.challenge || existing.blocker || '');
         setPriority(existing.priority || '');
-        setSavedAt((existing.memory || existing.gratitude || existing.challenge || existing.priority || existing.wins.length > 0 || existing.blocker) ? 'loaded' : null);
+        setFocusPicks(picks);
+        setHasExistingData(!!(existing.memory || existing.gratitude || existing.challenge || existing.priority || existing.wins.length > 0 || existing.blocker || picks.length > 0));
     }, [user?.id, selectedDate]);
 
     useEffect(() => {
@@ -114,6 +154,7 @@ const ReflectionPage: React.FC = () => {
                 { subtype: 'reflection_challenge' as const, text: challenge },
                 { subtype: 'reflection_priority' as const, text: priority },
             ]);
+            await saveReflectionFocus(user.id, selectedDate, focusPicks);
             // Persist goal check-ins for today
             await Promise.all(
                 goals
@@ -235,10 +276,104 @@ const ReflectionPage: React.FC = () => {
                         />
                     </div>
 
+                    {/* Goals & Projects to push tomorrow */}
+                    <div>
+                        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                            <Rocket size={18} className="text-fuchsia-500" /> Push goals or projects tomorrow
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-1">
+                            Pick a goal or project and write the concrete thing you'll do to move it forward.
+                        </p>
+
+                        <ul className="mt-3 space-y-3">
+                            {focusPicks.map((pick, idx) => {
+                                const update = (patch: Partial<ReflectionFocusPick>) =>
+                                    setFocusPicks(prev => prev.map((p, i) => i === idx ? { ...p, ...patch } : p));
+                                const remove = () =>
+                                    setFocusPicks(prev => prev.filter((_, i) => i !== idx));
+                                const selectValue = pick.refId ? `${pick.kind}:${pick.refId}` : '';
+                                return (
+                                    <li key={idx} className="rounded-xl border border-slate-200 p-3 space-y-2 bg-slate-50/50">
+                                        <div className="flex items-start gap-2">
+                                            <select
+                                                value={selectValue}
+                                                onChange={e => {
+                                                    const v = e.target.value;
+                                                    if (!v) { update({ refId: '', refTitle: '' }); return; }
+                                                    const [kind, id] = v.split(':') as ['goal' | 'project' | 'skill', string];
+                                                    const title = kind === 'goal'
+                                                        ? (goals.find(g => g.id === id)?.title ?? '')
+                                                        : kind === 'project'
+                                                            ? (activeProjects.find(p => p.id === id)?.name ?? '')
+                                                            : (skills.find(s => s.id === id)?.name ?? '');
+                                                    update({ kind, refId: id, refTitle: title });
+                                                }}
+                                                className="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-fuchsia-300 focus:border-transparent"
+                                            >
+                                                <option value="">Select a goal or project…</option>
+                                                {goals.length > 0 && (
+                                                    <optgroup label="Goals">
+                                                        {goals.map(g => (
+                                                            <option key={`goal-${g.id}`} value={`goal:${g.id}`}>{g.title}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                )}
+                                                {activeProjects.length > 0 && (
+                                                    <optgroup label="Projects">
+                                                        {activeProjects.map(p => (
+                                                            <option key={`project-${p.id}`} value={`project:${p.id}`}>{p.name}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                )}
+                                                {skills.length > 0 && (
+                                                    <optgroup label="Skills">
+                                                        {skills.map(s => (
+                                                            <option key={`skill-${s.id}`} value={`skill:${s.id}`}>{s.name}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                )}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={remove}
+                                                aria-label="Remove pick"
+                                                className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white rounded-lg transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                        <textarea
+                                            value={pick.plan}
+                                            onChange={e => update({ plan: e.target.value })}
+                                            rows={2}
+                                            placeholder="What will you do tomorrow to move this forward?"
+                                            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-fuchsia-300 focus:border-transparent resize-y"
+                                        />
+                                    </li>
+                                );
+                            })}
+                        </ul>
+
+                        {goals.length === 0 && activeProjects.length === 0 && skills.length === 0 ? (
+                            <p className="mt-3 text-xs text-slate-400 italic">
+                                No active goals, projects, or skills yet. Add one and it will show up here.
+                            </p>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setFocusPicks(prev => [...prev, { kind: 'goal', refId: '', refTitle: '', plan: '' }])}
+                                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-fuchsia-700 bg-fuchsia-50 hover:bg-fuchsia-100 rounded-lg transition-colors"
+                            >
+                                <Plus size={14} /> Add another
+                            </button>
+                        )}
+                    </div>
+
                     <div className="flex items-center justify-between">
                         <div className="text-xs text-slate-500">
                             {captureError && <span className="text-rose-600">{captureError}</span>}
-                            {!captureError && savedAt && savedAt !== 'loaded' && <span>Saved at {savedAt}.</span>}
+                            {!captureError && savedAt && <span>Saved at {savedAt}.</span>}
+                            {!captureError && !savedAt && hasExistingData && <span className="text-slate-400">Previously saved.</span>}
                         </div>
                         <button
                             onClick={handleSaveReflection}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
-import { ChevronUp, ChevronDown, Trash2, ArrowRight, Plus, Save, Clock } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, ArrowRight, Plus, Save, Clock, Sunrise, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import { loadPlanForDate, updateBlock, deleteBlock, moveBlockToTomorrow, addBlockToPlan } from '../../planning/services/planning.service';
 import type { DailyPlan, TimeBlock } from '../../../types/planning';
@@ -13,7 +13,21 @@ const STATUS_COLORS: Record<TimeBlock['status'], string> = {
     rescheduled: 'bg-amber-100 text-amber-700',
 };
 
-const MiddayRoutine: React.FC = () => {
+const STATUS_LABELS: Record<TimeBlock['status'], string> = {
+    pending: 'Pending',
+    active: 'Active',
+    completed: 'Done',
+    skipped: 'Skipped',
+    rescheduled: 'Rescheduled',
+};
+
+const STATUS_CYCLE: TimeBlock['status'][] = ['pending', 'active', 'completed', 'skipped'];
+
+interface MiddayRoutineProps {
+    onGoToMorning?: () => void;
+}
+
+const MiddayRoutine: React.FC<MiddayRoutineProps> = ({ onGoToMorning }) => {
     const { user } = useAuth();
     const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -21,7 +35,9 @@ const MiddayRoutine: React.FC = () => {
     const [blocks, setBlocks] = useState<TimeBlock[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
     const [pendingEdits, setPendingEdits] = useState<Record<string, Partial<TimeBlock>>>({});
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
     const [showAddForm, setShowAddForm] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [newStart, setNewStart] = useState('');
@@ -51,6 +67,12 @@ const MiddayRoutine: React.FC = () => {
             ...prev,
             [blockId]: { ...prev[blockId], [field]: value },
         }));
+    };
+
+    const cycleStatus = (blockId: string, currentStatus: TimeBlock['status']) => {
+        const idx = STATUS_CYCLE.indexOf(currentStatus);
+        const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+        updateLocal(blockId, 'status', next);
     };
 
     const moveUp = (index: number) => {
@@ -87,10 +109,9 @@ const MiddayRoutine: React.FC = () => {
 
     const handleDelete = async (block: TimeBlock) => {
         if (!user?.id) return;
-        const ok = window.confirm(`Delete "${block.title}"?`);
-        if (!ok) return;
         setBlocks(prev => prev.filter(b => b.id !== block.id));
         setPendingEdits(prev => { const next = { ...prev }; delete next[block.id]; return next; });
+        setDeleteConfirmId(null);
         await deleteBlock(user.id, block.id);
     };
 
@@ -102,6 +123,21 @@ const MiddayRoutine: React.FC = () => {
 
     const handleSave = async () => {
         if (!user?.id) return;
+        setSaveError(null);
+
+        // Validate time edits before saving
+        for (const [blockId, edits] of Object.entries(pendingEdits)) {
+            const block = blocks.find(b => b.id === blockId);
+            if (!block) continue;
+            const start = edits.startTime ?? block.startTime;
+            const end = edits.endTime ?? block.endTime;
+            if (start && end && start >= end) {
+                const title = edits.title ?? block.title;
+                setSaveError(`"${title}": end time must be after start time.`);
+                return;
+            }
+        }
+
         setSaving(true);
         try {
             await Promise.all(
@@ -152,32 +188,49 @@ const MiddayRoutine: React.FC = () => {
 
     if (!plan) {
         return (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 text-center">
-                <Clock size={32} className="text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-600 font-medium">No plan found for today</p>
-                <p className="text-sm text-slate-400 mt-1">Go to Morning to create one first.</p>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 text-center space-y-4">
+                <Clock size={32} className="text-slate-300 mx-auto" />
+                <div>
+                    <p className="text-slate-600 font-medium">No plan found for today</p>
+                    <p className="text-sm text-slate-400 mt-1">Create one in your morning routine first.</p>
+                </div>
+                {onGoToMorning && (
+                    <button
+                        onClick={onGoToMorning}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+                    >
+                        <Sunrise size={15} /> Go to morning routine
+                    </button>
+                )}
             </div>
         );
     }
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="font-semibold text-slate-900">Midday replan</h2>
-                    <p className="text-sm text-slate-500">Adjust your afternoon — reorder, edit times, add or remove blocks.</p>
-                </div>
+            <div>
+                <h2 className="font-semibold text-slate-900">Midday replan</h2>
+                <p className="text-sm text-slate-500">Adjust your afternoon — reorder, edit times, mark done, or move blocks.</p>
             </div>
+
             {hasPendingEdits && (
-                <div className="sticky top-2 z-10 flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 shadow-sm">
-                    <p className="text-sm text-amber-800 font-medium">You have unsaved changes</p>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors flex-shrink-0"
-                    >
-                        <Save size={14} /> {saving ? 'Saving…' : 'Save'}
-                    </button>
+                <div className="sticky top-2 z-10 space-y-1">
+                    <div className="flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 shadow-sm">
+                        <p className="text-sm text-amber-800 font-medium">You have unsaved changes</p>
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors flex-shrink-0"
+                        >
+                            <Save size={14} /> {saving ? 'Saving…' : 'Save'}
+                        </button>
+                    </div>
+                    {saveError && (
+                        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+                            <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
+                            <p className="text-sm text-red-700">{saveError}</p>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -204,8 +257,8 @@ const MiddayRoutine: React.FC = () => {
                                     className="w-full text-sm font-medium text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-1 hover:border-indigo-200 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 focus:outline-none transition-colors"
                                 />
 
-                                {/* Time fields */}
-                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                {/* Time fields + status */}
+                                <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
                                     <input
                                         type="time"
                                         value={block.startTime}
@@ -219,14 +272,18 @@ const MiddayRoutine: React.FC = () => {
                                         onChange={e => updateLocal(block.id, 'endTime', e.target.value)}
                                         className="border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300"
                                     />
-                                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[block.status]}`}>
-                                        {block.status}
-                                    </span>
+                                    <button
+                                        onClick={() => cycleStatus(block.id, block.status)}
+                                        title="Click to change status"
+                                        className={`ml-1 px-2 py-0.5 rounded-full text-xs font-medium hover:opacity-75 transition-opacity ${STATUS_COLORS[block.status]}`}
+                                    >
+                                        {STATUS_LABELS[block.status]}
+                                    </button>
                                 </div>
                             </div>
 
                             {/* Actions */}
-                            <div className="flex gap-1 flex-shrink-0">
+                            <div className="flex gap-1 flex-shrink-0 items-start pt-0.5">
                                 <button
                                     onClick={() => handleMoveToTomorrow(block)}
                                     title="Move to tomorrow"
@@ -234,13 +291,31 @@ const MiddayRoutine: React.FC = () => {
                                 >
                                     <ArrowRight size={15} />
                                 </button>
-                                <button
-                                    onClick={() => handleDelete(block)}
-                                    title="Delete block"
-                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                >
-                                    <Trash2 size={15} />
-                                </button>
+
+                                {deleteConfirmId === block.id ? (
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={() => handleDelete(block)}
+                                            className="px-2 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                                        >
+                                            Delete
+                                        </button>
+                                        <button
+                                            onClick={() => setDeleteConfirmId(null)}
+                                            className="px-2 py-1 text-xs border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => setDeleteConfirmId(block.id)}
+                                        title="Delete block"
+                                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    >
+                                        <Trash2 size={15} />
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </li>

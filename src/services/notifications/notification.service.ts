@@ -107,6 +107,9 @@ export async function scheduleNotification(
       body: request.body,
       data: request.data || {},
       status: 'pending',
+      source_type: request.sourceType ?? null,
+      source_id: request.sourceId ?? null,
+      dedup_key: request.dedupKey ?? null,
     })
     .select()
     .single();
@@ -186,6 +189,30 @@ export async function cancelToolNotifications(
 
   if (error) {
     console.error('Failed to cancel notifications:', error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Cancel pending notifications by source (e.g., for a specific task)
+ */
+export async function cancelNotificationsBySource(
+  userId: string,
+  sourceType: string,
+  sourceId: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('scheduled_notifications')
+    .update({ status: 'cancelled' })
+    .eq('user_id', userId)
+    .eq('source_type', sourceType)
+    .eq('source_id', sourceId)
+    .eq('status', 'pending');
+
+  if (error) {
+    console.error('Failed to cancel notifications by source:', error);
     return false;
   }
 

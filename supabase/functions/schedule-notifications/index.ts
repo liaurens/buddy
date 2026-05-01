@@ -40,6 +40,8 @@ async function sendNotification(
   data: Record<string, any> | null
 ): Promise<boolean> {
   try {
+    // Pull action buttons out of data so the SW can render them on iOS lock screen.
+    const actions = Array.isArray(data?.actions) ? data!.actions : undefined;
     const response = await fetch(`${supabaseUrl}/functions/v1/send-notification`, {
       method: 'POST',
       headers: {
@@ -51,6 +53,7 @@ async function sendNotification(
         title,
         body,
         data,
+        actions,
       }),
     });
 

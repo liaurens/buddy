@@ -185,6 +185,18 @@ export interface NotificationsSettings {
   taskDueAdvanceMinutes: number;
   calendarEventEnabled: boolean;
   calendarEventAdvanceMinutes: number;
+
+  // Off-track escalation
+  offTrackEnabled: boolean;
+  offTrackOverdueTasks: boolean;
+  offTrackMissedRoutines: boolean;
+  offTrackSkippedCheckin: boolean;
+  offTrackIdle: boolean;
+
+  // Quiet hours (HH:MM); start > end means range crosses midnight
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  maxRemindersPerHour: number;
 }
 
 // ============================================================================

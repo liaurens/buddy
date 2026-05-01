@@ -21,4 +21,9 @@ export interface DbTodo {
     historical_minutes: number[] | null;
     recurrence: 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays';
     recurrence_config: { daysOfWeek?: number[]; interval?: number } | null;
+    reminder_enabled?: boolean;
+    reminder_offset_minutes?: number | null;
+    reminder_at?: string | null;
+    reminder_cadence?: 'single' | 'smart' | 'aggressive' | null;
+    last_reminded_at?: string | null;
 }

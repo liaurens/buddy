@@ -15,6 +15,7 @@ export interface Goal {
     targetMinutes: number | null;
     streakCount: number;
     lastCompletedAt: string | null;
+    projectId: string | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -45,6 +46,7 @@ export function dbToGoal(db: DbGoal): Goal {
         targetMinutes: db.target_minutes,
         streakCount: db.streak_count ?? 0,
         lastCompletedAt: db.last_completed_at,
+        projectId: db.project_id ?? null,
         createdAt: db.created_at,
         updatedAt: db.updated_at,
     };
@@ -63,6 +65,7 @@ export function goalToDb(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>, use
         target_minutes: goal.targetMinutes,
         streak_count: goal.streakCount,
         last_completed_at: goal.lastCompletedAt,
+        project_id: goal.projectId,
     };
 }
 
