@@ -11,6 +11,8 @@ import AITaskSplitter from '../components/AITaskSplitter';
 import TaskBulkActionBar from '../components/TaskBulkActionBar';
 import { calculateNextDueDate } from '../utils/recurrence';
 import type { Task, Subtask, RecurrencePattern, ReminderCadence } from '../types';
+import { UpcomingDeadlinesBanner } from '../../school';
+import type { AppRoute } from '../../../constants/routes';
 
 type BucketId = 'overdue' | 'today' | 'week' | 'later';
 
@@ -23,9 +25,10 @@ const BUCKET_LABELS: Record<BucketId, string> = {
 
 interface TodoPageProps {
     initialParams?: Record<string, unknown> | null;
+    onNavigate?: (tab: AppRoute, params?: Record<string, unknown>) => void;
 }
 
-const TodoPage: React.FC<TodoPageProps> = ({ initialParams }) => {
+const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
     const { user } = useAuth();
     const { tasks: allTodos, isLoading, addTask, toggleTask, deleteTask, updateTask, rescheduleMany, completeMany, deleteMany } = useTasks();
     const { ranked } = useTaskRecommendation();
@@ -506,6 +509,8 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams }) => {
                     <Settings size={20} />
                 </button>
             </header>
+
+            <UpcomingDeadlinesBanner onOpenSchool={onNavigate ? () => onNavigate('school') : undefined} />
 
             {/* Input */}
             <form onSubmit={handleAdd} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">

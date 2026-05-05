@@ -134,6 +134,15 @@ export async function completeTask(
 // ─── Tool Definition ────────────────────────────────────────────────────────
 
 async function handleCreateTask(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  // Structured-params path (agent loop)
+  if (typeof params.title === 'string' && params.title.trim()) {
+    return createTask(params.title.trim(), context.userId, context.supabase, {
+      dueDate: typeof params.due_date === 'string' ? params.due_date : undefined,
+      priority: typeof params.priority === 'string' ? params.priority : undefined,
+      isReminder: !!params.is_reminder,
+    })
+  }
+  // Legacy raw-text path (rule routing passes the whole input as `content`)
   const content = (params.content as string) || ''
   return createTask(content, context.userId, context.supabase, {
     isReminder: params.isReminder as boolean,
@@ -149,7 +158,7 @@ async function handleListTodayTasks(_params: Record<string, unknown>, context: A
 }
 
 async function handleCompleteTask(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const target = (params.target as string) || (params.content as string) || ''
+  const target = (params.title as string) || (params.target as string) || (params.content as string) || ''
   return completeTask(target, context.userId, context.supabase)
 }
 
@@ -159,11 +168,56 @@ export const tasksTool: ToolDefinition = {
   description: 'Create, list, and complete tasks',
 
   actions: [
-    { action: 'task.create', description: 'Create a new task', handler: handleCreateTask },
-    { action: 'task.create.reminder', description: 'Create a task with reminder', handler: handleCreateTask },
-    { action: 'task.list', description: 'List open tasks', handler: handleListTasks },
-    { action: 'task.list.today', description: "List today's tasks", handler: handleListTodayTasks },
-    { action: 'task.complete', description: 'Mark a task as done', handler: handleCompleteTask },
+    {
+      action: 'task.create',
+      description: 'Create a new todo task. Use due_date for an ISO 8601 deadline; use is_reminder=true if it is a reminder-style task.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'Task title (required).' },
+          due_date: { type: 'string', format: 'date-time', description: 'ISO 8601 deadline (optional).' },
+          priority: { type: 'string', enum: ['low', 'normal', 'high'], description: 'Task priority' },
+          is_reminder: { type: 'boolean', description: 'True if the task is a reminder rather than a regular todo.' },
+        },
+        required: ['title'],
+      },
+      handler: handleCreateTask,
+    },
+    {
+      action: 'task.create.reminder',
+      description: 'Create a reminder-style task with a due date.',
+      // No inputSchema — the agent loop should use task.create with is_reminder=true.
+      // This action stays for the legacy /remind rule path only.
+      handler: handleCreateTask,
+    },
+    {
+      action: 'task.list',
+      description: 'List the user\'s open (uncompleted) tasks.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', description: 'Max tasks to return (default 10)' },
+        },
+      },
+      handler: handleListTasks,
+    },
+    {
+      action: 'task.list.today',
+      description: "List the user's tasks that are due today or overdue.",
+      inputSchema: { type: 'object', properties: {} },
+      handler: handleListTodayTasks,
+    },
+    {
+      action: 'task.complete',
+      description: 'Mark a task as done by title (fuzzy match) or task id.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'Task title to fuzzy-match' },
+        },
+      },
+      handler: handleCompleteTask,
+    },
   ],
 
   commands: [

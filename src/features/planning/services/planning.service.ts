@@ -85,6 +85,53 @@ async function getPendingTasks(userId: string): Promise<Task[]> {
 }
 
 /**
+ * Fetch active school assignments + their class names so the planner can
+ * surface deadlines alongside todos.
+ */
+async function getPendingAssignments(userId: string): Promise<Task[]> {
+    try {
+        const { data, error } = await supabase
+            .from('assignments')
+            .select('id, title, deadline, estimated_minutes, status, class_id, classes(name)')
+            .eq('user_id', userId)
+            .in('status', ['pending', 'in_progress'])
+            .order('deadline', { ascending: true });
+
+        if (error) {
+            if (error.code === '42P01' || error.message?.includes('does not exist')) {
+                return [];
+            }
+            throw error;
+        }
+
+        type Row = {
+            id: string;
+            title: string;
+            deadline: string;
+            estimated_minutes: number | null;
+            classes: { name: string } | { name: string }[] | null;
+        };
+
+        return (data as unknown as Row[] | null ?? []).map(r => {
+            const cls = Array.isArray(r.classes) ? r.classes[0] : r.classes;
+            const className = cls?.name ?? 'Class';
+            const deadline = new Date(r.deadline);
+            return {
+                id: `assignment:${r.id}`,
+                title: `[${className}] ${r.title}`,
+                priority: 'high',
+                estimatedTime: r.estimated_minutes ?? undefined,
+                dueDate: deadline.toISOString().slice(0, 10),
+                dueTime: deadline.toTimeString().slice(0, 5),
+            } as Task;
+        });
+    } catch (error) {
+        console.error('Failed to fetch assignments:', error);
+        return [];
+    }
+}
+
+/**
  * Fetch active activity templates
  */
 async function getActivityTemplates(userId: string): Promise<ActivityTemplate[]> {
@@ -133,17 +180,20 @@ export async function buildPlanningContext(
     },
     selectedTaskIds?: string[]
 ): Promise<PlanGenerationContext> {
-    const [calendarEvents, tasks, activityTemplates, learningPatterns] = await Promise.all([
+    const [calendarEvents, tasks, assignments, activityTemplates, learningPatterns] = await Promise.all([
         getCalendarEventsForDate(userId, date),
         getPendingTasks(userId),
+        getPendingAssignments(userId),
         getActivityTemplates(userId),
         getLearningPatternsForPlanning(userId, 5),
     ]);
 
+    const allCandidates = [...tasks, ...assignments];
+
     // Format tasks for planning context — filter to selected if provided
     const tasksToInclude = selectedTaskIds?.length
-        ? tasks.filter(t => selectedTaskIds.includes(t.id as string))
-        : tasks;
+        ? allCandidates.filter(t => selectedTaskIds.includes(t.id as string))
+        : allCandidates;
 
     const formattedTasks = tasksToInclude.map(t => ({
         id: t.id,

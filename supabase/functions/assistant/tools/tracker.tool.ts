@@ -165,6 +165,16 @@ export async function queryTracker(
 // ─── Tool Definition ────────────────────────────────────────────────────────
 
 async function handleCheckin(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
+  // Structured-params path
+  if (params.metrics && typeof params.metrics === 'object' && !Array.isArray(params.metrics)) {
+    const metrics = params.metrics as Record<string, unknown>
+    const values: Record<string, number> = {}
+    for (const [k, v] of Object.entries(metrics)) {
+      const num = typeof v === 'number' ? v : Number(v)
+      if (Number.isFinite(num)) values[k.toLowerCase()] = num
+    }
+    return logCheckin(values, context.userId, context.supabase)
+  }
   const content = (params.content as string) || ''
   const values = parseCheckinValues(content)
   return logCheckin(values, context.userId, context.supabase)
@@ -181,8 +191,32 @@ export const trackerTool: ToolDefinition = {
   description: 'Log and query health metrics (sleep, energy, exercise, etc.)',
 
   actions: [
-    { action: 'tracker.checkin', description: 'Log a health check-in', handler: handleCheckin },
-    { action: 'tracker.query', description: 'Query health trends', handler: handleQuery },
+    {
+      action: 'tracker.checkin',
+      description: 'Log a health check-in. Provide a metrics object whose keys are tracker names (mood, energy, sleep, focus, stress, pain, exercise, caffeine, alcohol, water, steps, …).',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          metrics: {
+            type: 'object',
+            description: 'Map of metric name to numeric value. Example: { "sleep": 7.5, "energy": 4 }',
+          },
+        },
+        required: ['metrics'],
+      },
+      handler: handleCheckin,
+    },
+    {
+      action: 'tracker.query',
+      description: 'Summarize health metrics over the last N days.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          days: { type: 'integer', description: 'Lookback window in days (default 7)' },
+        },
+      },
+      handler: handleQuery,
+    },
   ],
 
   commands: [

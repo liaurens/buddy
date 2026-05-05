@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { CheckCircle, XCircle, ListTodo, StickyNote, Calendar, Activity, Bell, Brain, BookOpen, FolderKanban, TrendingUp, HelpCircle, HelpingHand } from 'lucide-react'
+import { CheckCircle, XCircle, ListTodo, StickyNote, Calendar, Activity, Bell, Brain, BookOpen, FolderKanban, TrendingUp, HelpCircle, HelpingHand, GraduationCap } from 'lucide-react'
 import type { AssistantResponse } from '../types'
 import { invokeAssistantAction } from '../services/assistant.service'
 
@@ -59,6 +59,7 @@ function ClarifyCandidates({ response }: { response: AssistantResponse }) {
 
 function intentIcon(intent: string, domain?: string) {
   // Domain-based icons (preferred when available)
+  if (domain === 'school') return <GraduationCap size={16} className="text-rose-600" />
   if (domain === 'mental') return <Brain size={16} className="text-purple-600" />
   if (domain === 'studying') return <BookOpen size={16} className="text-teal-600" />
   if (domain === 'projects') return <FolderKanban size={16} className="text-orange-600" />
@@ -66,6 +67,7 @@ function intentIcon(intent: string, domain?: string) {
   if (domain === 'extra') return <HelpCircle size={16} className="text-slate-500" />
 
   // Intent-based icons (fallback)
+  if (intent.startsWith('school')) return <GraduationCap size={16} className="text-rose-600" />
   if (intent.startsWith('note')) return <StickyNote size={16} className="text-cyan-600" />
   if (intent.startsWith('task')) return <ListTodo size={16} className="text-indigo-600" />
   if (intent.startsWith('tracker')) return <Activity size={16} className="text-blue-600" />
@@ -106,6 +108,36 @@ function TaskList({ tasks }: { tasks: Array<{ id: string; title: string; due_dat
           )}
         </li>
       ))}
+    </ul>
+  )
+}
+
+function StepsList({ steps }: { steps: NonNullable<AssistantResponse['steps']> }) {
+  if (!steps.length) return null
+  return (
+    <ul className="mt-3 space-y-1.5">
+      {steps.map(step => {
+        const ok = step.result.success
+        const errorDetail = !ok && typeof step.result.data?.error === 'string'
+          ? (step.result.data.error as string)
+          : null
+        return (
+          <li key={step.id} className="flex items-start gap-2 text-xs">
+            {ok ? (
+              <CheckCircle size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+            ) : (
+              <XCircle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className={ok ? 'text-slate-700' : 'text-red-700'}>{step.result.action_taken}</p>
+              {errorDetail && (
+                <p className="text-[11px] text-red-500 mt-0.5">{errorDetail}</p>
+              )}
+            </div>
+            <span className="text-[10px] font-mono text-slate-400 flex-shrink-0">{step.action}</span>
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -161,6 +193,11 @@ const AssistantResponseCard: React.FC<AssistantResponseCardProps> = ({ response,
       </div>
 
       {isClarify && <ClarifyCandidates response={response} />}
+
+      {/* Multi-step agent results */}
+      {response.steps && response.steps.length > 0 && (
+        <StepsList steps={response.steps} />
+      )}
 
       {/* Inline data display */}
       {response.success && response.data && (

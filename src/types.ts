@@ -4,6 +4,9 @@
 // Health Tracking Types
 export type {
     TrackerType,
+    TrackerCadence,
+    ScaleDirection,
+    TrackerScale,
     TrackerDefinition,
     Entry,
     TrackerState,

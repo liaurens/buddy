@@ -3,7 +3,7 @@
  * Convert between DB types (snake_case) and App types (camelCase)
  */
 
-import type { TrackerDefinition, Entry } from '../../../types';
+import type { TrackerDefinition, TrackerCadence, Entry } from '../../../types';
 import type { DbTracker, DbEntry } from '../types';
 
 export function dbToTracker(db: DbTracker): TrackerDefinition {
@@ -16,6 +16,8 @@ export function dbToTracker(db: DbTracker): TrackerDefinition {
         group: db.group || undefined,
         goal: db.goal || undefined,
         checkinConfig: db.checkin_config || undefined,
+        cadence: (db.cadence as TrackerCadence | null) ?? 'daily',
+        scale: db.scale || undefined,
     };
 }
 
@@ -30,6 +32,8 @@ export function trackerToDb(tracker: TrackerDefinition, userId: string): Omit<Db
         group: tracker.group || null,
         goal: tracker.goal || null,
         checkin_config: tracker.checkinConfig || null,
+        cadence: tracker.cadence || 'daily',
+        scale: tracker.scale || null,
     };
 }
 

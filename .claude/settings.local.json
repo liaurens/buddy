@@ -72,7 +72,11 @@
       "Bash(git pull *)",
       "mcp__claude_ai_Supabase__list_migrations",
       "Bash(npx --version)",
-      "Bash(npx *)"
+      "Bash(npx *)",
+      "Bash(ssh *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(supabase db *)",
+      "Bash(deno check *)"
     ]
   },
   "enabledMcpjsonServers": [

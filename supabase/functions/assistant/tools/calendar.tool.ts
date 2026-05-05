@@ -117,7 +117,12 @@ export const calendarTool: ToolDefinition = {
   description: "View today's calendar events",
 
   actions: [
-    { action: 'calendar.today', description: "Show today's events", handler: handleTodayEvents },
+    {
+      action: 'calendar.today',
+      description: "Fetch the user's calendar events for today from their configured iCal feed.",
+      inputSchema: { type: 'object', properties: {} },
+      handler: handleTodayEvents,
+    },
   ],
 
   commands: [

@@ -8,6 +8,22 @@ export interface AssistantRequest {
   domain?: string
 }
 
+export interface AssistantStepResult {
+  success: boolean
+  action_taken: string
+  data: Record<string, unknown>
+  suggestions?: string[]
+}
+
+export interface AssistantStep {
+  id: string
+  domain: string
+  action: string
+  params: Record<string, unknown>
+  result: AssistantStepResult
+  durationMs: number
+}
+
 export interface AssistantResponse {
   success: boolean
   intent: string
@@ -17,6 +33,7 @@ export interface AssistantResponse {
   suggestions?: string[]
   feedback_prompt?: string
   error?: string
+  steps?: AssistantStep[]
 }
 
 export interface ChatMessage {

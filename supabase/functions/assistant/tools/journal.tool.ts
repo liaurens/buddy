@@ -49,7 +49,7 @@ async function getJournalCategoryId(userId: string, supabase: any): Promise<stri
 // ─── Action Handlers ────────────────────────────────────────────────────────
 
 async function handleJournalWrite(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
+  const content = (params.content as string) || (params.text as string) || ''
 
   if (!content.trim()) {
     return {
@@ -178,8 +178,24 @@ export const journalTool: ToolDefinition = {
   description: 'Write journal entries and get AI reflections',
 
   actions: [
-    { action: 'journal.write', description: 'Save a journal entry', handler: handleJournalWrite },
-    { action: 'journal.reflect', description: 'Get an AI reflection on recent entries', handler: handleJournalReflect },
+    {
+      action: 'journal.write',
+      description: 'Save a journal entry to the user\'s notebook.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          content: { type: 'string', description: 'The journal entry text.' },
+        },
+        required: ['content'],
+      },
+      handler: handleJournalWrite,
+    },
+    {
+      action: 'journal.reflect',
+      description: 'Generate an AI reflection on the user\'s most recent journal entries. Useful when the user asks to look back or review.',
+      inputSchema: { type: 'object', properties: {} },
+      handler: handleJournalReflect,
+    },
   ],
 
   commands: [

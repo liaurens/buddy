@@ -10,6 +10,7 @@ export type Domain =
   | 'improvement'
   | 'studying'
   | 'projects'
+  | 'school'
   | 'extra'
 
 // ─── Actions ────────────────────────────────────────────────────────────────
@@ -55,6 +56,16 @@ export type Intent =
   | 'project.list'
   | 'project.status'
   | 'project.add'
+  // School
+  | 'school.class.create'
+  | 'school.class.list'
+  | 'school.assignment.create'
+  | 'school.assignment.list'
+  | 'school.assignment.complete'
+  | 'school.session.list'
+  | 'school.session.create'
+  // Notifications
+  | 'notification.schedule.relative'
   // Extra / System
   | 'general.question'
   | 'system.help'
@@ -63,9 +74,25 @@ export type Intent =
 
 // ─── Tool Registration System ───────────────────────────────────────────────
 
+// ─── JSON Schema (minimal local subset for tool input schemas) ───────────────
+
+export interface JsonSchema {
+  type?: 'object' | 'string' | 'number' | 'integer' | 'boolean' | 'array'
+  description?: string
+  properties?: Record<string, JsonSchema>
+  required?: string[]
+  enum?: Array<string | number>
+  items?: JsonSchema
+  format?: string
+  default?: unknown
+}
+
 export interface ActionDefinition {
   action: Intent
   description: string
+  // Optional JSON Schema for structured params (used by the agent loop's tool-use mode).
+  // Handlers should still accept legacy { content } params for fast-path rule routing.
+  inputSchema?: JsonSchema
   handler: (params: Record<string, unknown>, context: AgentContext) => Promise<ToolResult>
 }
 
@@ -103,6 +130,15 @@ export interface AssistantRequest {
   domain?: Domain
 }
 
+export interface AssistantStep {
+  id: string                            // tool_use_id from the model
+  domain: Domain
+  action: Intent
+  params: Record<string, unknown>
+  result: ToolResult
+  durationMs: number
+}
+
 export interface AssistantResponse {
   success: boolean
   intent: string
@@ -112,6 +148,7 @@ export interface AssistantResponse {
   suggestions?: string[]
   feedback_prompt?: string
   error?: string
+  steps?: AssistantStep[]
 }
 
 export interface RoutedCommand {

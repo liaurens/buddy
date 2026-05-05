@@ -3,15 +3,18 @@ import type { ToolDefinition, ToolResult, AgentContext } from '../types.ts'
 // ─── Action Handlers ────────────────────────────────────────────────────────
 
 async function handleProjectCreate(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
+  const name = typeof params.name === 'string' && params.name.trim()
+    ? params.name.trim()
+    : ((params.content as string) || '').trim()
 
-  if (!content.trim()) {
+  if (!name) {
     return {
       success: false,
       action_taken: 'Please provide a project name. Example: /project Portfolio website',
       data: {},
     }
   }
+  const content = name
 
   // deno-lint-ignore no-explicit-any
   const supabase = context.supabase as any
@@ -94,7 +97,7 @@ async function handleProjectList(_params: Record<string, unknown>, context: Agen
 }
 
 async function handleProjectStatus(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
+  const content = (params.name as string) || (params.content as string) || ''
 
   // deno-lint-ignore no-explicit-any
   const supabase = context.supabase as any
@@ -150,8 +153,48 @@ async function handleProjectStatus(params: Record<string, unknown>, context: Age
 }
 
 async function handleProjectAdd(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
+  // Structured-params path
+  const projectName = typeof params.project_name === 'string' ? params.project_name.trim() : ''
+  const taskTitleParam = typeof params.task_title === 'string' ? params.task_title.trim() : ''
+  if (projectName && taskTitleParam) {
+    // deno-lint-ignore no-explicit-any
+    const sb = context.supabase as any
+    const { data: project } = await sb
+      .from('projects')
+      .select('id, name')
+      .eq('user_id', context.userId)
+      .ilike('name', `%${projectName}%`)
+      .limit(1)
+      .single()
+    if (!project) {
+      return {
+        success: false,
+        action_taken: `Could not find project matching "${projectName}"`,
+        data: {},
+      }
+    }
+    const { data: task, error } = await sb
+      .from('todos')
+      .insert({
+        user_id: context.userId,
+        title: taskTitleParam,
+        completed: false,
+        project_id: project.id,
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+    if (error) {
+      return { success: false, action_taken: 'Failed to create task', data: { error: error.message } }
+    }
+    return {
+      success: true,
+      action_taken: `Task added to ${project.name}: "${taskTitleParam}"`,
+      data: { task_id: task.id, project_id: project.id, project_name: project.name, title: taskTitleParam },
+    }
+  }
 
+  const content = (params.content as string) || ''
   if (!content.trim()) {
     return {
       success: false,
@@ -255,10 +298,50 @@ export const projectsTool: ToolDefinition = {
   description: 'Create and manage projects with linked tasks',
 
   actions: [
-    { action: 'project.create', description: 'Create a new project', handler: handleProjectCreate },
-    { action: 'project.list', description: 'List active projects', handler: handleProjectList },
-    { action: 'project.status', description: 'Show project status with tasks', handler: handleProjectStatus },
-    { action: 'project.add', description: 'Add a task to a project', handler: handleProjectAdd },
+    {
+      action: 'project.create',
+      description: 'Create a new project.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Project name' },
+          description: { type: 'string' },
+        },
+        required: ['name'],
+      },
+      handler: handleProjectCreate,
+    },
+    {
+      action: 'project.list',
+      description: 'List the user\'s active projects with task progress.',
+      inputSchema: { type: 'object', properties: {} },
+      handler: handleProjectList,
+    },
+    {
+      action: 'project.status',
+      description: 'Show details and tasks for a specific project (matched by name).',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Project name to fuzzy-match' },
+        },
+        required: ['name'],
+      },
+      handler: handleProjectStatus,
+    },
+    {
+      action: 'project.add',
+      description: 'Add a task to a specific project.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          project_name: { type: 'string', description: 'Project name to fuzzy-match' },
+          task_title: { type: 'string', description: 'Title of the task to add' },
+        },
+        required: ['project_name', 'task_title'],
+      },
+      handler: handleProjectAdd,
+    },
   ],
 
   commands: [

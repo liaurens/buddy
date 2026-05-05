@@ -12,6 +12,7 @@ import { ToolboxPage } from './features/toolbox';
 import PomodoroTimer from './features/focus/components/PomodoroTimer';
 import AssistantChat from './features/assistant/components/AssistantChat';
 import GrowthHubPage from './features/growth/pages/GrowthHubPage';
+import { SchoolPage } from './features/school';
 import LoginScreen from './features/core/components/LoginScreen';
 import MePage from './features/me/pages/MePage';
 import BrowsePage from './features/browse/pages/BrowsePage';
@@ -84,7 +85,7 @@ const App: React.FC = () => {
       case 'toolbox':
         return <ToolboxPage />;
       case 'tasks':
-        return <TodoPage initialParams={navParams} />;
+        return <TodoPage initialParams={navParams} onNavigate={handleNavigate} />;
       case 'calendar':
         return <CalendarPage />;
       case 'account':
@@ -111,6 +112,8 @@ const App: React.FC = () => {
         );
       case 'growth':
         return <GrowthHubPage initialParams={navParams} />;
+      case 'school':
+        return <SchoolPage />;
       case 'browse':
         return <BrowsePage onNavigate={handleNavigate} />;
       case 'me':

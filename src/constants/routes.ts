@@ -23,6 +23,7 @@ export type AppRoute =
     | 'me'
     | 'today'
     | 'goals'
+    | 'school'
     | 'notifications';
 
 export const HEALTH_HUB_ROUTES: AppRoute[] = ['health', 'protocols', 'experiments'];

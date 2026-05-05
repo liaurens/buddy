@@ -128,17 +128,18 @@ export async function queryNotes(
 // ─── Tool Definition ────────────────────────────────────────────────────────
 
 async function handleCreateNote(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
-  return createNote(content, context.userId, context.supabase)
+  const content = (params.content as string) || (params.text as string) || ''
+  const flag = typeof params.category_flag === 'string' ? params.category_flag : undefined
+  return createNote(content, context.userId, context.supabase, flag)
 }
 
 async function handleCreateShoppingNote(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
+  const content = (params.content as string) || (params.text as string) || ''
   return createNote(content, context.userId, context.supabase, 'shop')
 }
 
 async function handleQueryNotes(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const query = (params.content as string) || ''
+  const query = (params.query as string) || (params.content as string) || ''
   return queryNotes(query, context.userId, context.supabase)
 }
 
@@ -148,9 +149,42 @@ export const notesTool: ToolDefinition = {
   description: 'Create and search notes',
 
   actions: [
-    { action: 'note.create', description: 'Create a new note', handler: handleCreateNote },
-    { action: 'note.create.shopping', description: 'Create a shopping note', handler: handleCreateShoppingNote },
-    { action: 'note.query', description: 'Search notes', handler: handleQueryNotes },
+    {
+      action: 'note.create',
+      description: 'Save a free-form note. Optionally route to a category by its flag (e.g. "shop", "boodschap").',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          content: { type: 'string', description: 'The note text.' },
+          category_flag: { type: 'string', description: 'Route the note to a specific category by flag (e.g. "shop").' },
+        },
+        required: ['content'],
+      },
+      handler: handleCreateNote,
+    },
+    {
+      action: 'note.create.shopping',
+      description: 'Add an item to the shopping list.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          content: { type: 'string', description: 'What to buy / pick up.' },
+        },
+        required: ['content'],
+      },
+      handler: handleCreateShoppingNote,
+    },
+    {
+      action: 'note.query',
+      description: 'Search the user\'s notes.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Substring to search for. Empty returns recent notes.' },
+        },
+      },
+      handler: handleQueryNotes,
+    },
   ],
 
   commands: [

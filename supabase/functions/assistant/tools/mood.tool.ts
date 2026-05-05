@@ -3,11 +3,22 @@ import type { ToolDefinition, ToolResult, AgentContext } from '../types.ts'
 // ─── Action Handlers ────────────────────────────────────────────────────────
 
 async function handleMoodLog(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
+  // Structured-params path: explicit value (+ optional note)
+  let moodValue: number | null = null
+  let note = ''
+  if (typeof params.value === 'number' && Number.isInteger(params.value)) {
+    moodValue = params.value
+    note = typeof params.note === 'string' ? params.note : ''
+  } else {
+    const content = (params.content as string) || ''
+    const moodMatch = content.match(/(\d)/)
+    if (moodMatch) {
+      moodValue = parseInt(moodMatch[1], 10)
+      note = content.replace(/^\s*\d\s*/, '').trim()
+    }
+  }
 
-  // Parse mood value (1-5)
-  const moodMatch = content.match(/(\d)/)
-  if (!moodMatch) {
+  if (moodValue === null) {
     return {
       success: false,
       action_taken: 'Please provide a mood value (1-5). Example: /mood 4',
@@ -15,7 +26,6 @@ async function handleMoodLog(params: Record<string, unknown>, context: AgentCont
     }
   }
 
-  const moodValue = parseInt(moodMatch[1], 10)
   if (moodValue < 1 || moodValue > 5) {
     return {
       success: false,
@@ -58,8 +68,6 @@ async function handleMoodLog(params: Record<string, unknown>, context: AgentCont
     return { success: false, action_taken: 'Failed to log mood', data: { error: error.message } }
   }
 
-  // Extract optional note (everything after the number)
-  const note = content.replace(/^\s*\d\s*/, '').trim()
   const moodLabels: Record<number, string> = { 1: 'very low', 2: 'low', 3: 'okay', 4: 'good', 5: 'great' }
 
   return {
@@ -127,8 +135,25 @@ export const moodTool: ToolDefinition = {
   description: 'Log and query mood',
 
   actions: [
-    { action: 'mood.log', description: 'Log your current mood (1-5)', handler: handleMoodLog },
-    { action: 'mood.query', description: 'View recent mood trends', handler: handleMoodQuery },
+    {
+      action: 'mood.log',
+      description: 'Log the user\'s current mood on a 1–5 scale, with an optional note.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          value: { type: 'integer', description: 'Mood 1 (very low) to 5 (great)' },
+          note: { type: 'string', description: 'Optional context (e.g. "rough sleep")' },
+        },
+        required: ['value'],
+      },
+      handler: handleMoodLog,
+    },
+    {
+      action: 'mood.query',
+      description: 'View the user\'s mood entries over the last 7 days.',
+      inputSchema: { type: 'object', properties: {} },
+      handler: handleMoodQuery,
+    },
   ],
 
   commands: [

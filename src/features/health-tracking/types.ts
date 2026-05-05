@@ -2,6 +2,17 @@
 
 // Tracker Types
 export type TrackerType = 'number' | 'rating' | 'boolean' | 'text';
+export type TrackerCadence = 'daily' | 'episodic' | 'weekly';
+export type ScaleDirection = 'higher_better' | 'lower_better' | 'neutral';
+
+export interface TrackerScale {
+    min: number;
+    max: number;
+    step?: number;
+    lowLabel: string;
+    highLabel: string;
+    direction: ScaleDirection;
+}
 
 export interface TrackerDefinition {
     id: string;
@@ -10,6 +21,8 @@ export interface TrackerDefinition {
     type: TrackerType;
     unit?: string;
     group?: string;
+    cadence?: TrackerCadence;
+    scale?: TrackerScale;
     goal?: {
         target: number;
         condition: 'gt' | 'lt' | 'eq';

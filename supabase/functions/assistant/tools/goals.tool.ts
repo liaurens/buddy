@@ -4,9 +4,11 @@ import type { ToolDefinition, ToolResult, AgentContext } from '../types.ts'
 // ─── Action Handlers ────────────────────────────────────────────────────────
 
 async function handleGoalCreate(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
+  const title = typeof params.title === 'string' && params.title.trim()
+    ? params.title.trim()
+    : ((params.content as string) || '').trim()
 
-  if (!content.trim()) {
+  if (!title) {
     return {
       success: false,
       action_taken: 'Please provide a goal. Example: /goal Read 20 books this year',
@@ -16,13 +18,15 @@ async function handleGoalCreate(params: Record<string, unknown>, context: AgentC
 
   // deno-lint-ignore no-explicit-any
   const supabase = context.supabase as any
-  const targetDate = parseDateExpression(content)
+  const targetDate = typeof params.target_date === 'string' && params.target_date
+    ? params.target_date
+    : parseDateExpression(title)
 
   const { data: goal, error } = await supabase
     .from('goals')
     .insert({
       user_id: context.userId,
-      title: content.trim(),
+      title,
       target_date: targetDate,
       status: 'active',
       progress: 0,
@@ -37,8 +41,8 @@ async function handleGoalCreate(params: Record<string, unknown>, context: AgentC
   const dateStr = targetDate ? ` (target: ${targetDate})` : ''
   return {
     success: true,
-    action_taken: `Goal created: "${content.trim()}"${dateStr}`,
-    data: { goal_id: goal.id, title: content.trim(), target_date: targetDate },
+    action_taken: `Goal created: "${title}"${dateStr}`,
+    data: { goal_id: goal.id, title, target_date: targetDate },
     suggestions: ['/goals', '/progress'],
   }
 }
@@ -84,28 +88,30 @@ async function handleGoalList(_params: Record<string, unknown>, context: AgentCo
 }
 
 async function handleGoalProgress(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
-
-  // Parse: expect "goal title 50" or "goal title 50%"
-  const percentMatch = content.match(/(\d+)\s*%?\s*$/)
-  if (!percentMatch) {
+  // Structured-params path
+  let progress: number | null = null
+  let searchTerm = ''
+  if (typeof params.progress === 'number') {
+    progress = params.progress
+    searchTerm = (typeof params.title === 'string' ? params.title : '').trim()
+  } else {
+    const content = (params.content as string) || ''
+    const percentMatch = content.match(/(\d+)\s*%?\s*$/)
+    if (percentMatch) {
+      progress = parseInt(percentMatch[1], 10)
+      searchTerm = content.replace(/\d+\s*%?\s*$/, '').trim()
+    }
+  }
+  if (progress === null) {
     return {
       success: false,
       action_taken: 'Please include a progress percentage. Example: /progress Read 20 books 50',
       data: {},
     }
   }
-
-  const progress = parseInt(percentMatch[1], 10)
   if (progress < 0 || progress > 100) {
-    return {
-      success: false,
-      action_taken: 'Progress must be between 0 and 100',
-      data: {},
-    }
+    return { success: false, action_taken: 'Progress must be between 0 and 100', data: {} }
   }
-
-  const searchTerm = content.replace(/\d+\s*%?\s*$/, '').trim()
   if (!searchTerm) {
     return {
       success: false,
@@ -153,15 +159,18 @@ async function handleGoalProgress(params: Record<string, unknown>, context: Agen
 }
 
 async function handleGoalComplete(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
+  const target = typeof params.title === 'string' && params.title.trim()
+    ? params.title.trim()
+    : ((params.content as string) || '').trim()
 
-  if (!content.trim()) {
+  if (!target) {
     return {
       success: false,
       action_taken: 'Please specify which goal. Example: /goal.done Read 20 books',
       data: {},
     }
   }
+  const content = target
 
   // deno-lint-ignore no-explicit-any
   const supabase = context.supabase as any
@@ -209,10 +218,50 @@ export const goalsTool: ToolDefinition = {
   description: 'Create and track personal goals',
 
   actions: [
-    { action: 'goal.create', description: 'Create a new goal', handler: handleGoalCreate },
-    { action: 'goal.list', description: 'List active goals', handler: handleGoalList },
-    { action: 'goal.progress', description: 'Update goal progress', handler: handleGoalProgress },
-    { action: 'goal.complete', description: 'Mark a goal as completed', handler: handleGoalComplete },
+    {
+      action: 'goal.create',
+      description: 'Create a new personal goal.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'The goal as a short statement (e.g. "Read 20 books")' },
+          target_date: { type: 'string', format: 'date', description: 'Optional target date (YYYY-MM-DD or ISO 8601)' },
+        },
+        required: ['title'],
+      },
+      handler: handleGoalCreate,
+    },
+    {
+      action: 'goal.list',
+      description: 'List the user\'s active goals.',
+      inputSchema: { type: 'object', properties: {} },
+      handler: handleGoalList,
+    },
+    {
+      action: 'goal.progress',
+      description: 'Set the percentage progress on an existing goal (matched by title).',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'Goal title to fuzzy-match' },
+          progress: { type: 'integer', description: 'Progress 0-100' },
+        },
+        required: ['title', 'progress'],
+      },
+      handler: handleGoalProgress,
+    },
+    {
+      action: 'goal.complete',
+      description: 'Mark a goal as completed.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'Goal title to fuzzy-match' },
+        },
+        required: ['title'],
+      },
+      handler: handleGoalComplete,
+    },
   ],
 
   commands: [

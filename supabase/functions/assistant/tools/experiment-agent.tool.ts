@@ -176,7 +176,12 @@ export const experimentAgentTool: ToolDefinition = {
 
   actions: [
     { action: 'experiment.ask', description: 'Chat with the experiment agent', handler: handleExperimentAsk },
-    { action: 'experiment.list', description: 'List all experiments', handler: handleExperimentList },
+    {
+      action: 'experiment.list',
+      description: 'List all of the user\'s self-experiments.',
+      inputSchema: { type: 'object', properties: {} },
+      handler: handleExperimentList,
+    },
   ],
 
   commands: [

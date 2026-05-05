@@ -60,7 +60,12 @@ export const habitsTool: ToolDefinition = {
   description: 'Check habit streaks and status',
 
   actions: [
-    { action: 'habits.status', description: 'Show habit/streak status', handler: handleHabitsStatus },
+    {
+      action: 'habits.status',
+      description: "Summarize how many open and overdue tasks the user has — a stand-in for habit/streak status.",
+      inputSchema: { type: 'object', properties: {} },
+      handler: handleHabitsStatus,
+    },
   ],
 
   commands: [

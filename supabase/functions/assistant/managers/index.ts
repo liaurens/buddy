@@ -20,6 +20,7 @@ const DOMAINS: Domain[] = [
   'improvement',
   'studying',
   'projects',
+  'school',
   'extra',
 ]
 

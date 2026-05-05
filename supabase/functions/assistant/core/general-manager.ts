@@ -16,12 +16,137 @@
 import type { AgentContext, AssistantResponse, Domain, RoutedCommand, ToolResult } from '../types.ts'
 import { parseSlashCommand, parseLegacyFlag } from './command-parser.ts'
 import { matchRules, matchDynamicRules, loadDynamicRules } from './rule-engine.ts'
-import { classifyWithAI } from './ai-classifier.ts'
 import { AICallCollector } from './ai-wrapper.ts'
 import { PipelineTracker, safeExecute } from './error-handler.ts'
 import { getManager } from '../managers/index.ts'
 import { logInteraction } from '../tools/learnings.tool.ts'
-import { logError, extractError } from './error-logger.ts'
+import { logError } from './error-logger.ts'
+import { runAgentLoop, type AgentLoopResult } from './agent-loop.ts'
+
+/**
+ * Build an AssistantResponse from an agent-loop run.
+ * Aggregates per-step results so the UI can render ✓/✗ for each step.
+ */
+function buildAgentResponse(input: string, loop: AgentLoopResult): AssistantResponse {
+  const anyFailed = loop.steps.some(s => !s.result.success)
+  const isEmpty = loop.steps.length === 0 && !loop.finalText
+
+  // Empty case: model returned no tool calls AND no text. Surface as a soft clarify
+  // (amber styling), not a hard error — user's input was understood as English but
+  // the model declined to act.
+  if (isEmpty) {
+    return {
+      success: true,
+      intent: 'general.question',
+      domain: 'extra',
+      action_taken: `I didn't pick a tool for that. Could you rephrase, or try a slash command? (e.g. "/task ${input.slice(0, 40)}")`,
+      data: {
+        clarify: true,
+        stoppedReason: loop.stoppedReason,
+      },
+      steps: [],
+    }
+  }
+
+  const overallSuccess = loop.steps.length === 0
+    ? loop.finalText.length > 0
+    : loop.steps.every(s => s.result.success)
+
+  const firstStep = loop.steps[0]
+  const intent: string = firstStep?.action ?? 'general.question'
+  const domain: Domain = firstStep?.domain ?? 'extra'
+
+  const actionTaken = loop.finalText
+    ? loop.finalText
+    : loop.steps.map(s => `${s.result.success ? '✓' : '✗'} ${s.result.action_taken}`).join('\n')
+
+  const suggestions = loop.steps
+    .flatMap(s => s.result.suggestions ?? [])
+    .filter((v, i, a) => v && a.indexOf(v) === i)
+    .slice(0, 4)
+
+  return {
+    success: overallSuccess,
+    intent,
+    domain,
+    action_taken: actionTaken,
+    data: {
+      stoppedReason: loop.stoppedReason,
+      anyFailed,
+    },
+    suggestions: suggestions.length > 0 ? suggestions : undefined,
+    steps: loop.steps,
+  }
+}
+
+/**
+ * If any step failed, persist a structured failure report (non-blocking) so
+ * the user can debug it later. Reuses the existing assistant_error_logs table;
+ * the full transcript goes into the context JSONB column.
+ */
+function maybeLogFailureReport(input: string, loop: AgentLoopResult, context: AgentContext): void {
+  // Empty-loop case (model gave no tool calls AND no text) — log so we can debug
+  // why the agent declined. Reuses the same table as step failures.
+  if (loop.steps.length === 0 && !loop.finalText) {
+    logError(
+      {
+        userId: context.userId,
+        input,
+        errorType: 'execution_error',
+        errorMessage: 'Agent loop returned no tool calls and no text',
+        step: 'ai_conversation',
+        domain: 'extra',
+        intent: 'general.question',
+        routingMethod: 'ai',
+        aiProvider: context.aiConfig?.provider,
+        aiModel: context.aiConfig?.model,
+        context: {
+          stopped_reason: loop.stoppedReason,
+          total_tokens: loop.totalTokens,
+          transcript: loop.transcript,
+        },
+      },
+      context.supabase
+    )
+    return
+  }
+
+  if (!loop.steps.some(s => !s.result.success)) return
+  const failedSteps = loop.steps.filter(s => !s.result.success)
+  for (const step of failedSteps) {
+    logError(
+      {
+        userId: context.userId,
+        input,
+        errorType: 'execution_error',
+        errorMessage: step.result.action_taken,
+        step: 'ai_conversation',
+        domain: step.domain,
+        intent: step.action,
+        routingMethod: 'ai',
+        aiProvider: context.aiConfig?.provider,
+        aiModel: context.aiConfig?.model,
+        context: {
+          step_id: step.id,
+          step_params: step.params,
+          step_data: step.result.data,
+          all_steps: loop.steps.map(s => ({
+            id: s.id,
+            domain: s.domain,
+            action: s.action,
+            success: s.result.success,
+            action_taken: s.result.action_taken,
+            durationMs: s.durationMs,
+          })),
+          stopped_reason: loop.stoppedReason,
+          total_tokens: loop.totalTokens,
+          transcript: loop.transcript,
+        },
+      },
+      context.supabase
+    )
+  }
+}
 
 /**
  * Main entry point: resolve input → route → execute → log → respond.
@@ -62,52 +187,35 @@ export async function handleRequest(
           routed = dynamicResult
           tracker.endStep('success')
         } else if (context.aiConfig?.key) {
-          // Tier 3: AI classification
-          try {
-            const { routed: aiRouted, aiResult, confidence, alternatives } = await classifyWithAI(input, context.aiConfig.key, context.aiConfig.provider, context.aiConfig.model)
-            aiCalls.record(aiResult)
+          // Tier 3: agentic tool-use loop
+          tracker.endStep('success')
+          const loopResult = await runAgentLoop(input, context, aiCalls)
 
-            // Low-confidence gate: surface candidates instead of routing blind.
-            if (confidence < 0.5 && alternatives.length >= 2) {
-              tracker.endStep('success')
-              const candidates = [
-                { intent: aiRouted.action, domain: aiRouted.domain, label: `${aiRouted.action}` },
-                ...alternatives,
-              ].slice(0, 3)
-              const response: AssistantResponse = {
-                success: true,
-                intent: 'general.clarify',
-                domain: 'extra',
-                action_taken: 'Not sure which one — pick one?',
-                data: { clarify: true, candidates, original: input },
-              }
-              return { response, tracker }
-            }
+          // Persist failure transcripts for debugging
+          maybeLogFailureReport(input, loopResult, context)
 
-            routed = aiRouted
-            tracker.endStep('success')
-          } catch (err) {
-            const { message, stack } = extractError(err)
-            logError({
+          const response = buildAgentResponse(input, loopResult)
+          // Fire-and-forget interaction log
+          logInteraction(
+            {
               userId: context.userId,
               input,
-              errorType: 'ai_error',
-              errorMessage: message,
-              errorStack: stack,
-              step: 'ai_classification',
-              aiProvider: context.aiConfig.provider,
-              context: { tier: 3 },
-            }, context.supabase)
-            // Fall through to general.question on classification failure
-            routed = {
-              domain: 'extra',
-              action: 'general.question',
-              params: { content: input },
-              rawInput: input,
+              detectedIntent: response.intent,
+              detectionMethod: 'ai',
+              response: response as unknown as Record<string, unknown>,
+              source: context.source,
+              tokensUsed: loopResult.totalTokens.input + loopResult.totalTokens.output,
+              latencyMs: tracker.getTotalDuration(),
+              domain: response.domain,
+              toolId: undefined,
               routingMethod: 'ai',
-            }
-            tracker.endStep('error', message)
-          }
+              errorDetails: response.success ? undefined : { stoppedReason: loopResult.stoppedReason },
+              aiCalls: aiCalls.toJSON(),
+              processingSteps: tracker.getSteps() as unknown as Array<Record<string, unknown>>,
+            },
+            context.supabase
+          )
+          return { response, tracker }
         } else {
           // No AI available — route to general.question (tells user to configure AI)
           routed = {

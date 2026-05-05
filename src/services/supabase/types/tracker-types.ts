@@ -12,6 +12,15 @@ export interface DbTracker {
     group: string | null;
     goal: { target: number; condition: 'gt' | 'lt' | 'eq' } | null;
     checkin_config: { isRequired: boolean; inCheckin: boolean } | null;
+    cadence: string | null;
+    scale: {
+        min: number;
+        max: number;
+        step?: number;
+        lowLabel: string;
+        highLabel: string;
+        direction: 'higher_better' | 'lower_better' | 'neutral';
+    } | null;
     created_at: string;
 }
 

@@ -27,18 +27,24 @@ function parseSubject(input: string): string {
 // ─── Action Handlers ────────────────────────────────────────────────────────
 
 async function handleStudyLog(params: Record<string, unknown>, context: AgentContext): Promise<ToolResult> {
-  const content = (params.content as string) || ''
+  // Structured-params path
+  let subject = typeof params.subject === 'string' ? params.subject.trim() : ''
+  let duration: number | null = typeof params.duration_minutes === 'number'
+    ? params.duration_minutes
+    : null
 
-  if (!content.trim()) {
-    return {
-      success: false,
-      action_taken: 'Please provide a subject. Example: /study Linear algebra 2h',
-      data: {},
+  if (!subject || duration === null) {
+    const content = (params.content as string) || ''
+    if (!content.trim()) {
+      return {
+        success: false,
+        action_taken: 'Please provide a subject. Example: /study Linear algebra 2h',
+        data: {},
+      }
     }
+    if (!subject) subject = parseSubject(content)
+    if (duration === null) duration = parseDuration(content)
   }
-
-  const duration = parseDuration(content)
-  const subject = parseSubject(content)
 
   if (!subject) {
     return {
@@ -142,8 +148,25 @@ export const studyTool: ToolDefinition = {
   description: 'Log study sessions and view statistics',
 
   actions: [
-    { action: 'study.log', description: 'Log a study session', handler: handleStudyLog },
-    { action: 'study.stats', description: 'View study statistics', handler: handleStudyStats },
+    {
+      action: 'study.log',
+      description: 'Log a completed study session for a subject.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          subject: { type: 'string', description: 'What was studied (e.g. "Linear algebra")' },
+          duration_minutes: { type: 'integer', description: 'How long, in minutes' },
+        },
+        required: ['subject'],
+      },
+      handler: handleStudyLog,
+    },
+    {
+      action: 'study.stats',
+      description: 'Summarize study time over the last 7 days, grouped by subject.',
+      inputSchema: { type: 'object', properties: {} },
+      handler: handleStudyStats,
+    },
   ],
 
   commands: [

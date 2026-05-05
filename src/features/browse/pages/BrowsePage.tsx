@@ -13,6 +13,7 @@ import {
     Timer,
     CalendarClock,
     Bell,
+    GraduationCap,
 } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
 
@@ -26,6 +27,7 @@ const ITEMS: Array<{ tab: AppRoute; label: string; Icon: React.ComponentType<{ s
     { tab: 'checklists', label: 'Checklists', Icon: ListChecks, group: 'Stuff' },
     { tab: 'toolbox', label: 'Strategies', Icon: Wrench, group: 'Stuff' },
     { tab: 'growth', label: 'Growth', Icon: TrendingUp, group: 'Stuff' },
+    { tab: 'school', label: 'School', Icon: GraduationCap, group: 'Stuff' },
 
     { tab: 'health', label: 'Trackers', Icon: Activity, group: 'Health' },
     { tab: 'protocols', label: 'Protocols', Icon: Pill, group: 'Health' },

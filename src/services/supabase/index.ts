@@ -34,6 +34,14 @@ export { dbToTodo, todoToDb } from './converters/todo';
 // Converters - Goal
 export { dbToGoal, goalToDb, dbToGoalLog, type Goal, type GoalLog, type GoalType } from './converters/goal';
 
+// Converters - School
+export {
+    dbToClass, classToDb,
+    dbToAssignment, assignmentToDb,
+    dbToClassSession, classSessionToDb,
+    type SchoolClass, type Assignment, type ClassSession, type AssignmentStatus,
+} from './converters/school';
+
 // Converters - Notes
 export { dbToNoteCategory, dbToSmartNote, smartNoteToDb } from './converters/notes';
 

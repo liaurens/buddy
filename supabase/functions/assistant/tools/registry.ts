@@ -41,6 +41,9 @@ import { studyTool } from './study.tool.ts'
 // Projects domain
 import { projectsTool } from './projects.tool.ts'
 
+// School domain
+import { schoolTool } from './school.tool.ts'
+
 export const ALL_TOOLS: ToolDefinition[] = [
   // Planning
   tasksTool,
@@ -68,6 +71,9 @@ export const ALL_TOOLS: ToolDefinition[] = [
 
   // Projects
   projectsTool,
+
+  // School
+  schoolTool,
 
   // Extra / System
   systemTool,
