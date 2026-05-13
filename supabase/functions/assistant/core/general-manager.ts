@@ -39,7 +39,7 @@ function buildAgentResponse(input: string, loop: AgentLoopResult): AssistantResp
       success: true,
       intent: 'general.question',
       domain: 'extra',
-      action_taken: `I didn't pick a tool for that. Could you rephrase, or try a slash command? (e.g. "/task ${input.slice(0, 40)}")`,
+      action_taken: `I'm not sure how to handle that — could you rephrase?`,
       data: {
         clarify: true,
         stoppedReason: loop.stoppedReason,
