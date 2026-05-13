@@ -1,6 +1,7 @@
-import type { DbClass, DbAssignment, DbClassSession } from '../types/school-types';
+import type { DbClass, DbAssignment, DbClassSession, CheckpointItem } from '../types/school-types';
 
 export type AssignmentStatus = 'pending' | 'in_progress' | 'submitted' | 'graded';
+export type { CheckpointItem };
 
 export interface SchoolClass {
     id: string;
@@ -23,6 +24,7 @@ export interface Assignment {
     deadline: string;
     status: AssignmentStatus;
     estimatedMinutes: number | null;
+    checkpoints: CheckpointItem[] | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -74,6 +76,7 @@ export function dbToAssignment(db: DbAssignment): Assignment {
         deadline: db.deadline,
         status: db.status,
         estimatedMinutes: db.estimated_minutes,
+        checkpoints: db.checkpoints ?? null,
         createdAt: db.created_at,
         updatedAt: db.updated_at,
     };
@@ -88,6 +91,7 @@ export function assignmentToDb(a: Omit<Assignment, 'id' | 'createdAt' | 'updated
         deadline: a.deadline,
         status: a.status,
         estimated_minutes: a.estimatedMinutes,
+        checkpoints: a.checkpoints,
     };
 }
 

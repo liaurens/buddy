@@ -9,10 +9,20 @@ type DraftItem = Omit<RoutineItem, 'id' | 'routineId'>;
 const RoutineEditor: React.FC = () => {
     const { routines, addRoutine } = useRoutines();
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [creating, setCreating] = useState(false);
+    const [createError, setCreateError] = useState<string | null>(null);
 
     const createNew = async () => {
-        const r = await addRoutine({ name: 'New routine', emoji: '🔁' });
-        setSelectedId(r.id);
+        setCreating(true);
+        setCreateError(null);
+        try {
+            const r = await addRoutine({ name: 'New routine', emoji: '🔁' });
+            setSelectedId(r.id);
+        } catch (err: any) {
+            setCreateError(err?.message || 'Failed to create routine');
+        } finally {
+            setCreating(false);
+        }
     };
 
     const selected = routines.find(r => r.id === selectedId) || null;
@@ -39,11 +49,15 @@ const RoutineEditor: React.FC = () => {
                 ))}
                 <button
                     onClick={createNew}
-                    className="px-3 py-1.5 rounded-full text-sm border border-dashed border-slate-300 text-slate-500 hover:border-indigo-400 hover:text-indigo-600 flex items-center gap-1"
+                    disabled={creating}
+                    className="px-3 py-1.5 rounded-full text-sm border border-dashed border-slate-300 text-slate-500 hover:border-indigo-400 hover:text-indigo-600 flex items-center gap-1 disabled:opacity-50"
                 >
-                    <Plus size={14} /> New routine
+                    <Plus size={14} /> {creating ? 'Creating…' : 'New routine'}
                 </button>
             </div>
+            {createError && (
+                <p className="text-sm text-rose-600 bg-rose-50 px-3 py-2 rounded-lg">{createError}</p>
+            )}
 
             {selected && (
                 <RoutineForm

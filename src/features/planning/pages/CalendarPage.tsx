@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTasks } from '../../tasks/hooks/useTasks';
+import { useClasses } from '../../school/hooks/useClasses';
+import { useClassSessions } from '../../school/hooks/useClassSessions';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase, dbToCalendarEvent, type DbCalendarEvent } from '../../../services/supabase';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday } from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle, Circle, MapPin, Settings } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, isToday, getDay } from 'date-fns';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckCircle, Circle, MapPin, Settings, GraduationCap } from 'lucide-react';
 import CalendarSettingsModal from '../components/calendar/CalendarSettingsModal';
 import type { CalendarEvent } from '../../../types/planning';
 
@@ -11,6 +13,9 @@ const CalendarPage: React.FC = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const { tasks: allTodos } = useTasks();
     const { user } = useAuth();
+    const { classes } = useClasses();
+    const { sessions } = useClassSessions();
+    const classMap = new Map(classes.map(c => [c.id, c]));
     const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
     const [showSettings, setShowSettings] = useState(false);
 
@@ -59,6 +64,11 @@ const CalendarPage: React.FC = () => {
         return calendarEvents.filter(e => isSameDay(new Date(e.startTime), date));
     };
 
+    const getClassSessionsForDay = (date: Date) => {
+        const dow = getDay(date);
+        return sessions.filter(s => s.dayOfWeek === dow);
+    };
+
     const [selectedDay, setSelectedDay] = useState<Date | null>(new Date());
 
     return (
@@ -100,9 +110,17 @@ const CalendarPage: React.FC = () => {
                     {days.map(day => {
                         const dayTodos = getTodosForDay(day);
                         const dayEvents = getCalendarEventsForDay(day);
-                        const totalItems = dayTodos.length + dayEvents.length;
+                        const daySessions = getClassSessionsForDay(day);
+                        const totalItems = dayTodos.length + dayEvents.length + daySessions.length;
                         const isSelected = selectedDay && isSameDay(day, selectedDay);
                         const isCurrent = isToday(day);
+
+                        let slotsLeft = 3;
+                        const sessionChips = daySessions.slice(0, slotsLeft);
+                        slotsLeft -= sessionChips.length;
+                        const eventChips = dayEvents.slice(0, slotsLeft);
+                        slotsLeft -= eventChips.length;
+                        const todoChips = dayTodos.slice(0, slotsLeft);
 
                         return (
                             <div
@@ -117,13 +135,23 @@ const CalendarPage: React.FC = () => {
                                 </span>
 
                                 <div className="mt-1 space-y-1">
-                                    {dayEvents.slice(0, 2).map(event => (
+                                    {sessionChips.map(s => {
+                                        const cls = classMap.get(s.classId);
+                                        return (
+                                            <div key={s.id} className="text-[10px] truncate px-1 rounded flex items-center gap-1"
+                                                style={{ backgroundColor: cls ? cls.color + '22' : '#e0e7ff', color: cls?.color ?? '#6366f1' }}>
+                                                <div className="w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: cls?.color ?? '#6366f1' }} />
+                                                {s.startTime.slice(0, 5)} {cls?.name ?? 'Class'}
+                                            </div>
+                                        );
+                                    })}
+                                    {eventChips.map(event => (
                                         <div key={event.id} className="text-[10px] truncate px-1 rounded flex items-center gap-1 bg-purple-100 text-purple-700">
                                             <div className="w-1 h-1 rounded-full bg-purple-500" />
                                             {format(new Date(event.startTime), 'HH:mm')} {event.title}
                                         </div>
                                     ))}
-                                    {dayTodos.slice(0, Math.max(0, 3 - dayEvents.length)).map(todo => (
+                                    {todoChips.map(todo => (
                                         <div key={todo.id} className={`text-[10px] truncate px-1 rounded flex items-center gap-1 ${todo.completed ? 'bg-slate-100 text-slate-400 line-through' : 'bg-indigo-100 text-indigo-700'
                                             }`}>
                                             <div className={`w-1 h-1 rounded-full ${todo.completed ? 'bg-slate-400' : 'bg-indigo-500'}`} />
@@ -146,10 +174,33 @@ const CalendarPage: React.FC = () => {
                         {format(selectedDay, 'EEEE, MMMM do')}
                     </h3>
 
-                    {getTodosForDay(selectedDay).length === 0 && getCalendarEventsForDay(selectedDay).length === 0 ? (
+                    {getTodosForDay(selectedDay).length === 0 && getCalendarEventsForDay(selectedDay).length === 0 && getClassSessionsForDay(selectedDay).length === 0 ? (
                         <p className="text-slate-400 italic">No events or tasks scheduled for this day.</p>
                     ) : (
                         <div className="space-y-4">
+                            {getClassSessionsForDay(selectedDay).length > 0 && (
+                                <div>
+                                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Classes</h4>
+                                    <div className="space-y-2">
+                                        {getClassSessionsForDay(selectedDay).map(s => {
+                                            const cls = classMap.get(s.classId);
+                                            return (
+                                                <div key={s.id} className="flex items-start gap-3 p-3 rounded-lg border"
+                                                    style={{ backgroundColor: cls ? cls.color + '11' : '#f5f3ff', borderColor: cls ? cls.color + '44' : '#ddd6fe' }}>
+                                                    <GraduationCap size={16} className="mt-0.5 shrink-0" style={{ color: cls?.color ?? '#6366f1' }} />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-medium text-slate-800">{cls?.name ?? 'Class'}</div>
+                                                        <div className="text-xs text-slate-500 mt-0.5">
+                                                            {s.startTime.slice(0, 5)} – {s.endTime.slice(0, 5)}
+                                                            {s.location && <span> · {s.location}</span>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                             {getCalendarEventsForDay(selectedDay).length > 0 && (
                                 <div>
                                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Calendar Events</h4>

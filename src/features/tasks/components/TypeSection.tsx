@@ -7,6 +7,7 @@ import TaskCard from './TaskCard';
 interface TypeSectionProps {
     taskType: TaskType | null; // null = "No type" bucket
     tasks: Task[];
+    allTaskTypes?: TaskType[];
     selectedIds: Set<string>;
     topPickId?: string | null;
     onToggleSelect: (id: string) => void;
@@ -19,6 +20,7 @@ interface TypeSectionProps {
 const TypeSection: React.FC<TypeSectionProps> = ({
     taskType,
     tasks,
+    allTaskTypes,
     selectedIds,
     topPickId,
     onToggleSelect,
@@ -33,7 +35,7 @@ const TypeSection: React.FC<TypeSectionProps> = ({
     if (tasks.length === 0) return null;
 
     return (
-        <section className={`rounded-2xl border-l-4 ${colors.border} bg-white border border-slate-100 shadow-sm overflow-hidden`}>
+        <section className={`rounded-2xl border-l-4 ${colors.border} bg-white border border-slate-100 shadow-sm`}>
             <button
                 type="button"
                 onClick={() => setCollapsed(c => !c)}
@@ -53,6 +55,7 @@ const TypeSection: React.FC<TypeSectionProps> = ({
                             key={task.id}
                             task={task}
                             taskType={taskType || undefined}
+                            allTaskTypes={allTaskTypes}
                             isSelected={selectedIds.has(task.id)}
                             isTopPick={task.id === topPickId && selectedIds.size === 0}
                             onToggleSelect={onToggleSelect}

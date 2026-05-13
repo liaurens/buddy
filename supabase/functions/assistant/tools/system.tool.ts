@@ -127,8 +127,16 @@ export const systemTool: ToolDefinition = {
   description: 'System commands: help, feedback, general questions',
 
   actions: [
-    { action: 'system.help', description: 'Show available commands', handler: handleHelp },
+    {
+      action: 'system.help',
+      description: 'List all of the slash commands the user has available. Call this when the user asks "what can you do", "what commands are there", or similar.',
+      inputSchema: { type: 'object', properties: {} },
+      handler: handleHelp,
+    },
     { action: 'system.feedback', description: 'Send feedback', handler: handleFeedback },
+    // NOTE: general.question is intentionally schema-less. It's the conversational
+    // fallback when no other tool matches — exposing it as a tool would let the
+    // agent loop recurse into itself.
     { action: 'general.question', description: 'Answer general questions using AI', handler: handleGeneralQuestion },
   ],
 

@@ -227,6 +227,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                             key={type.id}
                             taskType={type}
                             tasks={byType.groups.get(type.id) || []}
+                            allTaskTypes={taskTypes}
                             selectedIds={selectedIds}
                             topPickId={topPickId}
                             onToggleSelect={toggleSelected}
@@ -239,6 +240,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                         <TypeSection
                             taskType={null}
                             tasks={byType.untyped}
+                            allTaskTypes={taskTypes}
                             selectedIds={selectedIds}
                             topPickId={topPickId}
                             onToggleSelect={toggleSelected}
@@ -269,6 +271,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                                             key={t.id}
                                             task={t}
                                             taskType={t.taskTypeId ? typesById.get(t.taskTypeId) : undefined}
+                                            allTaskTypes={taskTypes}
                                             isSelected={selectedIds.has(t.id)}
                                             isTopPick={t.id === topPickId && selectedIds.size === 0}
                                             onToggleSelect={toggleSelected}

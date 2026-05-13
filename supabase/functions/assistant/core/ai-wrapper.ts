@@ -531,16 +531,25 @@ async function callOpenAITools(
 
 /**
  * Recursively strip JSON Schema keywords that Gemini's OpenAPI subset rejects.
- * Gemini accepts: type, properties, required, enum, items, description, format
- * (limited: 'date-time', 'date', 'enum', 'int32', 'int64').
+ * Gemini supports (per the Vertex AI / Generative AI docs):
+ *   type, format ('date'/'date-time'/'int32'/'int64'/'float'/'double'/'enum'),
+ *   description, nullable, enum, properties, required, items, default.
+ * Anything else gets dropped so the call doesn't 400.
  */
 export function stripSchemaForGemini(schema: JsonSchema): Record<string, unknown> {
   const out: Record<string, unknown> = {}
   if (schema.type) out.type = schema.type.toUpperCase()
   if (schema.description) out.description = schema.description
-  if (schema.enum) out.enum = schema.enum.map(String)        // Gemini wants string enums
-  // Gemini accepts only a narrow format set; pass through 'date-time'/'date' only.
-  if (schema.format === 'date-time' || schema.format === 'date') out.format = schema.format
+  if (schema.enum) {
+    // Gemini requires enum values to be strings when type=STRING.
+    out.enum = schema.enum.map(String)
+    if (!schema.type) out.type = 'STRING'
+  }
+  if (schema.format) {
+    // Only pass through formats Gemini understands; everything else is dropped.
+    const allowed = new Set(['date', 'date-time', 'int32', 'int64', 'float', 'double', 'enum'])
+    if (allowed.has(schema.format)) out.format = schema.format
+  }
   if (schema.items) out.items = stripSchemaForGemini(schema.items)
   if (schema.properties) {
     out.properties = Object.fromEntries(
@@ -548,6 +557,7 @@ export function stripSchemaForGemini(schema: JsonSchema): Record<string, unknown
     )
   }
   if (schema.required) out.required = schema.required
+  if (schema.default !== undefined) out.default = schema.default
   return out
 }
 
@@ -621,13 +631,14 @@ async function callGeminiTools(
   const parts = candidate?.content?.parts || []
   let content = ''
   const toolCalls: AIToolCall[] = []
-  let callIdx = 0
   for (const p of parts) {
     if (p.text) content += p.text
     if (p.functionCall) {
       toolCalls.push({
-        // Gemini doesn't return ids — synthesize a stable one tied to the function name + index.
-        id: `gemini_${p.functionCall.name}_${callIdx++}`,
+        // Gemini doesn't return tool-call ids — synthesize a unique one per call.
+        // Run-scoped UUID avoids collisions across turns when the same tool is
+        // called multiple times in a single agent run.
+        id: `gemini_${p.functionCall.name}_${crypto.randomUUID().slice(0, 8)}`,
         name: p.functionCall.name,
         input: (p.functionCall.args as Record<string, unknown>) || {},
       })

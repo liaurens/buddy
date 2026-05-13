@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Pencil, Trash2 } from 'lucide-react';
+import { Check, Pencil, Trash2, ListChecks } from 'lucide-react';
 import type { Assignment, SchoolClass } from '../../../services/supabase/converters/school';
 
 interface DeadlineListProps {
@@ -8,6 +8,7 @@ interface DeadlineListProps {
     onEdit?: (a: Assignment) => void;
     onComplete?: (a: Assignment) => void;
     onDelete?: (a: Assignment) => void;
+    onCheckpoints?: (a: Assignment) => void;
 }
 
 const STATUS_LABEL: Record<Assignment['status'], string> = {
@@ -32,7 +33,7 @@ function bucketLabel(deadline: Date, now: Date): string {
 
 const BUCKET_ORDER = ['Overdue', 'Today', 'Tomorrow', 'This week', 'This month', 'Later'];
 
-export const DeadlineList: React.FC<DeadlineListProps> = ({ assignments, classes, onEdit, onComplete, onDelete }) => {
+export const DeadlineList: React.FC<DeadlineListProps> = ({ assignments, classes, onEdit, onComplete, onDelete, onCheckpoints }) => {
     const now = new Date();
     const classMap = new Map(classes.map(c => [c.id, c]));
 
@@ -74,6 +75,12 @@ export const DeadlineList: React.FC<DeadlineListProps> = ({ assignments, classes
                                             {a.status !== 'pending' && ` · ${STATUS_LABEL[a.status]}`}
                                         </div>
                                     </div>
+                                    {onCheckpoints && a.checkpoints && a.checkpoints.length > 0 && (
+                                        <button onClick={() => onCheckpoints(a)} title="Checkpoints"
+                                            className="p-1.5 text-slate-400 hover:text-indigo-600">
+                                            <ListChecks size={16} />
+                                        </button>
+                                    )}
                                     {onComplete && (
                                         <button onClick={() => onComplete(a)} title="Mark submitted"
                                             className="p-1.5 text-slate-400 hover:text-emerald-600">

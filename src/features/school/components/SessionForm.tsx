@@ -19,24 +19,35 @@ interface SessionFormProps {
 
 export const SessionForm: React.FC<SessionFormProps> = ({ classes, defaultClassId, onClose, onSubmit }) => {
     const [classId, setClassId] = useState(defaultClassId ?? classes[0]?.id ?? '');
-    const [dayOfWeek, setDayOfWeek] = useState(1);
+    const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set([1]));
     const [startTime, setStartTime] = useState('09:00');
     const [endTime, setEndTime] = useState('10:30');
     const [location, setLocation] = useState('');
     const [busy, setBusy] = useState(false);
 
+    const toggleDay = (i: number) => {
+        setSelectedDays(prev => {
+            const next = new Set(prev);
+            if (next.has(i)) { if (next.size > 1) next.delete(i); }
+            else next.add(i);
+            return next;
+        });
+    };
+
     const submit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!classId) return;
+        if (!classId || selectedDays.size === 0) return;
         setBusy(true);
         try {
-            await onSubmit({
-                classId,
-                dayOfWeek,
-                startTime,
-                endTime,
-                location: location.trim() || undefined,
-            });
+            for (const day of Array.from(selectedDays).sort()) {
+                await onSubmit({
+                    classId,
+                    dayOfWeek: day,
+                    startTime,
+                    endTime,
+                    location: location.trim() || undefined,
+                });
+            }
             onClose();
         } finally {
             setBusy(false);
@@ -62,12 +73,12 @@ export const SessionForm: React.FC<SessionFormProps> = ({ classes, defaultClassI
                 </label>
 
                 <div>
-                    <span className="text-xs font-medium text-slate-600">Day</span>
+                    <span className="text-xs font-medium text-slate-600">Days</span>
                     <div className="mt-1 grid grid-cols-7 gap-1">
                         {DAYS.map((d, i) => (
-                            <button key={d} type="button" onClick={() => setDayOfWeek(i)}
-                                className={`py-2 rounded-lg text-xs font-medium ${
-                                    dayOfWeek === i ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
+                            <button key={d} type="button" onClick={() => toggleDay(i)}
+                                className={`py-2 rounded-lg text-xs font-medium transition-colors ${
+                                    selectedDays.has(i) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                 }`}>
                                 {d}
                             </button>

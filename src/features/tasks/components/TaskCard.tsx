@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
     CheckCircle, Circle, Calendar as CalendarIcon, MapPin, Tag, Sparkles,
     ChevronDown, ChevronRight, Repeat, Bell, Trash2, Plus, MoreHorizontal,
+    Clock, Layers,
 } from 'lucide-react';
-import { format, isPast, isToday, differenceInCalendarDays, addDays } from 'date-fns';
+import { format, isPast, isToday, isTomorrow, differenceInCalendarDays, addDays } from 'date-fns';
 import type { Task, Subtask, TaskType, TaskEnergy } from '../types';
 import { calculateNextDueDate } from '../utils/recurrence';
 import { getTypeColors } from '../utils/typeColors';
@@ -41,9 +42,23 @@ function recurrenceLabel(task: Task): string | null {
     return `Next: ${format(d, 'MMM d')}`;
 }
 
+function deadlineInfo(dueDate: string): { label: string; className: string } {
+    const d = new Date(dueDate);
+    if (isPast(d) && !isToday(d)) {
+        const days = differenceInCalendarDays(new Date(), d);
+        return { label: `${days}d overdue`, className: 'text-rose-600 bg-rose-50 font-bold' };
+    }
+    if (isToday(d)) return { label: 'Due today', className: 'text-amber-700 bg-amber-50 font-bold' };
+    if (isTomorrow(d)) return { label: 'Tomorrow', className: 'text-amber-600 bg-amber-50 font-semibold' };
+    const diff = differenceInCalendarDays(d, new Date());
+    if (diff <= 7) return { label: `${format(d, 'EEE')} (${diff}d)`, className: 'text-slate-500 bg-slate-50' };
+    return { label: format(d, 'MMM d'), className: 'text-slate-400' };
+}
+
 export interface TaskCardProps {
     task: Task;
     taskType?: TaskType;
+    allTaskTypes?: TaskType[];
     isSelected: boolean;
     isTopPick?: boolean;
     onToggleSelect: (id: string) => void;
@@ -56,6 +71,7 @@ export interface TaskCardProps {
 const TaskCard: React.FC<TaskCardProps> = ({
     task,
     taskType,
+    allTaskTypes,
     isSelected,
     isTopPick = false,
     onToggleSelect,
@@ -68,9 +84,24 @@ const TaskCard: React.FC<TaskCardProps> = ({
     const [splitting, setSplitting] = useState(false);
     const [newSubtaskText, setNewSubtaskText] = useState('');
     const [snoozeOpen, setSnoozeOpen] = useState(false);
+    const [typeMenuOpen, setTypeMenuOpen] = useState(false);
+    const typeMenuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!typeMenuOpen) return;
+        const handler = (e: MouseEvent) => {
+            if (typeMenuRef.current && !typeMenuRef.current.contains(e.target as Node)) setTypeMenuOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [typeMenuOpen]);
 
     const colors = getTypeColors(taskType?.color);
     const recLabel = recurrenceLabel(task);
+    const subtaskCount = task.subtasks?.length ?? 0;
+    const subtaskDone = task.subtasks?.filter(st => st.completed).length ?? 0;
+    const hasSubtasks = subtaskCount > 0;
+    const progress = hasSubtasks ? Math.round((subtaskDone / subtaskCount) * 100) : 0;
 
     const handleSubtaskToggle = (subtaskId: string) => {
         const updatedSubtasks = task.subtasks?.map(st =>
@@ -155,16 +186,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                     {task.priority}
                                 </span>
                             )}
-                            {task.dueDate && (
-                                <span className={`flex items-center gap-1 font-medium ${
-                                    isPast(new Date(task.dueDate)) && !isToday(new Date(task.dueDate)) ? 'text-rose-500' :
-                                    isToday(new Date(task.dueDate)) ? 'text-amber-600' : 'text-slate-400'
-                                }`}>
-                                    <CalendarIcon size={11} />
-                                    {format(new Date(task.dueDate), 'MMM d')}
-                                    {task.dueTime && ` ${task.dueTime}`}
-                                </span>
-                            )}
+                            {task.dueDate && (() => {
+                                const { label, className } = deadlineInfo(task.dueDate);
+                                return (
+                                    <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${className}`}>
+                                        <CalendarIcon size={11} />
+                                        {label}
+                                        {task.dueTime && <span className="flex items-center gap-0.5"><Clock size={9} />{task.dueTime}</span>}
+                                    </span>
+                                );
+                            })()}
                             {task.location && (
                                 <span className="flex items-center gap-1 font-medium text-slate-500">
                                     <MapPin size={11} /> {task.location}
@@ -175,9 +206,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                     <Tag size={9} /> {label}
                                 </span>
                             ))}
-                            {task.subtasks && task.subtasks.length > 0 && (
-                                <span className="font-medium text-slate-400">
-                                    {task.subtasks.filter(st => st.completed).length}/{task.subtasks.length} subtasks
+                            {hasSubtasks && (
+                                <span className="flex items-center gap-1 font-medium text-slate-500">
+                                    <Layers size={9} /> {subtaskDone}/{subtaskCount}
                                 </span>
                             )}
                             {recLabel && (
@@ -191,14 +222,54 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 </span>
                             )}
                         </div>
+                        {hasSubtasks && (
+                            <div className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                <div
+                                    className="h-full rounded-full bg-indigo-500 transition-all duration-300"
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-0.5 flex-shrink-0 relative">
+                        {allTaskTypes && allTaskTypes.length > 0 && (
+                            <div ref={typeMenuRef} className="relative">
+                                <button
+                                    onClick={() => { setTypeMenuOpen(o => !o); setSnoozeOpen(false); }}
+                                    className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-indigo-500 transition-all"
+                                    title="Assign type"
+                                    aria-label="Assign type"
+                                >
+                                    <Tag size={15} />
+                                </button>
+                                {typeMenuOpen && (
+                                    <div className="absolute right-0 top-9 z-30 w-48 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden text-sm" onClick={e => e.stopPropagation()}>
+                                        <button
+                                            onClick={() => { onUpdate({ ...task, taskTypeId: undefined }); setTypeMenuOpen(false); }}
+                                            className={`w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-500 italic ${!task.taskTypeId ? 'bg-indigo-50 text-indigo-600 font-medium not-italic' : ''}`}
+                                        >
+                                            Uncategorized
+                                        </button>
+                                        {allTaskTypes.map(t => (
+                                            <button
+                                                key={t.id}
+                                                onClick={() => { onUpdate({ ...task, taskTypeId: t.id }); setTypeMenuOpen(false); }}
+                                                className={`w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 ${task.taskTypeId === t.id ? 'bg-indigo-50 text-indigo-600 font-medium' : 'text-slate-700'}`}
+                                            >
+                                                {t.emoji && <span>{t.emoji}</span>}
+                                                {t.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <button
-                            onClick={() => setSnoozeOpen(s => !s)}
+                            onClick={() => { setSnoozeOpen(s => !s); setTypeMenuOpen(false); }}
                             className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-indigo-500 transition-all"
-                            title="Snooze"
-                            aria-label="Snooze"
+                            title="Reschedule"
+                            aria-label="Reschedule"
                         >
                             <MoreHorizontal size={16} />
                         </button>

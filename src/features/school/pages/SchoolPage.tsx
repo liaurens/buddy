@@ -9,7 +9,8 @@ import { SessionForm } from '../components/SessionForm';
 import { DeadlineList } from '../components/DeadlineList';
 import { ClassList } from '../components/ClassList';
 import { WeeklyScheduleGrid } from '../components/WeeklyScheduleGrid';
-import type { Assignment, SchoolClass } from '../../../services/supabase/converters/school';
+import { CheckpointPanel } from '../components/CheckpointPanel';
+import type { Assignment, SchoolClass, CheckpointItem } from '../../../services/supabase/converters/school';
 
 type SchoolTab = 'deadlines' | 'classes' | 'schedule';
 
@@ -31,6 +32,7 @@ const SchoolPage: React.FC = () => {
     const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
     const [defaultAssignmentClassId, setDefaultAssignmentClassId] = useState<string | undefined>();
     const [showSessionForm, setShowSessionForm] = useState(false);
+    const [checkpointAssignment, setCheckpointAssignment] = useState<Assignment | null>(null);
 
     const activeClasses = classes.filter(c => !c.archived);
 
@@ -89,6 +91,7 @@ const SchoolPage: React.FC = () => {
                     onDelete={a => {
                         if (confirm(`Delete "${a.title}"?`)) deleteAssignment(a.id);
                     }}
+                    onCheckpoints={a => setCheckpointAssignment(a)}
                 />
             )}
 
@@ -154,6 +157,17 @@ const SchoolPage: React.FC = () => {
                     classes={activeClasses}
                     onClose={() => setShowSessionForm(false)}
                     onSubmit={addSession}
+                />
+            )}
+
+            {checkpointAssignment && (
+                <CheckpointPanel
+                    assignment={checkpointAssignment}
+                    onClose={() => setCheckpointAssignment(null)}
+                    onSave={async (checkpoints: CheckpointItem[]) => {
+                        await updateAssignment(checkpointAssignment.id, { checkpoints });
+                        setCheckpointAssignment(null);
+                    }}
                 />
             )}
         </div>

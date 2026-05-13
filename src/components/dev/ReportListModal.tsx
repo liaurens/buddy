@@ -56,34 +56,34 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
     }
   };
 
-  const generateMarkdown = () => {
+  const generateMarkdown = async () => {
     try {
       const selectedReports = reports.filter(r => selectedIds.has(r.id!));
       if (selectedReports.length === 0) return;
 
-      let md = `# Site Feedback & Bug Report\n\n`;
-      md += `*Generated on: ${new Date().toLocaleString()}*\n\n`;
+      let md = `# Bug Reports for Claude Code — ${new Date().toLocaleDateString()}\n\n`;
+      md += `Fix each issue below. The app uses React 19 + TypeScript + Vite, Tailwind CSS, Supabase backend. Route/page is indicated per issue.\n\n`;
       md += `---\n\n`;
-      
+
       selectedReports.forEach((r, i) => {
         const desc = r.description || 'No description provided';
-        const title = desc.split('\n')[0].substring(0, 60) + (desc.length > 60 ? '...' : '');
-        const typeLabel = (r.type || 'unknown').toUpperCase();
-        
-        md += `## ${i + 1}. [${typeLabel}] ${title}\n\n`;
-        md += `**Date:** ${r.created_at ? new Date(r.created_at).toLocaleString() : 'Unknown'}\n\n`;
-        md += `**Pathname:** \`${r.pathname || 'Unknown'}\`\n\n`;
-        md += `**Description:**\n\n${desc}\n\n`;
+        const typeLabel = r.type === 'bug' ? 'BUG' : r.type === 'feature' ? 'CHANGE REQUEST' : 'NOTE';
+        const page = r.pathname || '/';
+
+        md += `## ${i + 1}. [${typeLabel}] ${desc.split('\n')[0]}\n\n`;
+        md += `- **Page:** \`${page}\`\n`;
         if (r.selector) {
-          md += `**Target Element Selector:** \`${r.selector}\`\n\n`;
+          md += `- **Element:** \`${r.selector.split('>').slice(-2).join('>').trim()}\`\n`;
         }
-        if (r.html_snippet) {
-           md += `**Original HTML Snippet:**\n\`\`\`html\n${r.html_snippet}\n\`\`\`\n\n`;
-        }
+        md += `\n**Issue:**\n${desc}\n\n`;
         md += `---\n\n`;
       });
 
       setExportedMarkdown(md);
+
+      // Delete exported reports from the database
+      await Promise.all(selectedReports.map(r => deleteFeedback(r.id!)));
+      if (onRefresh) onRefresh();
     } catch (err: any) {
       console.error(err);
       alert("Failed to compile markdown: " + err.message);

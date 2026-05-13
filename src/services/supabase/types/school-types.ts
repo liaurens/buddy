@@ -10,6 +10,15 @@ export interface DbClass {
     updated_at: string;
 }
 
+export interface CheckpointItem {
+    id: string;
+    number: string;
+    title: string;
+    subitems: string[];
+    notes: string;
+    done: boolean;
+}
+
 export interface DbAssignment {
     id: string;
     user_id: string;
@@ -19,6 +28,7 @@ export interface DbAssignment {
     deadline: string;
     status: 'pending' | 'in_progress' | 'submitted' | 'graded';
     estimated_minutes: number | null;
+    checkpoints: CheckpointItem[] | null;
     created_at: string;
     updated_at: string;
 }

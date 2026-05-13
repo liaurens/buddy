@@ -48,6 +48,7 @@ export function useAssignments(options: UseAssignmentsOptions = {}) {
             deadline: params.deadline,
             status: 'pending',
             estimatedMinutes: params.estimatedMinutes ?? null,
+            checkpoints: null,
         }, userId);
         const { error } = await supabase.from('assignments').insert(payload);
         if (error) throw error;
@@ -63,6 +64,7 @@ export function useAssignments(options: UseAssignmentsOptions = {}) {
         if (patch.deadline !== undefined) dbPatch.deadline = patch.deadline;
         if (patch.status !== undefined) dbPatch.status = patch.status;
         if (patch.estimatedMinutes !== undefined) dbPatch.estimated_minutes = patch.estimatedMinutes;
+        if (patch.checkpoints !== undefined) dbPatch.checkpoints = patch.checkpoints;
         const { error } = await supabase.from('assignments').update(dbPatch).eq('id', id).eq('user_id', userId);
         if (error) throw error;
         queryClient.invalidateQueries({ queryKey: ['assignments', userId] });

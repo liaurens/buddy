@@ -175,7 +175,18 @@ export const experimentAgentTool: ToolDefinition = {
   description: 'Ask the experiment agent about your self-experiments',
 
   actions: [
-    { action: 'experiment.ask', description: 'Chat with the experiment agent', handler: handleExperimentAsk },
+    {
+      action: 'experiment.ask',
+      description: 'Ask a free-text question about the user\'s active self-experiment. Use when the user mentions "experiment", "trial", "A/B test", or asks for analysis of their experimental data.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          content: { type: 'string', description: 'The question or request about the experiment.' },
+        },
+        required: ['content'],
+      },
+      handler: handleExperimentAsk,
+    },
     {
       action: 'experiment.list',
       description: 'List all of the user\'s self-experiments.',

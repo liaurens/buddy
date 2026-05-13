@@ -34,10 +34,19 @@ import {
   type AICallCollector,
 } from './ai-wrapper.ts'
 
-const MAX_ITER = 6
-const MAX_TOOL_CALLS_TOTAL = 10
-const MAX_TOKENS_BUDGET = 20_000
-const PER_CALL_TIMEOUT_MS = 8_000
+const MAX_ITER = 8
+const MAX_TOOL_CALLS_TOTAL = 15
+const MAX_TOKENS_BUDGET = 40_000
+const PER_CALL_TIMEOUT_MS = 12_000
+
+// Small/cheap models that are prone to empty first turns and benefit from
+// force-tool retry. Match on substring (model strings vary by provider).
+const SMALL_MODEL_HINTS = ['haiku', 'flash', '4o-mini', 'gpt-4o-mini', 'gpt-5-mini']
+function isSmallModel(model: string | undefined): boolean {
+  if (!model) return true // unknown → treat as small (safer)
+  const m = model.toLowerCase()
+  return SMALL_MODEL_HINTS.some(h => m.includes(h))
+}
 
 export interface AgentLoopResult {
   steps: AssistantStep[]
@@ -108,9 +117,9 @@ function buildSystemPrompt(ctx: SystemPromptContext): string {
     ? `User's classes:\n${ctx.classes.map(c => `- ${c.name} (id: ${c.id})`).join('\n')}\n`
     : `User has no classes yet — use school_class_create before adding assignments.\n`
 
-  return `You are a personal productivity assistant for a single user. You have access to tools that let you create, list, and update items across the user's app: tasks, reminders, notes, school assignments, classes, mood entries, journal entries, goals, projects, study logs, and tracker check-ins.
+  return `Today's date (user's local): ${ctx.todayIso}
 
-Today's date (user's local): ${ctx.todayIso}
+You are a personal productivity assistant for a single user. You have tools to create, list, and update items across the user's app: tasks, reminders, task routines, task types, checklists, notes, school assignments, classes, mood entries, journal entries, goals, skills (Growth Hub), strategies (Toolbox), projects, study logs, and tracker check-ins.
 
 ${classesBlock}
 Hard rules — every turn MUST end with either a tool_use OR text. Never end a turn empty.
@@ -118,18 +127,32 @@ Hard rules — every turn MUST end with either a tool_use OR text. Never end a t
 - If the request is genuinely ambiguous, reply with a SHORT clarifying question as text (no tool call).
 - If you don't know what to do, reply with text suggesting what the user could try ("Try /task ..." etc.) — never stay silent.
 
-Examples of action mapping:
+Grounding rule:
+- For any ambiguous request ("what should I work on?", "how am I doing?", "plan my day", "give me advice"), call context_summary FIRST. It returns the user's current state in one cheap read. Then choose tools based on what it returns.
+- When the user asks "how do I handle X" or "what should I do about X", call strategy_find first — surface the user's OWN strategies before generic advice.
+
+Action mapping examples:
 - "make a new task called dentist" → task_create({ title: "dentist" })
 - "add a task to call mom tomorrow" → task_create({ title: "call mom", due_date: "<tomorrow ISO>" })
 - "remind me at 3pm to take meds" → notification_schedule({ message: "take meds", time: "15:00" })
+- "remind me about the dentist task tomorrow at 9am" → task_reminder_set({ task: "dentist", at: "<tomorrow 9am ISO>" })
+- "run my morning routine" → routine_run({ routine: "morning" })
+- "make a morning routine: shower, breakfast, brush teeth" → routine_create({ name: "morning", items: [...] })
+- "log 30 min Spanish practice" → skill_log({ skill: "Spanish", minutes: 30 })
+- "what's my packing checklist look like?" → checklist_get({ name: "packing" })
 
 Multi-step requests are normal. Chain tool calls as needed.
 - For school deadlines with a "remind me X days/hours before" phrasing, prefer school_assignment_create with reminder_days_before / reminder_hours_before. The handler creates both the assignment and the reminder atomically.
 - For non-school reminders relative to a specific time, use notification_schedule_relative with anchor + offset_*.
 - Resolve dates yourself: convert relative phrases ("next Tuesday", "over een week", "tomorrow at 3pm") into ISO 8601 before calling tools.
-- If a tool returns an error, read it and retry with corrected arguments, call a different tool, or ask the user a clarifying question.
-- After all tool calls succeed, reply with a short natural-language confirmation.
-- Be terse.`
+- All ISO timestamps without an offset are interpreted as the user's local time.
+- Fuzzy-matched fields ("task", "routine", "skill", "checklist", "item") accept substring matches against active rows.
+
+When a tool returns \`suggestions\`, surface them to the user — don't paraphrase, just pass them along.
+
+If a tool returns an error, read it and retry with corrected arguments, call a different tool, or ask the user a clarifying question.
+After all tool calls succeed, reply with a short natural-language confirmation.
+Be terse.`
 }
 
 export async function runAgentLoop(
@@ -190,10 +213,15 @@ export async function runAgentLoop(
     totalIn += resp.tokensIn
     totalOut += resp.tokensOut
 
-    // Force-tool retry: on the first turn only, if the model returned no tool
-    // calls AND no text, retry once with toolChoice='any' to force a pick.
-    // This catches small models that go shy on action requests.
-    if (iter === 0 && resp.toolCalls.length === 0 && !resp.content) {
+    // Force-tool retry: small models sometimes go shy and return an empty first
+    // turn. Retry once with toolChoice='any' to force a pick. Capable models
+    // (Sonnet, Opus, Pro, large GPTs) almost never need this — skip them.
+    if (
+      iter === 0 &&
+      resp.toolCalls.length === 0 &&
+      !resp.content &&
+      isSmallModel(resp.model)
+    ) {
       console.warn(
         `[agent-loop] empty first turn — retrying with tool_choice=any: provider=${resp.provider} model=${resp.model} input="${input.slice(0, 80)}"`
       )
