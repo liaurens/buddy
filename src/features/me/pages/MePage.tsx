@@ -6,8 +6,6 @@ import {
     Heart,
     StickyNote,
     Calendar,
-    CalendarClock,
-    LayoutGrid,
     TrendingUp,
     CheckSquare,
     Timer,
@@ -23,8 +21,6 @@ import ExperimentSettingsModal from '../../health-tracking/components/experiment
 import CheckInSettingsModal from '../../health-tracking/components/checkin/CheckInSettingsModal';
 import NoteSettingsModal from '../../tasks/components/notes/NoteSettingsModal';
 import CalendarSettingsModal from '../../planning/components/calendar/CalendarSettingsModal';
-import PlanningSettingsModal from '../../planning/components/plan/PlanningSettingsModal';
-import PlannerSettingsModal from '../../planning/components/plan/PlannerSettingsModal';
 import ReflectionSettingsModal from '../../planning/components/reflection/ReflectionSettingsModal';
 import TaskSettingsModal from '../../tasks/components/TaskSettingsModal';
 import PomodoroSettingsModal from '../../focus/components/PomodoroSettingsModal';
@@ -38,8 +34,6 @@ type SettingsKey =
     | 'check-in'
     | 'notes'
     | 'calendar'
-    | 'planning'
-    | 'planner'
     | 'reflection'
     | 'tasks'
     | 'focus'
@@ -62,8 +56,6 @@ const SETTINGS_REGISTRY: Array<{
     { key: 'protocols', label: 'Protocols', Icon: Pill, Modal: ProtocolSettingsModal },
     { key: 'experiments', label: 'Experiments', Icon: FlaskConical, Modal: ExperimentSettingsModal },
     { key: 'calendar', label: 'Calendar', Icon: Calendar, Modal: CalendarSettingsModal },
-    { key: 'planning', label: 'Planning', Icon: CalendarClock, Modal: PlanningSettingsModal },
-    { key: 'planner', label: 'Planner (AI)', Icon: LayoutGrid, Modal: PlannerSettingsModal },
     { key: 'reflection', label: 'Reflection', Icon: TrendingUp, Modal: ReflectionSettingsModal },
     { key: 'focus', label: 'Focus Timer', Icon: Timer, Modal: PomodoroSettingsModal },
     { key: 'toolbox', label: 'Toolbox', Icon: Wrench, Modal: ToolboxSettingsModal },

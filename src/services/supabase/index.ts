@@ -11,9 +11,9 @@ export type {
     DbProtocol, DbCycle, DbDose,
     DbExperiment, DbCorrelation, DbExperimentLog, DbExperimentCheckinEntry, DbDailyJournalEntry, DbExperimentAgentConversation,
     DbStrategy,
-    DbTodo,
+    DbTodo, DbTaskType, DbTaskRoutine, DbTaskRoutineItem, TaskEnergy, TaskContext,
     DbNoteCategory, DbSmartNote,
-    DbDailyPlan, DbTimeBlock, DbActivityTemplate, DbCalendarEvent,
+    DbActivityTemplate, DbCalendarEvent,
 } from './types';
 
 // Converters - Tracker
@@ -31,6 +31,12 @@ export { dbToStrategy, strategyToDb } from './converters/strategy';
 // Converters - Todo
 export { dbToTodo, todoToDb } from './converters/todo';
 
+// Converters - Task Types
+export { dbToTaskType, taskTypeToDb } from './converters/taskTypes';
+
+// Converters - Routines
+export { dbToRoutine, routineToDb, dbToRoutineItem, routineItemToDb } from './converters/routines';
+
 // Converters - Goal
 export { dbToGoal, goalToDb, dbToGoalLog, type Goal, type GoalLog, type GoalType } from './converters/goal';
 
@@ -47,8 +53,6 @@ export { dbToNoteCategory, dbToSmartNote, smartNoteToDb } from './converters/not
 
 // Converters - Planning
 export {
-    dbToDailyPlan, dailyPlanToDb,
-    dbToTimeBlock, timeBlockToDb,
     dbToActivityTemplate, activityTemplateToDb,
     dbToCalendarEvent, calendarEventToDb,
 } from './converters/planning';

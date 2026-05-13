@@ -13,6 +13,8 @@ export { default as AITaskSplitter } from './components/AITaskSplitter';
 // Hooks
 export { useStreak } from './hooks/useStreak';
 export { useTaskRecommendation } from './hooks/useTaskRecommendation';
+export { useTaskTypes } from './hooks/useTaskTypes';
+export { useRoutines } from './hooks/useRoutines';
 
 // Utils
 export { calculateStreak, getCompletionCalendar } from './utils/streakCalculator';

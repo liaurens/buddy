@@ -5,7 +5,7 @@ import MainLayout from './layouts/MainLayout';
 import { HomePage } from './features/core';
 import AccountPage from './features/core/pages/AccountPage';
 import { TrackerPage, ProtocolsPage, ExperimentsPage } from './features/health-tracking';
-import { PlanPage, CalendarPage, ReflectionPage, PlannerPage } from './features/planning';
+import { CalendarPage, ReflectionPage } from './features/planning';
 import { TodoPage, NotesPage } from './features/tasks';
 import { ChecklistsPage } from './features/checklists';
 import { ToolboxPage } from './features/toolbox';
@@ -98,10 +98,6 @@ const App: React.FC = () => {
         return <PomodoroTimer />;
       case 'reflection':
         return <ReflectionPage />;
-      case 'planning':
-        return <PlanPage />;
-      case 'planner':
-        return <PlannerPage />;
       case 'checklists':
         return <ChecklistsPage />;
       case 'assistant':

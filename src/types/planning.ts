@@ -1,12 +1,4 @@
 // Planning types - Re-exports from feature folder
 // This file maintains backward compatibility
 
-export type {
-    DailyPlan,
-    TimeBlock,
-    PlanSuggestion,
-    PlanGenerationContext,
-    ReplanRequest,
-    CalendarEvent,
-    ActivityTemplate
-} from '../features/planning/types';
+export type { CalendarEvent, ActivityTemplate } from '../features/planning/types';

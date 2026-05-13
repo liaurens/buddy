@@ -76,7 +76,15 @@
       "Bash(ssh *)",
       "Bash(echo \"exit=$?\")",
       "Bash(supabase db *)",
-      "Bash(deno check *)"
+      "Bash(deno check *)",
+      "Bash(/usr/local/bin/npm run *)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//Users/christine/.nvm/versions/**)",
+      "Read(//Users/christine/**)",
+      "Read(//Users/christine/.volta/bin/**)",
+      "Read(//Users/christine/n/bin/**)",
+      "mcp__claude_ai_Supabase__list_tables",
+      "mcp__claude_ai_Supabase__get_advisors"
     ]
   },
   "enabledMcpjsonServers": [

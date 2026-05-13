@@ -1,16 +1,13 @@
 /**
- * AI Service - Unified interface for OpenAI and Anthropic
+ * AI Service - Unified interface for OpenAI, Anthropic, and Gemini
  *
- * Provides AI-powered features for daily planning:
- * - Daily plan generation
- * - Adaptive replanning
- * - Task breakdown suggestions
+ * Currently used for task breakdown (AITaskSplitter). The daily-planning
+ * AI flows have been removed.
  */
 
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { GoogleGenAI } from '@google/genai';
-import type { PlanGenerationContext, PlanSuggestion, ReplanRequest } from '../../../types/planning';
 
 // ============================================================================
 // Types
@@ -72,54 +69,6 @@ export class AIService {
             this.geminiClient = new GoogleGenAI({
                 apiKey: this.config.apiKey,
             });
-        }
-    }
-
-    /**
-     * Generate a daily plan based on context
-     */
-    async generateDailyPlan(
-        _context: PlanGenerationContext,
-        systemPrompt: string,
-        userPrompt: string
-    ): Promise<AIResponse<PlanSuggestion>> {
-        try {
-            if (this.config.provider === 'openai') {
-                return await this.generateWithOpenAI(systemPrompt, userPrompt);
-            } else if (this.config.provider === 'anthropic') {
-                return await this.generateWithAnthropic(systemPrompt, userPrompt);
-            } else {
-                return await this.generateWithGemini(systemPrompt, userPrompt);
-            }
-        } catch (error: unknown) {
-            return {
-                success: false,
-                error: error instanceof Error ? error.message : 'AI generation failed',
-            };
-        }
-    }
-
-    /**
-     * Generate replan suggestions
-     */
-    async generateReplan(
-        _request: ReplanRequest,
-        systemPrompt: string,
-        userPrompt: string
-    ): Promise<AIResponse<PlanSuggestion>> {
-        try {
-            if (this.config.provider === 'openai') {
-                return await this.generateWithOpenAI(systemPrompt, userPrompt);
-            } else if (this.config.provider === 'anthropic') {
-                return await this.generateWithAnthropic(systemPrompt, userPrompt);
-            } else {
-                return await this.generateWithGemini(systemPrompt, userPrompt);
-            }
-        } catch (error: unknown) {
-            return {
-                success: false,
-                error: error instanceof Error ? error.message : 'AI replan generation failed',
-            };
         }
     }
 

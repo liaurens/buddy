@@ -7,7 +7,6 @@ export type AppRoute =
     | 'health'
     | 'protocols'
     | 'experiments'
-    | 'planning'
     | 'calendar'
     | 'reflection'
     | 'tasks'
@@ -18,7 +17,6 @@ export type AppRoute =
     | 'account'
     | 'assistant'
     | 'growth'
-    | 'planner'
     | 'browse'
     | 'me'
     | 'today'
@@ -27,7 +25,7 @@ export type AppRoute =
     | 'notifications';
 
 export const HEALTH_HUB_ROUTES: AppRoute[] = ['health', 'protocols', 'experiments'];
-export const CALENDAR_HUB_ROUTES: AppRoute[] = ['calendar', 'planning', 'reflection'];
+export const CALENDAR_HUB_ROUTES: AppRoute[] = ['calendar', 'reflection'];
 export const TASKS_HUB_ROUTES: AppRoute[] = ['tasks', 'checklists'];
 
 /** Top-level tabs in the new IA. All other routes are reachable via Browse or deep-links. */

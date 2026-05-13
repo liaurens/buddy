@@ -1,5 +1,9 @@
 // Tasks Feature Types
 
+// Energy & Context
+export type TaskEnergy = 'low' | 'medium' | 'high';
+export type TaskContext = 'computer' | 'phone' | 'home' | 'out' | 'anywhere';
+
 // Recurrence Types
 export type RecurrencePattern = 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays';
 
@@ -44,6 +48,44 @@ export interface Task {
     reminderAt?: string;              // ISO datetime, absolute mode (takes precedence)
     reminderCadence?: ReminderCadence;
     lastRemindedAt?: string;
+
+    // Categorization & batching
+    taskTypeId?: string;
+    energy?: TaskEnergy;
+    context?: TaskContext;
+    routineId?: string;
+    routineOrder?: number;
+}
+
+// Task Types (user-defined categories like Email, Home, Study)
+export interface TaskType {
+    id: string;
+    name: string;
+    emoji?: string;
+    color?: string;
+    sortOrder: number;
+    isPreset: boolean;
+    createdAt: string;
+}
+
+// Routines (reusable batches of tasks)
+export interface RoutineItem {
+    id: string;
+    routineId: string;
+    title: string;
+    taskTypeId?: string;
+    energy?: TaskEnergy;
+    estimatedTime?: number;
+    sortOrder: number;
+}
+
+export interface Routine {
+    id: string;
+    name: string;
+    emoji?: string;
+    description?: string;
+    createdAt: string;
+    items: RoutineItem[];
 }
 
 export type ReminderCadence = 'single' | 'smart' | 'aggressive';
@@ -52,6 +94,7 @@ export interface TaskState {
     tasks: Task[];
     isLoading: boolean;
     addTask: (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig, dueTime?: string) => Promise<string>;
+    addTaskFull: (partial: Partial<Task> & { title: string }) => Promise<string>;
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
     updateTask: (task: Task) => void;

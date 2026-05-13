@@ -1,6 +1,9 @@
 /**
- * Database types for Tasks (Todos)
+ * Database types for Tasks (Todos), Task Types, and Routines
  */
+
+export type TaskEnergy = 'low' | 'medium' | 'high';
+export type TaskContext = 'computer' | 'phone' | 'home' | 'out' | 'anywhere';
 
 export interface DbTodo {
     id: string;
@@ -26,4 +29,39 @@ export interface DbTodo {
     reminder_at?: string | null;
     reminder_cadence?: 'single' | 'smart' | 'aggressive' | null;
     last_reminded_at?: string | null;
+    task_type_id?: string | null;
+    energy?: TaskEnergy | null;
+    context?: TaskContext | null;
+    routine_id?: string | null;
+    routine_order?: number | null;
+}
+
+export interface DbTaskType {
+    id: string;
+    user_id: string;
+    name: string;
+    emoji: string | null;
+    color: string | null;
+    sort_order: number;
+    is_preset: boolean;
+    created_at: string;
+}
+
+export interface DbTaskRoutine {
+    id: string;
+    user_id: string;
+    name: string;
+    emoji: string | null;
+    description: string | null;
+    created_at: string;
+}
+
+export interface DbTaskRoutineItem {
+    id: string;
+    routine_id: string;
+    title: string;
+    task_type_id: string | null;
+    energy: TaskEnergy | null;
+    estimated_time: number | null;
+    sort_order: number;
 }

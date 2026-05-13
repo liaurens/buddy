@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, Calendar, Trash2 } from 'lucide-react';
+import { CheckCircle, Calendar, Trash2, Tag } from 'lucide-react';
 import type { ExperimentMetric, ExperimentCheckinEntry, ExperimentPhase } from '../../types';
 import { format } from 'date-fns';
 import { getCurrentPhaseForDate } from './ExperimentPhaseTimeline';
@@ -13,23 +13,34 @@ interface ExperimentCheckinFormProps {
     onDelete?: (date: string) => Promise<void>;
 }
 
+const NOTES_METRIC_ID = '__notes';
+
 const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
     metrics, phases, date, existingEntries = [], onSave, onDelete,
 }) => {
     const [values, setValues] = useState<Record<string, number | string>>({});
+    const [notes, setNotes] = useState('');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+
+    const currentPhase = phases.length > 0 ? getCurrentPhaseForDate(phases, new Date(date)) : undefined;
 
     // Pre-populate from existing entries
     useEffect(() => {
         const initial: Record<string, number | string> = {};
+        let loadedNotes = '';
         existingEntries.forEach(entry => {
+            if (entry.metricId === NOTES_METRIC_ID) {
+                loadedNotes = entry.textValue ?? '';
+                return;
+            }
             if (entry.textValue) {
                 initial[entry.metricId] = entry.textValue;
             } else if (entry.value !== undefined) {
                 initial[entry.metricId] = entry.value;
             }
         });
+        setNotes(loadedNotes);
         setValues(initial);
         setSaved(false);
     }, [existingEntries, date]);
@@ -42,15 +53,17 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
     const handleSave = async () => {
         setSaving(true);
         try {
-            const currentPhase = getCurrentPhaseForDate(phases, new Date(date));
-            const entries = metrics
+            const phase = getCurrentPhaseForDate(phases, new Date(date));
+            const entries: { metricId: string; value?: number; textValue?: string; phaseId?: string }[] = metrics
                 .filter(m => values[m.id] !== undefined && values[m.id] !== '')
                 .map(m => ({
                     metricId: m.id,
                     value: typeof values[m.id] === 'number' ? values[m.id] as number : undefined,
                     textValue: typeof values[m.id] === 'string' ? values[m.id] as string : undefined,
-                    phaseId: currentPhase?.id,
+                    phaseId: phase?.id,
                 }));
+
+            entries.push({ metricId: NOTES_METRIC_ID, textValue: notes, phaseId: phase?.id });
 
             await onSave(date, entries);
             setSaved(true);
@@ -74,9 +87,17 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-                <Calendar size={14} />
-                <span>{format(new Date(date), 'EEEE, MMM d')}</span>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Calendar size={14} />
+                    <span>{format(new Date(date), 'EEEE, MMM d')}</span>
+                </div>
+                {currentPhase && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-violet-50 text-violet-700 rounded-lg text-xs font-medium">
+                        <Tag size={11} />
+                        <span>{currentPhase.name}</span>
+                    </div>
+                )}
             </div>
 
             <div className="space-y-4">
@@ -93,6 +114,21 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
                         {renderInput(metric, values[metric.id], (val) => setValue(metric.id, val))}
                     </div>
                 ))}
+            </div>
+
+            <div className="space-y-1.5">
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <span>📝</span>
+                    <span>Notes for today</span>
+                    <span className="text-xs font-normal text-slate-400">(optional)</span>
+                </label>
+                <textarea
+                    value={notes}
+                    onChange={e => { setNotes(e.target.value); setSaved(false); }}
+                    placeholder="How did it go? Any observations or context..."
+                    rows={2}
+                    className="w-full p-2.5 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                />
             </div>
 
             <div className="flex gap-3">
@@ -201,8 +237,12 @@ function renderInput(
                 <div className="flex items-center gap-2">
                     <input
                         type="number"
+                        step="0.5"
                         value={value ?? ''}
-                        onChange={e => onChange(parseFloat(e.target.value) || 0)}
+                        onChange={e => {
+                            const v = parseFloat(e.target.value);
+                            onChange(isNaN(v) ? '' : v);
+                        }}
                         className="flex-1 p-2.5 border border-slate-200 rounded-lg text-sm"
                         placeholder="Enter value"
                     />

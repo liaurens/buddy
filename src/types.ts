@@ -34,7 +34,12 @@ export type {
     Todo,
     SmartNote,
     NoteCategory,
-    SmartNotesState
+    SmartNotesState,
+    TaskType,
+    TaskEnergy,
+    TaskContext,
+    Routine,
+    RoutineItem
 } from './features/tasks/types';
 
 // Toolbox Types

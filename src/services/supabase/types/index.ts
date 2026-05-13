@@ -16,15 +16,13 @@ export type { DbExperiment, DbCorrelation, DbExperimentLog, DbExperimentCheckinE
 export type { DbStrategy } from './strategy-types';
 
 // Task/Todo types
-export type { DbTodo } from './task-types';
+export type { DbTodo, DbTaskType, DbTaskRoutine, DbTaskRoutineItem, TaskEnergy, TaskContext } from './task-types';
 
 // Note and Category types
 export type { DbNoteCategory, DbSmartNote } from './note-types';
 
 // Planning system types
 export type {
-    DbDailyPlan,
-    DbTimeBlock,
     DbActivityTemplate,
     DbCalendarEvent
 } from './planning-types';

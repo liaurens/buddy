@@ -19,19 +19,25 @@ Student Buddy App — a PWA for executive function, self-regulation, and holisti
 
 ### Routing & Layout
 
-No router library — `App.tsx` uses a `useState<AppRoute>` with a switch statement to render pages. Navigation is done via `onNavigate(tab, params?)` callbacks passed down as props. Each page can have a per-route settings modal registered in `SETTINGS_MODALS`.
+No router library — `App.tsx` uses a `useState<AppRoute>` (typed in `src/constants/routes.ts`) with a switch statement to render pages. Navigation is done via `onNavigate(tab, params?)` callbacks passed down as props. Deep-links from notifications are parsed from `?route=…&intent=…&taskId=…` on load.
 
 ### Feature Modules (`src/features/`)
 
 Each feature is a self-contained module with its own components, hooks, services, and types:
 
 - **health-tracking** — custom metric tracking, correlation analysis, protocols (supplements/meds), experiments
-- **planning** — AI daily planning, time blocking calendar, daily reflection
-- **tasks** — todo list with prioritization, smart notes with auto-categorization
+- **planning** — time-blocking calendar and daily reflection (the older AI plan-generator pages have been removed; only `CalendarPage` and `ReflectionPage` remain)
+- **tasks** — todo list with prioritization, task types/routines, smart notes with auto-categorization
+- **day** — daily routine views (morning/midday light + full variants, today timeline, log-yesterday step)
+- **growth** — Growth Hub: skills and skill logs
+- **school** — classes, assignments, class sessions
 - **assistant** — AI chat interface with slash commands, tool registry, rule engine, HR/trainer agents
 - **checklists** — reusable checklists for recurring routines
 - **toolbox** — personal strategy library
 - **focus** — Pomodoro timer
+- **notifications** — in-app notifications center and push subscription management
+- **browse** — top-level browse/navigation page
+- **me** — profile/me page
 - **core** — home page, login, account, shared infrastructure
 
 Features export their public API through barrel `index.ts` files.
@@ -47,7 +53,15 @@ The `client.ts` exports the Supabase client and an `isSupabaseConfigured` flag.
 
 ### Supabase Edge Functions (`supabase/functions/`)
 
-Serverless functions for: AI assistant, calendar proxy, HR agent, trainer agent, quick notes, push notifications.
+Serverless functions:
+- `assistant` — main AI assistant (tool registry under `assistant/tools/`)
+- `calendar-proxy` — external calendar sync
+- `hr-agent`, `trainer-agent` — assistant supervisors (learnings, findings, rules)
+- `correlations-agent` — computes tracker correlations
+- `experiment-agent` — experiment analysis
+- `off-track-scanner` — periodic scan for off-track tasks/goals (runs on a Postgres cron)
+- `quick-note` — fast note ingestion
+- `schedule-notifications`, `send-notification` — push notification delivery
 
 ### AI Integration
 
@@ -77,14 +91,17 @@ All tables live in the `public` schema with RLS enabled. Edge functions use the 
 
 | Table | Feature | Notes |
 | --- | --- | --- |
-| `todos` | Tasks | NOT called `tasks`. Has `recurrence` + `recurrence_config` columns. |
+| `todos` | Tasks | NOT called `tasks`. Has `recurrence` + `recurrence_config`, per-task reminder columns (`reminder_enabled`, `reminder_offset_minutes`, `reminder_at`, `reminder_cadence`, `last_reminded_at`), and `task_type_id` FK. |
+| `task_types` | User-defined task type taxonomy | Referenced by `todos.task_type_id`. |
+| `task_routines` | Recurring task routine definitions | Owns `task_routine_items`. |
+| `task_routine_items` | Items in a task routine | FK to `task_routines`. |
 | `entries` | Health tracking check-ins | NOT `tracker_entries`. Stores numeric/text values per tracker. |
-| `trackers` | Health tracker definitions | Name, type, unit, goal config. |
+| `trackers` | Health tracker definitions | Name, type, unit, goal config, scale/cadence fields. |
 | `smart_notes` | Quick notes | Has `category_id` FK to `note_categories`. |
 | `note_categories` | Note category definitions | Flag-based routing (e.g. `shop`, `boodschap`). |
-| `daily_plans` | AI daily planning | One row per user per date. `user_context` JSONB holds planner-tool inputs (hours, feel, meds, focus_rating, mode). |
+| `daily_plans` | Daily plan rows | One row per user per date. `user_context` JSONB holds context inputs (hours, feel, meds, focus_rating, mode). |
 | `time_blocks` | Planning time blocks | FK to `daily_plans`. Status: `pending/active/completed/skipped`. |
-| `activity_templates` | Recurring activity templates | Used by AI planner to schedule recurring activities. |
+| `activity_templates` | Recurring activity templates | Used to schedule recurring activities. |
 | `calendar_events` | Calendar entries | Synced from external calendars via proxy. |
 | `correlations` | Computed tracker correlations | Calculated server-side. |
 | `protocols` | Supplement/medication protocols | Links to `trackers` via `linked_tracker_id`. |
@@ -101,10 +118,17 @@ All tables live in the `public` schema with RLS enabled. Edge functions use the 
 | `assistant_rules` | Dynamic routing rules | Trainer-generated, loaded at runtime. |
 | `assistant_error_logs` | Assistant error logging | Full context: step, domain, intent, stack trace. |
 | `goals` | Personal goals | Status: `active/completed/paused/abandoned`. Progress 0-100%. |
+| `goal_logs` | Goal progress log entries | FK to `goals`. |
 | `projects` | Project management | Links to `todos` via `todos.project_id` FK. |
 | `study_sessions` | Study session logs | Subject, duration_minutes, notes. |
+| `skills` | Growth Hub skills | Per-user skill definitions. |
+| `skill_logs` | Skill practice logs | FK to `skills`. |
+| `classes` | School classes | — |
+| `assignments` | School assignments | FK to `classes`. |
+| `class_sessions` | School class sessions | FK to `classes`. |
+| `site_feedback` | In-app feedback submissions | — |
 | `notification_subscriptions` | Push notification endpoints | — |
-| `scheduled_notifications` | Queued push notifications | — |
+| `scheduled_notifications` | Queued push notifications | Has `source_type` + `source_id` to link back to the originating record (e.g. a todo). |
 | `notification_logs` | Push delivery log | — |
 
 ### Critical naming gotchas
@@ -120,3 +144,5 @@ Edge functions (`supabase/functions/`) use the **service role key** — they byp
 ### Migrations
 
 Numbered migrations live in `supabase/migrations/`. Two unnumbered legacy files (`smart_notes_migration.sql`, `daily_planning_migration.sql`) were applied manually and are NOT tracked by the CLI. Use `supabase migration repair` if the CLI history gets out of sync (see memory for the full repair pattern).
+
+Some migrations also schedule Postgres cron jobs (e.g. `20260130000000_setup_notification_cron.sql`, `20260501000001_off_track_scanner_cron.sql`) that invoke edge functions over HTTP — keep these in mind when renaming or removing functions.

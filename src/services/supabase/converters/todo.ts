@@ -29,6 +29,11 @@ export function dbToTodo(db: DbTodo): Task {
         reminderAt: db.reminder_at || undefined,
         reminderCadence: (db.reminder_cadence as Task['reminderCadence']) || undefined,
         lastRemindedAt: db.last_reminded_at || undefined,
+        taskTypeId: db.task_type_id || undefined,
+        energy: db.energy || undefined,
+        context: db.context || undefined,
+        routineId: db.routine_id || undefined,
+        routineOrder: db.routine_order ?? undefined,
     };
 }
 
@@ -57,5 +62,10 @@ export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: strin
         reminder_at: todo.reminderAt || null,
         reminder_cadence: todo.reminderCadence || null,
         last_reminded_at: todo.lastRemindedAt || null,
+        task_type_id: todo.taskTypeId || null,
+        energy: todo.energy || null,
+        context: todo.context || null,
+        routine_id: todo.routineId || null,
+        routine_order: todo.routineOrder ?? null,
     };
 }

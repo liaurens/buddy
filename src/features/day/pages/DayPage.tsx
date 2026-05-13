@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Sun, Sunrise, Moon, Coffee, Zap } from 'lucide-react';
 import { ReflectionPage } from '../../planning';
-import MorningRoutine from '../components/MorningRoutine';
-import MiddayRoutine from '../components/MiddayRoutine';
+import FullMorning from '../components/FullMorning';
+import FullMidday from '../components/FullMidday';
 import LightMorning from '../components/LightMorning';
 import LightMidday from '../components/LightMidday';
 
@@ -32,8 +32,8 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate }) => {
     const [routineMode, setRoutineMode] = useState<RoutineMode>(() => {
         try {
             const saved = localStorage.getItem('routine_mode');
-            return saved === 'light' ? 'light' : 'full';
-        } catch { return 'full'; }
+            return saved === 'full' ? 'full' : 'light';
+        } catch { return 'light'; }
     });
 
     useEffect(() => {
@@ -86,10 +86,10 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate }) => {
 
             {mode === 'morning' && (isLight
                 ? <LightMorning onNavigate={onNavigate} />
-                : <MorningRoutine onNavigate={onNavigate} />)}
+                : <FullMorning onNavigate={onNavigate} />)}
             {mode === 'midday' && (isLight
                 ? <LightMidday onGoToMorning={() => setMode('morning')} />
-                : <MiddayRoutine onGoToMorning={() => setMode('morning')} />)}
+                : <FullMidday onGoToMorning={() => setMode('morning')} />)}
             {mode === 'night' && <ReflectionPage />}
         </div>
     );

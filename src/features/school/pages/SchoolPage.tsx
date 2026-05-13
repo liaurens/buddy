@@ -29,6 +29,7 @@ const SchoolPage: React.FC = () => {
     const [editingClass, setEditingClass] = useState<SchoolClass | null>(null);
     const [showAssignmentForm, setShowAssignmentForm] = useState(false);
     const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+    const [defaultAssignmentClassId, setDefaultAssignmentClassId] = useState<string | undefined>();
     const [showSessionForm, setShowSessionForm] = useState(false);
 
     const activeClasses = classes.filter(c => !c.archived);
@@ -100,6 +101,13 @@ const SchoolPage: React.FC = () => {
                     onDelete={c => {
                         if (confirm(`Delete "${c.name}" and all its assignments and class times?`)) deleteClass(c.id);
                     }}
+                    onAddAssignment={classId => {
+                        setEditingAssignment(null);
+                        setDefaultAssignmentClassId(classId);
+                        setShowAssignmentForm(true);
+                    }}
+                    onEditAssignment={a => { setEditingAssignment(a); setDefaultAssignmentClassId(undefined); setShowAssignmentForm(true); }}
+                    onCompleteAssignment={a => setStatus(a.id, 'submitted')}
                 />
             )}
 
@@ -128,7 +136,12 @@ const SchoolPage: React.FC = () => {
                 <AssignmentForm
                     initial={editingAssignment}
                     classes={activeClasses}
-                    onClose={() => { setShowAssignmentForm(false); setEditingAssignment(null); }}
+                    defaultClassId={editingAssignment ? undefined : defaultAssignmentClassId}
+                    onClose={() => {
+                        setShowAssignmentForm(false);
+                        setEditingAssignment(null);
+                        setDefaultAssignmentClassId(undefined);
+                    }}
                     onSubmit={async params => {
                         if (editingAssignment) await updateAssignment(editingAssignment.id, params);
                         else await addAssignment(params);

@@ -63,6 +63,7 @@ interface UseSkillsReturn {
     logs: Array<SkillLog & { projectId: string | null; minutes: number }>;
     isLoading: boolean;
     addSkill: (name: string, color: string, icon: string) => Promise<void>;
+    updateSkill: (id: string, patch: { name?: string; icon?: string; color?: string }) => Promise<void>;
     deleteSkill: (id: string) => Promise<void>;
     logActivity: (skillId: string, minutes: number, note: string, projectId?: string | null) => Promise<LogActivityResult>;
 }
@@ -116,6 +117,17 @@ export function useSkills(): UseSkillsReturn {
             color,
             icon,
         });
+        if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['skills', userId] });
+    }, [userId, queryClient]);
+
+    const updateSkill = useCallback(async (id: string, patch: { name?: string; icon?: string; color?: string }) => {
+        if (!userId) throw new Error('Not authenticated');
+        const { error } = await supabase
+            .from('skills')
+            .update({ ...patch, updated_at: new Date().toISOString() })
+            .eq('id', id)
+            .eq('user_id', userId);
         if (error) throw error;
         queryClient.invalidateQueries({ queryKey: ['skills', userId] });
     }, [userId, queryClient]);
@@ -185,5 +197,5 @@ export function useSkills(): UseSkillsReturn {
         return { xp: xpGained, critical: isCritical, levelUp, oldLevel, newLevel };
     }, [userId, skills, queryClient]);
 
-    return { skills, logs, isLoading, addSkill, deleteSkill, logActivity };
+    return { skills, logs, isLoading, addSkill, updateSkill, deleteSkill, logActivity };
 }

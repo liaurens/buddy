@@ -103,6 +103,28 @@ export const useTasks = (): TaskState => {
         return newTask.id;
     }, [userId, queryClient]);
 
+    const addTaskFull = useCallback(async (partial: Partial<Task> & { title: string }) => {
+        if (!userId) throw new Error('Not authenticated');
+
+        const newTask: Task = {
+            id: uuidv4(),
+            completed: false,
+            createdAt: new Date().toISOString(),
+            priority: 'medium',
+            subtasks: [],
+            recurrence: 'none',
+            ...partial,
+        };
+
+        const dbTask = todoToDb(newTask, userId);
+        const { error } = await supabase.from('todos').insert(dbTask);
+
+        if (error) throw error;
+        await syncTaskReminders(userId, newTask);
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        return newTask.id;
+    }, [userId, queryClient]);
+
     const toggleTask = useCallback(async (id: string) => {
         if (!userId) throw new Error('Not authenticated');
 
@@ -183,6 +205,11 @@ export const useTasks = (): TaskState => {
             reminder_offset_minutes: updates.reminderOffsetMinutes ?? null,
             reminder_at: updates.reminderAt || null,
             reminder_cadence: updates.reminderCadence || null,
+            task_type_id: updates.taskTypeId || null,
+            energy: updates.energy || null,
+            context: updates.context || null,
+            routine_id: updates.routineId || null,
+            routine_order: updates.routineOrder ?? null,
         };
 
         const { error } = await supabase
@@ -291,5 +318,5 @@ export const useTasks = (): TaskState => {
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
     }, [userId, queryClient]);
 
-    return { tasks, isLoading, addTask, toggleTask, deleteTask, updateTask, startTask, completeTaskWithDuration, rescheduleMany, completeMany, deleteMany };
+    return { tasks, isLoading, addTask, addTaskFull, toggleTask, deleteTask, updateTask, startTask, completeTaskWithDuration, rescheduleMany, completeMany, deleteMany };
 };

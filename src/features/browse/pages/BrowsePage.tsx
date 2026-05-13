@@ -9,9 +9,7 @@ import {
     Wrench,
     TrendingUp,
     CheckSquare,
-    LayoutGrid,
     Timer,
-    CalendarClock,
     Bell,
     GraduationCap,
 } from 'lucide-react';
@@ -34,8 +32,6 @@ const ITEMS: Array<{ tab: AppRoute; label: string; Icon: React.ComponentType<{ s
     { tab: 'experiments', label: 'Experiments', Icon: FlaskConical, group: 'Health' },
 
     { tab: 'calendar', label: 'Calendar', Icon: Calendar, group: 'Time' },
-    { tab: 'planning', label: 'Plan', Icon: CalendarClock, group: 'Time' },
-    { tab: 'planner', label: 'AI Planner', Icon: LayoutGrid, group: 'Time' },
     { tab: 'reflection', label: 'Reflect', Icon: TrendingUp, group: 'Time' },
     { tab: 'focus', label: 'Focus Timer', Icon: Timer, group: 'Time' },
 

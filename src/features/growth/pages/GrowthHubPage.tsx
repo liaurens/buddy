@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Target, FolderKanban, Trophy, Plus, Trash2, Flame, X, Clock,
-    CheckSquare, TrendingUp, Award, Zap, Archive, FolderOpen,
+    CheckSquare, TrendingUp, Award, Zap, Archive, FolderOpen, Pencil,
+    Image,
 } from 'lucide-react';
 import { useGoals, type Goal, type GoalType } from '../../core/hooks/useGoals';
 import { useProjects, type Project } from '../hooks/useProjects';
@@ -9,8 +10,10 @@ import { useSkills } from '../hooks/useSkills';
 import { LogActivityModal } from '../components/LogActivityModal';
 import { getRequiredXpForLevel, calculateTitle } from '../types';
 import type { Skill } from '../types';
+import { useAuth } from '../../../hooks/useAuth';
+import { getSetting, setSetting } from '../../../services/supabase';
 
-type HubTab = 'goals' | 'projects' | 'skills';
+type HubTab = 'goals' | 'projects' | 'skills' | 'vision';
 
 interface GrowthHubPageProps {
     initialParams?: Record<string, unknown> | null;
@@ -20,6 +23,7 @@ const TABS: Array<{ id: HubTab; label: string; Icon: React.ComponentType<{ size?
     { id: 'goals',    label: 'Goals',    Icon: Target },
     { id: 'projects', label: 'Projects', Icon: FolderKanban },
     { id: 'skills',   label: 'Skills',   Icon: Trophy },
+    { id: 'vision',   label: 'Vision',   Icon: Image },
 ];
 
 const GrowthHubPage: React.FC<GrowthHubPageProps> = ({ initialParams }) => {
@@ -50,6 +54,7 @@ const GrowthHubPage: React.FC<GrowthHubPageProps> = ({ initialParams }) => {
             {tab === 'goals' && <GoalsTab />}
             {tab === 'projects' && <ProjectsTab />}
             {tab === 'skills' && <SkillsTab />}
+            {tab === 'vision' && <VisionTab />}
         </div>
     );
 };
@@ -549,9 +554,10 @@ const SKILL_GRADIENTS = [
 const SKILL_ICONS = ['🧠', '💪', '📚', '🎨', '💻', '🎸', '🗣️', '🧘‍♂️', '🛠️', '🌿'];
 
 const SkillsTab: React.FC = () => {
-    const { skills, logs, isLoading, addSkill, deleteSkill, logActivity } = useSkills();
+    const { skills, logs, isLoading, addSkill, updateSkill, deleteSkill, logActivity } = useSkills();
     const { projects } = useProjects('active');
     const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
+    const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
     const [showAdd, setShowAdd] = useState(false);
     const [newName, setNewName] = useState('');
     const [pickedProjectId, setPickedProjectId] = useState<string>('');
@@ -628,6 +634,7 @@ const SkillsTab: React.FC = () => {
                             skill={skill}
                             totalMinutes={totalMinutesBySkill.get(skill.id) ?? 0}
                             onLog={() => setActiveSkillId(skill.id)}
+                            onEdit={() => setEditingSkill(skill)}
                             onDelete={() => {
                                 if (window.confirm(`Delete skill "${skill.name}"? All XP and logs will be lost.`)) {
                                     deleteSkill(skill.id);
@@ -661,6 +668,14 @@ const SkillsTab: React.FC = () => {
                     />
                 </div>
             )}
+
+            {editingSkill && (
+                <EditSkillModal
+                    skill={editingSkill}
+                    onClose={() => setEditingSkill(null)}
+                    onSave={(patch) => updateSkill(editingSkill.id, patch)}
+                />
+            )}
         </div>
     );
 };
@@ -669,10 +684,11 @@ interface SkillCardCompactProps {
     skill: Skill;
     totalMinutes: number;
     onLog: () => void;
+    onEdit: () => void;
     onDelete: () => void;
 }
 
-const SkillCardCompact: React.FC<SkillCardCompactProps> = ({ skill, totalMinutes, onLog, onDelete }) => {
+const SkillCardCompact: React.FC<SkillCardCompactProps> = ({ skill, totalMinutes, onLog, onEdit, onDelete }) => {
     const reqXp = getRequiredXpForLevel(skill.level);
     const progressPercent = Math.min(100, Math.floor((skill.xp / reqXp) * 100));
     const title = calculateTitle(skill.level);
@@ -682,11 +698,14 @@ const SkillCardCompact: React.FC<SkillCardCompactProps> = ({ skill, totalMinutes
     return (
         <div className="relative group overflow-hidden rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all">
             <div className="absolute top-0 left-0 right-0 h-1.5" style={{ backgroundImage: skill.color }} />
-            <button onClick={onDelete}
-                className="absolute top-3 right-3 text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                title="Delete skill">
-                <Trash2 size={14} />
-            </button>
+            <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={onEdit} className="p-1 text-slate-300 hover:text-indigo-500" title="Edit skill">
+                    <Pencil size={14} />
+                </button>
+                <button onClick={onDelete} className="p-1 text-slate-300 hover:text-red-400" title="Delete skill">
+                    <Trash2 size={14} />
+                </button>
+            </div>
             <div className="p-4 pt-5">
                 <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm"
@@ -718,6 +737,359 @@ const SkillCardCompact: React.FC<SkillCardCompactProps> = ({ skill, totalMinutes
                     className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors">
                     <Zap size={14} className="text-yellow-500" /> Log activity
                 </button>
+            </div>
+        </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Edit Skill Modal
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface EditSkillModalProps {
+    skill: Skill;
+    onClose: () => void;
+    onSave: (patch: { name?: string; icon?: string; color?: string }) => Promise<void>;
+}
+
+const EditSkillModal: React.FC<EditSkillModalProps> = ({ skill, onClose, onSave }) => {
+    const [name, setName] = useState(skill.name);
+    const [icon, setIcon] = useState(skill.icon);
+    const [color, setColor] = useState(skill.color);
+    const [saving, setSaving] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        setSaving(true);
+        try {
+            await onSave({ name: name.trim(), icon: icon || skill.icon, color });
+            onClose();
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl">
+                <div className="flex items-center justify-between p-5 border-b border-slate-100">
+                    <h2 className="font-semibold text-slate-900">Edit skill</h2>
+                    <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><X size={20} /></button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-5 space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Skill name</label>
+                        <input value={name} onChange={e => setName(e.target.value)} required autoFocus
+                            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+                    </div>
+                    <div className="flex gap-3">
+                        <div className="w-24">
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Icon</label>
+                            <input value={icon} onChange={e => setIcon(e.target.value)}
+                                placeholder="🎸"
+                                className="w-full text-center px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+                        </div>
+                        <div className="flex-1">
+                            <label className="block text-xs font-medium text-slate-600 mb-1">Color gradient</label>
+                            <div className="flex flex-wrap gap-1.5 mt-1">
+                                {SKILL_GRADIENTS.map(g => (
+                                    <button
+                                        key={g} type="button"
+                                        onClick={() => setColor(g)}
+                                        className={`w-7 h-7 rounded-lg border-2 transition-all ${color === g ? 'border-slate-800 scale-110' : 'border-transparent'}`}
+                                        style={{ backgroundImage: g }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                        <button type="button" onClick={onClose}
+                            className="flex-1 py-2 rounded-xl text-sm text-slate-600 hover:bg-slate-100 border border-slate-200">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={saving || !name.trim()}
+                            className="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                            {saving ? 'Saving…' : 'Save'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Vision Board Tab
+// ─────────────────────────────────────────────────────────────────────────────
+
+const VISION_SETTING_KEY = 'growth_vision_items';
+
+interface VisionItem {
+    id: string;
+    title: string;
+    description: string;
+    progress: string;
+    createdAt: string;
+    imageUrl?: string;
+}
+
+const VisionTab: React.FC = () => {
+    const { user } = useAuth();
+    const [items, setItems] = useState<VisionItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showAdd, setShowAdd] = useState(false);
+    const [editingItem, setEditingItem] = useState<VisionItem | null>(null);
+
+    useEffect(() => {
+        if (!user?.id) return;
+        getSetting(user.id, VISION_SETTING_KEY).then(raw => {
+            if (raw) {
+                try { setItems(JSON.parse(raw)); } catch { /* ignore */ }
+            }
+        }).finally(() => setLoading(false));
+    }, [user?.id]);
+
+    const persist = async (next: VisionItem[]) => {
+        if (!user?.id) return;
+        setItems(next);
+        await setSetting(user.id, VISION_SETTING_KEY, JSON.stringify(next));
+    };
+
+    const handleAdd = async (title: string, description: string, imageUrl?: string) => {
+        const item: VisionItem = {
+            id: crypto.randomUUID(),
+            title,
+            description,
+            progress: '',
+            createdAt: new Date().toISOString(),
+            imageUrl,
+        };
+        await persist([...items, item]);
+    };
+
+    const handleUpdateProgress = async (id: string, progress: string) => {
+        await persist(items.map(i => i.id === id ? { ...i, progress } : i));
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm('Remove this vision item?')) return;
+        await persist(items.filter(i => i.id !== id));
+    };
+
+    const handleEdit = async (id: string, title: string, description: string, imageUrl?: string) => {
+        await persist(items.map(i => i.id === id ? { ...i, title, description, imageUrl } : i));
+    };
+
+    if (loading) return <div className="text-center py-8 text-sm text-slate-400">Loading…</div>;
+
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-500">Things you want — and what you're doing to get there.</p>
+                <button onClick={() => setShowAdd(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors">
+                    <Plus size={16} /> Add
+                </button>
+            </div>
+
+            {items.length === 0 ? (
+                <EmptyState
+                    Icon={Image}
+                    title="No vision items yet"
+                    body="Add things you want and track what you're doing to get closer."
+                    action={{ label: 'Add vision item', onClick: () => setShowAdd(true) }}
+                />
+            ) : (
+                <div className="space-y-3">
+                    {items.map(item => (
+                        <VisionCard
+                            key={item.id}
+                            item={item}
+                            onUpdateProgress={handleUpdateProgress}
+                            onEdit={() => setEditingItem(item)}
+                            onDelete={() => handleDelete(item.id)}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {showAdd && (
+                <VisionItemForm
+                    onClose={() => setShowAdd(false)}
+                    onSave={handleAdd}
+                />
+            )}
+
+            {editingItem && (
+                <VisionItemForm
+                    initial={editingItem}
+                    onClose={() => setEditingItem(null)}
+                    onSave={async (title, description, imageUrl) => {
+                        await handleEdit(editingItem.id, title, description, imageUrl);
+                    }}
+                />
+            )}
+        </div>
+    );
+};
+
+interface VisionCardProps {
+    item: VisionItem;
+    onUpdateProgress: (id: string, progress: string) => Promise<void>;
+    onEdit: () => void;
+    onDelete: () => void;
+}
+
+const VisionCard: React.FC<VisionCardProps> = ({ item, onUpdateProgress, onEdit, onDelete }) => {
+    const [progress, setProgress] = useState(item.progress);
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => { setProgress(item.progress); }, [item.id]);
+
+    const handleBlur = async () => {
+        if (progress === item.progress) return;
+        setSaving(true);
+        try { await onUpdateProgress(item.id, progress); } finally { setSaving(false); }
+    };
+
+    return (
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            {item.imageUrl && (
+                <img src={item.imageUrl} alt={item.title}
+                    className="w-full h-40 object-cover" />
+            )}
+            <div className="p-4 space-y-3">
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-slate-900 text-sm">{item.title}</h3>
+                    {item.description && (
+                        <p className="text-xs text-slate-500 mt-0.5">{item.description}</p>
+                    )}
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                    <button onClick={onEdit} className="p-1.5 text-slate-300 hover:text-indigo-500 transition-colors">
+                        <Pencil size={14} />
+                    </button>
+                    <button onClick={onDelete} className="p-1.5 text-slate-300 hover:text-red-400 transition-colors">
+                        <Trash2 size={14} />
+                    </button>
+                </div>
+            </div>
+            <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">What I did to get closer</label>
+                <textarea
+                    value={progress}
+                    onChange={e => setProgress(e.target.value)}
+                    onBlur={handleBlur}
+                    placeholder="Write what actions you took or progress you made…"
+                    rows={2}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
+                />
+                {saving && <p className="text-xs text-slate-400 mt-1">Saving…</p>}
+            </div>
+            </div>
+        </div>
+    );
+};
+
+interface VisionItemFormProps {
+    initial?: VisionItem;
+    onClose: () => void;
+    onSave: (title: string, description: string, imageUrl?: string) => Promise<void>;
+}
+
+const resizeImage = (file: File, maxWidth = 900): Promise<string> =>
+    new Promise((resolve, reject) => {
+        const img = new window.Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            const scale = Math.min(1, maxWidth / img.width);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve(canvas.toDataURL('image/jpeg', 0.75));
+        };
+        img.onerror = reject;
+        img.src = url;
+    });
+
+const VisionItemForm: React.FC<VisionItemFormProps> = ({ initial, onClose, onSave }) => {
+    const [title, setTitle] = useState(initial?.title ?? '');
+    const [description, setDescription] = useState(initial?.description ?? '');
+    const [imageUrl, setImageUrl] = useState<string | undefined>(initial?.imageUrl);
+    const [saving, setSaving] = useState(false);
+
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const resized = await resizeImage(file);
+        setImageUrl(resized);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!title.trim()) return;
+        setSaving(true);
+        try {
+            await onSave(title.trim(), description.trim(), imageUrl);
+            onClose();
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
+                <div className="flex items-center justify-between p-5 border-b border-slate-100">
+                    <h2 className="font-semibold text-slate-900">{initial ? 'Edit vision item' : 'Add vision item'}</h2>
+                    <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><X size={20} /></button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-5 space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">What do you want?</label>
+                        <input value={title} onChange={e => setTitle(e.target.value)} required autoFocus
+                            placeholder="e.g. Travel to Japan, Learn to surf…"
+                            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Why does this matter? (optional)</label>
+                        <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2}
+                            placeholder="Why you want this, what it means to you…"
+                            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none" />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Picture (optional)</label>
+                        {imageUrl && (
+                            <div className="relative mb-2">
+                                <img src={imageUrl} alt="preview" className="w-full h-32 object-cover rounded-xl" />
+                                <button type="button" onClick={() => setImageUrl(undefined)}
+                                    className="absolute top-1.5 right-1.5 bg-black/50 text-white rounded-full p-0.5 hover:bg-black/70">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        )}
+                        <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors">
+                            <Image size={16} className="text-slate-400" />
+                            <span className="text-sm text-slate-500">{imageUrl ? 'Change picture' : 'Upload a picture'}</span>
+                            <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                        </label>
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                        <button type="button" onClick={onClose}
+                            className="flex-1 py-2 rounded-xl text-sm text-slate-600 hover:bg-slate-100 border border-slate-200">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={saving || !title.trim()}
+                            className="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                            {saving ? 'Saving…' : initial ? 'Save' : 'Add'}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );

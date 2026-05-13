@@ -16,7 +16,6 @@ import { tasksTool } from './tasks.tool.ts'
 import { calendarTool } from './calendar.tool.ts'
 import { habitsTool } from './habits.tool.ts'
 import { notificationsTool } from './notifications.tool.ts'
-import { plannerTool } from './planner.tool.ts'
 
 // Health domain
 import { trackerTool } from './tracker.tool.ts'
@@ -50,7 +49,6 @@ export const ALL_TOOLS: ToolDefinition[] = [
   calendarTool,
   habitsTool,
   notificationsTool,
-  plannerTool,
 
   // Health
   trackerTool,

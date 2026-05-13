@@ -5,10 +5,12 @@
  * Stores learning preferences in localStorage for adaptation over time.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, Loader2, Check, X, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { getAIService, isAIConfigured } from '../../planning/services/ai.service';
+import { getAIService, isAIConfigured, initializeAIService } from '../../planning/services/ai.service';
+import { useAuth } from '../../../hooks/useAuth';
+import { supabase } from '../../../services/supabase';
 import type { Task, Subtask } from '../types';
 
 interface AITaskSplitterProps {
@@ -103,9 +105,34 @@ ${task.labels?.length ? `Labels: ${task.labels.join(', ')}` : ''}`;
 }
 
 const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel }) => {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [suggestions, setSuggestions] = useState<SplitSuggestion[] | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [ready, setReady] = useState(isAIConfigured());
+
+    useEffect(() => {
+        if (!user?.id || ready) return;
+        void (async () => {
+            const { data } = await supabase
+                .from('settings')
+                .select('key, value')
+                .eq('user_id', user.id)
+                .in('key', ['ai_aiProvider', 'ai_aiApiKey', 'ai_aiModel']);
+            if (!data) return;
+            const m = data.reduce((acc, s) => {
+                acc[s.key] = s.value;
+                return acc;
+            }, {} as Record<string, string>);
+            const provider = m['ai_aiProvider'] as 'openai' | 'anthropic' | 'gemini' | undefined;
+            const apiKey = m['ai_aiApiKey'];
+            const model = m['ai_aiModel'];
+            if (provider && apiKey) {
+                initializeAIService({ provider, apiKey, model: model || undefined });
+                setReady(true);
+            }
+        })();
+    }, [user?.id, ready]);
 
     const handleGenerate = async () => {
         const aiService = getAIService();
@@ -186,7 +213,7 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
                 <div className="flex gap-2">
                     <button
                         onClick={handleGenerate}
-                        disabled={!isAIConfigured()}
+                        disabled={!ready}
                         className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         <Sparkles size={14} />
@@ -199,10 +226,10 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
                         Cancel
                     </button>
                 </div>
-                {!isAIConfigured() && (
+                {!ready && (
                     <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                         <AlertCircle size={12} />
-                        Configure an AI provider in Planning settings first.
+                        Configure an AI provider in Account settings first.
                     </p>
                 )}
             </div>
