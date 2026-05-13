@@ -21,14 +21,45 @@ for (const tool of ALL_TOOLS) {
   }
 }
 
-// Legacy flag → slash command mapping for backward compatibility
+// Legacy flag → slash command mapping. Keeps Dutch/EN flag style usable
+// from the iPhone Shortcut so the user can skip the AI for common cases.
 const LEGACY_FLAG_MAP: Record<string, string> = {
+  // Shopping
   '-shop': '/shop',
   '-boodschap': '/shop',
   '-boodschappen': '/shop',
+  // Tasks
   '-task': '/task',
   '-todo': '/task',
   '-taak': '/task',
+  '-done': '/done',
+  '-klaar': '/done',
+  // Notes
+  '-note': '/note',
+  '-notitie': '/note',
+  '-find': '/find',
+  '-zoek': '/find',
+  // Reminders / notifications
+  '-remind': '/remind',
+  '-reminder': '/remind',
+  '-herinner': '/remind',
+  '-herinnering': '/remind',
+  // Health / mood / journal
+  '-mood': '/mood',
+  '-stemming': '/mood',
+  '-checkin': '/checkin',
+  '-meting': '/checkin',
+  '-journal': '/journal',
+  '-dagboek': '/journal',
+  // Goals / study
+  '-goal': '/goal',
+  '-doel': '/goal',
+  '-study': '/study',
+  '-studie': '/study',
+  // Calendar / habits
+  '-agenda': '/agenda',
+  '-habits': '/habits',
+  '-gewoontes': '/habits',
 }
 
 /**

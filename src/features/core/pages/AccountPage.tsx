@@ -319,14 +319,15 @@ const AccountPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Quick Notes API Section */}
+            {/* Quick Capture API Section */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3 mb-4">
                     <Zap className="text-cyan-600" size={24} />
-                    <h2 className="text-xl font-semibold text-slate-800">Quick Notes API</h2>
+                    <h2 className="text-xl font-semibold text-slate-800">Quick Capture API (iPhone Shortcut)</h2>
                 </div>
                 <p className="text-sm text-slate-500 mb-4">
-                    Use this API key with iPhone Shortcuts to quickly capture notes via back-tap.
+                    Use this API key with an iPhone Shortcut to capture anything via Siri / back-tap.
+                    Free text → AI figures it out. Prefix with a flag (e.g. <code>-remind 14:00 …</code>) to skip AI.
                 </p>
 
                 {apiKey ? (
@@ -351,9 +352,36 @@ const AccountPage: React.FC = () => {
                             <RefreshCw size={14} className={isGeneratingKey ? 'animate-spin' : ''} />
                             Regenerate Key
                         </button>
-                        <div className="mt-4 p-3 bg-cyan-50 rounded-lg border border-cyan-100">
-                            <p className="text-xs text-cyan-800">
-                                <strong>Endpoint:</strong> Your Supabase URL + <code>/functions/v1/quick-note</code>
+                        <div className="mt-4 p-3 bg-cyan-50 rounded-lg border border-cyan-100 space-y-2">
+                            <p className="text-xs text-cyan-900">
+                                <strong>Endpoint:</strong> <code>{`<supabase-url>/functions/v1/assistant`}</code> (POST)
+                            </p>
+                            <p className="text-xs text-cyan-900">
+                                <strong>Body:</strong> <code>{`{ "input": "<text>", "api_key": "<key above>", "source": "iphone" }`}</code>
+                            </p>
+                            <p className="text-xs text-cyan-900">
+                                <strong>Response:</strong> JSON with <code>success</code>, <code>action_taken</code>, <code>data</code>. Show <code>action_taken</code> in a Notification action to confirm.
+                            </p>
+                        </div>
+                        <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <p className="text-xs font-semibold text-slate-700 mb-2">Flag cheat sheet (skip AI):</p>
+                            <ul className="text-xs text-slate-600 space-y-1 font-mono">
+                                <li><code>-task</code> / <code>-todo</code> &nbsp; fix bike by friday</li>
+                                <li><code>-done</code> &nbsp; fix bike</li>
+                                <li><code>-note</code> &nbsp; idea for the chapter intro</li>
+                                <li><code>-find</code> &nbsp; machine learning</li>
+                                <li><code>-shop</code> / <code>-boodschap</code> &nbsp; milk, eggs</li>
+                                <li><code>-remind</code> &nbsp; 14:00 call dentist &nbsp;<em>(needs a time)</em></li>
+                                <li><code>-mood</code> &nbsp; 4 feeling good</li>
+                                <li><code>-checkin</code> &nbsp; sleep 7 energy 3</li>
+                                <li><code>-journal</code> &nbsp; today I learned…</li>
+                                <li><code>-goal</code> &nbsp; read 20 books this year</li>
+                                <li><code>-study</code> &nbsp; linear algebra 2h</li>
+                                <li><code>-agenda</code> &nbsp; <em>(today's calendar)</em></li>
+                                <li><code>-habits</code> &nbsp; <em>(streaks &amp; open tasks)</em></li>
+                            </ul>
+                            <p className="text-[11px] text-slate-500 mt-2">
+                                No flag → AI routes it. Slash form (<code>/task …</code>) works too.
                             </p>
                         </div>
                     </div>

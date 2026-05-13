@@ -92,8 +92,8 @@ async function handleScheduleNotification(
   if (!time) {
     return {
       success: false,
-      action_taken: 'Could not parse a time from your input. Try "om 14:00" or "in 2 uur".',
-      data: {},
+      action_taken: 'Reminder needs a time. Try "/remind 14:00 call dentist" or "in 2 uur opbellen".',
+      data: { needs_param: 'time', example: '/remind 14:00 call dentist' },
     }
   }
 

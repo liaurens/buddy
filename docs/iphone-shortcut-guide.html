@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Buddy — iPhone Shortcut & Quick Capture Guide</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; color: #1f2937; line-height: 1.45; font-size: 11pt; }
+  h1 { font-size: 22pt; margin: 0 0 6pt; color: #0f172a; }
+  h2 { font-size: 14pt; margin: 18pt 0 6pt; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 3pt; }
+  h3 { font-size: 12pt; margin: 12pt 0 4pt; color: #0f172a; }
+  p, li { font-size: 10.5pt; }
+  code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 9.5pt; }
+  code { background: #f1f5f9; padding: 1px 4px; border-radius: 3px; color: #0f172a; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 10pt 12pt; border-radius: 6pt; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt; }
+  th, td { border: 1px solid #e2e8f0; padding: 5pt 8pt; text-align: left; font-size: 10pt; vertical-align: top; }
+  th { background: #f8fafc; }
+  .pill { display: inline-block; padding: 1pt 6pt; border-radius: 9pt; background: #ecfeff; color: #0e7490; font-size: 9pt; margin-right: 4pt; }
+  .callout { background: #fffbeb; border-left: 3pt solid #f59e0b; padding: 8pt 10pt; margin: 10pt 0; border-radius: 4pt; font-size: 10pt; }
+  .ok { background: #ecfdf5; border-left-color: #10b981; }
+  ol, ul { padding-left: 18pt; }
+  .small { font-size: 9.5pt; color: #475569; }
+  hr { border: 0; border-top: 1px solid #e2e8f0; margin: 14pt 0; }
+</style>
+</head>
+<body>
+
+<h1>Buddy — iPhone Shortcut &amp; Quick Capture Guide</h1>
+<p class="small">Single endpoint, one API key, AI by default, flags to skip the AI. Updated 2026-05-13.</p>
+
+<h2>1. The new picture</h2>
+<p>Before: your <code>Todo</code> Shortcut posted text to <code>/functions/v1/quick-note</code>. That endpoint only saved <em>notes</em> with simple <code>-flag</code> sorting. No AI, no tasks, no reminders, no confirmation.</p>
+<p>After: one Shortcut posts text to <code>/functions/v1/assistant</code> — the same backend the in-app chat uses. It supports:</p>
+<ul>
+  <li><strong>Plain text</strong> → AI classifies and routes (note, task, reminder, mood, journal, check-in, etc.).</li>
+  <li><strong>Slash commands</strong> (<code>/task</code>, <code>/remind</code> …) → skip the AI, zero cost.</li>
+  <li><strong>Dash flags</strong> (<code>-task</code>, <code>-remind</code> …) → same as slash commands, easier to type on mobile.</li>
+  <li><strong>JSON response</strong> with <code>action_taken</code> → show as an iPhone notification to confirm what fired.</li>
+</ul>
+
+<h2>2. Authentication (no change)</h2>
+<p>Keep using the API key from <strong>Account → Quick Capture API</strong>. The assistant endpoint accepts the exact same key (it looks up the same <code>quick_note_api_key</code> setting). You don't need to regenerate.</p>
+
+<h2>3. Rebuild the Shortcut</h2>
+<p>Open <em>Shortcuts</em>, edit your <strong>Todo</strong> shortcut, delete the two existing actions, and add these:</p>
+
+<h3>Step 1 — Ask for Input</h3>
+<table>
+  <tr><th>Field</th><th>Value</th></tr>
+  <tr><td>Input Type</td><td>Text</td></tr>
+  <tr><td>Prompt</td><td><code>Capture</code> (or anything you like)</td></tr>
+</table>
+
+<h3>Step 2 — Get Contents of URL</h3>
+<table>
+  <tr><th>Field</th><th>Value</th></tr>
+  <tr><td>URL</td><td><code>https://kdwgznfszbrysepsltua.supabase.co/functions/v1/assistant</code></td></tr>
+  <tr><td>Method</td><td><code>POST</code></td></tr>
+  <tr><td>Headers</td><td><code>Content-Type</code> = <code>application/json</code></td></tr>
+  <tr><td>Request Body</td><td><em>JSON</em></td></tr>
+  <tr><td>JSON keys</td>
+      <td>
+        <code>input</code> → <em>Provided Input</em> (the text from step 1)<br/>
+        <code>api_key</code> → your API key from Account<br/>
+        <code>source</code> → <code>iphone</code>
+      </td>
+  </tr>
+</table>
+<div class="callout">
+  Your previous URL ended in <code>/quik-note</code> (typo) — that endpoint never worked. Use the URL above exactly, ending in <code>/assistant</code>.
+</div>
+
+<h3>Step 3 — Get Dictionary Value</h3>
+<p>From <em>Contents of URL</em>. Get value for key <code>action_taken</code>.</p>
+
+<h3>Step 4 — Show Notification</h3>
+<table>
+  <tr><th>Field</th><th>Value</th></tr>
+  <tr><td>Title</td><td><code>Buddy</code></td></tr>
+  <tr><td>Body</td><td>Dictionary Value from step 3</td></tr>
+</table>
+
+<div class="callout ok">
+  <strong>Optional polish.</strong> Add an <em>If</em> branch after step 2: get the <code>success</code> key — if it's <code>true</code>, run step 3+4 with a check-mark title; otherwise grab <code>error</code> or <code>action_taken</code> and show a warning notification.
+</div>
+
+<h2>4. The flag system (refined)</h2>
+<p>Three tiers run before the AI; the first one to match wins. AI is the fallback.</p>
+<ol>
+  <li><strong>Slash command</strong> — <code>/task fix bike by friday</code></li>
+  <li><strong>Dash flag</strong> — <code>-task fix bike by friday</code> (translates to <code>/task …</code>)</li>
+  <li><strong>Regex rule</strong> — natural-language patterns (e.g. "herinner me om 14:00…")</li>
+  <li><strong>AI</strong> — anything else (default route)</li>
+</ol>
+
+<h3>Flag reference</h3>
+<table>
+  <tr><th>Flag (EN)</th><th>Flag (NL)</th><th>Slash form</th><th>What it does</th><th>Example payload</th></tr>
+  <tr><td><code>-task</code> / <code>-todo</code></td><td><code>-taak</code></td><td><code>/task</code></td><td>Create a task. Accepts due date in text.</td><td><code>-task fix bike by friday</code></td></tr>
+  <tr><td><code>-done</code></td><td><code>-klaar</code></td><td><code>/done</code></td><td>Complete a task by title.</td><td><code>-done fix bike</code></td></tr>
+  <tr><td><code>-note</code></td><td><code>-notitie</code></td><td><code>/note</code></td><td>Create a smart note.</td><td><code>-note idea for chapter intro</code></td></tr>
+  <tr><td><code>-find</code></td><td><code>-zoek</code></td><td><code>/find</code></td><td>Search notes.</td><td><code>-find linear algebra</code></td></tr>
+  <tr><td><code>-shop</code></td><td><code>-boodschap</code> / <code>-boodschappen</code></td><td><code>/shop</code></td><td>Add to shopping list.</td><td><code>-shop milk, eggs</code></td></tr>
+  <tr><td><code>-remind</code> / <code>-reminder</code></td><td><code>-herinner</code> / <code>-herinnering</code></td><td><code>/remind</code></td><td>Schedule a reminder. <strong>Needs a time.</strong></td><td><code>-remind 14:00 call dentist</code><br/><code>-remind in 2 uur opbellen</code></td></tr>
+  <tr><td><code>-mood</code></td><td><code>-stemming</code></td><td><code>/mood</code></td><td>Log mood (1–5 + note).</td><td><code>-mood 4 feeling good</code></td></tr>
+  <tr><td><code>-checkin</code></td><td><code>-meting</code></td><td><code>/checkin</code></td><td>Log tracker values.</td><td><code>-checkin sleep 7 energy 3</code></td></tr>
+  <tr><td><code>-journal</code></td><td><code>-dagboek</code></td><td><code>/journal</code></td><td>Write a journal entry.</td><td><code>-journal today I noticed…</code></td></tr>
+  <tr><td><code>-goal</code></td><td><code>-doel</code></td><td><code>/goal</code></td><td>Create a goal.</td><td><code>-goal read 20 books this year</code></td></tr>
+  <tr><td><code>-study</code></td><td><code>-studie</code></td><td><code>/study</code></td><td>Log a study session.</td><td><code>-study linear algebra 2h</code></td></tr>
+  <tr><td><code>-agenda</code></td><td>—</td><td><code>/agenda</code></td><td>Show today's calendar.</td><td><code>-agenda</code></td></tr>
+  <tr><td><code>-habits</code></td><td><code>-gewoontes</code></td><td><code>/habits</code></td><td>Streaks &amp; open tasks.</td><td><code>-habits</code></td></tr>
+</table>
+
+<h3>Reminders &amp; extras (the "-remind needs a time" case)</h3>
+<p>When a flag needs an extra (time, value, score), include it in the same line. Examples that work without AI:</p>
+<pre><code>-remind 14:00 call dentist
+-remind 20:30 take supplements
+-remind in 2 uur opbellen
+-checkin sleep 7 energy 3 mood 4
+-mood 4 long walk this morning
+-study Linear algebra 90m
+-goal Run 5km by 2026-09-01</code></pre>
+<p>If the backend can't parse the extra (e.g. <code>-remind buy milk</code> with no time), the response comes back as:</p>
+<pre><code>{
+  "success": false,
+  "action_taken": "Reminder needs a time. Try \"/remind 14:00 call dentist\" or \"in 2 uur opbellen\".",
+  "data": { "needs_param": "time", "example": "/remind 14:00 call dentist" }
+}</code></pre>
+<p>Your Shortcut already shows <code>action_taken</code> as a notification, so you'll see this on your lock screen and can try again. If you want, add a follow-up step for reminders specifically:</p>
+<div class="callout">
+  <strong>Two-step reminder Shortcut.</strong><br/>
+  1. <em>Ask for Input</em> — "What should I remind you of?"<br/>
+  2. <em>Ask for Input</em> — "When?" (e.g. <code>14:00</code> or <code>in 2 uur</code>)<br/>
+  3. <em>Text</em> action — combine into <code>-remind {When} {What}</code><br/>
+  4. <em>Get Contents of URL</em> — same as above, with that text as <code>input</code>.<br/>
+  This is the closest you can get to "iPhone prompts for extras". Shortcuts doesn't support reading a response and asking another question in one chain without you wiring it up explicitly.
+</div>
+
+<h2>5. Sample request &amp; response</h2>
+<h3>Request</h3>
+<pre><code>POST /functions/v1/assistant
+Content-Type: application/json
+
+{
+  "input": "-task buy groceries tomorrow",
+  "api_key": "your-key-here",
+  "source": "iphone"
+}</code></pre>
+
+<h3>Response (success)</h3>
+<pre><code>{
+  "success": true,
+  "intent": "task.create",
+  "domain": "planning",
+  "action_taken": "Created task 'buy groceries' due 2026-05-14",
+  "data": { "task_id": "…", "title": "buy groceries", "due_date": "2026-05-14" }
+}</code></pre>
+
+<h3>Response (free text → AI)</h3>
+<pre><code>POST … { "input": "remember to call mom on sunday", "api_key": "…", "source": "iphone" }
+
+{
+  "success": true,
+  "intent": "task.create",
+  "domain": "planning",
+  "action_taken": "Created task 'call mom' due 2026-05-17",
+  "data": { … }
+}</code></pre>
+
+<h2>6. Multiple Shortcuts (optional)</h2>
+<p>You can keep ONE catch-all Shortcut, or build a few focused ones — same endpoint, same body, just prefilling the flag:</p>
+<table>
+  <tr><th>Shortcut name</th><th>Prefilled body</th></tr>
+  <tr><td>Buddy: Capture</td><td><code>input</code> = Provided Input (no flag — AI routes it)</td></tr>
+  <tr><td>Buddy: Task</td><td><code>input</code> = <code>-task </code> + Provided Input</td></tr>
+  <tr><td>Buddy: Remind</td><td>Two prompts (What? + When?) combined into <code>-remind {When} {What}</code></td></tr>
+  <tr><td>Buddy: Shop</td><td><code>input</code> = <code>-shop </code> + Provided Input</td></tr>
+  <tr><td>Buddy: Mood</td><td><code>input</code> = <code>-mood </code> + Provided Input</td></tr>
+</table>
+<p>Tip: back-tap on iPhone can only run one shortcut, so pick the catch-all for back-tap and put the focused ones on the home screen / Siri.</p>
+
+<h2>7. Troubleshooting</h2>
+<table>
+  <tr><th>Symptom</th><th>Check</th></tr>
+  <tr><td>401 Authentication failed</td><td>API key wrong or not saved. Regenerate from Account.</td></tr>
+  <tr><td>400 input is required</td><td>Body JSON missing <code>input</code>. Verify Step 2 has Request Body set to JSON, not Form.</td></tr>
+  <tr><td>Notification shows raw JSON</td><td>Step 3 missing — add "Get Dictionary Value" for <code>action_taken</code> before "Show Notification".</td></tr>
+  <tr><td>Reminders never fire</td><td>You need a working push subscription. Open the web app once, allow notifications, confirm in Account.</td></tr>
+  <tr><td>Free text routed to wrong tool</td><td>Add a flag prefix to force routing — flags always beat the AI.</td></tr>
+</table>
+
+<h2>8. What changed in this rehaul</h2>
+<ul>
+  <li><strong>Endpoint switch:</strong> Shortcut now points at <code>/functions/v1/assistant</code> (full backend) instead of <code>/functions/v1/quick-note</code> (notes only).</li>
+  <li><strong>Flag system expanded:</strong> 14 new flag aliases (EN + NL) in <code>command-parser.ts</code> — every common slash command has a dash twin.</li>
+  <li><strong>Better reminder errors:</strong> when a time is missing the response includes <code>needs_param: "time"</code> with a usable example.</li>
+  <li><strong>Account page docs:</strong> updated to show new endpoint, body shape, and the full flag cheat sheet.</li>
+</ul>
+
+<hr/>
+<p class="small">Edge function: <code>supabase/functions/assistant/</code> &nbsp;·&nbsp; Flag mapping: <code>core/command-parser.ts</code> &nbsp;·&nbsp; Reminder handler: <code>tools/notifications.tool.ts</code></p>
+
+</body>
+</html>

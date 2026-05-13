@@ -22,5 +22,6 @@ export async function setSetting(userId: string, key: string, value: string): Pr
 
     if (error) {
         console.error('Error setting value:', error);
+        throw error;
     }
 }
