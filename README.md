@@ -1,8 +1,8 @@
 # Student Buddy App
 
-**A personal companion for executive function, self-regulation, and holistic life tracking.**
+**A personal executive-function scaffold for capture, planning, routines, school organization, health tracking, reflection, and AI-assisted follow-through.**
 
-The Student Buddy App helps you manage your daily life, understand your habits through data, and stay focused on your goals. It combines task management, focus tools, and detailed life tracking with correlation analysis.
+Student Buddy helps you capture what is on your mind, decide what matters next, follow through during the day, and learn from what actually happened. It combines task and note management, daily planning, school workflows, reminders, focus tools, health and mood tracking, personal experiments, growth goals, and a natural-language AI assistant backed by structured Supabase data.
 
 ## Documentation
 
@@ -29,7 +29,13 @@ The Student Buddy App helps you manage your daily life, understand your habits t
 - **Quick Notes**: Fast note capture with flag-based auto-categorization
 - **Checklists**: Reusable checklists for recurring routines
 
+### School & Capture
+- **AI Capture Assistant**: Turn natural language into tasks, notes, reminders, logs, and plans
+- **School Hub**: Manage classes, assignments, deadlines, weekly sessions, and course documents
+- **Notifications**: Per-task reminders and gentle nudges for important routines
+
 ### Personal Growth
+- **Growth Hub**: Track goals, skills, projects, XP, and long-term progress
 - **Strategy Library**: Build your personal playbook of tactics and best practices
 
 ## Project Structure
@@ -39,6 +45,9 @@ src/features/
 ├── health-tracking/    # Analytics and experimentation
 ├── planning/           # Daily planning and time management
 ├── tasks/              # Task and note management
+├── assistant/          # AI capture and structured assistant tools
+├── school/             # Classes, deadlines, sessions, and documents
+├── growth/             # Goals, skills, projects, and XP
 ├── focus/              # Focus tools and timers
 ├── checklists/         # Reusable checklists
 ├── toolbox/            # Personal strategies library
