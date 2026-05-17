@@ -43,19 +43,19 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="app-page">
             {/* Page Header */}
-            <div className="mb-4 flex justify-between items-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Health Tracking</h1>
-                    <p className="text-slate-500">Monitor your metrics and discover patterns</p>
+                    <h1 className="app-title">Health Tracking</h1>
+                    <p className="app-subtitle">Monitor your metrics and discover patterns.</p>
                 </div>
                 <button
                     onClick={() => {
                         setEditingTracker(undefined);
                         setIsCreateModalOpen(true);
                     }}
-                    className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+                    className="app-primary-button self-start sm:self-auto"
                 >
                     <Plus size={18} />
                     <span>New Tracker</span>
@@ -63,24 +63,24 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
             </div>
 
             {/* Tracker Sub-Navigation */}
-            <div className="flex p-1 bg-slate-200 rounded-lg">
+            <div className="app-segmented">
                 <button
                     onClick={() => setTrackerSubTab('dashboard')}
-                    className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${trackerSubTab === 'dashboard' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    className={`app-segment ${trackerSubTab === 'dashboard' ? 'app-segment-active' : ''
                         }`}
                 >
                     Dashboard
                 </button>
                 <button
                     onClick={() => setTrackerSubTab('add')}
-                    className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${trackerSubTab === 'add' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    className={`app-segment ${trackerSubTab === 'add' ? 'app-segment-active' : ''
                         }`}
                 >
                     Add Entry
                 </button>
                 <button
                     onClick={() => setTrackerSubTab('analysis')}
-                    className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${trackerSubTab === 'analysis' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    className={`app-segment ${trackerSubTab === 'analysis' ? 'app-segment-active' : ''
                         }`}
                 >
                     Analysis

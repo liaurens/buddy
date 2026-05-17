@@ -45,7 +45,7 @@ export {
     dbToClass, classToDb,
     dbToAssignment, assignmentToDb,
     dbToClassSession, classSessionToDb,
-    type SchoolClass, type Assignment, type ClassSession, type AssignmentStatus,
+    type SchoolClass, type Assignment, type ClassSession, type ClassDocument, type AssignmentStatus,
 } from './converters/school';
 
 // Converters - Notes

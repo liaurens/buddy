@@ -1,5 +1,6 @@
 import { supabase } from '../../../services/supabase'
 import type { AssistantRequest, AssistantResponse } from '../types'
+import type { AssistantCommandMetadata } from '../types'
 
 /**
  * Calls the assistant edge function with an authenticated session.
@@ -20,6 +21,17 @@ export async function sendAssistantMessage(input: string): Promise<AssistantResp
   }
 
   return data as AssistantResponse
+}
+
+/**
+ * Fetch the live registry of slash commands from the backend. Used by the
+ * frontend hint dropdown so it stays in sync with whichever tools are
+ * actually registered server-side.
+ */
+export async function fetchAssistantCommands(): Promise<AssistantCommandMetadata[]> {
+  const response = await invokeAssistantAction('extra', 'system.commands')
+  const commands = (response.data?.commands as AssistantCommandMetadata[] | undefined) ?? []
+  return commands
 }
 
 /**

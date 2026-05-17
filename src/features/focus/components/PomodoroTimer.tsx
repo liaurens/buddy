@@ -97,15 +97,16 @@ const PomodoroTimer: React.FC = () => {
         : ((breakDuration * 60 - timeLeft) / (breakDuration * 60)) * 100;
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+        <div className="app-page-readable">
+        <div className="app-surface p-6">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                <h2 className="app-title flex items-center gap-2">
                     {mode === 'work' ? <Brain className="text-indigo-500" /> : <Coffee className="text-emerald-500" />}
                     Focus Timer
                 </h2>
                 <button
                     onClick={() => setShowSettings(true)}
-                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                    className="app-icon-button"
                     aria-label="Pomodoro Settings"
                 >
                     <Settings size={20} />
@@ -140,7 +141,7 @@ const PomodoroTimer: React.FC = () => {
                         />
                     </svg>
 
-                    <div className="text-5xl font-bold text-slate-800 font-mono">
+                    <div className="font-mono text-5xl font-semibold text-slate-900">
                         {formatTime(timeLeft)}
                     </div>
                 </div>
@@ -165,17 +166,17 @@ const PomodoroTimer: React.FC = () => {
                 </div>
 
                 {/* Mode Switcher */}
-                <div className="flex bg-slate-100 p-1 rounded-lg">
+                <div className="app-segmented">
                     <button
                         onClick={() => switchMode('work')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${mode === 'work' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                        className={`app-segment ${mode === 'work' ? 'app-segment-active text-indigo-700' : ''
                             }`}
                     >
                         Focus ({workDuration}m)
                     </button>
                     <button
                         onClick={() => switchMode('break')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${mode === 'break' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                        className={`app-segment ${mode === 'break' ? 'app-segment-active text-emerald-700' : ''
                             }`}
                     >
                         Break ({breakDuration}m)
@@ -200,6 +201,7 @@ const PomodoroTimer: React.FC = () => {
                     }
                 }}
             />
+        </div>
         </div>
     );
 };

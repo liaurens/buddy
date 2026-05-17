@@ -102,7 +102,7 @@ const App: React.FC = () => {
         return <ChecklistsPage />;
       case 'assistant':
         return (
-          <div className="max-w-2xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
+          <div className="mx-auto flex h-[calc(100vh-7rem)] w-full max-w-6xl flex-col lg:h-[calc(100vh-4rem)]">
             <AssistantChat onNavigate={handleNavigate} />
           </div>
         );

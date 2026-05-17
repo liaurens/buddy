@@ -188,7 +188,7 @@ export const notesTool: ToolDefinition = {
   ],
 
   commands: [
-    { command: '/note', action: 'note.create', description: 'Create a note: /note Buy new headphones' },
+    { command: '/note', action: 'note.create', description: 'Create a note: /note Buy new headphones', primary: true },
     { command: '/shop', action: 'note.create.shopping', description: 'Add to shopping list: /shop Milk and cheese' },
     { command: '/find', action: 'note.query', description: 'Search notes: /find machine learning' },
   ],

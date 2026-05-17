@@ -34,10 +34,10 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
     });
 
     return (
-        <div className="space-y-6 animate-fadeIn">
+        <div className="app-page-readable animate-fadeIn">
             <button
                 onClick={onBack}
-                className="flex items-center text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+                className="flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -45,7 +45,7 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                 Back to Checklists
             </button>
 
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div className="app-surface p-5">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-4">
                         <span className="text-5xl">{checklist.emoji}</span>
@@ -58,25 +58,25 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                                     onChange={(e) => setEditName(e.target.value)}
                                     onBlur={handleUpdateTitle}
                                     onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle()}
-                                    className="text-2xl font-bold bg-transparent border-b-2 border-blue-500 focus:outline-none text-gray-900 dark:text-white w-full"
+                                    className="w-full border-b-2 border-indigo-500 bg-transparent text-2xl font-semibold text-slate-900 focus:outline-none"
                                 />
                             ) : (
                                 <h1
-                                    className="text-3xl font-bold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 transition-colors"
+                                    className="cursor-pointer text-2xl font-semibold text-slate-900 transition-colors hover:text-indigo-700"
                                     onClick={() => setIsEditingTitle(true)}
                                     title="Click to edit name"
                                 >
                                     {checklist.name}
                                 </h1>
                             )}
-                            <p className="text-gray-500">{checklist.items.length} items</p>
+                            <p className="text-slate-500">{checklist.items.length} items</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => resetChecklist(checklist)}
-                            className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                            className="app-secondary-button"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
@@ -90,7 +90,7 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                                     onBack();
                                 }
                             }}
-                            className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
+                            className="rounded-lg p-2 text-rose-500 transition-colors hover:bg-rose-50"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -110,7 +110,7 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                     ))}
 
                     {checklist.items.length === 0 && (
-                        <div className="text-center py-10 text-gray-500 bg-gray-50 dark:bg-gray-700/30 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-600">
+                        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 py-10 text-center text-slate-500">
                             <p>No items yet. Add one below!</p>
                         </div>
                     )}
@@ -122,12 +122,12 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                         placeholder="Add a new item..."
                         value={newItemText}
                         onChange={(e) => setNewItemText(e.target.value)}
-                        className="w-full pl-4 pr-12 py-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                        className="w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-4 pr-12 outline-none transition-all focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
                     />
                     <button
                         type="submit"
                         disabled={!newItemText.trim()}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-blue-500 text-white rounded-md disabled:opacity-50 hover:bg-blue-600 transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-indigo-700 p-1.5 text-white transition-colors hover:bg-indigo-800 disabled:opacity-50"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />

@@ -21,23 +21,23 @@ const ProtocolsPage = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="app-page">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Protocols</h1>
-                    <p className="text-slate-500">Manage your supplements, medications, and routines.</p>
+                    <h1 className="app-title">Protocols</h1>
+                    <p className="app-subtitle">Manage your supplements, medications, and routines.</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowSettings(true)}
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                        className="app-icon-button"
                         aria-label="Protocol Settings"
                     >
                         <Settings size={20} />
                     </button>
                     <button
                         onClick={() => setIsFormOpen(true)}
-                        className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                        className="app-primary-button"
                     >
                         <Plus size={20} />
                         Add Protocol

@@ -179,24 +179,23 @@ const ReflectionPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6">
-            <div className="max-w-4xl mx-auto space-y-6">
+        <div className="app-page">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-800">Daily Reflection</h1>
-                        <p className="text-slate-600">90 seconds — wins, blocker, tomorrow's one thing.</p>
+                        <h1 className="app-title">Daily Reflection</h1>
+                        <p className="app-subtitle">90 seconds: wins, blocker, tomorrow's one thing.</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <input
                             type="date"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="rounded-lg border border-slate-200 px-4 py-2 focus:ring-2 focus:ring-indigo-100"
                         />
                         <button
                             onClick={() => setShowSettings(true)}
-                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                            className="app-icon-button"
                             aria-label="Reflection Settings"
                         >
                             <Settings size={20} />
@@ -205,7 +204,7 @@ const ReflectionPage: React.FC = () => {
                 </div>
 
                 {/* Sparkline */}
-                <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-100">
+                <div className="app-surface p-5">
                     <div className="flex items-center justify-between mb-3">
                         <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Last 14 days</h2>
                     </div>
@@ -635,7 +634,6 @@ const ReflectionPage: React.FC = () => {
                     isOpen={showSettings}
                     onClose={() => setShowSettings(false)}
                 />
-            </div>
         </div>
     );
 };

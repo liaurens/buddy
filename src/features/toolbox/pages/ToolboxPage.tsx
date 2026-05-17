@@ -127,20 +127,20 @@ const ToolboxPage: React.FC = () => {
     });
 
     return (
-        <div className="max-w-4xl mx-auto p-4 pb-24 h-[calc(100vh-80px)] flex gap-6">
+        <div className="app-page flex h-[calc(100vh-7rem)] gap-6 lg:h-[calc(100vh-4rem)]">
 
             {/* Left Panel: List */}
             <div className={`flex-1 flex flex-col space-y-4 ${selectedStrategy ? 'hidden md:flex' : 'flex'}`}>
                 <header className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                        <div className="p-2 bg-amber-100 rounded-xl text-amber-600">
+                    <h1 className="app-title flex items-center gap-3">
+                        <div className="rounded-xl bg-amber-50 p-2 text-amber-600">
                             <Lightbulb size={24} />
                         </div>
                         Toolbox
                     </h1>
                     <button
                         onClick={() => setShowSettings(true)}
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                        className="app-icon-button"
                         aria-label="Toolbox Settings"
                     >
                         <Settings size={20} />
@@ -152,8 +152,8 @@ const ToolboxPage: React.FC = () => {
                             <button
                                 key={tag.label}
                                 onClick={() => setActiveFilterTag(activeFilterTag === tag.label ? null : tag.label)}
-                                className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold transition-all border ${activeFilterTag === tag.label
-                                    ? 'bg-slate-800 text-white border-slate-800'
+                                className={`whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${activeFilterTag === tag.label
+                                    ? 'border-indigo-700 bg-indigo-700 text-white'
                                     : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                                     }`}
                             >
@@ -170,14 +170,14 @@ const ToolboxPage: React.FC = () => {
                         placeholder="Search strategies..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 shadow-sm outline-none focus:ring-2 focus:ring-indigo-100"
                     />
                 </div>
 
                 <div className="flex-1 overflow-y-auto space-y-3 pb-20">
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="w-full p-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-bold flex items-center justify-center gap-2 hover:border-indigo-300 hover:text-indigo-500 transition-all"
+                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 p-4 font-medium text-slate-400 transition-all hover:border-indigo-300 hover:text-indigo-600"
                     >
                         <Plus size={20} /> Add New Strategy
                     </button>
@@ -186,8 +186,8 @@ const ToolboxPage: React.FC = () => {
                         <div
                             key={strategy.id}
                             onClick={() => setSelectedStrategy(strategy)}
-                            className={`bg-white p-4 rounded-xl border cursor-pointer transition-all text-left ${selectedStrategy?.id === strategy.id
-                                ? 'border-primary-500 shadow-md ring-1 ring-primary-500'
+                            className={`cursor-pointer rounded-xl border bg-white p-4 text-left transition-all ${selectedStrategy?.id === strategy.id
+                                ? 'border-indigo-300 shadow-md ring-1 ring-indigo-200'
                                 : 'border-slate-100 shadow-sm hover:border-slate-300'
                                 }`}
                         >
@@ -220,7 +220,7 @@ const ToolboxPage: React.FC = () => {
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 md:p-0">
-                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:h-full flex flex-col">
+                        <div className="app-surface flex flex-col p-6 md:h-full">
 
                             <div className="flex items-start justify-between mb-6">
                                 <div>

@@ -22,27 +22,37 @@ import { getManager } from '../managers/index.ts'
 import { logInteraction } from '../tools/learnings.tool.ts'
 import { logError } from './error-logger.ts'
 import { runAgentLoop, type AgentLoopResult } from './agent-loop.ts'
+import { classifyWithAI, type ClarifyCandidate } from './ai-classifier.ts'
 
 /**
  * Build an AssistantResponse from an agent-loop run.
  * Aggregates per-step results so the UI can render ✓/✗ for each step.
  */
-function buildAgentResponse(input: string, loop: AgentLoopResult): AssistantResponse {
+function buildAgentResponse(
+  input: string,
+  loop: AgentLoopResult,
+  clarifyCandidates: ClarifyCandidate[] = []
+): AssistantResponse {
   const anyFailed = loop.steps.some(s => !s.result.success)
   const isEmpty = loop.steps.length === 0 && !loop.finalText
 
   // Empty case: model returned no tool calls AND no text. Surface as a soft clarify
   // (amber styling), not a hard error — user's input was understood as English but
-  // the model declined to act.
+  // the model declined to act. Attach candidate actions so the user can pick one
+  // without retyping; AssistantResponseCard renders them as buttons.
   if (isEmpty) {
     return {
       success: true,
       intent: 'general.question',
       domain: 'extra',
-      action_taken: `I'm not sure how to handle that — could you rephrase?`,
+      action_taken: clarifyCandidates.length > 0
+        ? "I'm not sure which of these you meant — pick one or rephrase."
+        : `I'm not sure how to handle that — could you rephrase?`,
       data: {
         clarify: true,
         stoppedReason: loop.stoppedReason,
+        candidates: clarifyCandidates,
+        original: input,
       },
       steps: [],
     }
@@ -194,7 +204,39 @@ export async function handleRequest(
           // Persist failure transcripts for debugging
           maybeLogFailureReport(input, loopResult, context)
 
-          const response = buildAgentResponse(input, loopResult)
+          // If the loop produced no tool calls and no text, ask the cheap
+          // classifier for candidate intents so the user can disambiguate
+          // without retyping. Only worth the extra call on this rare path.
+          let clarifyCandidates: ClarifyCandidate[] = []
+          const isEmptyLoop = loopResult.steps.length === 0 && !loopResult.finalText
+          if (isEmptyLoop && context.aiConfig?.key) {
+            try {
+              const classified = await classifyWithAI(
+                input,
+                context.aiConfig.key,
+                context.aiConfig.provider,
+                context.aiConfig.model
+              )
+              aiCalls.record(classified.aiResult)
+              const top: ClarifyCandidate = {
+                domain: classified.routed.domain,
+                intent: classified.routed.action,
+                label: classified.routed.action.split('.')[0] || classified.routed.action,
+              }
+              const seen = new Set<string>([`${top.domain}:${top.intent}`])
+              const merged = [top, ...classified.alternatives.filter(a => {
+                const key = `${a.domain}:${a.intent}`
+                if (seen.has(key)) return false
+                seen.add(key)
+                return true
+              })]
+              clarifyCandidates = merged.slice(0, 4)
+            } catch {
+              // Classifier failure is non-fatal — fall back to the plain clarify message.
+            }
+          }
+
+          const response = buildAgentResponse(input, loopResult, clarifyCandidates)
           // Fire-and-forget interaction log
           logInteraction(
             {

@@ -14,12 +14,16 @@ CREATE INDEX IF NOT EXISTS idx_task_types_user_id ON task_types(user_id);
 
 ALTER TABLE task_types ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own task types" ON task_types;
 CREATE POLICY "Users can view own task types"
     ON task_types FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert own task types" ON task_types;
 CREATE POLICY "Users can insert own task types"
     ON task_types FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update own task types" ON task_types;
 CREATE POLICY "Users can update own task types"
     ON task_types FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can delete own task types" ON task_types;
 CREATE POLICY "Users can delete own task types"
     ON task_types FOR DELETE USING (auth.uid() = user_id);
 
@@ -37,12 +41,16 @@ CREATE INDEX IF NOT EXISTS idx_task_routines_user_id ON task_routines(user_id);
 
 ALTER TABLE task_routines ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own routines" ON task_routines;
 CREATE POLICY "Users can view own routines"
     ON task_routines FOR SELECT USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can insert own routines" ON task_routines;
 CREATE POLICY "Users can insert own routines"
     ON task_routines FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can update own routines" ON task_routines;
 CREATE POLICY "Users can update own routines"
     ON task_routines FOR UPDATE USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can delete own routines" ON task_routines;
 CREATE POLICY "Users can delete own routines"
     ON task_routines FOR DELETE USING (auth.uid() = user_id);
 
@@ -61,18 +69,22 @@ CREATE INDEX IF NOT EXISTS idx_task_routine_items_routine_id ON task_routine_ite
 
 ALTER TABLE task_routine_items ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own routine items" ON task_routine_items;
 CREATE POLICY "Users can view own routine items"
     ON task_routine_items FOR SELECT USING (
         EXISTS (SELECT 1 FROM task_routines r WHERE r.id = task_routine_items.routine_id AND r.user_id = auth.uid())
     );
+DROP POLICY IF EXISTS "Users can insert own routine items" ON task_routine_items;
 CREATE POLICY "Users can insert own routine items"
     ON task_routine_items FOR INSERT WITH CHECK (
         EXISTS (SELECT 1 FROM task_routines r WHERE r.id = task_routine_items.routine_id AND r.user_id = auth.uid())
     );
+DROP POLICY IF EXISTS "Users can update own routine items" ON task_routine_items;
 CREATE POLICY "Users can update own routine items"
     ON task_routine_items FOR UPDATE USING (
         EXISTS (SELECT 1 FROM task_routines r WHERE r.id = task_routine_items.routine_id AND r.user_id = auth.uid())
     );
+DROP POLICY IF EXISTS "Users can delete own routine items" ON task_routine_items;
 CREATE POLICY "Users can delete own routine items"
     ON task_routine_items FOR DELETE USING (
         EXISTS (SELECT 1 FROM task_routines r WHERE r.id = task_routine_items.routine_id AND r.user_id = auth.uid())

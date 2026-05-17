@@ -69,6 +69,7 @@ export const useTasks = (): TaskState => {
                 .from('todos')
                 .select('*')
                 .eq('user_id', userId)
+                .is('assignment_id', null)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;

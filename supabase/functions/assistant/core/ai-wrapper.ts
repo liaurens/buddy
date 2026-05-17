@@ -298,6 +298,16 @@ export interface CallAIWithToolsOptions {
   toolChoice?: 'auto' | 'any'             // 'any' forces the model to call one of the tools
 }
 
+export interface AIDocumentInput {
+  name: string
+  mediaType: string
+  base64: string
+}
+
+export interface CallAIWithDocumentsOptions extends CallAIWithToolsOptions {
+  documents: AIDocumentInput[]
+}
+
 /**
  * Provider-agnostic tool-use turn. Returns either text (`stopReason: 'end_turn'`)
  * or tool calls for the loop to execute (`stopReason: 'tool_use'`).
@@ -324,6 +334,192 @@ export async function callAIWithTools(
   }
 }
 
+/**
+ * Provider-agnostic single-turn tool-use call with inline documents.
+ * Used by dedicated import flows that need structured extraction from PDFs.
+ */
+export async function callAIWithDocuments(
+  text: string,
+  tools: AIToolDef[],
+  config: AIConfig,
+  options: CallAIWithDocumentsOptions
+): Promise<AIToolCallResult> {
+  const startTime = Date.now()
+  const model = options.model || DEFAULT_MODELS[config.provider] || DEFAULT_MODELS.anthropic
+  try {
+    if (config.provider === 'anthropic') {
+      return await callAnthropicDocuments(text, tools, config.key, model, options, startTime)
+    } else if (config.provider === 'gemini') {
+      return await callGeminiDocuments(text, tools, config.key, model, options, startTime)
+    } else {
+      return await callOpenAIDocuments(text, tools, config.key, model, options, startTime)
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    throw new Error(`AI document call failed [${config.provider}/${model}]: ${message}`)
+  }
+}
+
+async function callAnthropicDocuments(
+  text: string,
+  tools: AIToolDef[],
+  apiKey: string,
+  model: string,
+  options: CallAIWithDocumentsOptions,
+  startTime: number
+): Promise<AIToolCallResult> {
+  const content: Array<Record<string, unknown>> = [
+    ...options.documents.map(doc => ({
+      type: 'document',
+      source: {
+        type: 'base64',
+        media_type: doc.mediaType,
+        data: doc.base64,
+      },
+    })),
+    { type: 'text', text },
+  ]
+
+  const body: Record<string, unknown> = {
+    model,
+    max_tokens: options.maxTokens ?? 2048,
+    messages: [{ role: 'user', content }],
+    tools: tools.map(t => ({
+      name: t.name,
+      description: t.description,
+      input_schema: t.input_schema,
+    })),
+  }
+  if (options.systemPrompt) body.system = options.systemPrompt
+  if (options.toolChoice === 'any') body.tool_choice = { type: 'any' }
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Anthropic API error: ${res.status} ${await res.text()}`)
+  }
+
+  const data = await res.json()
+  return parseAnthropicToolResponse(data, model, Date.now() - startTime)
+}
+
+async function callOpenAIDocuments(
+  text: string,
+  tools: AIToolDef[],
+  apiKey: string,
+  model: string,
+  options: CallAIWithDocumentsOptions,
+  startTime: number
+): Promise<AIToolCallResult> {
+  const body: Record<string, unknown> = {
+    model,
+    max_output_tokens: options.maxTokens ?? 2048,
+    input: [{
+      role: 'user',
+      content: [
+      ...options.documents.map(doc => ({
+        type: 'input_file',
+        filename: doc.name,
+        file_data: `data:${doc.mediaType};base64,${doc.base64}`,
+      })),
+      { type: 'input_text', text },
+      ],
+    }],
+    tools: tools.map(t => ({
+      type: 'function',
+      name: t.name,
+      description: t.description,
+      parameters: t.input_schema,
+    })),
+  }
+  if (options.systemPrompt) body.instructions = options.systemPrompt
+  if (options.toolChoice === 'any' && tools.length === 1) {
+    body.tool_choice = { type: 'function', name: tools[0].name }
+  } else if (options.toolChoice === 'any') {
+    body.tool_choice = 'required'
+  }
+
+  const res = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!res.ok) {
+    throw new Error(`OpenAI API error: ${res.status} ${await res.text()}`)
+  }
+
+  const data = await res.json()
+  return parseOpenAIResponsesToolResponse(data, model, Date.now() - startTime)
+}
+
+async function callGeminiDocuments(
+  text: string,
+  tools: AIToolDef[],
+  apiKey: string,
+  model: string,
+  options: CallAIWithDocumentsOptions,
+  startTime: number
+): Promise<AIToolCallResult> {
+  const body: Record<string, unknown> = {
+    contents: [{
+      role: 'user',
+      parts: [
+        ...options.documents.map(doc => ({
+          inline_data: {
+            mime_type: doc.mediaType,
+            data: doc.base64,
+          },
+        })),
+        { text },
+      ],
+    }],
+    tools: [{
+      functionDeclarations: tools.map(t => ({
+        name: t.name,
+        description: t.description,
+        parameters: stripSchemaForGemini(t.input_schema),
+      })),
+    }],
+    generationConfig: {
+      maxOutputTokens: options.maxTokens ?? 2048,
+    },
+  }
+  if (options.systemPrompt) {
+    body.systemInstruction = { parts: [{ text: options.systemPrompt }] }
+  }
+  if (options.toolChoice === 'any') {
+    body.toolConfig = { functionCallingConfig: { mode: 'ANY' } }
+  }
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    }
+  )
+
+  if (!res.ok) {
+    throw new Error(`Gemini API error: ${res.status} ${await res.text()}`)
+  }
+
+  const data = await res.json()
+  return parseGeminiToolResponse(data, model, Date.now() - startTime)
+}
+
 // ─── Anthropic tool-use ──────────────────────────────────────────────────────
 
 interface AnthropicContentBlock {
@@ -332,6 +528,154 @@ interface AnthropicContentBlock {
   id?: string
   name?: string
   input?: Record<string, unknown>
+}
+
+function parseAnthropicToolResponse(data: Record<string, unknown>, model: string, latencyMs: number): AIToolCallResult {
+  const blocks = (data.content || []) as AnthropicContentBlock[]
+  let content = ''
+  const toolCalls: AIToolCall[] = []
+  for (const b of blocks) {
+    if (b.type === 'text' && b.text) content += b.text
+    if (b.type === 'tool_use' && b.id && b.name) {
+      toolCalls.push({ id: b.id, name: b.name, input: (b.input as Record<string, unknown>) || {} })
+    }
+  }
+
+  const stopReason = data.stop_reason === 'tool_use'
+    ? 'tool_use'
+    : data.stop_reason === 'end_turn'
+      ? 'end_turn'
+      : data.stop_reason === 'max_tokens'
+        ? 'max_tokens'
+        : 'other'
+
+  const usage = (data.usage || {}) as Record<string, number>
+  return {
+    content,
+    toolCalls,
+    stopReason,
+    tokensIn: usage.input_tokens ?? 0,
+    tokensOut: usage.output_tokens ?? 0,
+    latencyMs,
+    model,
+    provider: 'anthropic',
+  }
+}
+
+function parseOpenAIToolResponse(data: Record<string, unknown>, model: string, latencyMs: number): AIToolCallResult {
+  const choices = (data.choices || []) as Array<Record<string, unknown>>
+  const choice = choices[0]
+  const msg = (choice?.message || {}) as Record<string, unknown>
+  const content = typeof msg.content === 'string' ? msg.content : ''
+  const toolCalls: AIToolCall[] = []
+  for (const tc of (msg.tool_calls || []) as Array<Record<string, unknown>>) {
+    const fn = (tc.function || {}) as Record<string, unknown>
+    let parsed: Record<string, unknown> = {}
+    try { parsed = JSON.parse(String(fn.arguments || '{}')) } catch { /* leave empty */ }
+    toolCalls.push({ id: String(tc.id), name: String(fn.name), input: parsed })
+  }
+
+  const finish = choice?.finish_reason
+  const stopReason = finish === 'tool_calls'
+    ? 'tool_use'
+    : finish === 'stop'
+      ? 'end_turn'
+      : finish === 'length'
+        ? 'max_tokens'
+        : 'other'
+
+  const usage = (data.usage || {}) as Record<string, number>
+  return {
+    content,
+    toolCalls,
+    stopReason,
+    tokensIn: usage.prompt_tokens ?? 0,
+    tokensOut: usage.completion_tokens ?? 0,
+    latencyMs,
+    model,
+    provider: 'openai',
+  }
+}
+
+function parseOpenAIResponsesToolResponse(data: Record<string, unknown>, model: string, latencyMs: number): AIToolCallResult {
+  const output = (data.output || []) as Array<Record<string, unknown>>
+  const toolCalls: AIToolCall[] = []
+  let content = ''
+
+  for (const item of output) {
+    if (item.type === 'function_call') {
+      let parsed: Record<string, unknown> = {}
+      try { parsed = JSON.parse(String(item.arguments || '{}')) } catch { /* leave empty */ }
+      toolCalls.push({
+        id: String(item.call_id || item.id || crypto.randomUUID()),
+        name: String(item.name),
+        input: parsed,
+      })
+    }
+
+    if (item.type === 'message') {
+      for (const part of (item.content || []) as Array<Record<string, unknown>>) {
+        if (typeof part.text === 'string') content += part.text
+        if (typeof part.output_text === 'string') content += part.output_text
+      }
+    }
+  }
+
+  if (!content && typeof data.output_text === 'string') {
+    content = data.output_text
+  }
+
+  const usage = (data.usage || {}) as Record<string, number>
+  return {
+    content,
+    toolCalls,
+    stopReason: toolCalls.length > 0 ? 'tool_use' : data.status === 'completed' ? 'end_turn' : 'other',
+    tokensIn: usage.input_tokens ?? 0,
+    tokensOut: usage.output_tokens ?? 0,
+    latencyMs,
+    model,
+    provider: 'openai',
+  }
+}
+
+function parseGeminiToolResponse(data: Record<string, unknown>, model: string, latencyMs: number): AIToolCallResult {
+  const candidates = (data.candidates || []) as Array<Record<string, unknown>>
+  const candidate = candidates[0]
+  const candidateContent = (candidate?.content || {}) as Record<string, unknown>
+  const parts = (candidateContent.parts || []) as Array<Record<string, unknown>>
+  let content = ''
+  const toolCalls: AIToolCall[] = []
+  for (const p of parts) {
+    if (typeof p.text === 'string') content += p.text
+    if (p.functionCall) {
+      const fn = p.functionCall as Record<string, unknown>
+      const name = String(fn.name)
+      toolCalls.push({
+        id: `gemini_${name}_${crypto.randomUUID().slice(0, 8)}`,
+        name,
+        input: (fn.args as Record<string, unknown>) || {},
+      })
+    }
+  }
+
+  const finish = candidate?.finishReason
+  const usage = (data.usageMetadata || {}) as Record<string, number>
+  return {
+    content,
+    toolCalls,
+    stopReason: toolCalls.length > 0
+      ? 'tool_use'
+      : finish === 'STOP'
+        ? 'end_turn'
+        : finish === 'MAX_TOKENS'
+          ? 'max_tokens'
+          : 'other',
+    tokensIn: usage.promptTokenCount ?? 0,
+    tokensOut: usage.candidatesTokenCount ?? 0,
+    latencyMs,
+    model,
+    provider: 'gemini',
+  }
 }
 
 async function callAnthropicTools(
@@ -496,35 +840,7 @@ async function callOpenAITools(
   }
 
   const data = await res.json()
-  const choice = data.choices?.[0]
-  const msg = choice?.message ?? {}
-  const content: string = msg.content ?? ''
-  const toolCalls: AIToolCall[] = []
-  for (const tc of msg.tool_calls || []) {
-    let parsed: Record<string, unknown> = {}
-    try { parsed = JSON.parse(tc.function?.arguments || '{}') } catch { /* leave empty */ }
-    toolCalls.push({ id: tc.id, name: tc.function?.name, input: parsed })
-  }
-
-  const finish = choice?.finish_reason
-  const stopReason = finish === 'tool_calls'
-    ? 'tool_use'
-    : finish === 'stop'
-      ? 'end_turn'
-      : finish === 'length'
-        ? 'max_tokens'
-        : 'other'
-
-  return {
-    content,
-    toolCalls,
-    stopReason,
-    tokensIn: data.usage?.prompt_tokens ?? 0,
-    tokensOut: data.usage?.completion_tokens ?? 0,
-    latencyMs: Date.now() - startTime,
-    model,
-    provider: 'openai',
-  }
+  return parseOpenAIToolResponse(data, model, Date.now() - startTime)
 }
 
 // ─── Gemini tool-use ─────────────────────────────────────────────────────────

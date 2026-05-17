@@ -11,7 +11,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { NotificationPermissionPrompt } from '../../../components/notifications';
 import { showLocalNotification, scheduleNotificationIn } from '../../../services/notifications';
 
-const AccountPage: React.FC = () => {
+interface AccountPageProps {
+    embedded?: boolean;
+}
+
+const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
     const { user, signOut } = useAuth();
     const { exportData, importData } = useTrackers();
     const toast = useToast();
@@ -189,19 +193,21 @@ const AccountPage: React.FC = () => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto p-4 pb-24 space-y-6">
+        <div className={embedded ? 'space-y-5' : 'app-page-readable'}>
             {/* Page Header */}
+            {!embedded && (
             <header>
-                <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                    <div className="p-2 bg-indigo-100 rounded-xl text-indigo-600">
+                <h1 className="app-title flex items-center gap-3">
+                    <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
                         <User size={24} />
                     </div>
                     Account
                 </h1>
             </header>
+            )}
 
             {/* Account Info */}
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl shadow-sm text-white">
+            <div className="rounded-xl border border-indigo-100 bg-indigo-700 p-5 text-white shadow-[0_12px_30px_rgba(37,50,155,0.14)]">
                 <div className="flex items-center gap-3 mb-4">
                     <User size={24} />
                     <h2 className="text-xl font-semibold">Profile</h2>
@@ -225,9 +231,9 @@ const AccountPage: React.FC = () => {
             </div>
 
             {/* AI Provider Settings */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+            <div className="app-surface p-5">
                 <div className="flex items-center gap-3 mb-4">
-                    <Brain className="text-purple-600" size={24} />
+                    <Brain className="text-indigo-700" size={24} />
                     <div>
                         <h2 className="text-xl font-semibold text-slate-800">AI Provider</h2>
                         <p className="text-xs text-slate-500">Powers the Buddy Assistant and AI planning</p>
@@ -241,7 +247,7 @@ const AccountPage: React.FC = () => {
                             <select
                                 value={aiSettings.aiProvider}
                                 onChange={(e) => setAiSettings({ ...aiSettings, aiProvider: e.target.value as AISettings['aiProvider'] })}
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm"
+                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                             >
                                 <option value="openai">OpenAI</option>
                                 <option value="anthropic">Anthropic</option>
@@ -256,7 +262,7 @@ const AccountPage: React.FC = () => {
                                 placeholder="Enter your API key"
                                 value={aiSettings.aiApiKey || ''}
                                 onChange={(e) => setAiSettings({ ...aiSettings, aiApiKey: e.target.value || null })}
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm"
+                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                             />
                             <p className="text-xs text-slate-400 mt-1">
                                 Get a key from your provider's dashboard. Stored in your account settings.
@@ -270,14 +276,14 @@ const AccountPage: React.FC = () => {
                                 placeholder="Leave blank for default"
                                 value={aiSettings.aiModel || ''}
                                 onChange={(e) => setAiSettings({ ...aiSettings, aiModel: e.target.value || null })}
-                                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300 text-sm"
+                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                             />
                         </div>
 
                         <button
                             onClick={handleSaveAiSettings}
                             disabled={aiSaving}
-                            className="w-full py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors text-sm"
+                            className="app-primary-button w-full py-2"
                         >
                             {aiSaving ? 'Saving...' : 'Save AI Settings'}
                         </button>
@@ -296,7 +302,7 @@ const AccountPage: React.FC = () => {
                     />
 
                     {/* Test Notification Buttons */}
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                    <div className="app-surface p-4">
                         <h3 className="text-sm font-semibold text-slate-700 mb-3">Test Notifications</h3>
                         <div className="flex gap-2">
                             <button
@@ -320,7 +326,7 @@ const AccountPage: React.FC = () => {
             )}
 
             {/* Quick Capture API Section */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+            <div className="app-surface p-5">
                 <div className="flex items-center gap-3 mb-4">
                     <Zap className="text-cyan-600" size={24} />
                     <h2 className="text-xl font-semibold text-slate-800">Quick Capture API (iPhone Shortcut)</h2>
@@ -405,7 +411,7 @@ const AccountPage: React.FC = () => {
             {user?.id && <AssistantDevPanel userId={user.id} />}
 
             {/* Data Management Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="app-surface overflow-hidden">
                 <div className="p-4 border-b border-slate-100 bg-slate-50">
                     <h2 className="font-bold text-slate-800">Data Management</h2>
                 </div>

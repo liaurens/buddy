@@ -391,7 +391,7 @@ export const tasksTool: ToolDefinition = {
   ],
 
   commands: [
-    { command: '/task', action: 'task.create', description: 'Create a task: /task Fix bike tire by friday' },
+    { command: '/task', action: 'task.create', description: 'Create a task: /task Fix bike tire by friday', primary: true },
     { command: '/task.list', action: 'task.list', description: 'List all open tasks' },
     { command: '/today', action: 'task.list.today', description: "Show today's tasks" },
     { command: '/done', action: 'task.complete', description: 'Complete a task: /done fix bike' },

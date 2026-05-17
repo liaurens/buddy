@@ -53,3 +53,12 @@ export interface AssistantConversation {
   updatedAt: number
   createdAt: number
 }
+
+/** Slash command metadata as served by the backend `system.commands` action. */
+export interface AssistantCommandMetadata {
+  command: string
+  description: string
+  domain: string
+  action: string
+  primary: boolean
+}

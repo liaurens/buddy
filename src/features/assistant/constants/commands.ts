@@ -1,4 +1,9 @@
-/** Single source of truth for assistant slash commands shown in UI hint dropdowns. */
+/**
+ * Offline fallback for the slash-command hint dropdown. The runtime source of
+ * truth is the backend `system.commands` action, exposed via
+ * `useAssistantCommands()`. This list is only used when that request fails
+ * (no auth, edge function down, etc.).
+ */
 export interface AssistantCommand {
     command: string;
     description: string;

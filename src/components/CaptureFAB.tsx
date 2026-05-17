@@ -87,8 +87,8 @@ const CaptureFAB: React.FC<CaptureFABProps> = ({ activeTab, onNavigate }) => {
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerCancel}
             aria-label="Quick capture (long-press for voice)"
-            className={`fixed right-5 bottom-28 z-30 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white transition-all active:scale-95 ${
-                recording ? 'bg-rose-600 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700'
+            className={`fixed bottom-28 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_14px_34px_rgba(37,50,155,0.24)] transition-all active:scale-95 lg:bottom-8 lg:right-8 ${
+                recording ? 'animate-pulse bg-rose-600' : 'bg-indigo-700 hover:bg-indigo-800'
             }`}
         >
             {recording ? <Mic size={24} /> : <Plus size={24} />}

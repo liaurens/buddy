@@ -35,21 +35,21 @@ const TypeSection: React.FC<TypeSectionProps> = ({
     if (tasks.length === 0) return null;
 
     return (
-        <section className={`rounded-2xl border-l-4 ${colors.border} bg-white border border-slate-100 shadow-sm`}>
+        <section className="space-y-2">
             <button
                 type="button"
                 onClick={() => setCollapsed(c => !c)}
-                className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-slate-50 transition-colors"
+                className="flex w-full items-center gap-2 px-1 py-1 text-left transition-colors"
             >
                 {collapsed ? <ChevronRight size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
                 {taskType?.emoji && <span className="text-base">{taskType.emoji}</span>}
-                <span className={`text-sm font-bold uppercase tracking-wider ${colors.text}`}>
+                <span className={`text-sm font-semibold ${colors.text}`}>
                     {taskType?.name || 'Uncategorized'}
                 </span>
-                <span className="text-xs text-slate-400 font-medium">({tasks.length})</span>
+                <span className="text-xs font-medium text-slate-400">{tasks.length}</span>
             </button>
             {!collapsed && (
-                <div className="px-3 pb-3 space-y-1.5">
+                <div className={`overflow-hidden rounded-xl border-l-2 ${colors.border} border border-slate-200 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.04)]`}>
                     {tasks.map(task => (
                         <TaskCard
                             key={task.id}

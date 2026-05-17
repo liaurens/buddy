@@ -30,6 +30,7 @@ export interface DbTodo {
     reminder_cadence?: 'single' | 'smart' | 'aggressive' | null;
     last_reminded_at?: string | null;
     task_type_id?: string | null;
+    assignment_id?: string | null;
     energy?: TaskEnergy | null;
     context?: TaskContext | null;
     routine_id?: string | null;

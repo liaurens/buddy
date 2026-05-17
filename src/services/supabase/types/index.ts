@@ -31,4 +31,4 @@ export type {
 export type { DbGoal, DbGoalLog } from './goal-types';
 
 // School types
-export type { DbClass, DbAssignment, DbClassSession } from './school-types';
+export type { DbClass, DbAssignment, DbClassDocument, DbClassSession, ClassDocumentKind } from './school-types';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckSquare, StickyNote, Activity } from 'lucide-react';
+import { Activity, CheckSquare, ChevronRight, StickyNote } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useRecentCaptures } from '../hooks/useRecentCaptures';
 import type { AppRoute } from '../../../constants/routes';
@@ -26,26 +26,36 @@ const RecentCaptures: React.FC<Props> = ({ onNavigate }) => {
     if (isLoading || items.length === 0) return null;
 
     return (
-        <section>
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-1">Recent</h3>
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100 shadow-sm">
+        <section className="overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-[0_16px_42px_rgba(15,23,42,0.045)]">
+            <div className="flex items-center justify-between px-5 py-4">
+                <h2 className="text-base font-semibold text-slate-950">Recent captures</h2>
+            </div>
+            <div className="divide-y divide-slate-100">
                 {items.map(item => {
                     const Icon = ICONS[item.kind];
                     return (
                         <button
-                            key={`${item.kind}-${item.id}`}
-                            onClick={() => onNavigate(KIND_TO_ROUTE[item.kind])}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left"
+                        key={`${item.kind}-${item.id}`}
+                        onClick={() => onNavigate(KIND_TO_ROUTE[item.kind])}
+                            className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-slate-50"
                         >
-                            <Icon size={14} className="text-slate-400 shrink-0" />
-                            <span className="flex-1 text-sm text-slate-700 truncate">{item.label}</span>
-                            <span className="text-xs text-slate-400 shrink-0">
+                            <Icon size={17} className="shrink-0 text-slate-500" />
+                            <span className="flex-1 truncate text-sm text-slate-700">{item.label}</span>
+                            <span className="shrink-0 text-xs text-slate-400">
                                 {formatDistanceToNow(new Date(item.createdAt), { addSuffix: false })}
                             </span>
                         </button>
                     );
                 })}
             </div>
+            <button
+                type="button"
+                onClick={() => onNavigate('browse')}
+                className="flex w-full items-center justify-between border-t border-slate-100 px-5 py-3 text-sm font-medium text-indigo-900 transition-colors hover:bg-slate-50"
+            >
+                View all captures
+                <ChevronRight size={16} className="text-slate-400" />
+            </button>
         </section>
     );
 };

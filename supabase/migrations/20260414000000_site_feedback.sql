@@ -16,11 +16,14 @@ ALTER TABLE public.site_feedback ENABLE ROW LEVEL SECURITY;
 
 -- Allow authenticating users or anon to insert feedback since this is a global dev tool.
 -- Replace with strictly authenticated rules if you plan to expose this site externally without user login.
+DROP POLICY IF EXISTS "Enable insert for all users" ON public.site_feedback;
 CREATE POLICY "Enable insert for all users" ON public.site_feedback
     FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Enable select for all users" ON public.site_feedback;
 CREATE POLICY "Enable select for all users" ON public.site_feedback
     FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Enable delete for all users" ON public.site_feedback;
 CREATE POLICY "Enable delete for all users" ON public.site_feedback
     FOR DELETE USING (true);

@@ -66,36 +66,41 @@ const MePage: React.FC = () => {
     const ActiveModal = openKey ? SETTINGS_REGISTRY.find(s => s.key === openKey)?.Modal : null;
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="app-page">
             <header className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-100 rounded-xl text-indigo-600">
+                <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
                     <SettingsIcon size={24} />
                 </div>
-                <h1 className="text-3xl font-bold text-slate-900">Me</h1>
+                <div>
+                    <h1 className="app-title">Me</h1>
+                    <p className="app-subtitle">Settings, account, notifications, and data.</p>
+                </div>
             </header>
 
-            {/* Feature Settings — single destination for all per-feature settings */}
-            <section className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
-                    <h2 className="font-semibold text-slate-800 text-sm">Feature Settings</h2>
-                </div>
-                <div className="divide-y divide-slate-100">
-                    {SETTINGS_REGISTRY.map(({ key, label, Icon }) => (
-                        <button
-                            key={key}
-                            onClick={() => setOpenKey(key)}
-                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left"
-                        >
-                            <Icon size={18} className="text-slate-500" />
-                            <span className="flex-1 text-sm text-slate-700">{label}</span>
-                            <ChevronRight size={16} className="text-slate-400" />
-                        </button>
-                    ))}
-                </div>
-            </section>
+            <div className="grid gap-5 lg:grid-cols-[21rem_minmax(0,1fr)] lg:items-start">
+                {/* Feature Settings - single destination for all per-feature settings */}
+                <section className="app-surface overflow-hidden lg:sticky lg:top-8">
+                    <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-3">
+                        <h2 className="text-sm font-semibold text-slate-800">Feature settings</h2>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                        {SETTINGS_REGISTRY.map(({ key, label, Icon }) => (
+                            <button
+                                key={key}
+                                onClick={() => setOpenKey(key)}
+                                className="app-row"
+                            >
+                                <Icon size={18} className="text-slate-500" />
+                                <span className="flex-1 text-sm text-slate-700">{label}</span>
+                                <ChevronRight size={16} className="text-slate-400" />
+                            </button>
+                        ))}
+                    </div>
+                </section>
 
-            {/* Account, AI provider, notifications, API key, dev panel, data management */}
-            <AccountPage />
+                {/* Account, AI provider, notifications, API key, dev panel, data management */}
+                <AccountPage embedded />
+            </div>
 
             {ActiveModal && (
                 <ActiveModal isOpen={true} onClose={() => setOpenKey(null)} />

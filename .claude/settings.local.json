@@ -84,7 +84,22 @@
       "Read(//Users/christine/.volta/bin/**)",
       "Read(//Users/christine/n/bin/**)",
       "mcp__claude_ai_Supabase__list_tables",
-      "mcp__claude_ai_Supabase__get_advisors"
+      "mcp__claude_ai_Supabase__get_advisors",
+      "Bash(python3 *)",
+      "Bash(command -v deno)",
+      "Bash(deno --version)",
+      "Bash(textutil -convert rtf iphone-shortcut-guide.html -output iphone-shortcut-guide.rtf)",
+      "Bash(/usr/sbin/cupsfilter -m application/pdf iphone-shortcut-guide.rtf)",
+      "Read(//tmp/**)",
+      "Bash(textutil -convert rtf iphone-shortcut-guide.html -output /tmp/guide.rtf)",
+      "Bash(/usr/sbin/cupsfilter --list-filters /tmp/guide.rtf)",
+      "Bash(/usr/bin/python3 -c \"import Cocoa, WebKit, Quartz\")",
+      "Bash(/usr/bin/python3 --version)",
+      "Bash(rm -f iphone-shortcut-guide.pdf iphone-shortcut-guide.rtf)",
+      "Bash(npx --yes md-to-pdf --help)",
+      "Bash(echo \"help_exit=$?\")",
+      "Bash(cp iphone-shortcut-guide.html /tmp/buddy-guide.md)",
+      "Bash(npx --yes md-to-pdf /tmp/buddy-guide.md --pdf-options '{\"format\":\"A4\",\"margin\":{\"top\":\"18mm\",\"bottom\":\"18mm\",\"left\":\"16mm\",\"right\":\"16mm\"},\"printBackground\":true}')"
     ]
   },
   "enabledMcpjsonServers": [

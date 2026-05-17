@@ -39,6 +39,9 @@ nul
 
 # Playwright MCP temp files
 .playwright-mcp/
+test-results/
+playwright-report/
+blob-report/
 
 # Supabase CLI temp files
 supabase/.temp/

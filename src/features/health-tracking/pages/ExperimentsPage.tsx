@@ -42,26 +42,26 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="app-page">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <h1 className="app-title flex items-center gap-2">
                         <FlaskConical className="text-indigo-600" />
                         Experiments
                     </h1>
-                    <p className="text-slate-500">Test your hypotheses and find what works for you.</p>
+                    <p className="app-subtitle">Test your hypotheses and find what works for you.</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setShowSettings(true)}
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                        className="app-icon-button"
                         aria-label="Experiment Settings"
                     >
                         <Settings size={20} />
                     </button>
                     <button
                         onClick={() => setIsWizardOpen(true)}
-                        className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
+                        className="app-primary-button"
                     >
                         <Plus size={20} />
                         New Experiment

@@ -138,10 +138,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
     return (
         <div>
             <div
-                className={`group bg-white p-3 rounded-xl border shadow-sm hover:border-indigo-200 transition-all ${
-                    isSelected ? 'border-indigo-400 ring-1 ring-indigo-200'
-                    : isTopPick ? 'border-indigo-200 ring-1 ring-indigo-100'
-                    : 'border-slate-100'
+                className={`group border-b border-slate-100 bg-white p-3 transition-all last:border-b-0 hover:bg-slate-50 ${
+                    isSelected ? 'ring-1 ring-inset ring-indigo-200'
+                    : isTopPick ? 'ring-1 ring-inset ring-indigo-100'
+                    : ''
                 }`}
             >
                 <div className="flex items-start gap-2.5">
@@ -171,7 +171,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium text-slate-800 leading-tight">{task.title}</p>
                             {isTopPick && (
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-600 uppercase">Top Pick</span>
+                                <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">Top pick</span>
                             )}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs">
@@ -223,7 +223,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             )}
                         </div>
                         {hasSubtasks && (
-                            <div className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
                                 <div
                                     className="h-full rounded-full bg-indigo-500 transition-all duration-300"
                                     style={{ width: `${progress}%` }}

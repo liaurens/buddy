@@ -27,9 +27,9 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
     };
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3">
+        <div className="app-surface p-3">
             <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-indigo-400 flex-shrink-0" />
+                <Sparkles size={16} className="flex-shrink-0 text-indigo-600" />
                 <input
                     type="text"
                     value={text}
@@ -41,12 +41,12 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
                         }
                     }}
                     placeholder="Add task… try 'email mom tomorrow 2pm'"
-                    className="flex-1 bg-transparent outline-none text-slate-800 placeholder:text-slate-300"
+                    className="flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
                 />
                 <button
                     onClick={() => void submit()}
                     disabled={!draft.title.trim() || busy}
-                    className="bg-indigo-600 text-white rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1"
+                    className="flex items-center gap-1 rounded-lg bg-indigo-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                     <Plus size={14} /> Add
                 </button>
@@ -55,23 +55,23 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
             {(matchedType || draft.dueDate || draft.priority || draft.energy) && (
                 <div className="mt-2 flex flex-wrap gap-1.5 text-xs pl-6">
                     {matchedType && (
-                        <span className="flex items-center gap-1 bg-slate-50 text-slate-700 rounded px-2 py-0.5">
+                        <span className="app-chip">
                             {matchedType.emoji} {matchedType.name}
                         </span>
                     )}
                     {draft.dueDate && (
-                        <span className="flex items-center gap-1 bg-slate-50 text-slate-700 rounded px-2 py-0.5">
+                        <span className="app-chip">
                             <CalendarIcon size={11} /> {draft.dueDate}
                             {draft.dueTime && ` ${draft.dueTime}`}
                         </span>
                     )}
                     {draft.priority && (
-                        <span className="bg-rose-50 text-rose-700 rounded px-2 py-0.5 font-bold uppercase tracking-wider">
+                        <span className="rounded-md bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
                             {draft.priority}
                         </span>
                     )}
                     {draft.energy && (
-                        <span className="bg-slate-50 text-slate-700 rounded px-2 py-0.5">
+                        <span className="app-chip">
                             {draft.energy} energy
                         </span>
                     )}

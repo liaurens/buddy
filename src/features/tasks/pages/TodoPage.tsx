@@ -149,14 +149,14 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
     const typesById = useMemo(() => new Map(taskTypes.map(t => [t.id, t])), [taskTypes]);
 
     return (
-        <div className="max-w-3xl mx-auto p-4 pb-32">
+        <div className="app-page">
             {/* Header */}
-            <header className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold text-slate-800">Tasks</h1>
-                    <span className="text-sm text-slate-400">{activeTasks.length} active</span>
+            <header className="hidden flex-col gap-3 sm:flex-row sm:items-end sm:justify-between lg:flex">
+                <div>
+                    <h1 className="app-title">Tasks</h1>
+                    <p className="app-subtitle">{activeTasks.length} active · grouped for easier scanning</p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 self-start sm:self-auto">
                     <ViewToggle view={view} onChange={setView} />
                     <IconButton title="Run a routine" onClick={() => setShowRoutines(true)}>
                         <Repeat size={18} />
@@ -171,7 +171,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
             </header>
 
             {flashMessage && (
-                <div className="mb-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-3 py-2">
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
                     {flashMessage}
                 </div>
             )}
@@ -179,7 +179,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
             <UpcomingDeadlinesBanner onOpenSchool={onNavigate ? () => onNavigate('school') : undefined} />
 
             {/* Quick capture */}
-            <div className="mb-3">
+            <div>
                 <QuickCapture
                     taskTypes={taskTypes}
                     onSubmit={async (draft) => {
@@ -198,7 +198,29 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
 
             {/* Filters */}
             {activeTasks.length > 0 && (
-                <div className="mb-4">
+                <>
+                <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-4 lg:hidden">
+                    {[
+                        { label: 'All', active: filter.typeId === 'all' && filter.energy === 'all', onClick: () => { setFilter({ typeId: 'all', energy: 'all' }); setView('type'); } },
+                        { label: 'Today', active: view === 'schedule', onClick: () => setView('schedule') },
+                        { label: 'Upcoming', active: false, onClick: () => setView('schedule') },
+                        { label: 'Someday', active: false, onClick: () => setView('schedule') },
+                        { label: 'Done', active: false, onClick: () => setView('type') },
+                    ].map(chip => (
+                        <button
+                            key={chip.label}
+                            onClick={chip.onClick}
+                            className={`whitespace-nowrap rounded-full border px-5 py-2 text-sm font-medium transition-colors ${
+                                chip.active
+                                    ? 'border-indigo-800 bg-indigo-800 text-white'
+                                    : 'border-slate-200 bg-white text-slate-600'
+                            }`}
+                        >
+                            {chip.label}
+                        </button>
+                    ))}
+                </div>
+                <div className="hidden lg:block">
                     <TaskFilters
                         taskTypes={taskTypes}
                         activeTasks={activeTasks}
@@ -206,6 +228,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                         onChange={setFilter}
                     />
                 </div>
+                </>
             )}
 
             {/* Body */}
@@ -221,7 +244,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                     }
                 />
             ) : view === 'type' ? (
-                <div className="space-y-3">
+                <div className="space-y-3 lg:max-w-4xl">
                     {taskTypes.map(type => (
                         <TypeSection
                             key={type.id}
@@ -251,7 +274,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                     )}
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 lg:max-w-4xl">
                     {(Object.keys(BUCKET_META) as BucketId[]).map(bucket => {
                         const tasks = scheduled[bucket];
                         if (tasks.length === 0) return null;
@@ -333,18 +356,18 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
 };
 
 const ViewToggle: React.FC<{ view: ViewMode; onChange: (v: ViewMode) => void }> = ({ view, onChange }) => (
-    <div className="flex bg-slate-100 rounded-lg p-0.5 mr-1">
+    <div className="mr-1 flex rounded-lg border border-slate-200 bg-slate-100/80 p-0.5">
         <button
             onClick={() => onChange('type')}
             title="Group by type"
-            className={`p-1.5 rounded ${view === 'type' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500'}`}
+            className={`rounded p-1.5 ${view === 'type' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
         >
             <LayoutGrid size={16} />
         </button>
         <button
             onClick={() => onChange('schedule')}
             title="Group by schedule"
-            className={`p-1.5 rounded ${view === 'schedule' ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-500'}`}
+            className={`rounded p-1.5 ${view === 'schedule' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
         >
             <CalendarDays size={16} />
         </button>
@@ -356,7 +379,7 @@ const IconButton: React.FC<{ title: string; onClick: () => void; children: React
         onClick={onClick}
         title={title}
         aria-label={title}
-        className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+        className="app-icon-button"
     >
         {children}
     </button>

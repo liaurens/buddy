@@ -51,6 +51,7 @@ export interface Task {
 
     // Categorization & batching
     taskTypeId?: string;
+    assignmentId?: string;
     energy?: TaskEnergy;
     context?: TaskContext;
     routineId?: string;

@@ -9,7 +9,7 @@ interface ChecklistItemProps {
 
 export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, onDelete }) => {
     return (
-        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg group">
+        <div className="group flex items-center gap-3 rounded-lg bg-slate-50 p-3">
             <button
                 onClick={(e) => {
                     e.stopPropagation();
@@ -18,8 +18,8 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, on
                 className={`
                     w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors
                     ${item.isChecked
-                        ? 'bg-green-500 border-green-500 text-white'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-green-500'}
+                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                        : 'border-slate-300 hover:border-emerald-500'}
                 `}
             >
                 {item.isChecked && (
@@ -29,7 +29,7 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, on
                 )}
             </button>
 
-            <span className={`flex-1 text-gray-900 dark:text-white transition-all ${item.isChecked ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
+            <span className={`flex-1 text-slate-900 transition-all ${item.isChecked ? 'text-slate-400 line-through' : ''}`}>
                 {item.text}
             </span>
 
@@ -38,7 +38,7 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, on
                     e.stopPropagation();
                     onDelete();
                 }}
-                className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-all"
+                className="p-2 text-slate-400 opacity-0 transition-all hover:text-rose-500 group-hover:opacity-100"
                 title="Delete Item"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

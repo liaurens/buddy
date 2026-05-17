@@ -36,15 +36,17 @@ const SmartNotesPage: React.FC = () => {
     };
 
     return (
-        <div className="p-4 pb-24">
-            <div className="max-w-2xl mx-auto space-y-6">
+        <div className="app-page-readable">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-slate-800">Quick Notes</h1>
+                    <div>
+                        <h1 className="app-title">Quick Notes</h1>
+                        <p className="app-subtitle">Capture and sort ideas without clutter.</p>
+                    </div>
                     <div className="flex gap-2">
                         <button
                             onClick={() => setIsSettingsOpen(true)}
-                            className="p-2 rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                            className="app-icon-button"
                             title="Settings"
                         >
                             <Settings className="w-5 h-5" />
@@ -78,16 +80,16 @@ const SmartNotesPage: React.FC = () => {
                 ) : (
                     <>
                         {/* Navigation Tabs */}
-                        <div className="flex p-1 bg-slate-200 rounded-lg">
+                        <div className="app-segmented">
                             <button
                                 onClick={() => {
                                     setViewMode('inbox');
                                     setSelectedCategoryId(null);
                                 }}
-                                className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${
+                                className={`app-segment ${
                                     viewMode === 'inbox'
-                                        ? 'bg-white text-slate-800 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700'
+                                        ? 'app-segment-active'
+                                        : ''
                                 }`}
                             >
                                 <Inbox className="w-4 h-4" />
@@ -100,10 +102,10 @@ const SmartNotesPage: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => setViewMode('all')}
-                                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                                className={`app-segment ${
                                     viewMode === 'all'
-                                        ? 'bg-white text-slate-800 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700'
+                                        ? 'app-segment-active'
+                                        : ''
                                 }`}
                             >
                                 All Notes
@@ -127,7 +129,7 @@ const SmartNotesPage: React.FC = () => {
                         {viewMode === 'all' && (
                             <div className="space-y-4">
                                 {/* Inbox Section */}
-                                <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div className="app-surface overflow-hidden">
                                     <button
                                         onClick={() => toggleCategory('inbox')}
                                         className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
@@ -154,7 +156,7 @@ const SmartNotesPage: React.FC = () => {
 
                                 {/* Category Sections */}
                                 {categories.map(category => (
-                                    <div key={category.id} className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                    <div key={category.id} className="app-surface overflow-hidden">
                                         <button
                                             onClick={() => toggleCategory(category.id)}
                                             className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
@@ -212,7 +214,6 @@ const SmartNotesPage: React.FC = () => {
                         )}
                     </>
                 )}
-            </div>
         </div>
     );
 };

@@ -43,39 +43,39 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate }) => {
     const isLight = routineMode === 'light';
 
     return (
-        <div className="max-w-2xl mx-auto space-y-4">
+        <div className="app-page-readable">
             <header>
-                <p className="text-slate-500 text-sm font-medium">{format(today, 'EEEE, MMMM do')}</p>
-                <h1 className="text-3xl font-bold text-slate-900 mt-1">Today</h1>
+                <p className="text-sm font-medium text-slate-500">{format(today, 'EEEE, MMMM do')}</p>
+                <h1 className="app-title mt-1">Today</h1>
             </header>
 
             {/* Routine mode toggle */}
-            <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+            <div className="app-segmented">
                 <button
                     onClick={() => setRoutineMode('full')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        !isLight ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    className={`app-segment ${
+                        !isLight ? 'app-segment-active' : ''
                     }`}
                 >
                     <Zap size={14} /> Full routine
                 </button>
                 <button
                     onClick={() => setRoutineMode('light')}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        isLight ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    className={`app-segment ${
+                        isLight ? 'app-segment-active' : ''
                     }`}
                 >
                     <Coffee size={14} /> Light day
                 </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1 rounded-xl">
+            <div className="app-segmented grid grid-cols-3">
                 {TABS.map(({ key, label, Icon }) => (
                     <button
                         key={key}
                         onClick={() => setMode(key)}
-                        className={`flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            mode === key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                        className={`app-segment ${
+                            mode === key ? 'app-segment-active' : ''
                         }`}
                     >
                         <Icon size={16} />

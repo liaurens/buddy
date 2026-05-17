@@ -76,9 +76,16 @@ export function useAssignments(options: UseAssignmentsOptions = {}) {
 
     const deleteAssignment = useCallback(async (id: string) => {
         if (!userId) throw new Error('Not authenticated');
+        const { error: todoError } = await supabase
+            .from('todos')
+            .delete()
+            .eq('assignment_id', id)
+            .eq('user_id', userId);
+        if (todoError) throw todoError;
         const { error } = await supabase.from('assignments').delete().eq('id', id).eq('user_id', userId);
         if (error) throw error;
         queryClient.invalidateQueries({ queryKey: ['assignments', userId] });
+        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
     }, [userId, queryClient]);
 
     return { assignments, isLoading, addAssignment, updateAssignment, setStatus, deleteAssignment };

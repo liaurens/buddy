@@ -3,7 +3,7 @@
 ## Status (2026-04-21)
 
 - **Phase 1 — Now layout**: done. `HomePage` is `AssistantPromptBar` → `NextUpCard` → `TodayCard` → `InsightCard` → `RecentCaptures`. Tool grid and `HabitDashboard` removed.
-- **Phase 2 — Capture mechanics**: mostly done. Shared `COMMANDS` registry, `PRIMARY_COMMANDS` top-4 picker, multiline brain-dump chunking, `CaptureFAB` (tap + long-press voice) wired end-to-end into `AssistantPromptBar` via `sessionStorage`. Classifier now reports `confidence` and surfaces clarification candidates when ambiguous. NL rule ghost-chip preview not shipped.
+- **Phase 2 — Capture mechanics**: done (2026-05-13). Shared `CaptureInput` powers both Home and the `/assistant` route with textarea + brain-dump + voice-draft consumption. The hint dropdown is now sourced from the backend `system.commands` action (no more frontend command drift). `system.route_preview` drives a debounced ghost chip ("→ task", "→ note") above the input when slash/flag/static-rule/dynamic-rule matches deterministically. Tier 3 runtime is the agentic tool-use loop in `core/agent-loop.ts`; the legacy classifier (`core/ai-classifier.ts`) is still around but only called as a *clarification fallback* — when the loop returns no tool calls and no text, the classifier produces 2–4 candidate intents which `AssistantResponseCard` renders as buttons.
 - **Phase 3 — Day view**: scaffold only. `DayPage` shell with morning/midday/night tabs embeds existing `PlanPage` / `CheckInPage` / `ReflectionPage`. Full split blocked on the 71 KB `PlannerPage.tsx` audit.
 - **Phase 4 — Agent visibility**: partial. Migration adds `user_visible` / `seen_at`. `InsightCard` live on Home; HR agent now emits `habit_trend` and `overdue_cluster` findings flagged user-visible. Weekly digest and trainer-rule toasts deferred pending end-to-end push verification.
 - **Phase 5 — Settings consolidation**: done. All 13 modals live in the `MePage` registry; no more per-page gear icons.
@@ -98,9 +98,9 @@ Right now there are 5+ capture paths: task form (`TodoPage`), note form (`NotesP
 
 Persistent floating action button, visible on every tab except Capture. Tap = open Capture tab with input focused. Long-press = voice capture (browser SpeechRecognition → text → assistant.send). This is the "zero-friction-from-anywhere" surface.
 
-**File: `supabase/functions/assistant/core/ai-classifier.ts`**
+**File: `supabase/functions/assistant/core/agent-loop.ts` + `core/ai-classifier.ts`**
 
-- The AI classifier is the Tier 3 fallback. Right now it classifies into domain+action. **Add a `confidence` field**, and if confidence < threshold, return a clarification response with 2–3 disambiguation buttons ("Task? Note? Shopping?"). This prevents silent misrouting, which is the single most trust-destroying failure mode in a capture-first app.
+- Tier 3 is now an agentic tool-use loop (`runAgentLoop`) — the model is given the schema-backed tool registry and chains tool calls itself, up to 8 iterations / 15 executions. The legacy `ai-classifier.ts` is reserved for the *clarification fallback*: if the loop returns no tool calls and no text, the classifier produces 2–4 candidate intents that the UI renders as disambiguation buttons. This combination prevents silent misrouting without forcing every request through a separate classifier call.
 
 ---
 

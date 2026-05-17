@@ -1,8 +1,8 @@
 # Adding a New Tool to the Assistant
 
-This guide walks through adding a new tool to the multi-agent assistant so that it slots into the existing 3-tier routing pipeline (slash commands → rules → AI classification) with no manual wiring.
+This guide walks through adding a new tool to the multi-agent assistant so that it slots into the existing 3-tier routing pipeline (slash commands → rules → agentic tool-use loop) with no manual wiring.
 
-Everything downstream — the General Manager, Domain Managers, command parser, rule engine, AI classifier, and `/help` — auto-discovers from the tool registry. Your job is to produce one `ToolDefinition` and register it.
+Everything downstream — the General Manager, Domain Managers, command parser, rule engine, agent loop, and `/help` — auto-discovers from the tool registry. Your job is to produce one `ToolDefinition` and register it. The agent loop only exposes actions that declare an `inputSchema`.
 
 Related reading: `ARCHITECTURE_PLAN.md` (big picture), `CLAUDE.md` (table names and gotchas).
 
@@ -48,7 +48,7 @@ export type Intent =
   | 'flashcard.stats'
 ```
 
-Why this matters: the `Intent` union is the single source of truth used by the AI classifier prompt, the rule engine, the command parser, and `DomainManager.hasAction()`. If an action isn't in the union, TypeScript catches it at build time.
+Why this matters: the `Intent` union is the single source of truth used by the agent loop's tool list, the rule engine, the command parser, and `DomainManager.hasAction()`. If an action isn't in the union, TypeScript catches it at build time. The legacy AI classifier (`core/ai-classifier.ts`) still consumes the same union — it's invoked as a clarification fallback when the agent loop returns no tool calls.
 
 ---
 
@@ -148,7 +148,7 @@ export const ALL_TOOLS: ToolDefinition[] = [
 ]
 ```
 
-That's the entire wiring step. The General Manager, Domain Managers, `/help`, the AI classifier's system prompt, and the rule engine all rebuild themselves from `ALL_TOOLS`.
+That's the entire wiring step. The General Manager, Domain Managers, `/help`, the agent loop's tool list, the classifier's clarification fallback, and the rule engine all rebuild themselves from `ALL_TOOLS`.
 
 ---
 
@@ -191,7 +191,7 @@ npm run build   # catches type errors; `npx tsc --noEmit` hangs on this repo
 Smoke-test from the DevPanel or chat:
 - Slash command: `/flashcard Capital of France :: Paris`
 - Natural language: `flashcard review`
-- Unmatched: ensure the AI classifier picks it up or falls through to `general.question`.
+- Unmatched: ensure the agent loop picks it up (action must have an `inputSchema`) or falls through to `general.question` with clarification candidates.
 
 Check `assistant_logs` to confirm `detection_method`, `domain`, and `tool_id` are set correctly. Errors land in `assistant_error_logs` with the pipeline step — useful when the routing went to the wrong place.
 
@@ -200,7 +200,7 @@ Check `assistant_logs` to confirm `detection_method`, `domain`, and `tool_id` ar
 ## 7. Tests
 
 Existing test locations:
-- `supabase/functions/assistant/tests/` — unit tests for registry, classifier, rule engine.
+- `supabase/functions/assistant/tests/` — unit tests for registry, rule engine, agent loop, classifier fallback.
 - `src/features/assistant/tests/` — Vitest tests for the frontend-facing surface.
 
 Minimum-viable test: prove that the slash command and at least one rule route to the right `{ domain, action }`. The tool-registry test in `src/features/assistant/tests/tool-registry.test.ts` is a good template.
@@ -229,7 +229,8 @@ For the curious, here is what reads `ALL_TOOLS` at runtime:
 
 - `core/command-parser.ts` — builds `/help` list and slash → action map.
 - `core/rule-engine.ts` — flattens all `rules[]` into the Tier-2 matcher.
-- `core/ai-classifier.ts` — injects intent + domain lists into the classifier prompt.
+- `core/agent-loop.ts` — exposes every action with an `inputSchema` as a callable tool to the model.
+- `core/ai-classifier.ts` — injects intent + domain lists into the prompt used as a clarification fallback when the loop returns no tool calls.
 - `managers/base.manager.ts` — builds per-domain action → handler maps.
 - `managers/index.ts` — instantiates one manager per domain.
 

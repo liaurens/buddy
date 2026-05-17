@@ -3,7 +3,7 @@ import { Sparkles, X } from 'lucide-react';
 import { useLatestInsight } from '../hooks/useLatestInsight';
 
 const SEVERITY_STYLES: Record<string, string> = {
-    info: 'bg-violet-50 border-violet-200 text-violet-900',
+    info: 'bg-indigo-50 border-indigo-100 text-indigo-950',
     nudge: 'bg-amber-50 border-amber-200 text-amber-900',
     urgent: 'bg-rose-50 border-rose-200 text-rose-900',
 };
@@ -13,21 +13,19 @@ const InsightCard: React.FC = () => {
 
     if (!finding) return null;
 
-    const style = SEVERITY_STYLES[finding.severity] || SEVERITY_STYLES.info;
-
     return (
-        <section className={`rounded-2xl border p-4 shadow-sm ${style}`}>
+        <section className={`rounded-lg border p-5 shadow-[0_16px_42px_rgba(15,23,42,0.045)] ${SEVERITY_STYLES[finding.severity] || SEVERITY_STYLES.info}`}>
             <div className="flex items-start gap-3">
-                <div className="p-2 bg-white/60 rounded-lg mt-0.5">
-                    <Sparkles size={18} />
+                <div className="mt-0.5 rounded-lg bg-white/70 p-2 text-indigo-700">
+                    <Sparkles size={17} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <h3 className="text-xs font-bold uppercase tracking-wider opacity-70">Insight</h3>
-                    <p className="text-sm font-medium mt-1 leading-snug">{finding.summary}</p>
+                    <h2 className="text-sm font-semibold text-slate-950">Insight</h2>
+                    <p className="mt-1 text-sm leading-6 text-slate-700">{finding.summary}</p>
                 </div>
                 <button
                     onClick={dismiss}
-                    className="p-1 rounded hover:bg-white/40 transition-colors"
+                    className="rounded-md p-1 text-slate-400 transition-colors hover:bg-white/60 hover:text-slate-700"
                     aria-label="Dismiss"
                 >
                     <X size={16} />

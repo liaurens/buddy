@@ -220,7 +220,7 @@ export const trackerTool: ToolDefinition = {
   ],
 
   commands: [
-    { command: '/checkin', action: 'tracker.checkin', description: 'Log metrics: /checkin sleep 7 energy 3' },
+    { command: '/checkin', action: 'tracker.checkin', description: 'Log metrics: /checkin sleep 7 energy 3', primary: true },
     { command: '/health', action: 'tracker.query', description: 'Query health: /health how was my sleep?' },
   ],
 

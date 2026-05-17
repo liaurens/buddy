@@ -129,12 +129,12 @@ const NotificationsPage: React.FC = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto pb-24 space-y-5">
+        <div className="app-page-readable">
             <header className="pt-2">
-                <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                <h1 className="app-title flex items-center gap-2">
                     <Bell size={24} className="text-indigo-600" /> Notifications
                 </h1>
-                <p className="text-sm text-slate-500">Reminders for your routines, tasks, and calendar.</p>
+                <p className="app-subtitle">Reminders for your routines, tasks, and calendar.</p>
             </header>
 
             {/* iOS install hint (shown when not running as installed PWA) */}
@@ -152,7 +152,7 @@ const NotificationsPage: React.FC = () => {
             )}
 
             {/* Push status */}
-            <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+            <section className="app-surface p-5 space-y-3">
                 <div className="flex items-center gap-2">
                     <Smartphone size={18} className="text-slate-500" />
                     <h2 className="font-semibold text-slate-900">Push on this device</h2>
@@ -180,7 +180,7 @@ const NotificationsPage: React.FC = () => {
                         <p className="text-sm text-slate-600">
                             Push is not enabled. You'll only see in-app banners while the app is open.
                         </p>
-                        <button onClick={handleEnablePush} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+                        <button onClick={handleEnablePush} className="px-4 py-2 app-primary-button">
                             Enable push
                         </button>
                     </div>
@@ -188,7 +188,7 @@ const NotificationsPage: React.FC = () => {
             </section>
 
             {/* Routine reminders */}
-            <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+            <section className="app-surface p-5 space-y-4">
                 <h2 className="font-semibold text-slate-900">Daily routine reminders</h2>
 
                 <RoutineRow
@@ -218,7 +218,7 @@ const NotificationsPage: React.FC = () => {
             </section>
 
             {/* Task due */}
-            <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+            <section className="app-surface p-5 space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <CheckSquare size={18} className="text-emerald-500" />
@@ -243,7 +243,7 @@ const NotificationsPage: React.FC = () => {
             </section>
 
             {/* Calendar event */}
-            <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+            <section className="app-surface p-5 space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Calendar size={18} className="text-rose-500" />
@@ -268,7 +268,7 @@ const NotificationsPage: React.FC = () => {
             </section>
 
             {/* Off-track escalation */}
-            <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+            <section className="app-surface p-5 space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <AlertTriangle size={18} className="text-orange-500" />
@@ -304,7 +304,7 @@ const NotificationsPage: React.FC = () => {
             </section>
 
             {/* Quiet hours + rate limit */}
-            <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+            <section className="app-surface p-5 space-y-3">
                 <div className="flex items-center gap-2">
                     <MoonStar size={18} className="text-indigo-500" />
                     <h2 className="font-semibold text-slate-900">Quiet hours & rate limit</h2>
@@ -355,7 +355,7 @@ const NotificationsPage: React.FC = () => {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 shadow-lg"
+                    className="app-primary-button px-5 py-2.5"
                 >
                     {saving ? 'Saving…' : 'Save changes'}
                 </button>

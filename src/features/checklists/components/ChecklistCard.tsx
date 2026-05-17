@@ -14,17 +14,17 @@ export const ChecklistCard: React.FC<ChecklistCardProps> = ({ checklist, onClick
     return (
         <div
             onClick={onClick}
-            className="group relative bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all cursor-pointer"
+            className="app-surface group relative cursor-pointer p-5 transition-all hover:-translate-y-0.5"
         >
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <span className="text-4xl">{checklist.emoji || '📝'}</span>
                     <div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                        <h3 className="text-lg font-semibold text-slate-900 transition-colors group-hover:text-indigo-700">
                             {checklist.name}
                         </h3>
                         {checklist.description && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                            <p className="mt-1 line-clamp-1 text-sm text-slate-500">
                                 {checklist.description}
                             </p>
                         )}
@@ -33,13 +33,13 @@ export const ChecklistCard: React.FC<ChecklistCardProps> = ({ checklist, onClick
             </div>
 
             <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex justify-between text-sm text-slate-500">
                     <span>Progress</span>
                     <span>{checkedItems}/{totalItems}</span>
                 </div>
-                <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                     <div
-                        className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                        className="h-full rounded-full bg-indigo-600 transition-all duration-500"
                         style={{ width: `${percent}%` }}
                     />
                 </div>

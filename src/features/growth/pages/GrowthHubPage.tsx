@@ -31,19 +31,19 @@ const GrowthHubPage: React.FC<GrowthHubPageProps> = ({ initialParams }) => {
     const [tab, setTab] = useState<HubTab>(requested && TABS.some(t => t.id === requested) ? requested : 'goals');
 
     return (
-        <div className="max-w-3xl mx-auto pb-24 px-4 md:px-0 space-y-5">
+        <div className="app-page">
             <header className="pt-2">
-                <h1 className="text-2xl font-bold text-slate-900">Growth</h1>
-                <p className="text-sm text-slate-500">Goals, projects, and skills — your direction, work, and craft.</p>
+                <h1 className="app-title">Growth</h1>
+                <p className="app-subtitle">Goals, projects, skills, and direction.</p>
             </header>
 
-            <div className="flex gap-1 p-1 bg-slate-100 rounded-xl">
+            <div className="app-segmented">
                 {TABS.map(({ id, label, Icon }) => (
                     <button
                         key={id}
                         onClick={() => setTab(id)}
-                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            tab === id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                        className={`app-segment ${
+                            tab === id ? 'app-segment-active' : ''
                         }`}
                     >
                         <Icon size={16} /> {label}
@@ -1117,4 +1117,3 @@ const EmptyState: React.FC<EmptyStateProps> = ({ Icon, title, body, action }) =>
         </button>
     </div>
 );
-

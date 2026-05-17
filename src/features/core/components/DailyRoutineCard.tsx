@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Sunrise, Sun, Moon, ChevronRight } from 'lucide-react';
+import { Check, ChevronRight, Layers, Sunrise, Sun, Moon } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
 
 type Mode = 'morning' | 'midday' | 'night';
@@ -41,33 +41,21 @@ const MODE_CONFIG: Record<Mode, {
     Icon: typeof Sunrise;
     greeting: string;
     subtitle: string;
-    gradient: string;
-    iconColor: string;
-    ctaLabel: string;
 }> = {
     morning: {
         Icon: Sunrise,
         greeting: 'Good morning',
         subtitle: 'Start your day right',
-        gradient: 'from-amber-50 to-orange-50',
-        iconColor: 'text-amber-500',
-        ctaLabel: 'morning routine',
     },
     midday: {
         Icon: Sun,
         greeting: 'Good afternoon',
         subtitle: 'Check in & replan if needed',
-        gradient: 'from-sky-50 to-indigo-50',
-        iconColor: 'text-sky-500',
-        ctaLabel: 'midday replan',
     },
     night: {
         Icon: Moon,
         greeting: 'Good evening',
         subtitle: 'Wrap up your day',
-        gradient: 'from-indigo-50 to-violet-50',
-        iconColor: 'text-indigo-500',
-        ctaLabel: 'evening reflection',
     },
 };
 
@@ -83,7 +71,7 @@ interface Props {
 const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
     const mode = currentMode();
     const dateKey = format(new Date(), 'yyyy-MM-dd');
-    const { Icon, greeting, subtitle, gradient, iconColor, ctaLabel } = MODE_CONFIG[mode];
+    const { Icon, greeting, subtitle } = MODE_CONFIG[mode];
 
     const lightActive = isLightMode();
     const nextStep = lightActive
@@ -91,34 +79,108 @@ const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
         : mode === 'morning'
             ? getMorningNextStep(dateKey)
             : MODE_NEXT_STEP[mode];
+    const steps = [
+        {
+            label: 'Morning check-in',
+            active: mode === 'morning',
+            done: mode !== 'morning',
+            icon: <Sunrise size={15} />,
+        },
+        {
+            label: 'Plan top priorities',
+            active: mode === 'morning',
+            done: mode !== 'morning',
+            icon: <Layers size={15} />,
+        },
+        {
+            label: 'Midday reset',
+            active: mode === 'midday',
+            done: mode === 'night',
+            icon: <Sun size={15} />,
+        },
+        {
+            label: 'Evening reflection',
+            active: mode === 'night',
+            done: false,
+            icon: <Moon size={15} />,
+        },
+    ];
+    const doneCount = steps.filter(step => step.done).length;
+    const progress = Math.max(12, Math.round((doneCount / steps.length) * 100));
 
     return (
-        <button
-            onClick={() => onNavigate('today')}
-            className={`w-full text-left bg-gradient-to-br ${gradient} border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all group`}
-        >
-            <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                        <Icon size={20} className={iconColor} />
-                    </div>
+        <section className="rounded-lg border border-slate-200/90 bg-white shadow-[0_16px_42px_rgba(15,23,42,0.045)]">
+            <button
+                onClick={() => onNavigate('today')}
+                className="group w-full p-5 text-left"
+            >
+                <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{greeting}</p>
-                        <p className="text-sm text-slate-600">{subtitle}</p>
+                        <div className="flex items-center gap-2">
+                            <Icon size={18} className="text-emerald-600" />
+                            <h2 className="text-base font-semibold text-slate-950">Daily routine</h2>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">{greeting} - {subtitle}</p>
                     </div>
+                    <span className="shrink-0 text-xs font-medium text-slate-500">
+                        {doneCount} of {steps.length} done
+                    </span>
                 </div>
-                <ChevronRight size={18} className="text-slate-400 group-hover:text-slate-600 mt-1 transition-colors" />
-            </div>
 
-            <div className="mt-1">
-                <p className="text-base font-semibold text-slate-800">{nextStep}</p>
-            </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                        className="h-full rounded-full bg-emerald-500 transition-all"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
 
-            <div className="mt-3 w-full bg-white/70 rounded-lg px-4 py-2.5 text-sm font-medium text-center text-slate-700 group-hover:bg-white transition-colors">
-                Open {ctaLabel} →
-            </div>
-        </button>
+                <div className="mt-4 space-y-3">
+                    {steps.map(step => (
+                        <RoutineStep
+                            key={step.label}
+                            label={step.label}
+                            active={step.active}
+                            done={step.done}
+                            icon={step.done ? <Check size={14} /> : step.icon}
+                        />
+                    ))}
+                </div>
+            </button>
+
+            <button
+                type="button"
+                onClick={() => onNavigate('today')}
+                className="flex w-full items-center justify-between border-t border-slate-100 px-5 py-3 text-sm font-medium text-indigo-900 transition-colors hover:bg-slate-50"
+            >
+                <span>{nextStep}</span>
+                <ChevronRight size={15} className="text-slate-400" />
+            </button>
+        </section>
     );
 };
+
+const RoutineStep: React.FC<{
+    label: string;
+    active?: boolean;
+    done?: boolean;
+    icon: React.ReactNode;
+}> = ({ label, active = false, done = false, icon }) => (
+    <div className="flex min-w-0 items-center gap-3">
+        <span
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                done
+                    ? 'border-emerald-100 bg-emerald-500 text-white'
+                    : active
+                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                        : 'border-slate-200 bg-white text-slate-400'
+            }`}
+        >
+            {icon}
+        </span>
+        <span className={`truncate text-sm ${done || active ? 'font-medium text-slate-800' : 'text-slate-500'}`}>
+            {label}
+        </span>
+    </div>
+);
 
 export default DailyRoutineCard;

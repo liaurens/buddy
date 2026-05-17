@@ -188,7 +188,7 @@ export const notificationsTool: ToolDefinition = {
   ],
 
   commands: [
-    { command: '/remind', action: 'notification.schedule', description: 'Set a reminder: /remind 14:00 call dentist' },
+    { command: '/remind', action: 'notification.schedule', description: 'Set a reminder: /remind 14:00 call dentist', primary: true },
   ],
 
   rules: [

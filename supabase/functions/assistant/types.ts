@@ -99,6 +99,8 @@ export type Intent =
   // Extra / System
   | 'general.question'
   | 'system.help'
+  | 'system.commands'
+  | 'system.route_preview'
   | 'system.feedback'
   | 'context.summary'
   | 'unknown'
@@ -131,6 +133,7 @@ export interface CommandDefinition {
   command: string        // e.g. '/task'
   action: Intent         // maps to which action
   description: string    // for /help display
+  primary?: boolean      // surfaced in the compact hint list before "Show all"
 }
 
 export interface RuleDefinition {

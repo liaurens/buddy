@@ -1,10 +1,10 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
-import { Trash2, SendHorizontal, Loader2, BookOpen, Menu, Plus, MessageSquare, Edit2 } from 'lucide-react'
+import React, { useRef, useEffect, useState, useCallback } from 'react'
+import { Trash2, BookOpen, Menu, Plus, MessageSquare, Edit2 } from 'lucide-react'
 import { useAssistant } from '../hooks/useAssistant'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import AssistantChatBubble from './AssistantChatBubble'
 import AssistantGuide from './AssistantGuide'
-import { COMMANDS } from '../constants/commands'
+import CaptureInput from './CaptureInput'
 import type { AppRoute } from '../../../constants/routes'
 import type { AssistantResponse } from '../types'
 
@@ -13,29 +13,25 @@ interface AssistantChatProps {
 }
 
 const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
-  const [input, setInput] = useState('')
-  const [showHints, setShowHints] = useState(false)
-  const [selectedHint, setSelectedHint] = useState(0)
   const [showGuide, setShowGuide] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
   const [editingConvoId, setEditingConvoId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
 
   const { send, isLoading } = useAssistant()
-  const { 
+  const {
     conversations,
     activeConversationId,
-    messages, 
-    addUserMessage, 
-    addAssistantMessage, 
+    messages,
+    addUserMessage,
+    addAssistantMessage,
     createConversation,
     switchConversation,
     renameConversation,
-    deleteConversation 
+    deleteConversation
   } = useAssistantHistory()
-  
+
   const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -48,26 +44,10 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
     }
   }, [editingConvoId])
 
-  const filteredCommands = useMemo(() => {
-    if (!input.startsWith('/')) return []
-    const query = input.toLowerCase()
-    return COMMANDS.filter(
-      c => c.command.startsWith(query) || c.command.includes(query)
-    )
-  }, [input])
-
-  const handleSubmit = useCallback(
-    async (e?: React.FormEvent) => {
-      e?.preventDefault()
-      const trimmed = input.trim()
-      if (!trimmed || isLoading) return
-
-      setShowHints(false)
-      setInput('')
-      
-      const userMsgId = addUserMessage(trimmed)
-
-      const response = await send(trimmed)
+  const handleChunk = useCallback(
+    async (chunk: string) => {
+      const userMsgId = addUserMessage(chunk)
+      const response = await send(chunk)
       if (response) {
         const content = response.action_taken || (response.success ? 'Done.' : 'Something went wrong.')
         addAssistantMessage(content, response, userMsgId)
@@ -76,52 +56,8 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
         addAssistantMessage(errorResponse.action_taken, errorResponse, userMsgId)
       }
     },
-    [input, isLoading, send, addUserMessage, addAssistantMessage]
+    [send, addUserMessage, addAssistantMessage]
   )
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setInput(value)
-    setShowHints(value.startsWith('/') && value.length < 20)
-    setSelectedHint(0)
-  }
-
-  const handleSelectCommand = (command: string) => {
-    setInput(command + ' ')
-    setShowHints(false)
-    inputRef.current?.focus()
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (showHints && filteredCommands.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        setSelectedHint(prev => Math.min(prev + 1, filteredCommands.length - 1))
-        return
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        setSelectedHint(prev => Math.max(prev - 1, 0))
-        return
-      }
-      if (e.key === 'Tab') {
-        e.preventDefault()
-        handleSelectCommand(filteredCommands[selectedHint].command)
-        return
-      }
-    }
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      if (showHints && filteredCommands.length > 0 && input === filteredCommands[selectedHint]?.command) {
-        handleSelectCommand(filteredCommands[selectedHint].command)
-      } else {
-        handleSubmit()
-      }
-    }
-    if (e.key === 'Escape') {
-      setShowHints(false)
-    }
-  }
 
   const handleCreateNew = () => {
     createConversation()
@@ -155,23 +91,23 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
   }
 
   return (
-    <div className="flex bg-white rounded-2xl shadow-xl overflow-hidden h-full border border-slate-200 relative">
-      
+    <div className="relative flex h-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+
       {/* Sidebar Overlay (Mobile/Narrow views) */}
       {showSidebar && (
-        <div 
-          className="absolute inset-0 bg-slate-900/20 z-40" 
-          onClick={() => setShowSidebar(false)} 
+        <div
+          className="absolute inset-0 bg-slate-900/20 z-40"
+          onClick={() => setShowSidebar(false)}
         />
       )}
 
       {/* Conversations Sidebar */}
-      <div className={`absolute lg:relative z-50 h-full w-64 bg-slate-50 border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 hidden lg:flex'}`}>
+      <div className={`absolute z-50 flex h-full w-64 flex-col border-r border-slate-200 bg-slate-50/85 transition-transform duration-300 ease-in-out lg:relative ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 hidden lg:flex'}`}>
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <h2 className="font-semibold text-slate-700">Chats</h2>
-          <button 
+          <button
             onClick={handleCreateNew}
-            className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors"
+            className="rounded-lg bg-indigo-50 p-1.5 text-indigo-700 transition-colors hover:bg-indigo-100"
             title="New Chat"
           >
             <Plus size={16} />
@@ -182,11 +118,11 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
             <p className="text-xs text-center text-slate-400 mt-4">No conversations yet.</p>
           )}
           {conversations.map(c => (
-            <div 
-              key={c.id} 
-              className={`group flex items-center w-full px-3 py-2.5 rounded-lg text-sm transition-colors ${activeConversationId === c.id ? 'bg-indigo-50 border border-indigo-100 shadow-sm' : 'hover:bg-slate-100 transparent border border-transparent'}`}
+            <div
+              key={c.id}
+              className={`group flex w-full items-center rounded-lg border px-3 py-2.5 text-sm transition-colors ${activeConversationId === c.id ? 'border-indigo-100 bg-indigo-50 shadow-sm' : 'border-transparent hover:bg-slate-100'}`}
             >
-              <div 
+              <div
                 className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
                 onClick={() => handleSwitch(c.id)}
               >
@@ -208,17 +144,17 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
                   </span>
                 )}
               </div>
-              
+
               {/* Actions */}
               {!editingConvoId && (
                 <div className="hidden group-hover:flex items-center ml-2">
-                   <button 
+                   <button
                      onClick={(e) => { e.stopPropagation(); handleStartEdit(c.id, c.title); }}
                      className="p-1 text-slate-400 hover:text-indigo-600 rounded"
                    >
                      <Edit2 size={12} />
                    </button>
-                   <button 
+                   <button
                      onClick={(e) => { e.stopPropagation(); handleDeleteConvo(c.id); }}
                      className="p-1 text-slate-400 hover:text-red-500 rounded"
                    >
@@ -234,15 +170,15 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
       {/* Main Chat Area */}
       <div className="flex flex-col flex-1 min-w-0 h-full">
         {/* Chat header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0 bg-white">
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4 py-3">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setShowSidebar(!showSidebar)}
               className="lg:hidden p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <Menu size={18} />
             </button>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-inner">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-700 shadow-inner">
               <span className="text-xs font-bold text-white">B</span>
             </div>
             <div>
@@ -266,13 +202,13 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
         </div>
 
         {/* Messages list */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 min-h-0 bg-slate-50/50">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-slate-50/60 px-4 py-4">
           {showGuide && (
             <AssistantGuide />
           )}
           {!showGuide && messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 text-sm px-6">
-              <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4 inner-shadow">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50">
                  <MessageSquare size={24} className="text-indigo-400" />
               </div>
               <p className="font-bold text-slate-700 mb-2 text-lg">Start a conversation</p>
@@ -297,7 +233,7 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
           ) : null}
           {isLoading && (
             <div className="flex justify-start gap-2 items-start">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-inner flex-shrink-0">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-700 shadow-inner">
                 <span className="text-xs font-bold text-white">B</span>
               </div>
               <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
@@ -313,61 +249,18 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
         </div>
 
         {/* Input bar */}
-        <form
-          onSubmit={handleSubmit}
-          className="relative flex gap-2 items-center px-4 py-3 border-t border-slate-100 bg-white flex-shrink-0"
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            onFocus={() => input.startsWith('/') && setShowHints(true)}
-            onBlur={() => setTimeout(() => setShowHints(false), 150)}
+        <div className="px-4 py-3 border-t border-slate-100 bg-white flex-shrink-0">
+          <CaptureInput
+            onSubmit={handleChunk}
+            isLoading={isLoading}
             placeholder="Ask something or type / for commands..."
-            disabled={isLoading}
-            aria-label="Chat input"
-            autoComplete="off"
-            className="flex-1 min-w-0 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent disabled:opacity-50 transition-shadow"
+            ariaLabel="Chat input"
+            consumeVoiceDraft
+            enableBrainDump
+            hintsPosition="above"
+            variant="comfortable"
           />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            aria-label="Send message"
-            className="flex-shrink-0 w-11 h-11 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl transition-all shadow-sm active:scale-95"
-          >
-            {isLoading ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <SendHorizontal size={18} />
-            )}
-          </button>
-
-          {/* Command hints dropdown */}
-          {showHints && filteredCommands.length > 0 && (
-            <div className="absolute left-4 right-16 bottom-full mb-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50 transform origin-bottom-left animate-in slide-in-from-bottom-2">
-              {filteredCommands.slice(0, 6).map((cmd, i) => (
-                <button
-                  key={cmd.command}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault()
-                    handleSelectCommand(cmd.command)
-                  }}
-                  className={`w-full text-left px-4 py-2.5 flex items-center gap-3 text-sm transition-colors border-l-2 ${
-                    i === selectedHint ? 'bg-indigo-50 border-indigo-500' : 'hover:bg-slate-50 border-transparent'
-                  }`}
-                >
-                  <span className="font-mono text-indigo-600 font-bold w-24 flex-shrink-0">
-                    {cmd.command}
-                  </span>
-                  <span className="text-slate-600 truncate font-medium">{cmd.description}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </form>
+        </div>
       </div>
     </div>
   )
