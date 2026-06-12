@@ -6,12 +6,52 @@
 import { z } from 'zod';
 
 /**
+ * Generic URL Validation with SSRF Protection
+ */
+export const safeUrlSchema = z
+    .string()
+    .url('Please enter a valid URL')
+    .refine(
+        (url) => {
+            try {
+                const urlObj = new URL(url);
+                // Block private IP ranges
+                const hostname = urlObj.hostname;
+
+                // Block localhost
+                if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+                    return false;
+                }
+
+                // Block private IP ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+                const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+                const match = hostname.match(ipv4Regex);
+                if (match) {
+                    const [, a, b] = match.map(Number);
+                    if (
+                        a === 10 ||
+                        (a === 172 && b >= 16 && b <= 31) ||
+                        (a === 192 && b === 168)
+                    ) {
+                        return false;
+                    }
+                }
+
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        {
+            message: 'URL cannot point to private or internal networks',
+        }
+    );
+
+/**
  * Calendar Configuration Validation
  */
 export const calendarConfigSchema = z.object({
-    calendarUrl: z
-        .string()
-        .url('Please enter a valid URL')
+    calendarUrl: safeUrlSchema
         .refine(
             (url) => {
                 // Whitelist for common calendar providers
@@ -56,7 +96,7 @@ export const trackerDefinitionSchema = z.object({
         .string()
         .max(10, 'Emoji must be less than 10 characters')
         .optional(),
-    type: z.enum(['number', 'rating', 'boolean']),
+    type: z.enum(['number', 'rating', 'boolean', 'text']),
     unit: z
         .string()
         .max(20, 'Unit must be less than 20 characters')
@@ -130,45 +170,3 @@ export const dataImportSchema = z.object({
 export const apiKeySchema = z
     .string()
     .regex(/^qn_[a-f0-9]{32}$/, 'Invalid API key format');
-
-/**
- * Generic URL Validation with SSRF Protection
- */
-export const safeUrlSchema = z
-    .string()
-    .url('Please enter a valid URL')
-    .refine(
-        (url) => {
-            try {
-                const urlObj = new URL(url);
-                // Block private IP ranges
-                const hostname = urlObj.hostname;
-
-                // Block localhost
-                if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
-                    return false;
-                }
-
-                // Block private IP ranges (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
-                const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
-                const match = hostname.match(ipv4Regex);
-                if (match) {
-                    const [, a, b] = match.map(Number);
-                    if (
-                        a === 10 ||
-                        (a === 172 && b >= 16 && b <= 31) ||
-                        (a === 192 && b === 168)
-                    ) {
-                        return false;
-                    }
-                }
-
-                return true;
-            } catch {
-                return false;
-            }
-        },
-        {
-            message: 'URL cannot point to private or internal networks',
-        }
-    );

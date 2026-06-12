@@ -8,6 +8,7 @@ import {
 } from '../../../../services/settings';
 import Modal from '../../../../components/ui/Modal';
 import { syncCalendar, type SyncResult } from '../../services/calendar-sync.service';
+import { calendarConfigSchema } from '../../../../lib/validation/schemas';
 
 interface CalendarSettingsModalProps {
   isOpen: boolean;
@@ -24,6 +25,17 @@ const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  // Returns the validation error for the current URL, or null when valid/empty.
+  const validateUrl = (): string | null => {
+    if (!settings?.calendarUrl) return null;
+    const result = calendarConfigSchema.safeParse({
+      calendarUrl: settings.calendarUrl,
+      calendarName: settings.calendarName || undefined,
+    });
+    return result.success ? null : result.error.issues[0]?.message ?? 'Invalid calendar URL';
+  };
 
   // Load settings when modal opens
   useEffect(() => {
@@ -47,6 +59,9 @@ const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
 
   const handleSave = async () => {
     if (!user || !settings) return;
+    const error = validateUrl();
+    setUrlError(error);
+    if (error) return;
     setSaving(true);
     try {
       await updateCategorySettings(user.id, 'calendar', settings);
@@ -60,6 +75,9 @@ const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
 
   const handleSyncNow = async () => {
     if (!user || !settings) return;
+    const error = validateUrl();
+    setUrlError(error);
+    if (error) return;
     // Save first so the latest URL is used
     setSyncing(true);
     setSyncResult(null);
@@ -171,6 +189,9 @@ const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
               <p className="text-xs text-slate-500 mt-1">
                 Calendar feed URL or iCal link
               </p>
+              {urlError && (
+                <p className="text-xs text-red-600 mt-1">{urlError}</p>
+              )}
               <button
                 type="button"
                 onClick={handleSyncNow}

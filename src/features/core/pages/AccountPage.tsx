@@ -6,7 +6,7 @@ import AssistantDevPanel from '../../assistant/components/AssistantDevPanel';
 import { getSetting, setSetting, supabase } from '../../../services/supabase';
 import { getCategorySettings, updateCategorySettings, type AISettings } from '../../../services/settings';
 import { useToast } from '../../../components/ui/Toast';
-import { dataImportSchema } from '../../../lib/validation/schemas';
+import { dataImportSchema, aiConfigSchema, apiKeySchema } from '../../../lib/validation/schemas';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationPermissionPrompt } from '../../../components/notifications';
 import { showLocalNotification, scheduleNotificationIn } from '../../../services/notifications';
@@ -47,6 +47,18 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
 
     const handleSaveAiSettings = async () => {
         if (!user?.id || !aiSettings) return;
+        // Validate key format when one is set (empty key = AI disabled, allowed)
+        if (aiSettings.aiApiKey) {
+            const result = aiConfigSchema.safeParse({
+                provider: aiSettings.aiProvider,
+                apiKey: aiSettings.aiApiKey,
+                model: aiSettings.aiModel ?? undefined,
+            });
+            if (!result.success) {
+                toast.error(result.error.issues[0]?.message ?? 'Invalid AI settings');
+                return;
+            }
+        }
         setAiSaving(true);
         try {
             await updateCategorySettings(user.id, 'ai', aiSettings);
@@ -137,7 +149,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
         if (!user?.id) return;
         setIsGeneratingKey(true);
         try {
-            const newKey = `qn_${uuidv4().replace(/-/g, '')}`;
+            const newKey = apiKeySchema.parse(`qn_${uuidv4().replace(/-/g, '')}`);
             await setSetting(user.id, 'quick_note_api_key', newKey);
             setApiKey(newKey);
             toast.success('API key generated');
@@ -196,7 +208,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
         <div className={embedded ? 'space-y-5' : 'app-page-readable'}>
             {/* Page Header */}
             {!embedded && (
-            <header>
+            <header className="hidden lg:block">
                 <h1 className="app-title flex items-center gap-3">
                     <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
                         <User size={24} />

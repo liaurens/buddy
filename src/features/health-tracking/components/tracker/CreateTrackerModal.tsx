@@ -3,6 +3,7 @@ import { useTrackers } from '../../hooks/useTrackers';
 import Modal from '../../../../components/ui/Modal';
 import { v4 as uuidv4 } from 'uuid';
 import type { TrackerDefinition, TrackerType, TrackerCadence, TrackerScale, ScaleDirection } from '../../types';
+import { trackerDefinitionSchema } from '../../../../lib/validation/schemas';
 
 interface CreateTrackerModalProps {
     isOpen: boolean;
@@ -39,6 +40,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
     const [hasGoal, setHasGoal] = useState(!!editingTracker?.goal);
     const [goalTarget, setGoalTarget] = useState<number>(editingTracker?.goal?.target || 0);
     const [goalCondition, setGoalCondition] = useState<'gt' | 'lt' | 'eq'>(editingTracker?.goal?.condition || 'gt');
+    const [formError, setFormError] = useState<string | null>(null);
 
     const cadence = (formData.cadence ?? 'daily') as TrackerCadence;
     const usesScale = formData.type === 'rating' || formData.type === 'number';
@@ -53,6 +55,20 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
 
     const handleSave = async () => {
         if (!formData.name || !formData.type) return;
+
+        const validation = trackerDefinitionSchema.safeParse({
+            name: formData.name,
+            emoji: formData.emoji || undefined,
+            type: formData.type,
+            unit: formData.unit || undefined,
+            group: formData.group || 'Other',
+            goal: hasGoal ? { target: goalTarget, condition: goalCondition } : undefined,
+        });
+        if (!validation.success) {
+            setFormError(validation.error.issues[0]?.message ?? 'Invalid tracker');
+            return;
+        }
+        setFormError(null);
 
         const trackerData: TrackerDefinition = {
             id: editingTracker?.id || uuidv4(),
@@ -114,7 +130,11 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
     const canAdvance = step === 1 ? !!formData.name : true;
 
     const footer = (
-        <div className="flex justify-between w-full">
+        <div className="w-full">
+            {formError && (
+                <p className="text-xs text-red-600 mb-2">{formError}</p>
+            )}
+            <div className="flex justify-between w-full">
             {step > 1 ? (
                 <button
                     onClick={() => setStep(step - 1)}
@@ -152,6 +172,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({ isOpen, onClose
                     {editingTracker ? 'Save changes' : 'Create tracker'}
                 </button>
             )}
+            </div>
         </div>
     );
 
