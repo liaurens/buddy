@@ -14,7 +14,7 @@ const InsightCard: React.FC = () => {
     if (!finding) return null;
 
     return (
-        <section className={`rounded-lg border p-5 shadow-[0_16px_42px_rgba(15,23,42,0.045)] ${SEVERITY_STYLES[finding.severity] || SEVERITY_STYLES.info}`}>
+        <section className={`rounded-xl border p-5 shadow-[0_12px_30px_rgba(15,23,42,0.06)] ${SEVERITY_STYLES[finding.severity] || SEVERITY_STYLES.info}`}>
             <div className="flex items-start gap-3">
                 <div className="mt-0.5 rounded-lg bg-white/70 p-2 text-indigo-700">
                     <Sparkles size={17} />

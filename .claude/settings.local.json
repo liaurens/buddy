@@ -99,7 +99,22 @@
       "Bash(npx --yes md-to-pdf --help)",
       "Bash(echo \"help_exit=$?\")",
       "Bash(cp iphone-shortcut-guide.html /tmp/buddy-guide.md)",
-      "Bash(npx --yes md-to-pdf /tmp/buddy-guide.md --pdf-options '{\"format\":\"A4\",\"margin\":{\"top\":\"18mm\",\"bottom\":\"18mm\",\"left\":\"16mm\",\"right\":\"16mm\"},\"printBackground\":true}')"
+      "Bash(npx --yes md-to-pdf /tmp/buddy-guide.md --pdf-options '{\"format\":\"A4\",\"margin\":{\"top\":\"18mm\",\"bottom\":\"18mm\",\"left\":\"16mm\",\"right\":\"16mm\"},\"printBackground\":true}')",
+      "PowerShell(npm run *)",
+      "PowerShell(npm install *)",
+      "PowerShell(npm ls *)",
+      "Bash(awk -F: '{print $2}')",
+      "PowerShell(npx tsc -b 2>&1 | Select-Object -First 30)",
+      "PowerShell(npx tsc -b 2>&1 | Select-Object -First 20)",
+      "PowerShell(git log --oneline 666d69c..HEAD && \\(Get-Content PROJECT_DESCRIPTION.md | Measure-Object -Line\\).Lines)",
+      "PowerShell(npx eslint \"src/features/planning/components/reflection/JournalCard.tsx\" \"src/features/planning/components/reflection/SkillsLogCard.tsx\" \"src/features/planning/components/reflection/StrategySpotlightCard.tsx\" \"src/features/day/components/MorningProtocolsCard.tsx\" \"src/features/day/components/TriggeredChecklistsCard.tsx\" \"src/features/planning/pages/ReflectionPage.tsx\" \"src/features/core/pages/HomePage.tsx\" \"src/features/checklists\" \"src/App.tsx\" \"src/features/health-tracking/components/tracker/CreateTrackerModal.tsx\" \"src/features/planning/components/calendar/CalendarSettingsModal.tsx\" \"src/features/core/pages/AccountPage.tsx\" 2>&1 | Select-Object -Last 15)",
+      "PowerShell(winget install *)",
+      "PowerShell(npm *)",
+      "PowerShell(npx tsc -b 2>&1 | Select-Object -First 20; \"tsc exit: $LASTEXITCODE\")",
+      "PowerShell(npx tsc -b 2>&1 | Select-Object -First 30; \"tsc exit: $LASTEXITCODE\")",
+      "PowerShell(npm install -D typescript@latest 2>&1 | Select-Object -Last 3 && npx tsc -b 2>&1 | Select-Object -First 25; \"tsc exit: $LASTEXITCODE\")",
+      "PowerShell(npx tsc -b 2>&1 | Select-Object -First 25; \"tsc exit: $LASTEXITCODE\")",
+      "PowerShell(Test-Path *)"
     ]
   },
   "enabledMcpjsonServers": [

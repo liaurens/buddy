@@ -39,22 +39,18 @@ function getLightHint(dateKey: string): string {
 
 const MODE_CONFIG: Record<Mode, {
     Icon: typeof Sunrise;
-    greeting: string;
     subtitle: string;
 }> = {
     morning: {
         Icon: Sunrise,
-        greeting: 'Good morning',
         subtitle: 'Start your day right',
     },
     midday: {
         Icon: Sun,
-        greeting: 'Good afternoon',
         subtitle: 'Check in & replan if needed',
     },
     night: {
         Icon: Moon,
-        greeting: 'Good evening',
         subtitle: 'Wrap up your day',
     },
 };
@@ -71,7 +67,7 @@ interface Props {
 const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
     const mode = currentMode();
     const dateKey = format(new Date(), 'yyyy-MM-dd');
-    const { Icon, greeting, subtitle } = MODE_CONFIG[mode];
+    const { Icon, subtitle } = MODE_CONFIG[mode];
 
     const lightActive = isLightMode();
     const nextStep = lightActive
@@ -109,7 +105,7 @@ const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
     const progress = Math.max(12, Math.round((doneCount / steps.length) * 100));
 
     return (
-        <section className="rounded-lg border border-slate-200/90 bg-white shadow-[0_16px_42px_rgba(15,23,42,0.045)]">
+        <section className="app-surface">
             <button
                 onClick={() => onNavigate('today')}
                 className="group w-full p-5 text-left"
@@ -120,7 +116,7 @@ const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
                             <Icon size={18} className="text-emerald-600" />
                             <h2 className="text-base font-semibold text-slate-950">Daily routine</h2>
                         </div>
-                        <p className="mt-1 text-xs text-slate-500">{greeting} - {subtitle}</p>
+                        <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
                     </div>
                     <span className="shrink-0 text-xs font-medium text-slate-500">
                         {doneCount} of {steps.length} done

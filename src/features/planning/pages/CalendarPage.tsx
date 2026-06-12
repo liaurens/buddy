@@ -80,7 +80,7 @@ const CalendarPage: React.FC = () => {
     return (
         <div className="app-page">
             <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h1 className="app-title flex items-center gap-3">
+                <h1 className="app-title hidden items-center gap-3 lg:flex">
                     <div className="rounded-xl bg-rose-50 p-2 text-rose-600">
                         <CalendarIcon size={24} />
                     </div>

@@ -19,6 +19,107 @@ interface ScheduledNotification {
   status: string;
 }
 
+/**
+ * Routine reminders are the app's daily anchor triggers. Each row fires once,
+ * so after processing one we enqueue the next day's occurrence here — making
+ * the anchors self-sustaining instead of dying after the first fire.
+ */
+async function rescheduleRoutineForTomorrow(
+  supabase: ReturnType<typeof createClient>,
+  notification: ScheduledNotification
+): Promise<void> {
+  // Next occurrence at the same time of day, always in the future (a backlog
+  // row from days ago must not produce another already-due row).
+  const next = new Date(notification.scheduled_for);
+  while (next.getTime() <= Date.now()) {
+    next.setDate(next.getDate() + 1);
+  }
+
+  // Guard against doubles: skip if a pending row for this routine already exists.
+  const { data: existing } = await supabase
+    .from('scheduled_notifications')
+    .select('id')
+    .eq('user_id', notification.user_id)
+    .eq('tool_category', notification.tool_category)
+    .eq('status', 'pending')
+    .limit(1);
+  if (existing && existing.length > 0) return;
+
+  const { error } = await supabase.from('scheduled_notifications').insert({
+    user_id: notification.user_id,
+    tool_category: notification.tool_category,
+    notification_type: notification.notification_type,
+    scheduled_for: next.toISOString(),
+    title: notification.title,
+    body: notification.body,
+    data: notification.data ?? {},
+    status: 'pending',
+  });
+  if (error) {
+    console.error('Failed to reschedule routine reminder:', error);
+  }
+}
+
+/**
+ * Live counts for the morning anchor so the nudge says what actually matters
+ * ("2 due · 1 overdue · 3 school deadlines") instead of a generic line.
+ * Falls back to the stored body on any error.
+ */
+async function buildAnchorBody(
+  supabase: ReturnType<typeof createClient>,
+  notification: ScheduledNotification
+): Promise<string> {
+  if (notification.tool_category !== 'routine_morning') {
+    return notification.body;
+  }
+
+  try {
+    const now = new Date();
+    const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(now); todayEnd.setHours(23, 59, 59, 999);
+    const horizon = new Date(todayStart.getTime() + 8 * 24 * 60 * 60 * 1000);
+
+    const [dueRes, overdueRes, assignmentsRes] = await Promise.all([
+      supabase
+        .from('todos')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', notification.user_id)
+        .eq('completed', false)
+        .gte('due_date', todayStart.toISOString())
+        .lte('due_date', todayEnd.toISOString()),
+      supabase
+        .from('todos')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', notification.user_id)
+        .eq('completed', false)
+        .lt('due_date', todayStart.toISOString()),
+      supabase
+        .from('assignments')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', notification.user_id)
+        .in('status', ['pending', 'in_progress'])
+        .lt('deadline', horizon.toISOString()),
+    ]);
+
+    const due = dueRes.count ?? 0;
+    const overdue = overdueRes.count ?? 0;
+    const school = assignmentsRes.count ?? 0;
+
+    if (due === 0 && overdue === 0 && school === 0) {
+      return 'Plan today — nothing due yet. Capture what matters.';
+    }
+
+    const parts: string[] = [];
+    if (due > 0) parts.push(`${due} due today`);
+    if (overdue > 0) parts.push(`${overdue} overdue`);
+    if (school > 0) parts.push(`${school} school deadline${school === 1 ? '' : 's'} this week`);
+    return `Plan today — ${parts.join(' · ')}.`;
+  } catch (error) {
+    console.error('Failed to build anchor body, using stored body:', error);
+    return notification.body;
+  }
+}
+
 interface NotificationSubscription {
   id: string;
   user_id: string;
@@ -142,6 +243,12 @@ serve(async (req) => {
               error_message: 'No active subscriptions',
             })
             .eq('id', notification.id);
+
+          // Keep daily anchors alive even while no device is subscribed,
+          // so they start firing the moment the user re-enables push.
+          if (notification.notification_type === 'routine_reminder') {
+            await rescheduleRoutineForTomorrow(supabase, notification);
+          }
         }
         failedCount += userNotifications.length;
         continue;
@@ -150,6 +257,7 @@ serve(async (req) => {
       // Send each notification to all user's subscriptions
       for (const notification of userNotifications) {
         let notificationSent = false;
+        const body = await buildAnchorBody(supabase, notification);
 
         for (const subscription of subscriptions) {
           const success = await sendNotification(
@@ -157,7 +265,7 @@ serve(async (req) => {
             supabaseKey,
             subscription.id,
             notification.title,
-            notification.body,
+            body,
             notification.data
           );
 
@@ -175,6 +283,11 @@ serve(async (req) => {
             error_message: notificationSent ? null : 'Failed to send to any subscription',
           })
           .eq('id', notification.id);
+
+        // Daily anchors re-enqueue themselves for tomorrow.
+        if (notification.notification_type === 'routine_reminder') {
+          await rescheduleRoutineForTomorrow(supabase, notification);
+        }
 
         if (notificationSent) {
           sentCount++;

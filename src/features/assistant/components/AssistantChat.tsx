@@ -5,6 +5,7 @@ import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import AssistantChatBubble from './AssistantChatBubble'
 import AssistantGuide from './AssistantGuide'
 import CaptureInput from './CaptureInput'
+import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import type { AppRoute } from '../../../constants/routes'
 import type { AssistantResponse } from '../types'
 
@@ -17,6 +18,7 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
   const [showSidebar, setShowSidebar] = useState(false)
   const [editingConvoId, setEditingConvoId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   const { send, isLoading } = useAssistant()
   const {
@@ -85,9 +87,14 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
   }
 
   const handleDeleteConvo = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this chat session?')) {
-      deleteConversation(id)
+    setPendingDeleteId(id)
+  }
+
+  const confirmDeleteConvo = () => {
+    if (pendingDeleteId) {
+      deleteConversation(pendingDeleteId)
     }
+    setPendingDeleteId(null)
   }
 
   return (
@@ -262,6 +269,16 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
           />
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={pendingDeleteId !== null}
+        title="Delete chat"
+        message="Are you sure you want to delete this chat session?"
+        confirmLabel="Delete"
+        destructive
+        onConfirm={confirmDeleteConvo}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </div>
   )
 }

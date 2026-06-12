@@ -1,13 +1,22 @@
 {
-    "name": "Correlate Tracker",
-    "short_name": "Tracker",
-    "description": "Track habits, correlate patterns, optimize outcomes",
-    "theme_color": "#6366f1",
-    "background_color": "#0f172a",
+    "name": "Buddy",
+    "short_name": "Buddy",
+    "description": "Buddy — capture, plan, reflect",
+    "theme_color": "#ffffff",
+    "background_color": "#f7f8fb",
     "display": "standalone",
     "orientation": "portrait",
     "scope": "/",
     "start_url": "/",
+    "share_target": {
+        "action": "/",
+        "method": "GET",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url"
+        }
+    },
     "icons": [
         {
             "src": "/icons/icon-192.png",

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Grid2X2, Home, LayoutGrid, MessageSquare, PlusCircle, Search, Sparkles, User } from 'lucide-react';
+import { Bell, Grid2X2, Home, LayoutGrid, MessageSquare, PlusCircle, Sparkles, User } from 'lucide-react';
 import type { AppRoute } from '../constants/routes';
 import CaptureFAB from '../components/CaptureFAB';
 
@@ -80,7 +80,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                 </div>
             </aside>
 
-            <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl lg:hidden">
+            <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:hidden">
                 <div className="mx-auto grid max-w-2xl grid-cols-[44px_1fr_44px] items-center px-4 py-3">
                     <button
                         onClick={() => setActiveTab('home')}
@@ -89,18 +89,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                     >
                         <Sparkles size={21} />
                     </button>
-                    <button
-                        onClick={() => activeTab !== 'home' && setActiveTab('home')}
-                        className="min-w-0 justify-self-center truncate text-center text-lg font-semibold text-slate-950"
-                    >
+                    <h1 className="min-w-0 justify-self-center truncate text-center text-lg font-semibold text-slate-950">
                         {mobileTitle[activeTab] ?? 'Buddy'}
-                    </button>
+                    </h1>
                     <button
-                        onClick={() => activeTab === 'browse' ? setActiveTab('notifications') : setActiveTab('browse')}
+                        onClick={() => setActiveTab('notifications')}
                         className="flex h-10 w-10 items-center justify-center justify-self-end rounded-xl text-slate-700 transition-colors hover:bg-slate-100"
-                        aria-label={activeTab === 'browse' ? 'Notifications' : 'Search and browse'}
+                        aria-label="Notifications"
                     >
-                        {activeTab === 'browse' ? <Bell size={20} /> : <Search size={20} />}
+                        <Bell size={20} />
                     </button>
                 </div>
             </header>
@@ -111,16 +108,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
 
             <CaptureFAB activeTab={activeTab} onNavigate={setActiveTab} />
 
-            <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200/80 bg-white/90 px-2 py-2 backdrop-blur-xl safe-area-inset-bottom lg:hidden">
-                <div className="mx-auto flex h-[4.5rem] max-w-2xl items-center justify-around">
+            <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-slate-200/80 bg-white/90 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden">
+                <div className="mx-auto flex h-[4.5rem] max-w-2xl items-center justify-around gap-1">
                     {TABS.map(({ key, label, Icon }) => {
                         const isActive = isActiveTab(key);
                         return (
                             <button
                                 key={key}
                                 onClick={() => setActiveTab(key)}
+                                aria-current={isActive ? 'page' : undefined}
                                 className={`flex h-full w-full flex-col items-center justify-center gap-1 rounded-xl text-xs font-medium transition-colors ${
-                                    isActive ? 'text-indigo-800' : 'text-slate-500 hover:text-slate-800'
+                                    isActive ? 'bg-indigo-50 text-indigo-800' : 'text-slate-500 hover:text-slate-800'
                                 }`}
                             >
                                 {key === 'assistant' ? <PlusCircle size={23} /> : key === 'browse' ? <Grid2X2 size={22} /> : <Icon size={22} />}

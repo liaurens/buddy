@@ -24,6 +24,7 @@ import {
     showLocalNotification,
 } from '../../../services/notifications/push.service';
 import { reapplyNotificationSchedule } from '../services/notifications-schedule.service';
+import PushHealthCard from '../components/PushHealthCard';
 
 const NotificationsPage: React.FC = () => {
     const { user } = useAuth();
@@ -130,7 +131,7 @@ const NotificationsPage: React.FC = () => {
 
     return (
         <div className="app-page-readable">
-            <header className="pt-2">
+            <header className="hidden pt-2 lg:block">
                 <h1 className="app-title flex items-center gap-2">
                     <Bell size={24} className="text-indigo-600" /> Notifications
                 </h1>
@@ -186,6 +187,9 @@ const NotificationsPage: React.FC = () => {
                     </div>
                 )}
             </section>
+
+            {/* Subscription health — catches silently dropped subscriptions */}
+            <PushHealthCard />
 
             {/* Routine reminders */}
             <section className="app-surface p-5 space-y-4">

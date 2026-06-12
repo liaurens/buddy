@@ -18,11 +18,14 @@ happened.
 
 The product combines:
 
-- A daily "Now" surface for what matters next.
-- A natural-language AI capture assistant.
+- A daily "Now" surface for what matters next, including overdue tasks and
+  school deadlines.
+- A natural-language AI capture assistant with an offline-safe capture queue.
 - A task and note system.
-- Routines, checklists, reminders, and notifications.
-- AI-assisted daily planning and reflection.
+- Routines, checklists, reminders, and notifications, anchored by
+  self-sustaining morning and evening push nudges.
+- AI-assisted daily planning and reflection, with an explicit "close the day"
+  end state.
 - Health, mood, focus, protocol, and experiment tracking.
 - A school module for classes, assignments, deadlines, schedules, and course PDF
   import.
@@ -30,6 +33,8 @@ The product combines:
 - A toolbox for personal strategies and coping tactics.
 - A Supabase backend with Row-Level Security, Edge Functions, and user-owned AI
   provider keys.
+- Lightweight usage instrumentation (`app_events`) so product decisions can be
+  based on observed behavior rather than guesses.
 
 The central product loop is:
 
@@ -170,24 +175,35 @@ Capture is the first-class entry point. The user can capture:
 - Notes.
 - Shopping items.
 - Reminders.
-- Mood and health logs.
+- Health and mood check-ins (via trackers).
 - School assignments.
-- Journal entries.
 - Goal progress.
-- Study sessions.
 - Questions for the assistant.
 
 Capture happens through:
 
-- The Assistant/Capture tab.
+- The Assistant/Capture tab, built on a shared `CaptureInput` component with
+  brain-dump mode, voice draft, route-preview ghost chips, and a
+  backend-sourced command list.
 - The floating capture button.
 - Slash commands such as `/task`, `/note`, `/checkin`, `/remind`, `/done`,
   `/today`, and `/shop`.
 - Dedicated UI forms inside feature pages.
+- The OS share sheet: the PWA manifest declares a Web Share Target, so shared
+  text/URLs land in the capture input (pre-filled, user confirms before
+  submit).
+- The iPhone Shortcut path, which routes through the assistant endpoint.
 
 The assistant edge function accepts natural language and routes it to structured
 tools. Dedicated UI flows can bypass language routing and invoke a tool directly
 when the intent is already known.
+
+Capture is offline-safe: submissions that fail at the network level are written
+to an IndexedDB outbox (`src/services/offline/captureOutbox.ts`), replayed FIFO
+on login and whenever connectivity returns, and surfaced through a "pending
+sync" badge. The scope is deliberately capture-only, not general offline CRUD —
+the goal is that no capture is ever lost, because one lost capture teaches the
+brain not to trust the inbox.
 
 ### 4.2 Organize
 
@@ -235,14 +251,22 @@ The planner should account for:
 During the day, the app helps the user stay oriented through:
 
 - The Now page.
-- Next Up card.
+- Next Up card (tasks, calendar, and school assignments merged).
 - Today timeline.
 - Reminders.
 - In-app reminder banners.
-- Web Push notifications.
+- Web Push notifications, anchored by two daily time-based nudges: a morning
+  "plan today" notification and an evening "close the day" notification, both
+  deep-linking into the Day flow.
 - Pomodoro focus sessions.
 - Task completion and snoozing.
 - Routines and checklists.
+
+The anchor notifications are designed to be reliable: the
+`schedule-notifications` function re-enqueues the next day's occurrence after
+each fire (self-sustaining), and the client re-applies the schedule at most
+once per 12 hours on app open (self-healing) so the trigger layer survives
+server-side hiccups.
 
 The app should make it easy to recover from drift. The ideal behavior is not
 "never go off track"; it is "notice drift early and lower the cost of returning."
@@ -251,12 +275,20 @@ The app should make it easy to recover from drift. The ideal behavior is not
 
 The app collects both explicit and implicit data:
 
-- Explicit: tracker entries, mood logs, journal reflections, task completions,
-  focus sessions, experiment check-ins, protocol adherence, study sessions.
+- Explicit: tracker entries, mood logs, reflections, task completions,
+  focus sessions, experiment check-ins, protocol adherence.
 - Implicit: assistant logs, routing methods, skipped time blocks, overdue tasks,
-  reminder interactions, usage patterns.
+  reminder interactions, and app usage events.
 
-This data is used to improve planning, reveal correlations, and make the
+Usage instrumentation lives in the `app_events` table: app opens (tagged with
+their source — direct, notification, or share), route visits, capture
+submissions, capture syncs, and day closes. Logging is fire-and-forget and must
+never break the UX. This exists so "why isn't the app being used?" can be
+answered with data — distinguishing "never opens the app" from "opens it,
+finds nothing actionable, leaves" — and so module-freezing decisions can be
+based on what is actually touched.
+
+This data is used to improve planning, reveal patterns, and make the
 assistant more useful.
 
 ### 4.6 Reflect
@@ -264,12 +296,17 @@ assistant more useful.
 Reflection happens through:
 
 - Night reflection.
-- Daily journal.
-- Mood and energy capture.
 - Planner reflection.
-- AI-generated journal summaries.
-- Correlation cards and insights.
+- Tracker check-ins.
+- Insight cards.
 - Experiment analysis.
+- An explicit "Close day" step at the end of the night reflection.
+
+Closing the day is the defined end state of the daily loop. One tap marks the
+`daily_plans` row for the date as closed (`closed_at`), shows tomorrow's top
+item, and feeds a low-pressure continuity indicator — days closed this week,
+deliberately not a streak that punishes a miss. This gives the evening anchor
+notification something to land on and gives the loop a visible reward.
 
 The reflection layer is intended to answer questions like:
 
@@ -347,6 +384,17 @@ The Now page is the calm operational center. It includes:
 Its job is to answer: "What should I pay attention to now?" It should avoid
 being a dense dashboard. It is a steering surface.
 
+A core requirement is that the Now page tells the truth. The first screen must
+never under-report a deadline, or the user correctly learns the app cannot be
+trusted and routes around it. Concretely:
+
+- Next Up merges `todos`, calendar events, and school `assignments` — school
+  deadlines (the highest-stakes daily content for a student) surface here, not
+  only inside the School module.
+- The Today card shows overdue tasks as the primary line when non-zero, plus
+  due-today count, event count, and school assignments due within 7 days. The
+  counting logic lives in a tested `summarizeToday` utility.
+
 ### 5.4 Browse Page
 
 Browse is the app map. It exposes shortcuts and module lists:
@@ -379,17 +427,20 @@ The assistant is both an interaction surface and an orchestration layer. It can:
 - Create notes.
 - Create shopping items.
 - Search notes.
-- Log health check-ins.
-- Log mood.
+- Log health check-ins (including mood, via trackers).
 - Create reminders.
 - Query calendar/agenda.
-- Work with habits and task routines.
 - Manage checklists.
 - Create and update goals.
-- Log study sessions.
-- Work with projects.
+- Log skill practice and manage strategies.
 - Handle school-related requests.
 - Answer general questions when no structured action applies.
+
+The tool surface was deliberately pruned in June 2026: habits, mood, journal,
+study, projects, task-routines, task-types, and context tools were removed
+(they live in git history). Every registered tool's schema is sent to the model
+on each AI-routed request, so a lean registry is cheaper and routes more
+accurately.
 
 The assistant supports explicit slash commands and natural language. It should
 be forgiving when the user uses short, messy, or tired-language inputs.
@@ -430,11 +481,14 @@ The tasks feature supports:
 - Task recommendation.
 - Recurring tasks.
 - Task type organization.
-- Streak and habit-style views.
 - Bulk actions.
 - Snoozing.
 - AI task splitting.
 - Deep links from notifications.
+
+(The habit dashboard, streak calendar, and streak calculator were removed in
+the June 2026 prune — streak mechanics conflicted with the product guardrail
+against shame-based motivation and were not used.)
 
 Implementation detail: tasks are stored in the `todos` table, not a `tasks`
 table. This naming detail matters for future agents and database work.
@@ -553,10 +607,13 @@ Entries are stored in the `entries` table. Tracker definitions are stored in
 The analysis layer can surface:
 
 - Trends.
-- Top correlations.
 - Segment comparisons.
 - Basic statistical summaries.
 - Relationships between inputs and outcomes.
+
+(The server-side correlations agent and the top-correlations card were removed
+in the June 2026 prune; correlation-style insight now flows through experiments
+and the insight card rather than a standing dashboard.)
 
 The product philosophy is N-of-1 personal science. The app does not claim that a
 correlation proves causation. Instead, it gives the user better questions and
@@ -676,10 +733,9 @@ to tasks. The assistant has tools for:
 - Listing goals.
 - Updating progress.
 - Marking goals done.
-- Creating projects.
-- Listing projects.
-- Updating project status.
-- Adding tasks to projects.
+
+Projects remain in the database and UI (tasks can link to a project), but the
+assistant's dedicated projects tool was removed in the June 2026 prune.
 
 These features connect daily tasks to longer-running intentions.
 
@@ -704,15 +760,27 @@ The notification system includes:
 - Notification permission prompt.
 - In-app reminder banner.
 - Scheduled notifications.
+- Daily anchor notifications: morning ("plan today", with live due/overdue
+  counts filled in at send time) and evening ("close the day — 90 seconds").
+- Self-sustaining routine reminders: after a routine reminder fires, the
+  `schedule-notifications` function enqueues the next day's occurrence, with
+  guards against duplicates and against backlogged rows producing already-due
+  sends.
+- Client-side self-healing: the app re-applies the anchor schedule at most
+  once per 12 hours on open, so the nudges survive a broken server-side chain.
 - Per-task reminders.
 - Notification management page.
+- A push subscription health card, so a silently dead subscription (an iOS
+  Web Push failure mode) is visible instead of invisible.
 - Web Push service worker support.
 - Deep links back into the app.
 - Quiet hours and rate-limiting behavior in the off-track scanner path.
 
 Notifications are meant to be useful, not noisy. They should help the user
 return to intention, especially when time blindness or context switching has
-pulled them away.
+pulled them away. The anchor notifications are treated as the trigger layer of
+the entire product: without a reliable external prompt to open the app, every
+downstream feature is dead infrastructure.
 
 ### 6.16 Account and Settings
 
@@ -795,32 +863,27 @@ declare:
 - Schemas/parameters.
 - Execution behavior.
 
-Current tool areas include:
+Current tool areas (after the June 2026 prune):
 
 - Tasks.
-- Task routines.
-- Task types.
 - Checklists.
 - Calendar.
-- Habits.
 - Notifications.
 - Trackers.
 - Experiment agent.
-- Mood.
-- Journal.
 - Notes.
 - Goals.
 - Skills.
 - Strategies.
-- Study.
-- Projects.
 - School.
-- Context.
 - System.
 
 The General Manager, command parser, rule engine, AI classifier, and domain
 managers auto-discover capabilities through the registry. Adding a new assistant
-capability should usually mean adding one tool file and registering it.
+capability should usually mean adding one tool file and registering it. The
+registry is intentionally kept lean: every registered tool costs tokens on
+every AI-routed request and widens the routing space, so tools that do not
+earn their place in a normal day are removed rather than accumulated.
 
 ### 7.4 Domain Managers
 
@@ -828,13 +891,13 @@ Domain managers group tool execution by area:
 
 - Planning.
 - Health.
-- Mental.
 - Content.
 - Improvement.
-- Studying.
-- Projects.
 - School.
 - Extra/system.
+
+(The mental, studying, and projects domains were removed in the June 2026
+prune along with their tools.)
 
 The General Manager resolves the route, then delegates execution to the relevant
 domain manager. This keeps the request path understandable and prevents one
@@ -976,13 +1039,15 @@ Product tables include:
 - `trackers`: tracker definitions.
 - `smart_notes`: notes and note-like content.
 - `note_categories`: note categories.
-- `daily_plans`: daily planning records.
+- `daily_plans`: daily planning records, including the `closed_at` timestamp
+  that marks a day as explicitly closed.
 - `time_blocks`: scheduled blocks.
 - `calendar_events`: synced or created calendar events.
 - `goals`: goals and progress.
 - `projects`: projects.
-- `study_sessions`: study logs.
 - `task_types`: task organization/types.
+- `app_events`: lightweight client-side usage events (opens, route visits,
+  captures, day closes), RLS-protected per user.
 - `task_reminders`: per-task reminder configuration.
 - `notifications` / scheduled notification tables.
 - `classes`: school classes.
@@ -1028,6 +1093,9 @@ Important naming details:
   conceptually behave like deadlines/tasks.
 - Uploaded class PDFs are represented in `class_documents` and stored in the
   `class-documents` storage bucket.
+- `study_sessions` and `planner_drift_events` were dropped in June 2026
+  (migration `20260610000002_drop_unused_tables.sql`) — no code reads or
+  writes them anymore.
 
 Future agents should check these names before writing queries or migrations.
 
@@ -1097,6 +1165,7 @@ The frontend stack:
 - Vite PWA plugin.
 - Zod for validation where needed.
 - Vitest and Testing Library for tests.
+- Playwright for E2E smoke tests.
 
 ### 11.2 App Shell
 
@@ -1175,13 +1244,15 @@ Important Edge Functions include:
 - `hr-agent`: analyzes assistant logs and writes findings.
 - `trainer-agent`: generates dynamic routing rules from findings.
 - `off-track-scanner`: finds likely drift and schedules nudges.
-- `schedule-notifications`: schedules or flushes notifications.
+- `schedule-notifications`: schedules or flushes notifications, and re-enqueues
+  the next occurrence of routine anchor reminders after each fire.
 - `send-notification`: sends Web Push notifications.
 - `quick-note`: fast note capture.
 - `calendar-proxy`: calendar integration helper.
-- `correlations-agent`: analysis support.
 - `experiment-agent`: experiment support.
 - `school-import`: course PDF analysis and import.
+
+(The `correlations-agent` function was removed in the June 2026 prune.)
 
 ### 12.2 Edge Function Principles
 
@@ -1213,22 +1284,31 @@ turning the app into a nagging system.
 
 Student Buddy is a PWA. It includes:
 
-- Web app manifest.
+- Web app manifest, including a Web Share Target so installed-PWA users can
+  share text/URLs from other apps straight into capture.
 - Icons.
 - Service worker.
 - Offline-capable asset caching.
+- An IndexedDB offline capture outbox with automatic replay on reconnect and a
+  pending-sync badge.
 - Installable mobile experience.
-- iPhone shortcut/setup documentation.
+- iPhone shortcut/setup documentation (the Shortcut routes through the
+  assistant endpoint, enabling Back Tap / Action Button capture).
 
 The PWA layer matters because this app is meant to be opened many times a day.
 It should feel close to a native personal companion, especially on mobile.
 
-Offline behavior should prioritize:
+Offline behavior prioritizes:
 
 - Loading the app shell.
 - Keeping the interface usable during flaky connectivity.
-- Avoiding data loss on capture where possible.
+- Never losing a capture: writes queue locally first and sync when online.
 - Clear feedback when a server-side action cannot complete.
+
+Known platform limits are accepted facts, not planning gaps: a PWA cannot
+provide iOS home/lock-screen widgets or HealthKit access, and iOS only
+delivers Web Push to PWAs added to the home screen (16.4+). The subscription
+health card exists because iOS can silently drop push subscriptions.
 
 ---
 
@@ -1248,8 +1328,13 @@ The repo includes Vitest tests around critical assistant and task utilities:
 - Tool registry.
 - Quick capture parsing.
 - Task recommendation.
-- Streak calculation.
+- Offline capture outbox.
+- Close-day service and week-window logic.
+- Today summary (overdue/due-today/school counting).
 - Analysis utilities.
+
+A Playwright smoke test (`e2e/app-smoke.spec.ts`) covers the app shell
+end-to-end.
 
 The most important quality risks are:
 
@@ -1275,31 +1360,44 @@ Tests should focus heavily on:
 
 ---
 
-## 15. Current Product Direction as of May 2026
+## 15. Current Product Direction as of June 2026
 
-The project has moved beyond a basic tracker/task app. Recent work indicates a
-direction toward a fuller personal operating system:
+Through May 2026 the project grew toward a fuller personal operating system:
+Growth Hub with skills, goals, XP, levels, and projects; per-task reminders;
+an off-track scanner cron; light and full daily routine modes; a school module
+with classes, assignments, sessions, checkpoints, and AI PDF import; unified
+capture (shared `CaptureInput` with brain-dump, voice draft, and route-preview
+chips); and assistant learning infrastructure.
 
-- Growth Hub with skills, goals, XP, levels, and projects.
-- Per-task reminders.
-- Off-track scanner cron.
-- Light and full daily routine modes.
-- School module with classes, assignments, sessions, checkpoints, and PDF import.
-- Class document storage and AI course extraction.
-- Expanded goals.
-- Task types and task organization redesign.
-- Notification improvements.
-- Assistant learning infrastructure.
+In June 2026 the direction shifted, prompted by a daily-use audit
+(`docs/buddy-daily-use-report.md`): capability had grown for months without
+usage following. The diagnosis was that daily use is a habit-formation
+problem, not a capability problem — a habit needs a reliable external
+**trigger**, a **low-friction action**, and a **visible reward/closure**, and
+the app was strong on action but weak on trigger and closure. The June work
+therefore mostly finished, wired, or removed things rather than adding
+features:
 
-The core loop is stable enough that current work is mostly about making the app
-stickier, gentler, and more complete:
-
-- Better capture.
-- Better re-entry after drift.
-- Better support for bad days.
-- Better student-specific workflows.
-- Better visibility into long-term growth.
-- Better AI routing and cheaper repeated interactions.
+- **Trigger**: morning and evening anchor push notifications, made
+  self-sustaining (server re-enqueues the next occurrence) and self-healing
+  (client re-applies the schedule every 12 hours), with a push subscription
+  health card.
+- **Truthful first screen**: Next Up and the Today card now merge school
+  assignments and overdue tasks, so the Now page never under-reports a
+  deadline.
+- **Friction**: an IndexedDB offline capture outbox with replay and a
+  pending-sync badge, plus a Web Share Target so OS-level shares land in
+  capture.
+- **Closure**: an explicit "Close day" end state on `daily_plans` with a
+  days-closed-this-week continuity indicator (deliberately not a streak).
+- **Measurement**: the `app_events` table instruments opens, route visits,
+  captures, and day closes, so future cuts and freezes are data-driven.
+- **Weight reduction**: the assistant tool registry was pruned (habits, mood,
+  journal, study, projects, task-routines, task-types, context removed along
+  with the mental/studying/projects domains); habit/streak UI, the daily
+  journal forms, the top-correlations card, and the `correlations-agent`
+  function were deleted; the unused `study_sessions` and
+  `planner_drift_events` tables were dropped.
 
 ---
 
@@ -1307,15 +1405,29 @@ stickier, gentler, and more complete:
 
 High-value future directions:
 
+- Two-way time integration: publish the app's time blocks/deadlines as an iCal
+  feed the phone's calendar subscribes to, so the plan appears where the user
+  already looks instead of in a competing surface.
+- Non-AI degradation for the daily path: plan generation should fall back to a
+  deterministic heuristic (the task-recommender scoring) when no API key is
+  configured or the provider errors.
+- Weekly digest and trainer-rule visibility (deferred until push is verified
+  end-to-end on the actual device).
+- Module freezing driven by `app_events` data: anything untouched for 30 days
+  gets removed from the daily path and the assistant hint surface, kept in the
+  database.
+- Day view merge (the `PlannerPage.tsx` refactor) — deliberately sequenced
+  after the trigger/truth/closure work.
+- Whether school assignments should auto-generate linked todos (one source of
+  truth for "what do I act on").
 - Command palette/autocomplete backed by the live tool registry.
-- Stronger Siri Shortcuts and mobile OS integration.
-- More robust offline capture queue.
+- Optional iOS Shortcuts automation that POSTs Apple Health samples (sleep,
+  steps) to an edge function nightly; Capacitor wrapping is the structural
+  escape hatch if PWA limits keep hurting.
 - Weekly review flow.
 - Planner that explicitly distinguishes "ideal plan" from "minimum viable day."
 - Flashcards and exam planning for the school/study domain.
-- Better integration between school assignments and the main task planner.
 - Experiment design guidance with clearer causal language.
-- Correlation insights that account for lagged effects.
 - More visible AI audit trail for actions that mutate data.
 - User-facing controls for assistant learning rules.
 - Better notification digesting and batching.

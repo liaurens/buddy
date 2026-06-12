@@ -83,7 +83,7 @@ interface ToastContainerProps {
 
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemove }) => {
     return (
-        <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+        <div className="pointer-events-none fixed inset-x-4 bottom-[calc(4.5rem+1rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-4 sm:items-end">
             {toasts.map(toast => (
                 <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
             ))}
@@ -145,12 +145,16 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
 
     return (
         <div
+            role="status"
+            aria-live="polite"
             className={`
                 pointer-events-auto
                 flex items-start gap-3 p-4 rounded-lg border shadow-lg
-                min-w-[320px] max-w-[480px]
+                w-full max-w-[480px] sm:w-auto sm:min-w-[320px]
                 ${getStyles()}
-                ${isExiting ? 'animate-out fade-out slide-out-to-right' : 'animate-in fade-in slide-in-from-right'}
+                ${isExiting
+                    ? 'animate-out fade-out slide-out-to-bottom sm:slide-out-to-right'
+                    : 'animate-in fade-in slide-in-from-bottom sm:slide-in-from-right'}
             `}
         >
             <div className={getIconColor()}>

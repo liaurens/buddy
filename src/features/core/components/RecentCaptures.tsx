@@ -26,7 +26,7 @@ const RecentCaptures: React.FC<Props> = ({ onNavigate }) => {
     if (isLoading || items.length === 0) return null;
 
     return (
-        <section className="overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-[0_16px_42px_rgba(15,23,42,0.045)]">
+        <section className="app-surface overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4">
                 <h2 className="text-base font-semibold text-slate-950">Recent captures</h2>
             </div>

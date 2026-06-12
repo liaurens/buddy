@@ -141,26 +141,6 @@ export function dbToClassDocument(db: DbClassDocument): ClassDocument {
     };
 }
 
-export function classDocumentToDb(
-    d: Omit<ClassDocument, 'id' | 'createdAt'>,
-    userId: string
-): Omit<DbClassDocument, 'id' | 'created_at'> {
-    return {
-        user_id: userId,
-        class_id: d.classId,
-        name: d.name,
-        storage_path: d.storagePath,
-        mime_type: d.mimeType,
-        size_bytes: d.sizeBytes,
-        kind: d.kind,
-        folder: d.folder || 'General',
-        tags: d.tags ?? [],
-        notes: d.notes ?? null,
-        extracted_summary: d.extractedSummary,
-        updated_at: d.updatedAt,
-    };
-}
-
 export function dbToClassSession(db: DbClassSession): ClassSession {
     return {
         id: db.id,

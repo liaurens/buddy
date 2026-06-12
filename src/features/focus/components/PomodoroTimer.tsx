@@ -99,8 +99,8 @@ const PomodoroTimer: React.FC = () => {
     return (
         <div className="app-page-readable">
         <div className="app-surface p-6">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="app-title flex items-center gap-2">
+            <div className="flex items-center justify-end mb-6 lg:justify-between">
+                <h2 className="app-title hidden items-center gap-2 lg:flex">
                     {mode === 'work' ? <Brain className="text-indigo-500" /> : <Coffee className="text-emerald-500" />}
                     Focus Timer
                 </h2>

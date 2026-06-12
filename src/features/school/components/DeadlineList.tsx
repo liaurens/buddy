@@ -77,7 +77,7 @@ export const DeadlineList: React.FC<DeadlineListProps> = ({ assignments, classes
 
     return (
         <div className="space-y-5">
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-2 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+            <div className="app-surface p-2">
                 <div className="flex gap-2 overflow-x-auto">
                     {(Object.keys(FILTER_LABELS) as DeadlineFilter[]).map(value => (
                         <button
@@ -104,7 +104,7 @@ export const DeadlineList: React.FC<DeadlineListProps> = ({ assignments, classes
             ) : null}
 
             {BUCKET_ORDER.filter(b => buckets.has(b)).map(b => (
-                <section key={b} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+                <section key={b} className="app-surface p-4">
                     <div className="mb-3 flex items-center justify-between gap-3">
                         <h3 className={`text-sm font-semibold ${
                             b === 'Overdue' ? 'text-red-700' : 'text-slate-950'

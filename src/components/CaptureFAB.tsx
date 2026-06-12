@@ -1,5 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Plus, Mic } from 'lucide-react';
+import { useToast } from './ui/Toast';
+import { CAPTURE_DRAFT_KEY } from '../features/assistant/constants';
 import type { AppRoute } from '../constants/routes';
 
 interface SpeechRecognitionLike {
@@ -30,6 +32,7 @@ const CaptureFAB: React.FC<CaptureFABProps> = ({ activeTab, onNavigate }) => {
     const [recording, setRecording] = useState(false);
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const triggeredLongPress = useRef(false);
+    const toast = useToast();
 
     if (HIDDEN_ON.includes(activeTab)) return null;
 
@@ -38,7 +41,7 @@ const CaptureFAB: React.FC<CaptureFABProps> = ({ activeTab, onNavigate }) => {
         const w = window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike };
         const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
         if (!SR) {
-            alert('Voice capture is not supported in this browser.');
+            toast.warning('Voice capture is not supported in this browser.');
             return;
         }
         const rec = new SR();
@@ -50,7 +53,7 @@ const CaptureFAB: React.FC<CaptureFABProps> = ({ activeTab, onNavigate }) => {
             const text = event.results[0]?.[0]?.transcript;
             if (text) {
                 onNavigate('assistant');
-                sessionStorage.setItem('captureFAB.voiceDraft', text);
+                sessionStorage.setItem(CAPTURE_DRAFT_KEY, text);
             }
             setRecording(false);
         };
@@ -86,6 +89,7 @@ const CaptureFAB: React.FC<CaptureFABProps> = ({ activeTab, onNavigate }) => {
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerCancel}
+            onPointerCancel={handlePointerCancel}
             aria-label="Quick capture (long-press for voice)"
             className={`fixed bottom-28 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_14px_34px_rgba(37,50,155,0.24)] transition-all active:scale-95 lg:bottom-8 lg:right-8 ${
                 recording ? 'animate-pulse bg-rose-600' : 'bg-indigo-700 hover:bg-indigo-800'

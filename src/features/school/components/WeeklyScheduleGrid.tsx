@@ -36,7 +36,7 @@ export const WeeklyScheduleGrid: React.FC<WeeklyScheduleGridProps> = ({ sessions
                 const list = byDay.get(day) ?? [];
                 if (list.length === 0) return null;
                 return (
-                    <section key={day} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+                    <section key={day} className="app-surface p-4">
                         <div className="mb-3 flex items-center justify-between gap-3">
                             <h3 className="text-sm font-semibold text-slate-950">{DAYS[i]}</h3>
                             <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">

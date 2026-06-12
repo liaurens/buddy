@@ -14,14 +14,13 @@ Student Buddy helps you capture what is on your mind, decide what matters next, 
 
 ### Health Tracking
 - **Custom Metrics**: Track any biometric data (sleep, mood, energy, etc.)
-- **Correlation Analysis**: Discover hidden patterns in your data
 - **Protocol Management**: Manage supplements and medications with cycle tracking
 - **Experiments**: Test hypotheses about your health and habits
 
 ### Planning & Productivity
 - **AI-Powered Daily Planning**: Generate optimized daily schedules
 - **Time Blocking**: Visual calendar with time block management
-- **Daily Reflection**: Review and learn from each day
+- **Daily Reflection & Close Day**: Review each day and end it with an explicit one-tap close
 - **Focus Timer**: Pomodoro-style focus sessions with break management
 
 ### Task Management
@@ -31,8 +30,11 @@ Student Buddy helps you capture what is on your mind, decide what matters next, 
 
 ### School & Capture
 - **AI Capture Assistant**: Turn natural language into tasks, notes, reminders, logs, and plans
+- **Offline-Safe Capture**: Captures queue locally when offline and sync automatically on reconnect
+- **Share to Capture**: Share text or links from other apps straight into the capture input (installed PWA)
 - **School Hub**: Manage classes, assignments, deadlines, weekly sessions, and course documents
-- **Notifications**: Per-task reminders and gentle nudges for important routines
+- **Truthful Today View**: Overdue tasks and upcoming school deadlines surface on the home screen
+- **Notifications**: Daily morning/evening anchor nudges, per-task reminders, and a push subscription health check
 
 ### Personal Growth
 - **Growth Hub**: Track goals, skills, projects, XP, and long-term progress

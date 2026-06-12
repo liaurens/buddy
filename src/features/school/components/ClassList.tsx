@@ -55,7 +55,7 @@ export const ClassList: React.FC<ClassListProps> = ({
                 const expanded = expandedId === c.id;
                 const classAss = classAssignments(c.id);
                 return (
-                    <li key={c.id} className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+                    <li key={c.id} className="app-surface overflow-hidden">
                         <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center">
                             <button
                                 type="button"

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { isSameDay, isPast } from 'date-fns';
-import { CalendarDays, CheckCircle2, ChevronRight, ListTodo, RotateCcw } from 'lucide-react';
-import { useTrackers } from '../../health-tracking/hooks/useTrackers';
+import { AlertTriangle, CalendarDays, ChevronRight, GraduationCap, ListTodo } from 'lucide-react';
 import { useTasks } from '../../tasks/hooks/useTasks';
+import { useAssignments } from '../../school/hooks/useAssignments';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase } from '../../../services/supabase';
+import { summarizeToday } from '../utils/todaySummary';
 import type { AppRoute } from '../../../constants/routes';
 
 interface Props {
@@ -12,17 +12,12 @@ interface Props {
 }
 
 const TodayCard: React.FC<Props> = ({ onNavigate }) => {
-    const { entries } = useTrackers();
     const { tasks } = useTasks();
+    const { assignments } = useAssignments({ activeOnly: true });
     const { user } = useAuth();
     const [eventCount, setEventCount] = useState(0);
 
-    const today = new Date();
-    const todayEntries = entries.filter(e => isSameDay(new Date(e.timestamp), today));
-    const hasCheckin = todayEntries.some(e => e.notes === 'Daily Check-in' || e.trackerId === 'journal_notes' || e.trackerId === 'mood');
-
-    const tasksToday = tasks.filter(t => !t.completed && t.dueDate && isSameDay(new Date(t.dueDate), today)).length;
-    const tasksOverdue = tasks.filter(t => !t.completed && t.dueDate && isPast(new Date(t.dueDate)) && !isSameDay(new Date(t.dueDate), today)).length;
+    const { overdue, dueToday, assignmentsDueSoon } = summarizeToday(tasks, assignments);
 
     useEffect(() => {
         if (!user?.id) return;
@@ -41,17 +36,35 @@ const TodayCard: React.FC<Props> = ({ onNavigate }) => {
     return (
         <button
             onClick={() => onNavigate('today')}
-            className="w-full rounded-lg border border-slate-200/90 bg-white p-5 text-left shadow-[0_16px_42px_rgba(15,23,42,0.045)] transition-colors hover:bg-slate-50"
+            className="app-surface w-full p-5 text-left transition-colors hover:bg-slate-50"
         >
             <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-base font-semibold text-slate-950">Today</h2>
                 <ChevronRight size={16} className="text-slate-400" />
             </div>
+
+            {overdue > 0 && (
+                <div className="mb-3 flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+                    <AlertTriangle size={15} />
+                    <span>{overdue} overdue task{overdue === 1 ? '' : 's'}</span>
+                </div>
+            )}
+
             <div className="grid grid-cols-4 gap-2">
-                <Stat icon={<ListTodo size={17} />} value={tasksToday + tasksOverdue} label="Tasks" tone="text-slate-700" />
+                <Stat icon={<ListTodo size={17} />} value={dueToday} label="Due today" tone="text-slate-700" />
+                <Stat
+                    icon={<AlertTriangle size={17} />}
+                    value={overdue}
+                    label="Overdue"
+                    tone={overdue > 0 ? 'text-rose-600' : 'text-slate-400'}
+                />
                 <Stat icon={<CalendarDays size={17} />} value={eventCount} label="Events" tone="text-blue-600" />
-                <Stat icon={<CheckCircle2 size={17} />} value={hasCheckin ? 0 : 1} label="Check-in" tone="text-rose-500" />
-                <Stat icon={<RotateCcw size={17} />} value="0m" label="Focus" tone="text-slate-700" />
+                <Stat
+                    icon={<GraduationCap size={17} />}
+                    value={assignmentsDueSoon}
+                    label="School ≤7d"
+                    tone={assignmentsDueSoon > 0 ? 'text-amber-600' : 'text-slate-400'}
+                />
             </div>
         </button>
     );

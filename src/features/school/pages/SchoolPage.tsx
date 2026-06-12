@@ -78,7 +78,7 @@ const SchoolFocusRail: React.FC<SchoolFocusRailProps> = ({ assignments, classes,
 
     return (
         <aside className="space-y-4">
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+            <section className="app-surface p-4">
                 <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
                         <h2 className="text-sm font-semibold text-slate-950">Today focus</h2>
@@ -108,7 +108,7 @@ const SchoolFocusRail: React.FC<SchoolFocusRailProps> = ({ assignments, classes,
                 </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+            <section className="app-surface p-4">
                 <h2 className="text-sm font-semibold text-slate-950">Next up</h2>
                 {nextAssignment ? (
                     <div className="mt-3 rounded-xl border border-slate-200/80 bg-white p-3">
@@ -152,7 +152,7 @@ const SchoolFocusRail: React.FC<SchoolFocusRailProps> = ({ assignments, classes,
                 </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+            <section className="app-surface p-4">
                 <h2 className="text-sm font-semibold text-slate-950">Class load</h2>
                 <div className="mt-3 space-y-2">
                     {mostLoadedClasses.length === 0 ? (

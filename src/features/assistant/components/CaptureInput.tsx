@@ -1,9 +1,13 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useRef, useCallback, useMemo, useEffect, useImperativeHandle } from 'react'
 import { SendHorizontal, Loader2, ArrowRight } from 'lucide-react'
 import { useAssistantCommands } from '../hooks/useAssistantCommands'
 import { useRoutePreview } from '../hooks/useRoutePreview'
+import { CAPTURE_DRAFT_KEY } from '../constants'
 
-const VOICE_DRAFT_KEY = 'captureFAB.voiceDraft'
+export interface CaptureInputHandle {
+  /** Replace the input text and focus the textarea (caret at end). */
+  fill: (text: string) => void
+}
 
 interface CaptureInputProps {
   onSubmit: (text: string) => Promise<void> | void
@@ -16,6 +20,7 @@ interface CaptureInputProps {
   richHints?: boolean
   variant?: 'compact' | 'comfortable' | 'bare'
   onBeforeSubmit?: (text: string) => void
+  ref?: React.Ref<CaptureInputHandle>
 }
 
 const CaptureInput: React.FC<CaptureInputProps> = ({
@@ -29,6 +34,7 @@ const CaptureInput: React.FC<CaptureInputProps> = ({
   richHints = false,
   variant = 'compact',
   onBeforeSubmit,
+  ref,
 }) => {
   // Seed from CaptureFAB voice draft on first render. Lazy initializer avoids
   // setState-in-effect. We don't auto-submit — speech recognition errors are
@@ -36,9 +42,9 @@ const CaptureInput: React.FC<CaptureInputProps> = ({
   const [input, setInput] = useState<string>(() => {
     if (!consumeVoiceDraft) return ''
     try {
-      const draft = sessionStorage.getItem(VOICE_DRAFT_KEY)
+      const draft = sessionStorage.getItem(CAPTURE_DRAFT_KEY)
       if (draft) {
-        sessionStorage.removeItem(VOICE_DRAFT_KEY)
+        sessionStorage.removeItem(CAPTURE_DRAFT_KEY)
         return draft
       }
     } catch {
@@ -74,6 +80,18 @@ const CaptureInput: React.FC<CaptureInputProps> = ({
     ta.style.height = 'auto'
     ta.style.height = Math.min(ta.scrollHeight, 200) + 'px'
   }, [input])
+
+  useImperativeHandle(ref, () => ({
+    fill: (text: string) => {
+      setInput(text)
+      setShowHints(false)
+      const ta = textareaRef.current
+      if (!ta) return
+      ta.focus()
+      // Caret placement must wait until the new value is rendered.
+      requestAnimationFrame(() => ta.setSelectionRange(text.length, text.length))
+    },
+  }), [])
 
   // If seeded from voice draft, focus the textarea with caret at end.
   useEffect(() => {

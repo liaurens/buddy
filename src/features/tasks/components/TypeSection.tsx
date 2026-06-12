@@ -49,7 +49,7 @@ const TypeSection: React.FC<TypeSectionProps> = ({
                 <span className="text-xs font-medium text-slate-400">{tasks.length}</span>
             </button>
             {!collapsed && (
-                <div className={`overflow-hidden rounded-xl border-l-2 ${colors.border} border border-slate-200 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.04)]`}>
+                <div className={`app-surface overflow-hidden border-l-2 ${colors.border}`}>
                     {tasks.map(task => (
                         <TaskCard
                             key={task.id}

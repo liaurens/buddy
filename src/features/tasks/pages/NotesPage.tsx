@@ -38,8 +38,8 @@ const SmartNotesPage: React.FC = () => {
     return (
         <div className="app-page-readable">
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
+                <div className="flex items-center justify-end lg:justify-between">
+                    <div className="hidden lg:block">
                         <h1 className="app-title">Quick Notes</h1>
                         <p className="app-subtitle">Capture and sort ideas without clutter.</p>
                     </div>

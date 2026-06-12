@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { CheckCircle, XCircle, ListTodo, StickyNote, Calendar, Activity, Bell, Brain, BookOpen, FolderKanban, TrendingUp, HelpCircle, HelpingHand, GraduationCap } from 'lucide-react'
+import { CheckCircle, XCircle, ListTodo, StickyNote, Calendar, Activity, Bell, TrendingUp, HelpCircle, HelpingHand, GraduationCap } from 'lucide-react'
 import type { AssistantResponse } from '../types'
 import { invokeAssistantAction } from '../services/assistant.service'
 
@@ -60,9 +60,6 @@ function ClarifyCandidates({ response }: { response: AssistantResponse }) {
 function intentIcon(intent: string, domain?: string) {
   // Domain-based icons (preferred when available)
   if (domain === 'school') return <GraduationCap size={16} className="text-rose-600" />
-  if (domain === 'mental') return <Brain size={16} className="text-purple-600" />
-  if (domain === 'studying') return <BookOpen size={16} className="text-teal-600" />
-  if (domain === 'projects') return <FolderKanban size={16} className="text-orange-600" />
   if (domain === 'improvement') return <TrendingUp size={16} className="text-green-600" />
   if (domain === 'extra') return <HelpCircle size={16} className="text-slate-500" />
 
@@ -72,7 +69,6 @@ function intentIcon(intent: string, domain?: string) {
   if (intent.startsWith('task')) return <ListTodo size={16} className="text-indigo-600" />
   if (intent.startsWith('tracker')) return <Activity size={16} className="text-blue-600" />
   if (intent.startsWith('calendar')) return <Calendar size={16} className="text-pink-600" />
-  if (intent.startsWith('habits')) return <ListTodo size={16} className="text-violet-600" />
   if (intent.startsWith('notification')) return <Bell size={16} className="text-amber-600" />
   return null
 }

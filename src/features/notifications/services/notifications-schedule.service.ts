@@ -13,6 +13,25 @@ import type { ToolCategory } from '../../../services/notifications/notification.
 
 const ROUTINE_CATEGORIES: ToolCategory[] = ['routine_morning', 'routine_midday', 'routine_night'];
 
+const ANCHOR_REAPPLY_KEY = 'notifications.anchorsAppliedAt';
+const ANCHOR_REAPPLY_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12h
+
+/**
+ * Self-healing for the daily anchor notifications: re-applies the routine
+ * schedule at most once per 12 hours on app open, so the morning/evening
+ * nudges survive even if the server-side re-enqueue chain ever breaks.
+ */
+export async function ensureAnchorSchedule(userId: string): Promise<void> {
+    try {
+        const last = Number(localStorage.getItem(ANCHOR_REAPPLY_KEY) ?? 0);
+        if (Date.now() - last < ANCHOR_REAPPLY_INTERVAL_MS) return;
+        await reapplyNotificationSchedule(userId);
+        localStorage.setItem(ANCHOR_REAPPLY_KEY, String(Date.now()));
+    } catch (err) {
+        console.warn('Failed to reapply anchor notification schedule:', err);
+    }
+}
+
 /**
  * Cancel all pending routine reminders and reschedule from current settings.
  * Call after the user saves Notifications settings.
@@ -31,7 +50,8 @@ export async function reapplyNotificationSchedule(userId: string, settings?: Not
             'routine_reminder',
             s.morningTime,
             'Morning routine',
-            'Start your day — comms, log yesterday, plan today.',
+            // Body is replaced with live counts (due/overdue/school) at send time.
+            'Plan today — open to see what\'s due.',
             { route: 'today', step: 'morning' },
         );
     }
@@ -55,7 +75,7 @@ export async function reapplyNotificationSchedule(userId: string, settings?: Not
             'routine_reminder',
             s.nightTime,
             'Night reflection',
-            "Wrap the day — wins, blocker, tomorrow's priority.",
+            "Close the day — 90 seconds: wins, blocker, tomorrow's one thing.",
             { route: 'reflection', step: 'night' },
         );
     }

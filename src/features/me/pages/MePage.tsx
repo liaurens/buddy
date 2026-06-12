@@ -67,7 +67,7 @@ const MePage: React.FC = () => {
 
     return (
         <div className="app-page">
-            <header className="flex items-center gap-3">
+            <header className="hidden items-center gap-3 lg:flex">
                 <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
                     <SettingsIcon size={24} />
                 </div>
