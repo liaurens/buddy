@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { MessageSquare } from 'lucide-react';
 import { ToastProvider } from './components/ui/Toast';
 import MainLayout from './layouts/MainLayout';
 // Feature imports
@@ -11,15 +12,17 @@ import { ChecklistsPage } from './features/checklists';
 import { ToolboxPage } from './features/toolbox';
 import PomodoroTimer from './features/focus/components/PomodoroTimer';
 import AssistantChat from './features/assistant/components/AssistantChat';
-import GrowthHubPage from './features/growth/pages/GrowthHubPage';
 import { SchoolPage } from './features/school';
 import LoginScreen from './features/core/components/LoginScreen';
 import MePage from './features/me/pages/MePage';
 import BrowsePage from './features/browse/pages/BrowsePage';
 import DayPage from './features/day/pages/DayPage';
-import { NotificationsPage } from './features/notifications';
+import { NotificationsPage, ensureAnchorSchedule } from './features/notifications';
 import InAppReminderBanner from './components/notifications/InAppReminderBanner';
 import { syncCalendarIfStale } from './features/planning/services/calendar-sync.service';
+import { flushPendingCaptures } from './features/assistant/services/assistant.service';
+import { CAPTURE_DRAFT_KEY } from './features/assistant/constants';
+import { logAppEvent } from './services/app-events';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured } from './services/supabase';
 import { DevPortal } from './components/dev/DevPortal';
@@ -51,10 +54,16 @@ const App: React.FC = () => {
   }, [user?.id]);
 
   // Handle deep-links from notifications (?route=tasks&intent=complete&taskId=…)
+  // and incoming Web Share Target shares (?title=…&text=…&url=…).
   useEffect(() => {
     if (!isLoggedIn) return;
     const params = new URLSearchParams(window.location.search);
     const route = params.get('route') as AppRoute | null;
+    const sharedText = [params.get('title'), params.get('text'), params.get('url')]
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+
     if (route) {
       setActiveTab(route);
       const intent = params.get('intent');
@@ -62,12 +71,50 @@ const App: React.FC = () => {
       if (intent && taskId) {
         setNavParams({ intent, taskId });
       }
+    } else if (sharedText) {
+      // Seed the capture input with the shared content; the user confirms before submit.
+      try {
+        sessionStorage.setItem(CAPTURE_DRAFT_KEY, sharedText);
+      } catch {
+        // sessionStorage unavailable (private mode) — share is lost, but don't crash.
+      }
+      setActiveTab('home');
+    }
+
+    void logAppEvent('app_open', {
+      source: route ? 'notification' : sharedText ? 'share' : 'direct',
+      ...(route ? { route } : {}),
+    });
+
+    if (route || sharedText) {
       // Clear the query so a refresh doesn't re-fire the intent.
       const url = new URL(window.location.href);
       url.search = '';
       window.history.replaceState({}, '', url.toString());
     }
   }, [isLoggedIn]);
+
+  // Log route visits so surface engagement is measurable.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    void logAppEvent('route_visit', { route: activeTab });
+  }, [isLoggedIn, activeTab]);
+
+  // Offline capture outbox: replay queued captures on login and whenever
+  // connectivity returns.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    void flushPendingCaptures();
+    const onOnline = () => { void flushPendingCaptures(); };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [isLoggedIn]);
+
+  // Keep the daily anchor notifications alive (self-heals at most every 12h).
+  useEffect(() => {
+    if (!user?.id) return;
+    void ensureAnchorSchedule(user.id);
+  }, [user?.id]);
 
   const handleNavigate = (tab: typeof activeTab, params?: Record<string, unknown>) => {
     setActiveTab(tab);
@@ -102,12 +149,14 @@ const App: React.FC = () => {
         return <ChecklistsPage />;
       case 'assistant':
         return (
-          <div className="mx-auto flex h-[calc(100vh-7rem)] w-full max-w-6xl flex-col lg:h-[calc(100vh-4rem)]">
+          <div className="mx-auto flex h-[calc(100dvh-7rem)] w-full max-w-6xl flex-col lg:h-[calc(100dvh-4rem)]">
             <AssistantChat onNavigate={handleNavigate} />
           </div>
         );
+      // Growth Hub was folded into the reflection flow (goals check-in,
+      // skills log, journal). Old growth/goals deep links land there.
       case 'growth':
-        return <GrowthHubPage initialParams={navParams} />;
+        return <ReflectionPage />;
       case 'school':
         return <SchoolPage />;
       case 'browse':
@@ -117,7 +166,7 @@ const App: React.FC = () => {
       case 'today':
         return <DayPage onNavigate={handleNavigate} />;
       case 'goals':
-        return <GrowthHubPage initialParams={{ tab: 'goals' }} />;
+        return <ReflectionPage />;
       case 'notifications':
         return <NotificationsPage />;
       default:
@@ -142,14 +191,17 @@ const App: React.FC = () => {
   // Show loading state with timeout
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4">
-        <div className="text-white text-lg">Loading...</div>
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#f7f8fb]">
+        <div className="flex h-14 w-14 animate-pulse items-center justify-center rounded-2xl bg-indigo-700 text-white shadow-[0_14px_34px_rgba(37,50,155,0.24)]">
+          <MessageSquare size={26} />
+        </div>
+        <div className="text-sm font-medium text-slate-500">Loading Buddy…</div>
         {loadingTimeout && (
-          <div className="text-slate-400 text-sm text-center max-w-xs">
+          <div className="max-w-xs text-center text-sm text-slate-500">
             Taking longer than expected. Check browser console for errors.
             <button
               onClick={() => window.location.reload()}
-              className="block mx-auto mt-3 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm"
+              className="mx-auto mt-3 block rounded-lg bg-indigo-700 px-4 py-2 text-sm text-white hover:bg-indigo-800"
             >
               Reload Page
             </button>

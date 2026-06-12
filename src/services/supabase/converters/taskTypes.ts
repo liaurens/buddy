@@ -2,7 +2,7 @@
  * Task Type Converters
  */
 
-import type { TaskType } from '../../../types';
+import type { TaskType } from '../../../features/tasks/types';
 import type { DbTaskType } from '../types';
 
 export function dbToTaskType(db: DbTaskType): TaskType {

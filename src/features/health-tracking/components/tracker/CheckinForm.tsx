@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useTrackers } from '../../hooks/useTrackers';
 import { useProtocols } from '../../hooks/useProtocols';
 import { CheckCircle, Pill, Calendar, Settings, Plus, Check, X } from 'lucide-react';
-import type { TrackerDefinition, TrackerScale, ScaleDirection, Entry, Dose } from '../../../../types';
+import type { TrackerDefinition, TrackerScale, ScaleDirection, Entry, Dose } from '../../types';
 import { format } from 'date-fns';
 
 interface CheckinFormProps {

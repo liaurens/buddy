@@ -6,7 +6,7 @@ import { useExperiments } from '../../health-tracking/hooks/useExperiments';
 import { useExperimentCheckins } from '../../health-tracking/hooks/useExperimentCheckins';
 import CheckinModal from '../../health-tracking/components/tracker/CheckinModal';
 import ExperimentCheckinForm from '../../health-tracking/components/experiments/ExperimentCheckinForm';
-import type { Entry } from '../../../types';
+import type { Entry } from '../../health-tracking/types';
 import type { AppRoute } from '../../../constants/routes';
 
 interface LogYesterdayStepProps {

@@ -24,8 +24,5 @@ export const COMMANDS: AssistantCommand[] = [
     { command: '/find', description: 'Search notes', example: '/find machine learning' },
     { command: '/health', description: 'Health query', example: '/health how was my sleep?' },
     { command: '/agenda', description: "Today's events", example: '/agenda' },
-    { command: '/habits', description: 'Habit status', example: '/habits' },
     { command: '/help', description: 'Show all commands', example: '/help' },
 ];
-
-export const PRIMARY_COMMANDS = COMMANDS.filter(c => c.primary);

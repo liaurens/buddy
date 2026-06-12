@@ -2,7 +2,7 @@ import { useState } from 'react';
 import ProtocolList from '../components/protocols/ProtocolList';
 import ProtocolForm from '../components/protocols/ProtocolForm';
 import ProtocolSettingsModal from '../components/protocols/ProtocolSettingsModal';
-import type { Protocol } from '../../../types';
+import type { Protocol } from '../types';
 import { Plus, Settings } from 'lucide-react';
 
 const ProtocolsPage = () => {
@@ -22,8 +22,8 @@ const ProtocolsPage = () => {
 
     return (
         <div className="app-page">
-            <div className="flex items-center justify-between">
-                <div>
+            <div className="flex items-center justify-end lg:justify-between">
+                <div className="hidden lg:block">
                     <h1 className="app-title">Protocols</h1>
                     <p className="app-subtitle">Manage your supplements, medications, and routines.</p>
                 </div>

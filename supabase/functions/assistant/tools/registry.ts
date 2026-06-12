@@ -7,6 +7,11 @@
  *
  * That's it. The General Manager and Domain Managers auto-discover
  * commands, rules, and actions from this registry.
+ *
+ * Keep this registry lean: every registered tool's schema is sent to the
+ * model on each request, which costs tokens and hurts routing accuracy.
+ * Tools removed in the 2026-06 prune (habits, mood, journal, study,
+ * projects, task-routines, task-types, context) live in git history.
  */
 
 import type { ToolDefinition } from '../types.ts'
@@ -14,10 +19,7 @@ import type { ToolDefinition } from '../types.ts'
 // Planning domain
 import { tasksTool } from './tasks.tool.ts'
 import { calendarTool } from './calendar.tool.ts'
-import { habitsTool } from './habits.tool.ts'
 import { notificationsTool } from './notifications.tool.ts'
-import { taskRoutinesTool } from './task-routines.tool.ts'
-import { taskTypesTool } from './task-types.tool.ts'
 import { checklistsTool } from './checklists.tool.ts'
 
 // Health domain
@@ -29,22 +31,11 @@ import { notesTool } from './notes.tool.ts'
 
 // Extra / System domain
 import { systemTool } from './system.tool.ts'
-import { contextTool } from './context.tool.ts'
-
-// Mental domain
-import { moodTool } from './mood.tool.ts'
-import { journalTool } from './journal.tool.ts'
 
 // Improvement domain
 import { goalsTool } from './goals.tool.ts'
 import { skillsTool } from './skills.tool.ts'
 import { strategiesTool } from './strategies.tool.ts'
-
-// Studying domain
-import { studyTool } from './study.tool.ts'
-
-// Projects domain
-import { projectsTool } from './projects.tool.ts'
 
 // School domain
 import { schoolTool } from './school.tool.ts'
@@ -52,20 +43,13 @@ import { schoolTool } from './school.tool.ts'
 export const ALL_TOOLS: ToolDefinition[] = [
   // Planning
   tasksTool,
-  taskRoutinesTool,
-  taskTypesTool,
   checklistsTool,
   calendarTool,
-  habitsTool,
   notificationsTool,
 
   // Health
   trackerTool,
   experimentAgentTool,
-
-  // Mental
-  moodTool,
-  journalTool,
 
   // Content
   notesTool,
@@ -75,16 +59,9 @@ export const ALL_TOOLS: ToolDefinition[] = [
   skillsTool,
   strategiesTool,
 
-  // Studying
-  studyTool,
-
-  // Projects
-  projectsTool,
-
   // School
   schoolTool,
 
   // Extra / System
-  contextTool,
   systemTool,
 ]

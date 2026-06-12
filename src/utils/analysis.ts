@@ -1,4 +1,4 @@
-import type { TLCCResult } from '../types';
+import type { TLCCResult } from '../features/health-tracking/types';
 
 /**
  * Calculate Pearson correlation coefficient between two arrays

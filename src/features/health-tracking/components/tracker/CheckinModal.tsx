@@ -1,6 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import type { Entry, Dose } from '../../../../types';
+import type { Entry, Dose } from '../../types';
 import CheckinForm from './CheckinForm';
 
 interface CheckinModalProps {

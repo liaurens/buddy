@@ -3,7 +3,7 @@
  * Convert between DB types (snake_case) and App types (camelCase)
  */
 
-import type { Protocol, Cycle, Dose } from '../../../types';
+import type { Protocol, Cycle, Dose } from '../../../features/health-tracking/types';
 import type { DbProtocol, DbCycle, DbDose } from '../types';
 
 export function dbToProtocol(db: DbProtocol): Protocol {

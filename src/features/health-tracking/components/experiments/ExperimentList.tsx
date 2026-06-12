@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTrackers } from '../../hooks/useTrackers';
 import { useExperiments } from '../../hooks/useExperiments';
 import { useProtocols } from '../../hooks/useProtocols';
-import type { Experiment, ExperimentStatus } from '../../../../types';
+import type { Experiment, ExperimentStatus } from '../../types';
 import { FlaskConical, ArrowRight, TrendingUp, Trash2, CheckSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 

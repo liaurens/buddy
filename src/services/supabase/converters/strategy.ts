@@ -2,7 +2,7 @@
  * Strategy Converters
  */
 
-import type { Strategy } from '../../../types';
+import type { Strategy } from '../../../features/toolbox/types';
 import type { DbStrategy } from '../types';
 
 export function dbToStrategy(db: DbStrategy): Strategy {

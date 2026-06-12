@@ -2,7 +2,7 @@
  * Experiment Check-in Entry Operations
  */
 
-import type { ExperimentCheckinEntry } from '../../../types';
+import type { ExperimentCheckinEntry } from '../../../features/health-tracking/types';
 import type { DbExperimentCheckinEntry } from '../types';
 import { supabase } from '../client';
 import { dbToExperimentCheckinEntry } from '../converters/experiment';

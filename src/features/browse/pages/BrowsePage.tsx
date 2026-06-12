@@ -33,7 +33,7 @@ const EXPLORE: Array<{ tab: AppRoute; label: string; desc: string; Icon: React.C
     { tab: 'school', label: 'School', desc: 'Classes, assignments, and grades', Icon: GraduationCap },
     { tab: 'calendar', label: 'Calendar', desc: 'Events and time blocking', Icon: Calendar },
     { tab: 'health', label: 'Health', desc: 'Track habits and wellness', Icon: Activity },
-    { tab: 'growth', label: 'Growth', desc: 'Books, goals, and reflections', Icon: TrendingUp },
+    { tab: 'reflection', label: 'Reflection & Growth', desc: 'Journal, goals, and skills', Icon: TrendingUp },
     { tab: 'assistant', label: 'AI Capture', desc: 'Smart capture and suggestions', Icon: Sparkles },
 ];
 
@@ -54,16 +54,13 @@ const BrowsePage: React.FC<BrowsePageProps> = ({ onNavigate }) => {
 
             <div className="mx-auto max-w-3xl space-y-7 lg:mx-0 lg:max-w-5xl">
                 <section className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-sm font-semibold text-slate-950">Shortcuts</h2>
-                        <button className="text-sm font-medium text-indigo-800">Edit</button>
-                    </div>
+                    <h2 className="text-sm font-semibold text-slate-950">Shortcuts</h2>
                     <div className="grid grid-cols-5 gap-2.5">
                         {SHORTCUTS.map(({ tab, label, Icon }) => (
                             <button
                                 key={tab}
                                 onClick={() => onNavigate(tab)}
-                                className="flex aspect-square min-h-[4.7rem] flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-center shadow-[0_8px_22px_rgba(15,23,42,0.03)]"
+                                className="app-surface flex aspect-square min-h-[4.7rem] flex-col items-center justify-center gap-2 text-center"
                             >
                                 <Icon size={21} className="text-indigo-800" />
                                 <span className="max-w-full truncate px-1 text-xs font-medium text-slate-800">{label}</span>
@@ -86,7 +83,7 @@ const BrowseList: React.FC<{
 }> = ({ title, items, onNavigate }) => (
     <section className="space-y-3">
         <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_10px_26px_rgba(15,23,42,0.04)]">
+        <div className="app-surface overflow-hidden">
             {items.map(({ tab, label, desc, Icon }) => (
                 <button
                     key={tab}

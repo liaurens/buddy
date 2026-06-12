@@ -3,7 +3,7 @@ import ExperimentList from '../components/experiments/ExperimentList';
 import ExperimentWizard from '../components/experiments/ExperimentWizard';
 import ExperimentDetails from '../components/experiments/ExperimentDetails';
 import ExperimentSettingsModal from '../components/experiments/ExperimentSettingsModal';
-import type { Experiment } from '../../../types';
+import type { Experiment } from '../types';
 import { Plus, FlaskConical, Settings } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
 
@@ -43,8 +43,8 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
 
     return (
         <div className="app-page">
-            <div className="flex items-center justify-between">
-                <div>
+            <div className="flex items-center justify-end lg:justify-between">
+                <div className="hidden lg:block">
                     <h1 className="app-title flex items-center gap-2">
                         <FlaskConical className="text-indigo-600" />
                         Experiments

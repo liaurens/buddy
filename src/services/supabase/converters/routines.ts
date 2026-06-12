@@ -2,7 +2,7 @@
  * Routine + Routine Item Converters
  */
 
-import type { Routine, RoutineItem } from '../../../types';
+import type { Routine, RoutineItem } from '../../../features/tasks/types';
 import type { DbTaskRoutine, DbTaskRoutineItem } from '../types';
 
 export function dbToRoutineItem(db: DbTaskRoutineItem): RoutineItem {

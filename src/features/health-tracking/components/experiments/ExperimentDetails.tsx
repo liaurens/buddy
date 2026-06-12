@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, Calendar as CalendarIcon, Save, CheckSquare, BarChart3, Bot, Settings as SettingsIcon, FileText, Pause, Check, Archive } from 'lucide-react';
 import { format } from 'date-fns';
-import type { Experiment, ExperimentStatus } from '../../../../types';
+import type { Experiment, ExperimentStatus } from '../../types';
 import { getExperimentLogs, addExperimentLog } from '../../../../services/supabase';
 import { useTrackers } from '../../hooks/useTrackers';
 import { useProtocols } from '../../hooks/useProtocols';

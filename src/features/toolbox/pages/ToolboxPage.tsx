@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, Search, BookOpen, Lightbulb, Star, ChevronRight, X, Settings } from 'lucide-react';
 import { format } from 'date-fns';
-import type { Strategy } from '../../../types';
+import type { Strategy } from '../types';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase, dbToStrategy, strategyToDb, type DbStrategy } from '../../../services/supabase';
 import ToolboxSettingsModal from '../components/ToolboxSettingsModal';
@@ -127,12 +127,12 @@ const ToolboxPage: React.FC = () => {
     });
 
     return (
-        <div className="app-page flex h-[calc(100vh-7rem)] gap-6 lg:h-[calc(100vh-4rem)]">
+        <div className="app-page flex h-[calc(100dvh-7rem)] gap-6 lg:h-[calc(100dvh-4rem)]">
 
             {/* Left Panel: List */}
             <div className={`flex-1 flex flex-col space-y-4 ${selectedStrategy ? 'hidden md:flex' : 'flex'}`}>
-                <header className="flex items-center justify-between">
-                    <h1 className="app-title flex items-center gap-3">
+                <header className="flex items-center justify-end lg:justify-between">
+                    <h1 className="app-title hidden items-center gap-3 lg:flex">
                         <div className="rounded-xl bg-amber-50 p-2 text-amber-600">
                             <Lightbulb size={24} />
                         </div>

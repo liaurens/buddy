@@ -2,7 +2,7 @@
  * Task/Todo Converters
  */
 
-import type { Task } from '../../../types';
+import type { Task } from '../../../features/tasks/types';
 import type { DbTodo } from '../types';
 
 export function dbToTodo(db: DbTodo): Task {

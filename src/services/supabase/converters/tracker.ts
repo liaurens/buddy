@@ -3,7 +3,7 @@
  * Convert between DB types (snake_case) and App types (camelCase)
  */
 
-import type { TrackerDefinition, TrackerCadence, Entry } from '../../../types';
+import type { TrackerDefinition, TrackerCadence, Entry } from '../../../features/health-tracking/types';
 import type { DbTracker, DbEntry } from '../types';
 
 export function dbToTracker(db: DbTracker): TrackerDefinition {

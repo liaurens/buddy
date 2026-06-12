@@ -44,22 +44,14 @@ const LEGACY_FLAG_MAP: Record<string, string> = {
   '-reminder': '/remind',
   '-herinner': '/remind',
   '-herinnering': '/remind',
-  // Health / mood / journal
-  '-mood': '/mood',
-  '-stemming': '/mood',
+  // Health
   '-checkin': '/checkin',
   '-meting': '/checkin',
-  '-journal': '/journal',
-  '-dagboek': '/journal',
-  // Goals / study
+  // Goals
   '-goal': '/goal',
   '-doel': '/goal',
-  '-study': '/study',
-  '-studie': '/study',
-  // Calendar / habits
+  // Calendar
   '-agenda': '/agenda',
-  '-habits': '/habits',
-  '-gewoontes': '/habits',
 }
 
 /**

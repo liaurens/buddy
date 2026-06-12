@@ -2,7 +2,7 @@
  * Daily Journal Entry Operations
  */
 
-import type { DailyJournalEntry, JournalPromptResponse } from '../../../types';
+import type { DailyJournalEntry, JournalPromptResponse } from '../../../features/health-tracking/types';
 import type { DbDailyJournalEntry } from '../types';
 import { supabase } from '../client';
 import { dbToDailyJournalEntry } from '../converters/experiment';

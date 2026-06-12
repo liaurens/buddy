@@ -1,6 +1,6 @@
 import React from 'react';
 import { useProtocols } from '../../hooks/useProtocols';
-import type { Protocol } from '../../../../types';
+import type { Protocol } from '../../types';
 import { Edit2, Trash2, Pill, Activity } from 'lucide-react';
 
 interface ProtocolListProps {

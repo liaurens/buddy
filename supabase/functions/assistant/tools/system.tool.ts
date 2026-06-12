@@ -88,13 +88,9 @@ const LABEL_BY_ACTION: Partial<Record<Intent, string>> = {
   'note.query': 'search notes',
   'tracker.checkin': 'check-in',
   'tracker.query': 'health query',
-  'mood.log': 'mood',
-  'journal.write': 'journal',
   'calendar.today': 'agenda',
-  'habits.status': 'habits',
   'notification.schedule': 'reminder',
   'goal.create': 'goal',
-  'study.log': 'study log',
   'system.help': 'help',
 }
 

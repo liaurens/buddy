@@ -5,11 +5,8 @@
 export type Domain =
   | 'planning'
   | 'health'
-  | 'mental'
   | 'content'
   | 'improvement'
-  | 'studying'
-  | 'projects'
   | 'school'
   | 'extra'
 
@@ -30,24 +27,11 @@ export type Intent =
   | 'task.reminder.cancel'
   | 'task.reminder.list'
   | 'calendar.today'
-  | 'habits.status'
   | 'notification.schedule'
   | 'plan.start'
   | 'plan.generate'
   | 'plan.review'
   | 'plan.close'
-  // Task routines
-  | 'routine.create'
-  | 'routine.list'
-  | 'routine.add_item'
-  | 'routine.remove_item'
-  | 'routine.run'
-  | 'routine.delete'
-  // Task types
-  | 'tasktype.create'
-  | 'tasktype.list'
-  | 'tasktype.assign'
-  | 'tasktype.delete'
   // Checklists
   | 'checklist.create'
   | 'checklist.list'
@@ -59,11 +43,6 @@ export type Intent =
   | 'tracker.query'
   | 'experiment.ask'
   | 'experiment.list'
-  // Mental
-  | 'mood.log'
-  | 'mood.query'
-  | 'journal.write'
-  | 'journal.reflect'
   // Improvement
   | 'goal.create'
   | 'goal.list'
@@ -78,14 +57,6 @@ export type Intent =
   | 'strategy.add'
   | 'strategy.list'
   | 'strategy.find'
-  // Studying
-  | 'study.log'
-  | 'study.stats'
-  // Projects
-  | 'project.create'
-  | 'project.list'
-  | 'project.status'
-  | 'project.add'
   // School
   | 'school.class.create'
   | 'school.class.list'
@@ -102,7 +73,6 @@ export type Intent =
   | 'system.commands'
   | 'system.route_preview'
   | 'system.feedback'
-  | 'context.summary'
   | 'unknown'
 
 // ─── Tool Registration System ───────────────────────────────────────────────

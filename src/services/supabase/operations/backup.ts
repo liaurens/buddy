@@ -2,7 +2,9 @@
  * Data Export & Import Operations
  */
 
-import type { TrackerDefinition, Entry, Protocol, Cycle, Dose, Experiment, ExperimentLog, Strategy, Task } from '../../../types';
+import type { TrackerDefinition, Entry, Protocol, Cycle, Dose, Experiment, ExperimentLog } from '../../../features/health-tracking/types';
+import type { Strategy } from '../../../features/toolbox/types';
+import type { Task } from '../../../features/tasks/types';
 import { supabase } from '../client';
 import { dbToTracker, trackerToDb, dbToEntry, entryToDb } from '../converters/tracker';
 import { dbToProtocol, protocolToDb, dbToCycle, cycleToDb, dbToDose, doseToDb } from '../converters/protocol';

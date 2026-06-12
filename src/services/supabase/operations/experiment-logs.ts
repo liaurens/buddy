@@ -2,7 +2,7 @@
  * Experiment Log Operations
  */
 
-import type { ExperimentLog } from '../../../types';
+import type { ExperimentLog } from '../../../features/health-tracking/types';
 import type { DbExperimentLog } from '../types';
 import { supabase } from '../client';
 import { dbToExperimentLog } from '../converters/experiment';

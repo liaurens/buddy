@@ -15,11 +15,8 @@ import { createDomainManager, type DomainManager } from './base.manager.ts'
 const DOMAINS: Domain[] = [
   'planning',
   'health',
-  'mental',
   'content',
   'improvement',
-  'studying',
-  'projects',
   'school',
   'extra',
 ]

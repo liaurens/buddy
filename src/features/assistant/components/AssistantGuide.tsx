@@ -102,7 +102,6 @@ const AssistantGuide: React.FC = () => {
           <CommandRow cmd="/checkin" desc="Log health metrics" example="/checkin mood 4 sleep 7 energy 3" />
           <CommandRow cmd="/health" desc="Query health data" example="/health how was my sleep?" />
           <CommandRow cmd="/agenda" desc="Show today's events" />
-          <CommandRow cmd="/habits" desc="Check habit status" />
         </div>
 
         <p className="font-medium text-slate-700 mt-3 mb-1">System</p>

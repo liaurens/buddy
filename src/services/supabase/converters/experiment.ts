@@ -6,7 +6,7 @@ import type {
     Experiment, ExperimentLog, CorrelationResult,
     ExperimentCheckinEntry, ExperimentPhase, ExperimentMetric,
     ExperimentStatus, DailyJournalEntry, JournalPromptResponse,
-} from '../../../types';
+} from '../../../features/health-tracking/types';
 import type {
     DbExperiment, DbExperimentLog, DbCorrelation,
     DbExperimentCheckinEntry, DbDailyJournalEntry,

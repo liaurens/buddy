@@ -3,7 +3,7 @@ import { useTrackers } from '../../hooks/useTrackers';
 import { useProtocols } from '../../hooks/useProtocols';
 import { format } from 'date-fns';
 import { Trash2, Edit2, X, Check, Trophy, Pill } from 'lucide-react';
-import type { Entry, Dose, TrackerDefinition } from '../../../../types';
+import type { Entry, Dose, TrackerDefinition } from '../../types';
 import TrackerTrends from './TrackerTrends';
 
 interface DashboardProps {

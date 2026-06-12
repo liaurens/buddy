@@ -3,7 +3,6 @@ import Dashboard from '../components/tracker/Dashboard';
 import EntryForm from '../components/tracker/EntryForm';
 import Analysis from '../components/tracker/Analysis';
 import CreateTrackerModal from '../components/tracker/CreateTrackerModal';
-import TopCorrelationsCard from '../components/tracker/TopCorrelationsCard';
 import SegmentComparePanel from '../components/tracker/SegmentComparePanel';
 import type { TrackerDefinition } from '../types';
 import { Plus } from 'lucide-react';
@@ -37,16 +36,11 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
         }
     }, [initialParams]);
 
-    const openPair = (xId: string, yId: string) => {
-        setAnalysisPair({ xId, yId });
-        setTrackerSubTab('analysis');
-    };
-
     return (
         <div className="app-page">
             {/* Page Header */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
+                <div className="hidden lg:block">
                     <h1 className="app-title">Health Tracking</h1>
                     <p className="app-subtitle">Monitor your metrics and discover patterns.</p>
                 </div>
@@ -88,15 +82,12 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
             </div>
 
             {trackerSubTab === 'dashboard' && (
-                <>
-                    <Dashboard
-                        onEditTracker={(tracker) => {
-                            setEditingTracker(tracker);
-                            setIsCreateModalOpen(true);
-                        }}
-                    />
-                    <TopCorrelationsCard onOpenPair={openPair} />
-                </>
+                <Dashboard
+                    onEditTracker={(tracker) => {
+                        setEditingTracker(tracker);
+                        setIsCreateModalOpen(true);
+                    }}
+                />
             )}
             {trackerSubTab === 'add' && (
                 <EntryForm 

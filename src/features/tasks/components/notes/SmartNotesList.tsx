@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Trash2, Check, MoveRight, Inbox, Edit2, X, Save, ListChecks } from 'lucide-react';
 import { useNotes as useSmartNotes } from '../../hooks/useNotes';
-import type { SmartNote, NoteCategory } from '../../../../types';
+import type { SmartNote, NoteCategory } from '../../types';
 
 interface SmartNotesListProps {
     categoryId?: string | null; // null = inbox, undefined = all notes
@@ -196,7 +196,7 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                                                     style={{
                                                         backgroundColor: note.categoryId === cat.id
                                                             ? cat.color || '#6366f1'
-                                                            : `${cat.color}80` || '#6366f180',
+                                                            : cat.color ? `${cat.color}80` : '#6366f180',
                                                     }}
                                                 >
                                                     {cat.emoji} {cat.name}

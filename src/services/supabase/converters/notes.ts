@@ -2,7 +2,7 @@
  * Smart Notes and Category Converters
  */
 
-import type { NoteCategory, SmartNote } from '../../../types';
+import type { NoteCategory, SmartNote } from '../../../features/tasks/types';
 import type { DbNoteCategory, DbSmartNote } from '../types';
 
 export function dbToNoteCategory(db: DbNoteCategory): NoteCategory {

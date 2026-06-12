@@ -2,7 +2,7 @@
  * User Data Seeding - Initialize default trackers for new users
  */
 
-import type { TrackerDefinition, TrackerScale } from '../../../types';
+import type { TrackerDefinition, TrackerScale } from '../../../features/health-tracking/types';
 import { supabase } from '../client';
 
 // Reusable 1-10 scales. lowLabel / highLabel describe the endpoints so the UI
