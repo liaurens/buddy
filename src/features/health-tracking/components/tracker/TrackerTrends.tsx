@@ -97,12 +97,9 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                                     }
 
                                     // Calc height percentage
-                                    let height = '0%';
-                                    if (tracker.type === 'boolean') {
-                                        height = val ? '100%' : '5%';
-                                    } else {
-                                        height = `${Math.min((val / maxVal) * 100, 100)}%`;
-                                    }
+                                    const height = tracker.type === 'boolean'
+                                        ? (val ? '100%' : '5%')
+                                        : `${Math.min((val / maxVal) * 100, 100)}%`;
 
                                     // Goal status coloring
                                     let colorClass = 'bg-slate-200';

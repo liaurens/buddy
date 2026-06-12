@@ -329,7 +329,7 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                                     label={{ value: 'Correlation', angle: -90, position: 'insideLeft' }}
                                 />
                                 <Tooltip
-                                    formatter={(value: number) => [value.toFixed(3), 'Correlation']}
+                                    formatter={(value) => [typeof value === 'number' ? value.toFixed(3) : String(value ?? ''), 'Correlation']}
                                     labelFormatter={(label) => `${label} day${label !== 1 ? 's' : ''} later`}
                                 />
                                 <Line

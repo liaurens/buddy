@@ -30,7 +30,7 @@ export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFo
 
       setStatus('success');
       setTimeout(() => {
-        onSuccess && onSuccess();
+        onSuccess?.();
         onClose();
       }, 1500);
     } catch (err) {

@@ -161,7 +161,7 @@ function createMockSupabase(selectResults?: Map<string, unknown[]>): MockSupabas
     _inserts: inserts,
     _selectResults: results,
     from(table: string) {
-      let currentTable = table
+      const currentTable = table
       const builder: MockQueryBuilder = {
         select(_cols: string) { return builder },
         eq(_col: string, _val: unknown) { return builder },

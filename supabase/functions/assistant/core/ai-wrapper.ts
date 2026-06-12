@@ -67,7 +67,7 @@ export async function callAI(
   } catch (err) {
     // Re-throw with enriched context for upstream error loggers
     const message = err instanceof Error ? err.message : String(err)
-    throw new Error(`AI call failed [${config.provider}/${model}] (purpose: ${options.purpose}): ${message}`)
+    throw new Error(`AI call failed [${config.provider}/${model}] (purpose: ${options.purpose}): ${message}`, { cause: err })
   }
 }
 
@@ -330,7 +330,7 @@ export async function callAIWithTools(
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    throw new Error(`AI tool-use call failed [${config.provider}/${model}]: ${message}`)
+    throw new Error(`AI tool-use call failed [${config.provider}/${model}]: ${message}`, { cause: err })
   }
 }
 
@@ -356,7 +356,7 @@ export async function callAIWithDocuments(
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    throw new Error(`AI document call failed [${config.provider}/${model}]: ${message}`)
+    throw new Error(`AI document call failed [${config.provider}/${model}]: ${message}`, { cause: err })
   }
 }
 
