@@ -13,6 +13,13 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
     const [newItemText, setNewItemText] = useState('');
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editName, setEditName] = useState(checklist.name);
+    const [triggerKeyword, setTriggerKeyword] = useState(checklist.triggerKeyword ?? '');
+
+    const handleSaveTrigger = async () => {
+        const next = triggerKeyword.trim();
+        if (next === (checklist.triggerKeyword ?? '')) return;
+        await updateChecklist({ ...checklist, triggerKeyword: next || undefined });
+    };
 
     const handleAddItem = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,7 +41,7 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
     });
 
     return (
-        <div className="app-page-readable animate-fadeIn">
+        <div className="app-page-readable animate-in fade-in">
             <button
                 onClick={onBack}
                 className="flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
@@ -97,6 +104,23 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                             </svg>
                         </button>
                     </div>
+                </div>
+
+                {/* Trigger keyword — surfaces this checklist in the day view on matching calendar days */}
+                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <label className="text-sm font-medium text-slate-700">Show on calendar match</label>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        When a calendar event today contains this word (e.g. “work”), this checklist pops up in your day view. Leave empty to disable.
+                    </p>
+                    <input
+                        type="text"
+                        value={triggerKeyword}
+                        onChange={(e) => setTriggerKeyword(e.target.value)}
+                        onBlur={() => void handleSaveTrigger()}
+                        onKeyDown={(e) => e.key === 'Enter' && void handleSaveTrigger()}
+                        placeholder="e.g. work"
+                        className="mt-2 w-full max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                    />
                 </div>
 
                 <div className="space-y-3 mb-6">

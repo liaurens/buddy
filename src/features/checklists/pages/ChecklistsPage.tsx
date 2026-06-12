@@ -38,9 +38,9 @@ export const ChecklistsPage: React.FC = () => {
     }
 
     return (
-        <div className="app-page animate-fadeIn">
+        <div className="app-page animate-in fade-in">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
+                <div className="hidden lg:block">
                     <h1 className="app-title">Checklists</h1>
                     <p className="app-subtitle">Smart lists that reset and grow with you.</p>
                 </div>

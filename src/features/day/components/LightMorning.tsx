@@ -11,6 +11,7 @@ import { useToast } from '../../../components/ui/Toast';
 import { useTodayItems, formatMinutesTotal } from '../hooks/useTodayItems';
 import TodayTimeline from './TodayTimeline';
 import LogYesterdayStep from './LogYesterdayStep';
+import MorningProtocolsCard from './MorningProtocolsCard';
 import CommsSettingsModal from './CommsSettingsModal';
 import SchoolPlanningPicker from './SchoolPlanningPicker';
 import type { Task } from '../../tasks/types';
@@ -279,6 +280,8 @@ const LightMorning: React.FC<Props> = ({ onNavigate }) => {
             {/* Step 2 — Plan today */}
             {step === 2 && (
                 <div className="space-y-4">
+                    {/* Active protocols (meds/supplements) — especially important on light days */}
+                    <MorningProtocolsCard />
                     {/* Intention */}
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
                         <div>

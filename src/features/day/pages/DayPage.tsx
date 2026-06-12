@@ -6,6 +6,7 @@ import FullMorning from '../components/FullMorning';
 import FullMidday from '../components/FullMidday';
 import LightMorning from '../components/LightMorning';
 import LightMidday from '../components/LightMidday';
+import TriggeredChecklistsCard from '../components/TriggeredChecklistsCard';
 
 type Mode = 'morning' | 'midday' | 'night';
 type RoutineMode = 'full' | 'light';
@@ -44,7 +45,7 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate }) => {
 
     return (
         <div className="app-page-readable">
-            <header>
+            <header className="hidden lg:block">
                 <p className="text-sm font-medium text-slate-500">{format(today, 'EEEE, MMMM do')}</p>
                 <h1 className="app-title mt-1">Today</h1>
             </header>
@@ -83,6 +84,9 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate }) => {
                     </button>
                 ))}
             </div>
+
+            {/* Checklists triggered by today's calendar events (e.g. work day → work checklist) */}
+            {mode !== 'night' && <TriggeredChecklistsCard />}
 
             {mode === 'morning' && (isLight
                 ? <LightMorning onNavigate={onNavigate} />

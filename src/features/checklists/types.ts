@@ -11,6 +11,8 @@ export interface Checklist {
     emoji?: string;
     items: ChecklistItem[];
     isPinned: boolean;
+    /** Case-insensitive substring matched against today's calendar event titles; on match the checklist surfaces in the day view. */
+    triggerKeyword?: string;
     createdAt: string;
     updatedAt?: string;
 }

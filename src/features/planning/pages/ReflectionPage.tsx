@@ -24,9 +24,13 @@ import { useGoals } from '../../../features/core/hooks/useGoals';
 import type { Goal } from '../../../features/core/hooks/useGoals';
 import { useSkills } from '../../growth/hooks/useSkills';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../../../services/supabase';
+import { supabase, saveJournalEntry } from '../../../services/supabase';
 import ReflectionSettingsModal from '../components/reflection/ReflectionSettingsModal';
 import MoodEnergySparkline from '../components/reflection/MoodEnergySparkline';
+import CloseDayCard from '../components/reflection/CloseDayCard';
+import JournalCard from '../components/reflection/JournalCard';
+import SkillsLogCard from '../components/reflection/SkillsLogCard';
+import StrategySpotlightCard from '../components/reflection/StrategySpotlightCard';
 import type { DayReflection, LearningPattern } from '../services/reflection.service';
 import {
     TrendingUp, TrendingDown, Target, Clock, CheckCircle, AlertCircle,
@@ -154,6 +158,16 @@ const ReflectionPage: React.FC = () => {
                 { subtype: 'reflection_challenge' as const, text: challenge },
                 { subtype: 'reflection_priority' as const, text: priority },
             ]);
+            // Compose the day's answers into a durable journal entry as well —
+            // the JournalCard below reads these back as the journal.
+            const journalPrompts = [
+                { promptId: 'core_memory', question: "Today's core memory", answer: memory.trim() },
+                { promptId: 'gratitude', question: 'Gratitude', answer: gratitude.trim() },
+                { promptId: 'challenge', question: 'Challenge & growth', answer: challenge.trim() },
+            ].filter(p => p.answer);
+            if (journalPrompts.length > 0) {
+                await saveJournalEntry({ date: selectedDate, prompts: journalPrompts, wins: [] });
+            }
             await saveReflectionFocus(user.id, selectedDate, focusPicks);
             // Persist goal check-ins for today
             await Promise.all(
@@ -181,8 +195,8 @@ const ReflectionPage: React.FC = () => {
     return (
         <div className="app-page">
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
+                <div className="flex items-center justify-end lg:justify-between">
+                    <div className="hidden lg:block">
                         <h1 className="app-title">Daily Reflection</h1>
                         <p className="app-subtitle">90 seconds: wins, blocker, tomorrow's one thing.</p>
                     </div>
@@ -384,6 +398,12 @@ const ReflectionPage: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Close the day — explicit end state of the loop */}
+                <CloseDayCard date={selectedDate} tomorrowPriority={priority} />
+
+                {/* Skills practiced today (Growth Hub lives here now) */}
+                <SkillsLogCard />
+
                 {/* Goals check-in */}
                 {goals.length > 0 && (
                     <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-4">
@@ -456,6 +476,12 @@ const ReflectionPage: React.FC = () => {
                         </ul>
                     </div>
                 )}
+
+                {/* Toolbox strategies, resurfaced at reflection time */}
+                <StrategySpotlightCard />
+
+                {/* Journal read-back — composed from saved reflections */}
+                <JournalCard refreshToken={savedAt} />
 
                 {/* Collapsible day metrics */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100">

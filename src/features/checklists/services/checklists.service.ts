@@ -10,6 +10,7 @@ interface DbChecklist {
     emoji: string | null;
     items: ChecklistItem[]; // JSONB
     is_pinned: boolean;
+    trigger_keyword: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -23,6 +24,7 @@ function dbToChecklist(db: DbChecklist): Checklist {
         emoji: db.emoji || undefined,
         items: Array.isArray(db.items) ? db.items : [],
         isPinned: db.is_pinned,
+        triggerKeyword: db.trigger_keyword || undefined,
         createdAt: db.created_at,
         updatedAt: db.updated_at,
     };
@@ -37,6 +39,7 @@ function checklistToDb(checklist: Partial<Checklist>, userId: string): Partial<D
     if (checklist.emoji !== undefined) db.emoji = checklist.emoji || null;
     if (checklist.items !== undefined) db.items = checklist.items;
     if (checklist.isPinned !== undefined) db.is_pinned = checklist.isPinned;
+    if (checklist.triggerKeyword !== undefined) db.trigger_keyword = checklist.triggerKeyword || null;
 
     return db;
 }
