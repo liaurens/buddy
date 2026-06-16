@@ -72,3 +72,48 @@ export async function deleteFeedback(id: string): Promise<boolean> {
 
   return true;
 }
+
+export async function deleteManyFeedback(ids: string[]): Promise<boolean> {
+  if (!isSupabaseConfigured || ids.length === 0) {
+    return false;
+  }
+
+  const { error } = await supabase
+    .from('site_feedback')
+    .delete()
+    .in('id', ids);
+
+  if (error) {
+    console.error('Error deleting feedback batch:', error);
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Delete every feedback report. Pass a pathname to clear only one page's
+ * reports; omit it to wipe the whole table.
+ */
+export async function deleteAllFeedback(pathname?: string): Promise<boolean> {
+  if (!isSupabaseConfigured) {
+    return false;
+  }
+
+  let query = supabase.from('site_feedback').delete();
+  if (pathname) {
+    query = query.eq('pathname', pathname);
+  } else {
+    // PostgREST refuses an unfiltered delete; this matches every row.
+    query = query.not('id', 'is', null);
+  }
+
+  const { error } = await query;
+
+  if (error) {
+    console.error('Error clearing feedback:', error);
+    return false;
+  }
+
+  return true;
+}

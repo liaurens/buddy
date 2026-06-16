@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { X, Bug, MessageSquare, StickyNote, Download, Trash2, Copy } from 'lucide-react';
-import { deleteFeedback, type SiteFeedback } from '../../services/supabase/operations/site-feedback';
+import { X, Bug, MessageSquare, StickyNote, Download, Trash2, Copy, Eraser } from 'lucide-react';
+import {
+  deleteFeedback,
+  deleteManyFeedback,
+  deleteAllFeedback,
+  type SiteFeedback,
+} from '../../services/supabase/operations/site-feedback';
 
 interface ReportListModalProps {
   reports: SiteFeedback[];
@@ -11,6 +16,41 @@ interface ReportListModalProps {
 export function ReportListModal({ reports, onClose, onRefresh }: ReportListModalProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportedMarkdown, setExportedMarkdown] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0 || clearing) return;
+    if (!window.confirm(`Delete ${selectedIds.size} selected report${selectedIds.size === 1 ? '' : 's'}?`)) return;
+    setClearing(true);
+    try {
+      const success = await deleteManyFeedback([...selectedIds]);
+      if (success) {
+        setSelectedIds(new Set());
+        if (onRefresh) onRefresh();
+      } else {
+        alert('Failed to delete the selected reports.');
+      }
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (reports.length === 0 || clearing) return;
+    if (!window.confirm(`Clear all ${reports.length} reports for this page? This cannot be undone.`)) return;
+    setClearing(true);
+    try {
+      const success = await deleteAllFeedback(window.location.pathname);
+      if (success) {
+        setSelectedIds(new Set());
+        if (onRefresh) onRefresh();
+      } else {
+        alert('Failed to clear reports.');
+      }
+    } finally {
+      setClearing(false);
+    }
+  };
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -106,12 +146,32 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
               {exportedMarkdown ? 'Exported Report Text' : 'Site Feedback & Reports'}
             </h2>
             {!exportedMarkdown && selectedIds.size > 0 && (
-              <button 
+              <button
                 onClick={generateMarkdown}
                 className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm"
               >
                 <Download size={16} />
                 Generate MD for {selectedIds.size} {selectedIds.size === 1 ? 'item' : 'items'}
+              </button>
+            )}
+            {!exportedMarkdown && selectedIds.size > 0 && (
+              <button
+                onClick={handleDeleteSelected}
+                disabled={clearing}
+                className="flex items-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              >
+                <Trash2 size={16} />
+                Delete selected
+              </button>
+            )}
+            {!exportedMarkdown && reports.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                disabled={clearing}
+                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50"
+              >
+                <Eraser size={16} />
+                {clearing ? 'Clearing…' : 'Clear all'}
               </button>
             )}
           </div>
