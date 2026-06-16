@@ -4,6 +4,7 @@ import { Sunrise, Calendar as CalendarIcon } from 'lucide-react';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { useTodayItems, formatMinutesTotal } from '../hooks/useTodayItems';
 import TodayTimeline from './TodayTimeline';
+import MiddayFinishButton from './MiddayFinishButton';
 
 interface Props {
     onGoToMorning?: () => void;
@@ -38,6 +39,7 @@ const FullMidday: React.FC<Props> = ({ onGoToMorning }) => {
                         <Sunrise size={14} /> Go to morning
                     </button>
                 )}
+                <MiddayFinishButton dateKey={dateKey} accent="indigo" />
             </div>
         );
     }
@@ -72,6 +74,8 @@ const FullMidday: React.FC<Props> = ({ onGoToMorning }) => {
                 <span>{items.totalCount} picked{totalTimeLabel ? ` · est. ~${totalTimeLabel}` : ''}</span>
                 <span className="text-slate-400">{items.events.length} event{items.events.length === 1 ? '' : 's'}</span>
             </div>
+
+            <MiddayFinishButton dateKey={dateKey} accent="indigo" />
         </div>
     );
 };

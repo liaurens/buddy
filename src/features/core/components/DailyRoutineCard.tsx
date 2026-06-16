@@ -1,108 +1,40 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Check, ChevronRight, Layers, Sunrise, Sun, Moon } from 'lucide-react';
+import { Check, ChevronRight, Moon, PartyPopper, Sun, Sunrise } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
+import { useRoutineProgress } from '../../day/hooks/useRoutineProgress';
+import { ROUTINE_PHASES, type RoutinePhase } from '../../day/services/routine-progress';
 
-type Mode = 'morning' | 'midday' | 'night';
-
-function currentMode(): Mode {
+function currentPhase(): RoutinePhase {
     const h = new Date().getHours();
     if (h < 11) return 'morning';
     if (h < 17) return 'midday';
     return 'night';
 }
 
-const MORNING_STEP_LABELS = ['Comms check', 'Log Yesterday', 'Tasks & Calendar', 'Plan Day'];
-
-function getMorningNextStep(dateKey: string): string {
-    try {
-        const saved = sessionStorage.getItem(`morning_step_${dateKey}`);
-        const step = saved !== null ? Number(saved) : 0;
-        return `${MORNING_STEP_LABELS[step]} · Step ${step + 1} of 4`;
-    } catch {
-        return 'Comms check · Step 1 of 4';
-    }
-}
-
-function isLightMode(): boolean {
-    try { return localStorage.getItem('routine_mode') === 'light'; } catch { return false; }
-}
-
-function getLightHint(dateKey: string): string {
-    try {
-        const locked = sessionStorage.getItem(`light_locked_${dateKey}`) === '1';
-        return locked ? 'Light day · check off your picks' : 'Light day · pick top 3';
-    } catch {
-        return 'Light day · pick top 3';
-    }
-}
-
-const MODE_CONFIG: Record<Mode, {
-    Icon: typeof Sunrise;
-    subtitle: string;
-}> = {
-    morning: {
-        Icon: Sunrise,
-        subtitle: 'Start your day right',
-    },
-    midday: {
-        Icon: Sun,
-        subtitle: 'Check in & replan if needed',
-    },
-    night: {
-        Icon: Moon,
-        subtitle: 'Wrap up your day',
-    },
+const PHASE_CONFIG: Record<RoutinePhase, { Icon: typeof Sunrise; label: string; hint: string }> = {
+    morning: { Icon: Sunrise, label: 'Morning check-in', hint: 'Comms, log yesterday, plan today' },
+    midday: { Icon: Sun, label: 'Midday reset', hint: 'Check in & adjust your afternoon' },
+    night: { Icon: Moon, label: 'Evening reflection', hint: 'Reflect and close the day' },
 };
 
-const MODE_NEXT_STEP: Record<Exclude<Mode, 'morning'>, string> = {
-    midday: 'Midday replan',
-    night: 'Evening reflection',
-};
+function nextStepLabel(progress: { morning: boolean; midday: boolean; night: boolean }): string {
+    if (!progress.morning) return 'Start your morning check-in';
+    if (!progress.midday) return 'Do your midday reset';
+    if (!progress.night) return 'Reflect & close the day';
+    return 'All done for today';
+}
 
 interface Props {
     onNavigate: (tab: AppRoute) => void;
 }
 
 const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
-    const mode = currentMode();
     const dateKey = format(new Date(), 'yyyy-MM-dd');
-    const { Icon, subtitle } = MODE_CONFIG[mode];
-
-    const lightActive = isLightMode();
-    const nextStep = lightActive
-        ? getLightHint(dateKey)
-        : mode === 'morning'
-            ? getMorningNextStep(dateKey)
-            : MODE_NEXT_STEP[mode];
-    const steps = [
-        {
-            label: 'Morning check-in',
-            active: mode === 'morning',
-            done: mode !== 'morning',
-            icon: <Sunrise size={15} />,
-        },
-        {
-            label: 'Plan top priorities',
-            active: mode === 'morning',
-            done: mode !== 'morning',
-            icon: <Layers size={15} />,
-        },
-        {
-            label: 'Midday reset',
-            active: mode === 'midday',
-            done: mode === 'night',
-            icon: <Sun size={15} />,
-        },
-        {
-            label: 'Evening reflection',
-            active: mode === 'night',
-            done: false,
-            icon: <Moon size={15} />,
-        },
-    ];
-    const doneCount = steps.filter(step => step.done).length;
-    const progress = Math.max(12, Math.round((doneCount / steps.length) * 100));
+    const progress = useRoutineProgress(dateKey);
+    const active = currentPhase();
+    const allDone = progress.doneCount === ROUTINE_PHASES.length;
+    const percent = Math.round((progress.doneCount / ROUTINE_PHASES.length) * 100);
 
     return (
         <section className="app-surface">
@@ -113,33 +45,61 @@ const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
                 <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
                         <div className="flex items-center gap-2">
-                            <Icon size={18} className="text-emerald-600" />
+                            {allDone
+                                ? <PartyPopper size={18} className="text-emerald-600" />
+                                : React.createElement(PHASE_CONFIG[active].Icon, { size: 18, className: 'text-emerald-600' })}
                             <h2 className="text-base font-semibold text-slate-950">Daily routine</h2>
                         </div>
-                        <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                            {allDone ? 'Everything finished — nice work.' : 'Counts only what you actually finished.'}
+                        </p>
                     </div>
                     <span className="shrink-0 text-xs font-medium text-slate-500">
-                        {doneCount} of {steps.length} done
+                        {progress.doneCount} of {ROUTINE_PHASES.length} done
                     </span>
                 </div>
 
                 <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
                     <div
                         className="h-full rounded-full bg-emerald-500 transition-all"
-                        style={{ width: `${progress}%` }}
+                        style={{ width: `${percent}%` }}
                     />
                 </div>
 
                 <div className="mt-4 space-y-3">
-                    {steps.map(step => (
-                        <RoutineStep
-                            key={step.label}
-                            label={step.label}
-                            active={step.active}
-                            done={step.done}
-                            icon={step.done ? <Check size={14} /> : step.icon}
-                        />
-                    ))}
+                    {ROUTINE_PHASES.map(phase => {
+                        const { Icon, label, hint } = PHASE_CONFIG[phase];
+                        const done = progress[phase];
+                        const isNow = phase === active && !done;
+                        return (
+                            <div key={phase} className="flex min-w-0 items-center gap-3">
+                                <span
+                                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+                                        done
+                                            ? 'border-emerald-100 bg-emerald-500 text-white'
+                                            : isNow
+                                                ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                                : 'border-slate-200 bg-white text-slate-400'
+                                    }`}
+                                >
+                                    {done ? <Check size={14} /> : <Icon size={15} />}
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                    <span className={`block truncate text-sm ${done || isNow ? 'font-medium text-slate-800' : 'text-slate-500'}`}>
+                                        {label}
+                                    </span>
+                                    {isNow && (
+                                        <span className="block truncate text-xs text-slate-400">{hint}</span>
+                                    )}
+                                </span>
+                                {isNow && (
+                                    <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                                        Now
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </button>
 
@@ -148,35 +108,11 @@ const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
                 onClick={() => onNavigate('today')}
                 className="flex w-full items-center justify-between border-t border-slate-100 px-5 py-3 text-sm font-medium text-indigo-900 transition-colors hover:bg-slate-50"
             >
-                <span>{nextStep}</span>
+                <span>{nextStepLabel(progress)}</span>
                 <ChevronRight size={15} className="text-slate-400" />
             </button>
         </section>
     );
 };
-
-const RoutineStep: React.FC<{
-    label: string;
-    active?: boolean;
-    done?: boolean;
-    icon: React.ReactNode;
-}> = ({ label, active = false, done = false, icon }) => (
-    <div className="flex min-w-0 items-center gap-3">
-        <span
-            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
-                done
-                    ? 'border-emerald-100 bg-emerald-500 text-white'
-                    : active
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                        : 'border-slate-200 bg-white text-slate-400'
-            }`}
-        >
-            {icon}
-        </span>
-        <span className={`truncate text-sm ${done || active ? 'font-medium text-slate-800' : 'text-slate-500'}`}>
-            {label}
-        </span>
-    </div>
-);
 
 export default DailyRoutineCard;

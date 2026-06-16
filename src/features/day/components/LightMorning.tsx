@@ -9,6 +9,8 @@ import type { AppRoute } from '../../../constants/routes';
 import { syncCalendar } from '../../planning/services/calendar-sync.service';
 import { useToast } from '../../../components/ui/Toast';
 import { useTodayItems, formatMinutesTotal } from '../hooks/useTodayItems';
+import { markRoutineDone } from '../services/routine-progress';
+import { useRoutineProgress } from '../hooks/useRoutineProgress';
 import TodayTimeline from './TodayTimeline';
 import LogYesterdayStep from './LogYesterdayStep';
 import MorningProtocolsCard from './MorningProtocolsCard';
@@ -36,6 +38,7 @@ const LightMorning: React.FC<Props> = ({ onNavigate }) => {
     const toast = useToast();
     const { tasks, addTask, rescheduleMany, updateTask } = useTasks();
     const items = useTodayItems(dateKey);
+    const routineProgress = useRoutineProgress(dateKey);
 
     const [step, setStep] = useState<Step>(() => {
         try {
@@ -454,12 +457,22 @@ const LightMorning: React.FC<Props> = ({ onNavigate }) => {
                         <ChevronLeft size={16} /> Back
                     </button>
                 )}
-                {step < 2 && (
+                {step < 2 ? (
                     <button
                         onClick={() => setStep((step + 1) as Step)}
                         className="ml-auto flex items-center gap-1 px-5 py-2 text-sm font-medium bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors"
                     >
                         Next <ChevronRight size={16} />
+                    </button>
+                ) : !routineProgress.morning && (
+                    <button
+                        onClick={() => {
+                            markRoutineDone('morning', dateKey);
+                            toast.success('Morning routine done — have a good day!');
+                        }}
+                        className="ml-auto flex items-center gap-1 px-5 py-2 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors"
+                    >
+                        <Check size={16} /> Finish morning
                     </button>
                 )}
             </div>

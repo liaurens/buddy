@@ -18,6 +18,7 @@ import {
     getClosedDatesThisWeek,
     weekWindow,
 } from '../../services/closeDay.service';
+import { markRoutineDone, clearRoutineDone } from '../../../day/services/routine-progress';
 
 interface CloseDayCardProps {
     /** Date being reflected on, yyyy-MM-dd. */
@@ -59,8 +60,10 @@ const CloseDayCard: React.FC<CloseDayCardProps> = ({ date, tomorrowPriority }) =
         try {
             if (closed) {
                 await reopenDay(user.id, date);
+                clearRoutineDone('night', date);
             } else {
                 await closeDay(user.id, date);
+                markRoutineDone('night', date);
             }
             await refresh();
         } catch (err) {
