@@ -87,7 +87,9 @@ export async function scheduleNotificationWithSource(
 }
 
 /**
- * Schedule a daily notification at a specific time
+ * Schedule a daily notification at a specific time.
+ * Pass `daysOfWeek` (0=Sun … 6=Sat) to restrict which days it may fire on;
+ * the next occurrence lands on the first allowed day.
  */
 export async function scheduleDailyNotification(
   userId: string,
@@ -96,9 +98,11 @@ export async function scheduleDailyNotification(
   timeString: string, // HH:MM format (e.g., "20:00")
   title: string,
   body: string,
-  data?: Record<string, any>
+  data?: Record<string, any>,
+  daysOfWeek?: number[]
 ): Promise<ScheduledNotification | null> {
-  const scheduledFor = parseTimeToNextOccurrence(timeString);
+  const scheduledFor = parseTimeToNextOccurrence(timeString, daysOfWeek);
+  if (!scheduledFor) return null; // no allowed days → nothing to schedule
 
   return scheduleNotificationAt(
     userId,
@@ -167,14 +171,19 @@ export async function getToolNotifications(
 }
 
 /**
- * Parse time string (HH:MM) to next occurrence as Date
+ * Parse time string (HH:MM) to next occurrence as Date.
+ * With `daysOfWeek` (0=Sun … 6=Sat), advances to the first allowed weekday.
+ * Returns null when daysOfWeek is an empty list (nothing allowed).
  */
-function parseTimeToNextOccurrence(timeString: string): Date {
+function parseTimeToNextOccurrence(timeString: string, daysOfWeek?: number[]): Date | null {
   const [hours, minutes] = timeString.split(':').map(Number);
 
   if (isNaN(hours) || isNaN(minutes)) {
     throw new Error(`Invalid time format: ${timeString}. Expected HH:MM`);
   }
+
+  const allowed = daysOfWeek && daysOfWeek.length < 7 ? new Set(daysOfWeek) : null;
+  if (daysOfWeek && daysOfWeek.length === 0) return null;
 
   const now = new Date();
   const scheduled = new Date();
@@ -183,6 +192,13 @@ function parseTimeToNextOccurrence(timeString: string): Date {
   // If time has passed today, schedule for tomorrow
   if (scheduled <= now) {
     scheduled.setDate(scheduled.getDate() + 1);
+  }
+
+  if (allowed) {
+    // Advance to the first allowed weekday (at most 6 extra days).
+    for (let i = 0; i < 7 && !allowed.has(scheduled.getDay()); i++) {
+      scheduled.setDate(scheduled.getDate() + 1);
+    }
   }
 
   return scheduled;
@@ -253,6 +269,7 @@ export async function scheduleProtocolDose(
   const body = `Time to take: ${protocolName}`;
 
   const scheduledFor = parseTimeToNextOccurrence(doseTime);
+  if (!scheduledFor) return null;
 
   // Adjust for advance notification
   if (advanceMinutes > 0) {

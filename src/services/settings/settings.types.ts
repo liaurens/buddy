@@ -177,12 +177,17 @@ export interface NotificationsSettings {
   pushEnabled: boolean;
   morningEnabled: boolean;
   morningTime: string;   // HH:MM
+  morningDays: number[]; // 0=Sun … 6=Sat; all 7 days = every day
   middayEnabled: boolean;
   middayTime: string;    // HH:MM
+  middayDays: number[];
   nightEnabled: boolean;
   nightTime: string;     // HH:MM
+  nightDays: number[];
   taskDueEnabled: boolean;
   taskDueAdvanceMinutes: number;
+  /** Default escalation pattern for task reminders without a per-task override. */
+  taskReminderCadence: 'single' | 'smart' | 'aggressive';
   calendarEventEnabled: boolean;
   calendarEventAdvanceMinutes: number;
 
@@ -193,7 +198,9 @@ export interface NotificationsSettings {
   offTrackSkippedCheckin: boolean;
   offTrackIdle: boolean;
 
-  // Quiet hours (HH:MM); start > end means range crosses midnight
+  // Quiet hours (HH:MM); start > end means range crosses midnight.
+  // When enabled, pushes inside the window are held until it ends.
+  quietHoursEnabled: boolean;
   quietHoursStart: string;
   quietHoursEnd: string;
   maxRemindersPerHour: number;

@@ -14,6 +14,7 @@ import {
     scheduleTaskReminders,
     cancelTaskReminders,
 } from '../../../services/notifications/scheduler.service';
+import { getCategorySettings } from '../../../services/settings';
 
 /** Build the absolute due moment from dueDate (YYYY-MM-DD) + optional dueTime (HH:MM). */
 function resolveDueAt(dueDate?: string, dueTime?: string): Date | undefined {
@@ -40,6 +41,11 @@ async function syncTaskReminders(userId: string, task: Task): Promise<void> {
             await cancelTaskReminders(userId, task.id);
             return;
         }
+        // Per-task cadence wins; otherwise the user's default from
+        // notification settings (cached in memory after the first read).
+        const defaultCadence = task.reminderCadence
+            ? undefined
+            : (await getCategorySettings(userId, 'notifications')).taskReminderCadence;
         await scheduleTaskReminders({
             userId,
             taskId: task.id,
@@ -47,7 +53,7 @@ async function syncTaskReminders(userId: string, task: Task): Promise<void> {
             dueAt,
             absoluteAt,
             offsetMinutes: task.reminderOffsetMinutes,
-            cadence: task.reminderCadence || 'smart',
+            cadence: task.reminderCadence || defaultCadence || 'smart',
             priority: task.priority,
         });
     } catch (e) {

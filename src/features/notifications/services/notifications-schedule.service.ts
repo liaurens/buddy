@@ -42,7 +42,9 @@ export async function reapplyNotificationSchedule(userId: string, settings?: Not
     // Cancel existing pending routine reminders
     await Promise.all(ROUTINE_CATEGORIES.map(cat => cancelToolNotifications(userId, cat)));
 
-    // Re-schedule each enabled routine for its next occurrence
+    // Re-schedule each enabled routine for its next occurrence on an allowed
+    // weekday. daysOfWeek rides along in `data` so the server-side re-enqueue
+    // keeps respecting it on subsequent days.
     if (s.morningEnabled) {
         await scheduleDailyNotification(
             userId,
@@ -52,7 +54,8 @@ export async function reapplyNotificationSchedule(userId: string, settings?: Not
             'Morning routine',
             // Body is replaced with live counts (due/overdue/school) at send time.
             'Plan today — open to see what\'s due.',
-            { route: 'today', step: 'morning' },
+            { route: 'today', step: 'morning', daysOfWeek: s.morningDays },
+            s.morningDays,
         );
     }
 
@@ -64,7 +67,8 @@ export async function reapplyNotificationSchedule(userId: string, settings?: Not
             s.middayTime,
             'Midday replan',
             'Check in and adjust your afternoon blocks.',
-            { route: 'today', step: 'midday' },
+            { route: 'today', step: 'midday', daysOfWeek: s.middayDays },
+            s.middayDays,
         );
     }
 
@@ -76,7 +80,8 @@ export async function reapplyNotificationSchedule(userId: string, settings?: Not
             s.nightTime,
             'Night reflection',
             "Close the day — 90 seconds: wins, blocker, tomorrow's one thing.",
-            { route: 'reflection', step: 'night' },
+            { route: 'reflection', step: 'night', daysOfWeek: s.nightDays },
+            s.nightDays,
         );
     }
 }

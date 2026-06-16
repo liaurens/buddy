@@ -1,14 +1,15 @@
 /**
  * Notifications Settings Page
  *
- * Enables push, manages the morning/midday/night routine reminder times,
- * and toggles task-due + calendar-event reminders. Persists to settings
- * category `notifications` and reschedules `scheduled_notifications` rows
- * on save.
+ * Enables push, manages the morning/midday/night routine reminder times and
+ * weekdays, task/calendar reminder tuning (advance + cadence), off-track
+ * nudges, quiet hours, rate limit, and a live view of the scheduled queue.
+ * Persists to settings category `notifications` and reschedules
+ * `scheduled_notifications` rows on save.
  */
 
 import React, { useEffect, useState } from 'react';
-import { Bell, Check, AlertCircle, Sun, CloudSun, Moon, CheckSquare, Calendar, Smartphone, AlertTriangle, MoonStar, Share } from 'lucide-react';
+import { Bell, Check, AlertCircle, Sun, CloudSun, Moon, CheckSquare, Calendar, Smartphone, AlertTriangle, MoonStar, Share, Eye } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import {
     getCategorySettings,
@@ -25,6 +26,14 @@ import {
 } from '../../../services/notifications/push.service';
 import { reapplyNotificationSchedule } from '../services/notifications-schedule.service';
 import PushHealthCard from '../components/PushHealthCard';
+import NotificationQueueCard from '../components/NotificationQueueCard';
+import DayOfWeekPicker from '../components/DayOfWeekPicker';
+
+const CADENCE_OPTIONS: Array<{ value: NotificationsSettings['taskReminderCadence']; label: string; hint: string }> = [
+    { value: 'single', label: 'Single', hint: 'One reminder before the due time. Quietest.' },
+    { value: 'smart', label: 'Smart', hint: 'Before, at due time, then 15 min and 1 h overdue.' },
+    { value: 'aggressive', label: 'Persistent', hint: 'Before, at due time, then 15/30/60/120 min overdue. Hardest to ignore.' },
+];
 
 const NotificationsPage: React.FC = () => {
     const { user } = useAuth();
@@ -100,12 +109,12 @@ const NotificationsPage: React.FC = () => {
         }
     };
 
-    const handleTest = async () => {
+    const handlePreview = async (title: string, body: string) => {
         setError(null);
         try {
-            await showLocalNotification('Test notification', 'If you see this, local notifications work.', {});
+            await showLocalNotification(title, body, {});
         } catch (e) {
-            setError(e instanceof Error ? e.message : 'Test failed');
+            setError(e instanceof Error ? e.message : 'Preview failed — is push enabled?');
         }
     };
 
@@ -135,7 +144,7 @@ const NotificationsPage: React.FC = () => {
                 <h1 className="app-title flex items-center gap-2">
                     <Bell size={24} className="text-indigo-600" /> Notifications
                 </h1>
-                <p className="app-subtitle">Reminders for your routines, tasks, and calendar.</p>
+                <p className="app-subtitle">Tune when, how often, and on which days you get nudged.</p>
             </header>
 
             {/* iOS install hint (shown when not running as installed PWA) */}
@@ -168,7 +177,10 @@ const NotificationsPage: React.FC = () => {
                             <Check size={16} /> Push is enabled on this device (permission: {pushPermission}).
                         </p>
                         <div className="flex gap-2 flex-wrap">
-                            <button onClick={handleTest} className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg hover:bg-slate-50">
+                            <button
+                                onClick={() => handlePreview('Test notification', 'If you see this, local notifications work.')}
+                                className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg hover:bg-slate-50"
+                            >
                                 Send test notification
                             </button>
                             <button onClick={handleDisablePush} className="px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
@@ -192,57 +204,95 @@ const NotificationsPage: React.FC = () => {
             <PushHealthCard />
 
             {/* Routine reminders */}
-            <section className="app-surface p-5 space-y-4">
-                <h2 className="font-semibold text-slate-900">Daily routine reminders</h2>
+            <section className="app-surface p-5 space-y-5">
+                <div>
+                    <h2 className="font-semibold text-slate-900">Daily routine reminders</h2>
+                    <p className="mt-0.5 text-xs text-slate-500">Pick a time and the days each anchor should fire.</p>
+                </div>
 
                 <RoutineRow
                     icon={<Sun size={18} className="text-amber-500" />}
                     label="Morning"
                     enabled={settings.morningEnabled}
                     time={settings.morningTime}
+                    days={settings.morningDays}
                     onToggle={v => update('morningEnabled', v)}
                     onTimeChange={v => update('morningTime', v)}
+                    onDaysChange={v => update('morningDays', v)}
+                    onPreview={() => handlePreview('Morning routine', 'Plan today — open to see what\'s due.')}
                 />
                 <RoutineRow
                     icon={<CloudSun size={18} className="text-sky-500" />}
                     label="Midday"
                     enabled={settings.middayEnabled}
                     time={settings.middayTime}
+                    days={settings.middayDays}
                     onToggle={v => update('middayEnabled', v)}
                     onTimeChange={v => update('middayTime', v)}
+                    onDaysChange={v => update('middayDays', v)}
+                    onPreview={() => handlePreview('Midday replan', 'Check in and adjust your afternoon blocks.')}
                 />
                 <RoutineRow
                     icon={<Moon size={18} className="text-indigo-500" />}
                     label="Night"
                     enabled={settings.nightEnabled}
                     time={settings.nightTime}
+                    days={settings.nightDays}
                     onToggle={v => update('nightEnabled', v)}
                     onTimeChange={v => update('nightTime', v)}
+                    onDaysChange={v => update('nightDays', v)}
+                    onPreview={() => handlePreview('Night reflection', "Close the day — 90 seconds: wins, blocker, tomorrow's one thing.")}
                 />
             </section>
 
-            {/* Task due */}
-            <section className="app-surface p-5 space-y-3">
+            {/* Task reminders */}
+            <section className="app-surface p-5 space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <CheckSquare size={18} className="text-emerald-500" />
-                        <h2 className="font-semibold text-slate-900">Task due reminders</h2>
+                        <h2 className="font-semibold text-slate-900">Task reminders</h2>
                     </div>
                     <ToggleSwitch checked={settings.taskDueEnabled} onChange={v => update('taskDueEnabled', v)} />
                 </div>
                 {settings.taskDueEnabled && (
-                    <label className="flex items-center gap-3 text-sm text-slate-600">
-                        Notify me
-                        <input
-                            type="number"
-                            min={0}
-                            max={240}
-                            value={settings.taskDueAdvanceMinutes}
-                            onChange={e => update('taskDueAdvanceMinutes', Number(e.target.value))}
-                            className="w-20 px-2 py-1 border border-slate-200 rounded-lg"
-                        />
-                        minutes before the task's due time
-                    </label>
+                    <>
+                        <label className="flex items-center gap-3 text-sm text-slate-600">
+                            Notify me
+                            <input
+                                type="number"
+                                min={0}
+                                max={240}
+                                value={settings.taskDueAdvanceMinutes}
+                                onChange={e => update('taskDueAdvanceMinutes', Number(e.target.value))}
+                                className="w-20 px-2 py-1 border border-slate-200 rounded-lg"
+                            />
+                            minutes before the task's due time
+                        </label>
+
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-slate-700">Default reminder style</p>
+                            <p className="text-xs text-slate-500">
+                                Used for tasks without their own reminder setting. Change it per task in the task editor.
+                            </p>
+                            <div className="space-y-2 pt-1">
+                                {CADENCE_OPTIONS.map(opt => (
+                                    <label key={opt.value} className="flex items-start gap-3 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="taskReminderCadence"
+                                            checked={settings.taskReminderCadence === opt.value}
+                                            onChange={() => update('taskReminderCadence', opt.value)}
+                                            className="mt-0.5 w-4 h-4 border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-sm">
+                                            <span className="font-medium text-slate-800">{opt.label}</span>
+                                            <span className="block text-xs text-slate-500">{opt.hint}</span>
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </>
                 )}
             </section>
 
@@ -309,26 +359,34 @@ const NotificationsPage: React.FC = () => {
 
             {/* Quiet hours + rate limit */}
             <section className="app-surface p-5 space-y-3">
-                <div className="flex items-center gap-2">
-                    <MoonStar size={18} className="text-indigo-500" />
-                    <h2 className="font-semibold text-slate-900">Quiet hours & rate limit</h2>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <MoonStar size={18} className="text-indigo-500" />
+                        <h2 className="font-semibold text-slate-900">Quiet hours & rate limit</h2>
+                    </div>
+                    <ToggleSwitch checked={settings.quietHoursEnabled} onChange={v => update('quietHoursEnabled', v)} />
                 </div>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
-                    Quiet from
-                    <input
-                        type="time"
-                        value={settings.quietHoursStart}
-                        onChange={e => update('quietHoursStart', e.target.value)}
-                        className="px-2 py-1 border border-slate-200 rounded-lg"
-                    />
-                    to
-                    <input
-                        type="time"
-                        value={settings.quietHoursEnd}
-                        onChange={e => update('quietHoursEnd', e.target.value)}
-                        className="px-2 py-1 border border-slate-200 rounded-lg"
-                    />
-                </div>
+                <p className="text-xs text-slate-500">
+                    While quiet hours are on, every push is held until the window ends — nothing wakes you up.
+                </p>
+                {settings.quietHoursEnabled && (
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                        Quiet from
+                        <input
+                            type="time"
+                            value={settings.quietHoursStart}
+                            onChange={e => update('quietHoursStart', e.target.value)}
+                            className="px-2 py-1 border border-slate-200 rounded-lg"
+                        />
+                        to
+                        <input
+                            type="time"
+                            value={settings.quietHoursEnd}
+                            onChange={e => update('quietHoursEnd', e.target.value)}
+                            className="px-2 py-1 border border-slate-200 rounded-lg"
+                        />
+                    </div>
+                )}
                 <label className="flex items-center gap-3 text-sm text-slate-600">
                     Max
                     <input
@@ -339,9 +397,12 @@ const NotificationsPage: React.FC = () => {
                         onChange={e => update('maxRemindersPerHour', Number(e.target.value))}
                         className="w-20 px-2 py-1 border border-slate-200 rounded-lg"
                     />
-                    reminders per hour
+                    reminders per hour (routine anchors are always allowed)
                 </label>
             </section>
+
+            {/* Scheduled queue */}
+            <NotificationQueueCard />
 
             {/* Feedback + Save */}
             {error && (
@@ -373,20 +434,40 @@ const RoutineRow: React.FC<{
     label: string;
     enabled: boolean;
     time: string;
+    days: number[];
     onToggle: (v: boolean) => void;
     onTimeChange: (v: string) => void;
-}> = ({ icon, label, enabled, time, onToggle, onTimeChange }) => (
-    <div className="flex items-center gap-3">
-        {icon}
-        <span className="text-sm font-medium text-slate-800 flex-1">{label}</span>
-        <input
-            type="time"
-            value={time}
-            disabled={!enabled}
-            onChange={e => onTimeChange(e.target.value)}
-            className="px-2 py-1 text-sm border border-slate-200 rounded-lg disabled:opacity-40"
-        />
-        <ToggleSwitch checked={enabled} onChange={onToggle} />
+    onDaysChange: (v: number[]) => void;
+    onPreview: () => void;
+}> = ({ icon, label, enabled, time, days, onToggle, onTimeChange, onDaysChange, onPreview }) => (
+    <div className="space-y-2">
+        <div className="flex items-center gap-3">
+            {icon}
+            <span className="text-sm font-medium text-slate-800 flex-1">{label}</span>
+            <button
+                type="button"
+                onClick={onPreview}
+                disabled={!enabled}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-30"
+                aria-label={`Preview ${label} notification`}
+                title="Preview this notification"
+            >
+                <Eye size={15} />
+            </button>
+            <input
+                type="time"
+                value={time}
+                disabled={!enabled}
+                onChange={e => onTimeChange(e.target.value)}
+                className="px-2 py-1 text-sm border border-slate-200 rounded-lg disabled:opacity-40"
+            />
+            <ToggleSwitch checked={enabled} onChange={onToggle} />
+        </div>
+        {enabled && (
+            <div className="pl-8">
+                <DayOfWeekPicker value={days} onChange={onDaysChange} />
+            </div>
+        )}
     </div>
 );
 

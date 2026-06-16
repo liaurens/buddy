@@ -182,16 +182,24 @@ export const commsSettingsSchema = z.object({
 // NOTIFICATIONS SCHEMAS
 // ============================================================================
 
+const daysOfWeekSchema = z
+  .array(z.number().int().min(0).max(6))
+  .default([0, 1, 2, 3, 4, 5, 6]);
+
 export const notificationsSettingsSchema = z.object({
   pushEnabled: z.boolean().default(false),
   morningEnabled: z.boolean().default(true),
   morningTime: z.string().default('08:00'),
+  morningDays: daysOfWeekSchema,
   middayEnabled: z.boolean().default(true),
   middayTime: z.string().default('13:00'),
+  middayDays: daysOfWeekSchema,
   nightEnabled: z.boolean().default(true),
   nightTime: z.string().default('21:00'),
+  nightDays: daysOfWeekSchema,
   taskDueEnabled: z.boolean().default(true),
   taskDueAdvanceMinutes: z.number().int().min(0).max(240).default(15),
+  taskReminderCadence: z.enum(['single', 'smart', 'aggressive']).default('smart'),
   calendarEventEnabled: z.boolean().default(true),
   calendarEventAdvanceMinutes: z.number().int().min(0).max(240).default(15),
   offTrackEnabled: z.boolean().default(true),
@@ -199,6 +207,7 @@ export const notificationsSettingsSchema = z.object({
   offTrackMissedRoutines: z.boolean().default(true),
   offTrackSkippedCheckin: z.boolean().default(true),
   offTrackIdle: z.boolean().default(false),
+  quietHoursEnabled: z.boolean().default(true),
   quietHoursStart: z.string().default('22:00'),
   quietHoursEnd: z.string().default('07:00'),
   maxRemindersPerHour: z.number().int().min(1).max(20).default(3),
