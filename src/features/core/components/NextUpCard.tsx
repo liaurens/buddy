@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar as CalendarIcon, Check, CheckCircle2, Clock3, GraduationCap, Play, Target } from 'lucide-react';
+import { ArrowRight, Calendar as CalendarIcon, Check, CheckCircle2, Clock3, GraduationCap, Target } from 'lucide-react';
 import { differenceInCalendarDays, format, isPast, isToday, isTomorrow } from 'date-fns';
 import { useNextUp } from '../hooks/useNextUp';
 import { useTasks } from '../../tasks/hooks/useTasks';
@@ -77,16 +77,16 @@ const NextUpCard: React.FC<Props> = ({ onNavigate }) => {
 
                         <div className="mt-5 grid gap-3 sm:grid-cols-2">
                             <button
-                                onClick={() => onNavigate('focus', { taskId: task.id })}
+                                onClick={() => toggleTask(task.id)}
                                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(30,41,99,0.18)] transition-colors hover:bg-indigo-900"
                             >
-                                <Play size={15} /> Start focus
+                                <Check size={15} /> Mark done
                             </button>
                             <button
-                                onClick={() => toggleTask(task.id)}
+                                onClick={() => onNavigate('tasks')}
                                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                             >
-                                <Check size={15} /> Done
+                                <ArrowRight size={15} /> All tasks
                             </button>
                         </div>
                     </div>
@@ -121,18 +121,12 @@ const NextUpCard: React.FC<Props> = ({ onNavigate }) => {
                             School assignment
                         </div>
 
-                        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        <div className="mt-5">
                             <button
                                 onClick={() => onNavigate('school')}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(30,41,99,0.18)] transition-colors hover:bg-indigo-900"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-950 px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(30,41,99,0.18)] transition-colors hover:bg-indigo-900 sm:w-auto"
                             >
                                 <GraduationCap size={15} /> Open school
-                            </button>
-                            <button
-                                onClick={() => onNavigate('focus')}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-                            >
-                                <Play size={15} /> Start focus
                             </button>
                         </div>
                     </div>

@@ -9,7 +9,6 @@ import DailyRoutineCard from '../components/DailyRoutineCard';
 import NextUpCard from '../components/NextUpCard';
 import TodayCard from '../components/TodayCard';
 import InsightCard from '../components/InsightCard';
-import RecentCaptures from '../components/RecentCaptures';
 
 interface HomePageProps {
     onNavigate: (tab: AppRoute, params?: Record<string, unknown>) => void;
@@ -79,7 +78,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                     <NextUpCard onNavigate={onNavigate} />
 
                     <div className="hidden lg:block">
-                        <RecentCaptures onNavigate={onNavigate} />
+                        <InsightCard />
                     </div>
                 </section>
 
@@ -88,12 +87,10 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
                     <TodayCard onNavigate={onNavigate} />
 
-                    <InsightCard />
+                    <div className="lg:hidden">
+                        <InsightCard />
+                    </div>
                 </aside>
-
-                <div className="lg:hidden">
-                    <RecentCaptures onNavigate={onNavigate} />
-                </div>
             </div>
         </div>
     );
