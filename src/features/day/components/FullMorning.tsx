@@ -23,6 +23,7 @@ import MorningProtocolsCard from './MorningProtocolsCard';
 import CommsSettingsModal from './CommsSettingsModal';
 import SchoolPlanningPicker from './SchoolPlanningPicker';
 import type { Task } from '../../tasks/types';
+import { deriveTaskKind } from '../../tasks/utils/taskKind';
 import { v4 as uuidv4 } from 'uuid';
 
 type Step = 0 | 1 | 2 | 3;
@@ -225,6 +226,30 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
     const [planSource, setPlanSource] = useState<'tasks' | 'school'>('tasks');
 
     const pickedIds = useMemo(() => new Set(items.picks.map(p => p.id)), [items.picks]);
+
+    // Backlog ("someday") forcing: nudge the user to pull at least one no-pressure
+    // task into today unless they explicitly opt out.
+    const backlog = useMemo(
+        () => tasks.filter(t => !t.completed && !pickedIds.has(t.id) && deriveTaskKind(t) === 'backlog'),
+        [tasks, pickedIds],
+    );
+    const [backlogChoice, setBacklogChoice] = useState<'pending' | 'picked' | 'skip'>(() => {
+        try { return (sessionStorage.getItem(`backlog_choice_${dateKey}`) as 'pending' | 'picked' | 'skip') || 'pending'; }
+        catch { return 'pending'; }
+    });
+    useEffect(() => {
+        try { sessionStorage.setItem(`backlog_choice_${dateKey}`, backlogChoice); } catch { /* ignore */ }
+    }, [backlogChoice, dateKey]);
+    const backlogSatisfied = backlog.length === 0 || backlogChoice !== 'pending';
+
+    const handleAddBacklogPick = async (task: Task) => {
+        try {
+            await rescheduleMany([task.id], todayStr);
+            setBacklogChoice('picked');
+        } catch {
+            toast.error('Could not add to today.');
+        }
+    };
 
     const suggestions = useMemo(() => {
         return tasks
@@ -528,6 +553,42 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
                         </div>
                     </div>
 
+                    {/* Backlog forcing — pull one "someday" task into today */}
+                    {backlog.length > 0 && backlogChoice === 'pending' && (
+                        <div className="bg-white rounded-2xl border border-violet-200 shadow-sm p-5 space-y-3">
+                            <div>
+                                <h3 className="font-semibold text-slate-900">Pick one from someday</h3>
+                                <p className="text-sm text-slate-500 mt-0.5">
+                                    Move one no-pressure task into today — or skip it if today isn't the day.
+                                </p>
+                            </div>
+                            <ul className="space-y-1 max-h-48 overflow-y-auto">
+                                {backlog.slice(0, 12).map(task => (
+                                    <li key={task.id}>
+                                        <button
+                                            onClick={() => handleAddBacklogPick(task)}
+                                            className="w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left hover:bg-violet-50 transition-colors"
+                                        >
+                                            <Plus size={14} className="text-violet-500 flex-shrink-0" />
+                                            <span className="text-sm flex-1 truncate text-slate-800">{task.title}</span>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                            <button
+                                onClick={() => setBacklogChoice('skip')}
+                                className="text-xs font-medium text-slate-500 hover:text-slate-700"
+                            >
+                                Not today
+                            </button>
+                        </div>
+                    )}
+                    {backlog.length > 0 && backlogChoice === 'picked' && (
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                            Nice — a someday task is on today's plan.
+                        </div>
+                    )}
+
                     {/* Timeline */}
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
                         <div className="flex items-center justify-between">
@@ -714,15 +775,21 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
                         Next <ChevronRight size={16} />
                     </button>
                 ) : !routineProgress.morning && (
-                    <button
-                        onClick={() => {
-                            markRoutineDone('morning', dateKey);
-                            toast.success('Morning routine done — have a good day!');
-                        }}
-                        className="ml-auto flex items-center gap-1 px-5 py-2 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors"
-                    >
-                        <Check size={16} /> Finish morning
-                    </button>
+                    <div className="ml-auto flex flex-col items-end gap-1">
+                        <button
+                            onClick={() => {
+                                markRoutineDone('morning', dateKey);
+                                toast.success('Morning routine done — have a good day!');
+                            }}
+                            disabled={!backlogSatisfied}
+                            className="flex items-center gap-1 px-5 py-2 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <Check size={16} /> Finish morning
+                        </button>
+                        {!backlogSatisfied && (
+                            <span className="text-xs text-slate-400">Pick a someday task or tap "Not today" first.</span>
+                        )}
+                    </div>
                 )}
             </div>
 

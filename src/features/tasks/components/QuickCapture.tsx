@@ -1,19 +1,29 @@
 import React, { useMemo, useState } from 'react';
 import { Sparkles, Calendar as CalendarIcon, Plus } from 'lucide-react';
-import type { TaskType } from '../types';
+import type { TaskType, TaskKind } from '../types';
 import { parseQuickCapture } from '../utils/quickCaptureParser';
+import { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from '../utils/taskKind';
 
 interface QuickCaptureProps {
     taskTypes: TaskType[];
     onSubmit: (draft: ReturnType<typeof parseQuickCapture>) => Promise<void> | void;
 }
 
+type KindChoice = TaskKind | 'auto';
+
 const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
     const [text, setText] = useState('');
     const [busy, setBusy] = useState(false);
+    const [kindChoice, setKindChoice] = useState<KindChoice>('auto');
 
-    const draft = useMemo(() => parseQuickCapture(text, taskTypes), [text, taskTypes]);
+    const parsed = useMemo(() => parseQuickCapture(text, taskTypes), [text, taskTypes]);
+    // Explicit button choice wins; otherwise use whatever the text implied.
+    const draft = useMemo(
+        () => (kindChoice === 'auto' ? parsed : { ...parsed, kind: kindChoice }),
+        [parsed, kindChoice],
+    );
     const matchedType = draft.taskTypeId ? taskTypes.find(t => t.id === draft.taskTypeId) : undefined;
+    const effectiveKind = draft.kind ?? deriveTaskKind(draft);
 
     const submit = async () => {
         if (!draft.title.trim() || busy) return;
@@ -21,6 +31,7 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
         try {
             await onSubmit(draft);
             setText('');
+            setKindChoice('auto');
         } finally {
             setBusy(false);
         }
@@ -52,6 +63,24 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
                 </button>
             </div>
 
+            {/* Kind selector — Auto derives from the text; tap to force a kind. */}
+            <div className="mt-2 flex flex-wrap gap-1 pl-6">
+                <KindButton
+                    label="Auto"
+                    active={kindChoice === 'auto'}
+                    hint={kindChoice === 'auto' ? `→ ${TASK_KIND_META[effectiveKind].label}` : undefined}
+                    onClick={() => setKindChoice('auto')}
+                />
+                {TASK_KIND_ORDER.map(k => (
+                    <KindButton
+                        key={k}
+                        label={`${TASK_KIND_META[k].emoji} ${TASK_KIND_META[k].label}`}
+                        active={kindChoice === k}
+                        onClick={() => setKindChoice(prev => (prev === k ? 'auto' : k))}
+                    />
+                ))}
+            </div>
+
             {(matchedType || draft.dueDate || draft.priority || draft.energy) && (
                 <div className="mt-2 flex flex-wrap gap-1.5 text-xs pl-6">
                     {matchedType && (
@@ -80,5 +109,19 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
         </div>
     );
 };
+
+const KindButton: React.FC<{ label: string; active: boolean; hint?: string; onClick: () => void }> = ({ label, active, hint, onClick }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+            active
+                ? 'border-indigo-600 bg-indigo-600 text-white'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-300'
+        }`}
+    >
+        {label}{hint ? <span className="ml-1 opacity-70">{hint}</span> : null}
+    </button>
+);
 
 export default QuickCapture;

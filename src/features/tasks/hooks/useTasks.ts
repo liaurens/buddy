@@ -15,6 +15,12 @@ import {
     cancelTaskReminders,
 } from '../../../services/notifications/scheduler.service';
 import { getCategorySettings } from '../../../services/settings';
+import { deriveTaskKind, kindSignalPatch } from '../utils/taskKind';
+import {
+    pushTaskToGoogle,
+    updateTaskOnGoogle,
+    removeTaskFromGoogle,
+} from '../../planning/services/google-calendar.service';
 
 /** Build the absolute due moment from dueDate (YYYY-MM-DD) + optional dueTime (HH:MM). */
 function resolveDueAt(dueDate?: string, dueTime?: string): Date | undefined {
@@ -58,6 +64,29 @@ async function syncTaskReminders(userId: string, task: Task): Promise<void> {
         });
     } catch (e) {
         console.error('Failed to sync task reminders:', e);
+    }
+}
+
+/** Hybrid write-through: seed the canonical signal for an explicit kind so the two never drift. */
+function applyKindWriteThrough(task: Task): Task {
+    return task.kind ? { ...task, ...kindSignalPatch(task.kind) } : task;
+}
+
+/**
+ * Mirror a task to Google Calendar. Always non-fatal — a missing connection or
+ * a Google error must never break the local task save. Network failures are
+ * queued by the service itself.
+ */
+async function syncTaskToGoogle(task: Task): Promise<void> {
+    try {
+        if (task.googleEventId) {
+            if (task.completed || !task.dueDate) await removeTaskFromGoogle(task);
+            else await updateTaskOnGoogle(task);
+        } else if (!task.completed && task.dueDate && deriveTaskKind(task) === 'urgent') {
+            await pushTaskToGoogle(task);
+        }
+    } catch (e) {
+        console.warn('Google Calendar sync skipped:', e);
     }
 }
 
@@ -113,7 +142,7 @@ export const useTasks = (): TaskState => {
     const addTaskFull = useCallback(async (partial: Partial<Task> & { title: string }) => {
         if (!userId) throw new Error('Not authenticated');
 
-        const newTask: Task = {
+        const newTask: Task = applyKindWriteThrough({
             id: uuidv4(),
             completed: false,
             createdAt: new Date().toISOString(),
@@ -121,13 +150,14 @@ export const useTasks = (): TaskState => {
             subtasks: [],
             recurrence: 'none',
             ...partial,
-        };
+        });
 
         const dbTask = todoToDb(newTask, userId);
         const { error } = await supabase.from('todos').insert(dbTask);
 
         if (error) throw error;
         await syncTaskReminders(userId, newTask);
+        void syncTaskToGoogle(newTask);
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
         return newTask.id;
     }, [userId, queryClient]);
@@ -154,6 +184,7 @@ export const useTasks = (): TaskState => {
         if (nowCompleting) {
             await cancelTaskReminders(userId, id);
         }
+        void syncTaskToGoogle({ ...task, completed: nowCompleting });
 
         // Spawn next occurrence for recurring tasks
         if (nowCompleting && task.recurrence && task.recurrence !== 'none') {
@@ -181,6 +212,8 @@ export const useTasks = (): TaskState => {
     const deleteTask = useCallback(async (id: string) => {
         if (!userId) throw new Error('Not authenticated');
 
+        const task = tasks.find(t => t.id === id);
+
         const { error } = await supabase
             .from('todos')
             .delete()
@@ -189,13 +222,15 @@ export const useTasks = (): TaskState => {
 
         if (error) throw error;
         await cancelTaskReminders(userId, id);
+        if (task?.googleEventId) void removeTaskFromGoogle(task);
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, queryClient]);
+    }, [userId, tasks, queryClient]);
 
     const updateTask = useCallback(async (updatedTask: Task) => {
         if (!userId) throw new Error('Not authenticated');
 
-        const { id, ...updates } = updatedTask;
+        const finalTask = applyKindWriteThrough(updatedTask);
+        const { id, ...updates } = finalTask;
         const dbUpdates = {
             title: updates.title,
             completed: updates.completed,
@@ -217,6 +252,9 @@ export const useTasks = (): TaskState => {
             context: updates.context || null,
             routine_id: updates.routineId || null,
             routine_order: updates.routineOrder ?? null,
+            kind: updates.kind || null,
+            parent_todo_id: updates.parentTodoId || null,
+            notes: updates.notes || null,
         };
 
         const { error } = await supabase
@@ -226,7 +264,8 @@ export const useTasks = (): TaskState => {
             .eq('user_id', userId);
 
         if (error) throw error;
-        await syncTaskReminders(userId, updatedTask);
+        await syncTaskReminders(userId, finalTask);
+        void syncTaskToGoogle(finalTask);
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
     }, [userId, queryClient]);
 
@@ -276,8 +315,13 @@ export const useTasks = (): TaskState => {
             .in('id', ids)
             .eq('user_id', userId);
         if (error) throw error;
+        // Mirror the new schedule to Google (urgent tasks land on the calendar; already-synced tasks move).
+        ids.forEach(id => {
+            const task = tasks.find(t => t.id === id);
+            if (task) void syncTaskToGoogle({ ...task, dueDate: isoDate });
+        });
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, queryClient]);
+    }, [userId, tasks, queryClient]);
 
     const completeMany = useCallback(async (ids: string[]) => {
         if (!userId || ids.length === 0) return;
@@ -289,6 +333,7 @@ export const useTasks = (): TaskState => {
             .eq('user_id', userId);
         if (error) throw error;
         await Promise.all(ids.map(id => cancelTaskReminders(userId, id)));
+        tasks.filter(t => ids.includes(t.id) && t.googleEventId).forEach(t => void removeTaskFromGoogle(t));
 
         // Spawn next occurrence for any recurring tasks we just completed
         const completed = tasks.filter(t => ids.includes(t.id) && t.recurrence && t.recurrence !== 'none');
@@ -315,6 +360,7 @@ export const useTasks = (): TaskState => {
 
     const deleteMany = useCallback(async (ids: string[]) => {
         if (!userId || ids.length === 0) return;
+        const toUnsync = tasks.filter(t => ids.includes(t.id) && t.googleEventId);
         const { error } = await supabase
             .from('todos')
             .delete()
@@ -322,8 +368,9 @@ export const useTasks = (): TaskState => {
             .eq('user_id', userId);
         if (error) throw error;
         await Promise.all(ids.map(id => cancelTaskReminders(userId, id)));
+        toUnsync.forEach(t => void removeTaskFromGoogle(t));
         queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, queryClient]);
+    }, [userId, tasks, queryClient]);
 
     return { tasks, isLoading, addTask, addTaskFull, toggleTask, deleteTask, updateTask, startTask, completeTaskWithDuration, rescheduleMany, completeMany, deleteMany };
 };

@@ -108,4 +108,24 @@ describe('parseQuickCapture', () => {
         const r = parseQuickCapture('random thing to do', TYPES, NOW);
         expect(r.taskTypeId).toBeUndefined();
     });
+
+    it('parses "!!!" → urgent priority and urgent kind', () => {
+        const r = parseQuickCapture('!!! call the dentist', TYPES, NOW);
+        expect(r.priority).toBe('urgent');
+        expect(r.kind).toBe('urgent');
+        expect(r.title).toBe('call the dentist');
+    });
+
+    it('does not set a kind for plain "!!"', () => {
+        const r = parseQuickCapture('!! reply to professor', TYPES, NOW);
+        expect(r.priority).toBe('urgent');
+        expect(r.kind).toBeUndefined();
+    });
+
+    it('parses "someday" → backlog kind and strips the keyword', () => {
+        const r = parseQuickCapture('learn guitar someday', TYPES, NOW);
+        expect(r.kind).toBe('backlog');
+        expect(r.title.toLowerCase()).toContain('learn guitar');
+        expect(r.title.toLowerCase()).not.toContain('someday');
+    });
 });

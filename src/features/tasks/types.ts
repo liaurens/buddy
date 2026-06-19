@@ -4,6 +4,11 @@
 export type TaskEnergy = 'low' | 'medium' | 'high';
 export type TaskContext = 'computer' | 'phone' | 'home' | 'out' | 'anywhere';
 
+// Task Kind — behavioral classification that drives capture, scheduling, and surfacing.
+// Hybrid model: when `kind` is unset it is derived from existing signals
+// (priority/recurrence/dueDate/reminder) via deriveTaskKind(); an explicit value overrides.
+export type TaskKind = 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard';
+
 // Recurrence Types
 export type RecurrencePattern = 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays';
 
@@ -56,6 +61,19 @@ export interface Task {
     context?: TaskContext;
     routineId?: string;
     routineOrder?: number;
+
+    // Behavioral kind (explicit override; usually derived via deriveTaskKind)
+    kind?: TaskKind;
+
+    // Urgent flow: prep tasks worked on earlier days roll up to a parent task
+    parentTodoId?: string;
+    // Free-form "important info" captured during the urgent scheduling flow
+    notes?: string;
+
+    // Google Calendar write sync (Phase 1)
+    googleEventId?: string;
+    googleCalendarId?: string;
+    googleSyncedAt?: string;
 }
 
 // Task Types (user-defined categories like Email, Home, Study)

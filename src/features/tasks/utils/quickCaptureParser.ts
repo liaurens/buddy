@@ -6,7 +6,7 @@
  * Deterministic — no AI.
  */
 
-import type { Task, TaskType, TaskEnergy } from '../types';
+import type { Task, TaskType, TaskEnergy, TaskKind } from '../types';
 
 export interface ParsedDraft {
     title: string;
@@ -15,6 +15,7 @@ export interface ParsedDraft {
     dueTime?: string;        // HH:MM
     priority?: Task['priority'];
     energy?: TaskEnergy;
+    kind?: TaskKind;         // explicit kind detected from text (e.g. "!!!" → urgent, "someday" → backlog)
 }
 
 // Keyword → preset task type NAME. Hits matched against the name on the user's
@@ -77,12 +78,22 @@ export function parseQuickCapture(input: string, types: TaskType[], now: Date = 
     let dueDate: string | undefined;
     let dueTime: string | undefined;
     let taskTypeId: string | undefined;
+    let kind: TaskKind | undefined;
 
-    // Priority: leading !! or !
-    const prMatch = text.match(/^(!!|!)\s+/);
+    // Priority: leading !!! (urgent kind), !! (urgent), or ! (high)
+    const prMatch = text.match(/^(!!!|!!|!)\s+/);
     if (prMatch) {
-        priority = prMatch[1] === '!!' ? 'urgent' : 'high';
+        if (prMatch[1] === '!!!') { priority = 'urgent'; kind = 'urgent'; }
+        else if (prMatch[1] === '!!') priority = 'urgent';
+        else priority = 'high';
         text = text.slice(prMatch[0].length);
+    }
+
+    // Kind keyword: "someday"/"backlog" → backlog (no-pressure list)
+    const kindMatch = text.match(/\b(someday|backlog)\b[:\s]*/i);
+    if (kindMatch) {
+        kind = 'backlog';
+        text = text.replace(kindMatch[0], ' ');
     }
 
     // Energy prefix
@@ -156,5 +167,5 @@ export function parseQuickCapture(input: string, types: TaskType[], now: Date = 
     }
 
     const title = text.replace(/\s+/g, ' ').trim();
-    return { title, taskTypeId, dueDate, dueTime, priority, energy };
+    return { title, taskTypeId, dueDate, dueTime, priority, energy, kind };
 }

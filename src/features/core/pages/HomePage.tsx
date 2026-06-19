@@ -7,6 +7,7 @@ import NotificationPermissionPrompt from '../../../components/notifications/Noti
 import AssistantPromptBar from '../../assistant/components/AssistantPromptBar';
 import DailyRoutineCard from '../components/DailyRoutineCard';
 import NextUpCard from '../components/NextUpCard';
+import UrgentInboxCard from '../components/UrgentInboxCard';
 import TodayCard from '../components/TodayCard';
 import InsightCard from '../components/InsightCard';
 
@@ -72,6 +73,8 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             {user && !pushPromptDismissed && (
                 <NotificationPermissionPrompt userId={user.id} onClose={dismissPushPrompt} />
             )}
+
+            <UrgentInboxCard onNavigate={onNavigate} />
 
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.85fr)] lg:items-start lg:gap-6">
                 <section className="space-y-5">

@@ -7,6 +7,10 @@ export { default as NotesPage } from './pages/NotesPage';
 
 // Components
 export { default as AITaskSplitter } from './components/AITaskSplitter';
+export { default as UrgentScheduleModal } from './components/UrgentScheduleModal';
+
+// Utils — task kind classification
+export { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from './utils/taskKind';
 
 // Hooks
 export { useTaskRecommendation } from './hooks/useTaskRecommendation';

@@ -35,6 +35,12 @@ export interface DbTodo {
     context?: TaskContext | null;
     routine_id?: string | null;
     routine_order?: number | null;
+    kind?: 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard' | null;
+    parent_todo_id?: string | null;
+    notes?: string | null;
+    google_event_id?: string | null;
+    google_calendar_id?: string | null;
+    google_synced_at?: string | null;
 }
 
 export interface DbTaskType {

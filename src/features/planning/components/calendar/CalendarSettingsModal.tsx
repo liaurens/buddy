@@ -9,6 +9,7 @@ import {
 import Modal from '../../../../components/ui/Modal';
 import { syncCalendar, type SyncResult } from '../../services/calendar-sync.service';
 import { calendarConfigSchema } from '../../../../lib/validation/schemas';
+import GoogleCalendarConnect from './GoogleCalendarConnect';
 
 interface CalendarSettingsModalProps {
   isOpen: boolean;
@@ -166,7 +167,15 @@ const CalendarSettingsModal: React.FC<CalendarSettingsModalProps> = ({
       size="lg"
     >
       <div className="space-y-6">
-        {/* Calendar Source Settings */}
+        {/* Google Calendar write integration */}
+        <div>
+          <h3 className="text-lg font-medium text-slate-900 mb-4">
+            Google Calendar
+          </h3>
+          <GoogleCalendarConnect />
+        </div>
+
+        {/* Calendar Source Settings (read-only iCal feed) */}
         <div>
           <h3 className="text-lg font-medium text-slate-900 mb-4">
             Calendar Source

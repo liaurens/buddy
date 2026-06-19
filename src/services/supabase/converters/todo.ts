@@ -35,6 +35,12 @@ export function dbToTodo(db: DbTodo): Task {
         context: db.context || undefined,
         routineId: db.routine_id || undefined,
         routineOrder: db.routine_order ?? undefined,
+        kind: (db.kind as Task['kind']) || undefined,
+        parentTodoId: db.parent_todo_id || undefined,
+        notes: db.notes || undefined,
+        googleEventId: db.google_event_id || undefined,
+        googleCalendarId: db.google_calendar_id || undefined,
+        googleSyncedAt: db.google_synced_at || undefined,
     };
 }
 
@@ -69,5 +75,11 @@ export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: strin
         context: todo.context || null,
         routine_id: todo.routineId || null,
         routine_order: todo.routineOrder ?? null,
+        kind: todo.kind || null,
+        parent_todo_id: todo.parentTodoId || null,
+        notes: todo.notes || null,
+        google_event_id: todo.googleEventId || null,
+        google_calendar_id: todo.googleCalendarId || null,
+        google_synced_at: todo.googleSyncedAt || null,
     };
 }

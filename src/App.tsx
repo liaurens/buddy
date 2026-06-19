@@ -20,6 +20,8 @@ import DayPage from './features/day/pages/DayPage';
 import { NotificationsPage, ensureAnchorSchedule } from './features/notifications';
 import InAppReminderBanner from './components/notifications/InAppReminderBanner';
 import { syncCalendarIfStale } from './features/planning/services/calendar-sync.service';
+import { flushGoogleCalendarOutbox } from './features/planning/services/google-calendar.service';
+import GoogleOAuthCallbackPage from './features/planning/pages/GoogleOAuthCallbackPage';
 import { flushPendingCaptures } from './features/assistant/services/assistant.service';
 import { CAPTURE_DRAFT_KEY } from './features/assistant/constants';
 import { logAppEvent } from './services/app-events';
@@ -105,7 +107,8 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!isLoggedIn) return;
     void flushPendingCaptures();
-    const onOnline = () => { void flushPendingCaptures(); };
+    void flushGoogleCalendarOutbox();
+    const onOnline = () => { void flushPendingCaptures(); void flushGoogleCalendarOutbox(); };
     window.addEventListener('online', onOnline);
     return () => window.removeEventListener('online', onOnline);
   }, [isLoggedIn]);
@@ -209,6 +212,12 @@ const App: React.FC = () => {
         )}
       </div>
     );
+  }
+
+  // Google OAuth callback — handle before login gating so the code exchange can run
+  // using the persisted Supabase session.
+  if (window.location.pathname === '/oauth/google/callback') {
+    return <GoogleOAuthCallbackPage />;
   }
 
   // Show login screen if not logged in

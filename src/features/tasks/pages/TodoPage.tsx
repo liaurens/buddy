@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Settings, Repeat, LayoutGrid, CalendarDays, BookOpen } from 'lucide-react';
+import { Settings, Repeat, LayoutGrid, CalendarDays, BookOpen, Flame } from 'lucide-react';
 import { isToday, isPast, differenceInCalendarDays } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTasks } from '../hooks/useTasks';
 import { useTaskTypes } from '../hooks/useTaskTypes';
 import { useTaskRecommendation } from '../hooks/useTaskRecommendation';
-import type { Task } from '../types';
+import type { Task, TaskKind } from '../types';
+import { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from '../utils/taskKind';
 import { UpcomingDeadlinesBanner } from '../../school';
 import type { AppRoute } from '../../../constants/routes';
 
@@ -24,7 +25,7 @@ interface TodoPageProps {
     onNavigate?: (tab: AppRoute, params?: Record<string, unknown>) => void;
 }
 
-type ViewMode = 'type' | 'schedule';
+type ViewMode = 'type' | 'schedule' | 'kind';
 type BucketId = 'overdue' | 'today' | 'week' | 'later';
 
 const BUCKET_META: Record<BucketId, { label: string; tone: string; dot: string }> = {
@@ -43,7 +44,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
     const { taskTypes } = useTaskTypes();
     const { ranked } = useTaskRecommendation();
 
-    const [view, setView] = useState<ViewMode>('type');
+    const deepLinkUrgent = initialParams?.view === 'urgent';
+    const [view, setView] = useState<ViewMode>(deepLinkUrgent ? 'kind' : 'type');
+    const [onlyKind, setOnlyKind] = useState<TaskKind | null>(deepLinkUrgent ? 'urgent' : null);
     const [filter, setFilter] = useState<FilterState>({ typeId: 'all', energy: 'all' });
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showSettings, setShowSettings] = useState(false);
@@ -136,6 +139,20 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
         return buckets;
     }, [filteredActive, scoreById]);
 
+    // Group by behavioral kind for the Kind view.
+    const byKind = useMemo(() => {
+        const groups = new Map<TaskKind, Task[]>();
+        for (const t of filteredActive) {
+            const k = deriveTaskKind(t);
+            const arr = groups.get(k) || [];
+            arr.push(t);
+            groups.set(k, arr);
+        }
+        const byScore = (a: Task, b: Task) => (scoreById.get(b.id) ?? 0) - (scoreById.get(a.id) ?? 0);
+        groups.forEach(arr => arr.sort(byScore));
+        return groups;
+    }, [filteredActive, scoreById]);
+
     const toggleSelected = (id: string) => {
         setSelectedIds(prev => {
             const next = new Set(prev);
@@ -157,7 +174,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                     <p className="app-subtitle">{activeTasks.length} active · grouped for easier scanning</p>
                 </div>
                 <div className="flex items-center gap-1 self-start sm:self-auto">
-                    <ViewToggle view={view} onChange={setView} />
+                    <ViewToggle view={view} onChange={(v) => { setView(v); setOnlyKind(null); }} />
                     <IconButton title="Run a routine" onClick={() => setShowRoutines(true)}>
                         <Repeat size={18} />
                     </IconButton>
@@ -191,6 +208,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                             dueTime: draft.dueTime,
                             priority: draft.priority || 'medium',
                             energy: draft.energy,
+                            kind: draft.kind,
                         });
                     }}
                 />
@@ -201,11 +219,11 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                 <>
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-4 lg:hidden">
                     {[
-                        { label: 'All', active: filter.typeId === 'all' && filter.energy === 'all', onClick: () => { setFilter({ typeId: 'all', energy: 'all' }); setView('type'); } },
-                        { label: 'Today', active: view === 'schedule', onClick: () => setView('schedule') },
-                        { label: 'Upcoming', active: false, onClick: () => setView('schedule') },
-                        { label: 'Someday', active: false, onClick: () => setView('schedule') },
-                        { label: 'Done', active: false, onClick: () => setView('type') },
+                        { label: 'All', active: view === 'type' && filter.typeId === 'all' && filter.energy === 'all', onClick: () => { setFilter({ typeId: 'all', energy: 'all' }); setOnlyKind(null); setView('type'); } },
+                        { label: 'Urgent', active: view === 'kind' && onlyKind === 'urgent', onClick: () => { setOnlyKind('urgent'); setView('kind'); } },
+                        { label: 'Today', active: view === 'schedule', onClick: () => { setOnlyKind(null); setView('schedule'); } },
+                        { label: 'Someday', active: view === 'kind' && onlyKind === 'backlog', onClick: () => { setOnlyKind('backlog'); setView('kind'); } },
+                        { label: 'Done', active: false, onClick: () => { setOnlyKind(null); setView('type'); } },
                     ].map(chip => (
                         <button
                             key={chip.label}
@@ -271,6 +289,46 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                             onDelete={deleteTask}
                             onUpdate={updateTask}
                         />
+                    )}
+                </div>
+            ) : view === 'kind' ? (
+                <div className="space-y-4 lg:max-w-4xl">
+                    {TASK_KIND_ORDER.filter(k => !onlyKind || k === onlyKind).map(kind => {
+                        const tasks = byKind.get(kind) || [];
+                        if (tasks.length === 0) return null;
+                        const meta = TASK_KIND_META[kind];
+                        return (
+                            <section key={kind} className="space-y-1.5">
+                                <div className="flex items-center gap-2 pl-1">
+                                    <span>{meta.emoji}</span>
+                                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600">{meta.label}</h2>
+                                    <span className="text-xs text-slate-400">({tasks.length})</span>
+                                    <span className="hidden text-xs text-slate-400 sm:inline">· {meta.description}</span>
+                                </div>
+                                <div className="space-y-1.5">
+                                    {tasks.map(t => (
+                                        <TaskCard
+                                            key={t.id}
+                                            task={t}
+                                            taskType={t.taskTypeId ? typesById.get(t.taskTypeId) : undefined}
+                                            allTaskTypes={taskTypes}
+                                            isSelected={selectedIds.has(t.id)}
+                                            isTopPick={t.id === topPickId && selectedIds.size === 0}
+                                            onToggleSelect={toggleSelected}
+                                            onToggleComplete={toggleTask}
+                                            onDelete={deleteTask}
+                                            onUpdate={updateTask}
+                                            showTypeBadge
+                                        />
+                                    ))}
+                                </div>
+                            </section>
+                        );
+                    })}
+                    {onlyKind && (
+                        <button onClick={() => setOnlyKind(null)} className="pl-1 text-xs font-medium text-indigo-600 hover:underline">
+                            Show all kinds
+                        </button>
                     )}
                 </div>
             ) : (
@@ -357,6 +415,13 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
 
 const ViewToggle: React.FC<{ view: ViewMode; onChange: (v: ViewMode) => void }> = ({ view, onChange }) => (
     <div className="mr-1 flex rounded-lg border border-slate-200 bg-slate-100/80 p-0.5">
+        <button
+            onClick={() => onChange('kind')}
+            title="Group by kind"
+            className={`rounded p-1.5 ${view === 'kind' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+        >
+            <Flame size={16} />
+        </button>
         <button
             onClick={() => onChange('type')}
             title="Group by type"
