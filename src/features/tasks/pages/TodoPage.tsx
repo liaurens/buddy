@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Settings, Repeat, LayoutGrid, CalendarDays, BookOpen, Flame } from 'lucide-react';
+import { Settings, Repeat, LayoutGrid, CalendarDays, BookOpen, Flame, Sparkles } from 'lucide-react';
 import { isToday, isPast, differenceInCalendarDays } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTasks } from '../hooks/useTasks';
@@ -18,11 +18,14 @@ import EmptyState from '../components/EmptyState';
 import TaskBulkActionBar from '../components/TaskBulkActionBar';
 import TaskSettingsModal from '../components/TaskSettingsModal';
 import TasksOrganizationModal from '../components/TasksOrganizationModal';
+import AIOrganizeModal from '../components/AIOrganizeModal';
 import RoutinePicker from '../components/RoutinePicker';
 
 interface TodoPageProps {
     initialParams?: Record<string, unknown> | null;
     onNavigate?: (tab: AppRoute, params?: Record<string, unknown>) => void;
+    /** Optional content rendered at the top of the page (e.g. urgent inbox / next-up cards). */
+    topSlot?: React.ReactNode;
 }
 
 type ViewMode = 'type' | 'schedule' | 'kind';
@@ -35,7 +38,7 @@ const BUCKET_META: Record<BucketId, { label: string; tone: string; dot: string }
     later:   { label: 'Later / no due',  tone: 'text-slate-500',  dot: 'bg-slate-300' },
 };
 
-const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
+const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot }) => {
     const { user } = useAuth();
     const {
         tasks: allTodos, isLoading, addTaskFull, toggleTask, deleteTask, updateTask,
@@ -51,6 +54,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showSettings, setShowSettings] = useState(false);
     const [showOrganize, setShowOrganize] = useState(false);
+    const [showOrganizeAI, setShowOrganizeAI] = useState(false);
     const [showRoutines, setShowRoutines] = useState(false);
     const [flashMessage, setFlashMessage] = useState<string | null>(null);
 
@@ -87,6 +91,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
 
     const activeTasks = useMemo(() => allTodos.filter(t => !t.completed), [allTodos]);
     const completedTasks = useMemo(() => allTodos.filter(t => t.completed).slice(0, 10), [allTodos]);
+
+    // "Unorganized" inbox = active tasks without a type; the AI organizer targets these.
+    const organizeCandidates = useMemo(() => activeTasks.filter(t => !t.taskTypeId), [activeTasks]);
 
     const filteredActive = useMemo(() => activeTasks.filter(t => {
         if (filter.typeId === 'all') { /* allow all */ }
@@ -175,6 +182,11 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                 </div>
                 <div className="flex items-center gap-1 self-start sm:self-auto">
                     <ViewToggle view={view} onChange={(v) => { setView(v); setOnlyKind(null); }} />
+                    {organizeCandidates.length > 0 && (
+                        <IconButton title="Organize with AI" onClick={() => setShowOrganizeAI(true)}>
+                            <Sparkles size={18} />
+                        </IconButton>
+                    )}
                     <IconButton title="Run a routine" onClick={() => setShowRoutines(true)}>
                         <Repeat size={18} />
                     </IconButton>
@@ -192,6 +204,8 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
                     {flashMessage}
                 </div>
             )}
+
+            {topSlot}
 
             <UpcomingDeadlinesBanner onOpenSchool={onNavigate ? () => onNavigate('school') : undefined} />
 
@@ -404,6 +418,17 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate }) => {
 
             <TaskSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
             <TasksOrganizationModal isOpen={showOrganize} onClose={() => setShowOrganize(false)} />
+            {showOrganizeAI && (
+                <AIOrganizeModal
+                    candidates={organizeCandidates}
+                    taskTypes={taskTypes}
+                    onApply={(updated) => {
+                        updated.forEach(updateTask);
+                        setFlashMessage(`Organized ${updated.length} ${updated.length === 1 ? 'task' : 'tasks'}`);
+                    }}
+                    onClose={() => setShowOrganizeAI(false)}
+                />
+            )}
             <RoutinePicker
                 isOpen={showRoutines}
                 onClose={() => setShowRoutines(false)}

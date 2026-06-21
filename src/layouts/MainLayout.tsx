@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Grid2X2, Home, LayoutGrid, MessageSquare, PlusCircle, Sparkles, User } from 'lucide-react';
+import { Bell, CheckSquare, Grid2X2, Home, LayoutGrid, MessageSquare, PlusCircle, Sparkles, User } from 'lucide-react';
 import type { AppRoute } from '../constants/routes';
 import CaptureFAB from '../components/CaptureFAB';
 
@@ -11,6 +11,7 @@ interface MainLayoutProps {
 
 const TABS: Array<{ key: AppRoute; label: string; Icon: typeof Home }> = [
     { key: 'home', label: 'Now', Icon: Home },
+    { key: 'tasks', label: 'Tasks', Icon: CheckSquare },
     { key: 'assistant', label: 'Capture', Icon: MessageSquare },
     { key: 'browse', label: 'Browse', Icon: LayoutGrid },
     { key: 'me', label: 'Me', Icon: User },

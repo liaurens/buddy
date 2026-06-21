@@ -5,6 +5,8 @@ import MainLayout from './layouts/MainLayout';
 // Feature imports
 import { HomePage } from './features/core';
 import AccountPage from './features/core/pages/AccountPage';
+import UrgentInboxCard from './features/core/components/UrgentInboxCard';
+import NextUpCard from './features/core/components/NextUpCard';
 import { TrackerPage, ProtocolsPage, ExperimentsPage } from './features/health-tracking';
 import { CalendarPage, ReflectionPage } from './features/planning';
 import { TodoPage, NotesPage } from './features/tasks';
@@ -135,7 +137,18 @@ const App: React.FC = () => {
       case 'toolbox':
         return <ToolboxPage />;
       case 'tasks':
-        return <TodoPage initialParams={navParams} onNavigate={handleNavigate} />;
+        return (
+          <TodoPage
+            initialParams={navParams}
+            onNavigate={handleNavigate}
+            topSlot={
+              <>
+                <UrgentInboxCard onNavigate={handleNavigate} />
+                <NextUpCard onNavigate={handleNavigate} />
+              </>
+            }
+          />
+        );
       case 'calendar':
         return <CalendarPage />;
       case 'account':

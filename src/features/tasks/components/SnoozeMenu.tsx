@@ -1,7 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import PortalMenu from './PortalMenu';
 
 interface SnoozeMenuProps {
+    /** Ref to the trigger element the menu anchors to. */
+    anchorRef: React.RefObject<HTMLElement | null>;
     /** Called with new dueDate (YYYY-MM-DD) and optional dueTime (HH:MM) */
     onSnooze: (dueDate: string, dueTime?: string) => void;
     onClose: () => void;
@@ -37,25 +40,12 @@ function nextWeek(): { date: string } {
     return { date: toIso(d) };
 }
 
-const SnoozeMenu: React.FC<SnoozeMenuProps> = ({ onSnooze, onClose }) => {
-    const ref = useRef<HTMLDivElement>(null);
+const SnoozeMenu: React.FC<SnoozeMenuProps> = ({ anchorRef, onSnooze, onClose }) => {
     const [picking, setPicking] = useState(false);
     const [customDate, setCustomDate] = useState('');
 
-    useEffect(() => {
-        const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [onClose]);
-
     return (
-        <div
-            ref={ref}
-            className="absolute right-0 top-9 z-20 w-44 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden text-sm"
-            onClick={e => e.stopPropagation()}
-        >
+        <PortalMenu anchorRef={anchorRef} open onClose={onClose} width={176}>
             {!picking ? (
                 <>
                     <button onClick={() => { const t = tonight(); onSnooze(t.date, t.time); }}
@@ -96,7 +86,7 @@ const SnoozeMenu: React.FC<SnoozeMenuProps> = ({ onSnooze, onClose }) => {
                     </button>
                 </div>
             )}
-        </div>
+        </PortalMenu>
     );
 };
 

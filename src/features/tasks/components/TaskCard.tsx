@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
     CheckCircle, Circle, Calendar as CalendarIcon, MapPin, Tag, Sparkles,
@@ -11,6 +11,7 @@ import { calculateNextDueDate } from '../utils/recurrence';
 import { getTypeColors } from '../utils/typeColors';
 import AITaskSplitter from './AITaskSplitter';
 import SnoozeMenu from './SnoozeMenu';
+import PortalMenu from './PortalMenu';
 
 const ENERGY_DOT: Record<TaskEnergy, string> = {
     low: 'bg-emerald-400',
@@ -85,16 +86,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
     const [newSubtaskText, setNewSubtaskText] = useState('');
     const [snoozeOpen, setSnoozeOpen] = useState(false);
     const [typeMenuOpen, setTypeMenuOpen] = useState(false);
-    const typeMenuRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!typeMenuOpen) return;
-        const handler = (e: MouseEvent) => {
-            if (typeMenuRef.current && !typeMenuRef.current.contains(e.target as Node)) setTypeMenuOpen(false);
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, [typeMenuOpen]);
+    const typeBtnRef = useRef<HTMLButtonElement>(null);
+    const snoozeBtnRef = useRef<HTMLButtonElement>(null);
 
     const colors = getTypeColors(taskType?.color);
     const recLabel = recurrenceLabel(task);
@@ -234,8 +227,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
                     <div className="flex items-center gap-0.5 flex-shrink-0 relative">
                         {allTaskTypes && allTaskTypes.length > 0 && (
-                            <div ref={typeMenuRef} className="relative">
+                            <>
                                 <button
+                                    ref={typeBtnRef}
                                     onClick={() => { setTypeMenuOpen(o => !o); setSnoozeOpen(false); }}
                                     className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-indigo-500 transition-all"
                                     title="Assign type"
@@ -243,29 +237,33 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 >
                                     <Tag size={15} />
                                 </button>
-                                {typeMenuOpen && (
-                                    <div className="absolute right-0 top-9 z-30 w-48 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden text-sm" onClick={e => e.stopPropagation()}>
+                                <PortalMenu
+                                    anchorRef={typeBtnRef}
+                                    open={typeMenuOpen}
+                                    onClose={() => setTypeMenuOpen(false)}
+                                    width={192}
+                                >
+                                    <button
+                                        onClick={() => { onUpdate({ ...task, taskTypeId: undefined }); setTypeMenuOpen(false); }}
+                                        className={`w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-500 italic ${!task.taskTypeId ? 'bg-indigo-50 text-indigo-600 font-medium not-italic' : ''}`}
+                                    >
+                                        Uncategorized
+                                    </button>
+                                    {allTaskTypes.map(t => (
                                         <button
-                                            onClick={() => { onUpdate({ ...task, taskTypeId: undefined }); setTypeMenuOpen(false); }}
-                                            className={`w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-500 italic ${!task.taskTypeId ? 'bg-indigo-50 text-indigo-600 font-medium not-italic' : ''}`}
+                                            key={t.id}
+                                            onClick={() => { onUpdate({ ...task, taskTypeId: t.id }); setTypeMenuOpen(false); }}
+                                            className={`w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 ${task.taskTypeId === t.id ? 'bg-indigo-50 text-indigo-600 font-medium' : 'text-slate-700'}`}
                                         >
-                                            Uncategorized
+                                            {t.emoji && <span>{t.emoji}</span>}
+                                            {t.name}
                                         </button>
-                                        {allTaskTypes.map(t => (
-                                            <button
-                                                key={t.id}
-                                                onClick={() => { onUpdate({ ...task, taskTypeId: t.id }); setTypeMenuOpen(false); }}
-                                                className={`w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 ${task.taskTypeId === t.id ? 'bg-indigo-50 text-indigo-600 font-medium' : 'text-slate-700'}`}
-                                            >
-                                                {t.emoji && <span>{t.emoji}</span>}
-                                                {t.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                    ))}
+                                </PortalMenu>
+                            </>
                         )}
                         <button
+                            ref={snoozeBtnRef}
                             onClick={() => { setSnoozeOpen(s => !s); setTypeMenuOpen(false); }}
                             className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-indigo-500 transition-all"
                             title="Reschedule"
@@ -275,6 +273,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         </button>
                         {snoozeOpen && (
                             <SnoozeMenu
+                                anchorRef={snoozeBtnRef}
                                 onSnooze={handleSnooze}
                                 onClose={() => setSnoozeOpen(false)}
                             />

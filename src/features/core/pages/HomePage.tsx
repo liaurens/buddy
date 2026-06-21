@@ -6,8 +6,6 @@ import { useAuth } from '../../../hooks/useAuth';
 import NotificationPermissionPrompt from '../../../components/notifications/NotificationPermissionPrompt';
 import AssistantPromptBar from '../../assistant/components/AssistantPromptBar';
 import DailyRoutineCard from '../components/DailyRoutineCard';
-import NextUpCard from '../components/NextUpCard';
-import UrgentInboxCard from '../components/UrgentInboxCard';
 import TodayCard from '../components/TodayCard';
 import InsightCard from '../components/InsightCard';
 
@@ -74,11 +72,11 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 <NotificationPermissionPrompt userId={user.id} onClose={dismissPushPrompt} />
             )}
 
-            <UrgentInboxCard onNavigate={onNavigate} />
-
+            {/* Routine-central: the daily routine leads, with a light today summary
+                alongside. Task management lives on its own Tasks tab. */}
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.85fr)] lg:items-start lg:gap-6">
                 <section className="space-y-5">
-                    <NextUpCard onNavigate={onNavigate} />
+                    <DailyRoutineCard onNavigate={onNavigate} />
 
                     <div className="hidden lg:block">
                         <InsightCard />
@@ -86,8 +84,6 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 </section>
 
                 <aside className="space-y-5 lg:sticky lg:top-8">
-                    <DailyRoutineCard onNavigate={onNavigate} />
-
                     <TodayCard onNavigate={onNavigate} />
 
                     <div className="lg:hidden">

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Inbox, Settings, ChevronDown, ChevronRight } from 'lucide-react';
+import { Inbox, Settings, ChevronDown, ChevronRight, FileText } from 'lucide-react';
 import { QuickNoteInput } from '../components/notes/QuickNoteInput';
 import { SmartNotesList } from '../components/notes/SmartNotesList';
 import { CategoryManager } from '../components/notes/CategoryManager';
+import ProjectDocView from '../components/notes/ProjectDocView';
 import NoteSettingsModal from '../components/notes/NoteSettingsModal';
 import { useNotes as useSmartNotes } from '../hooks/useNotes';
 
-type ViewMode = 'inbox' | 'category' | 'all' | 'settings';
+type ViewMode = 'inbox' | 'category' | 'all' | 'project' | 'settings';
 
 const SmartNotesPage: React.FC = () => {
     const { categories, notes, isLoading } = useSmartNotes();
@@ -110,6 +111,17 @@ const SmartNotesPage: React.FC = () => {
                             >
                                 All Notes
                             </button>
+                            <button
+                                onClick={() => setViewMode('project')}
+                                className={`app-segment ${
+                                    viewMode === 'project'
+                                        ? 'app-segment-active'
+                                        : ''
+                                }`}
+                            >
+                                <FileText className="w-4 h-4" />
+                                Project doc
+                            </button>
                         </div>
 
                         {/* Content */}
@@ -189,6 +201,8 @@ const SmartNotesPage: React.FC = () => {
                                 ))}
                             </div>
                         )}
+
+                        {viewMode === 'project' && <ProjectDocView />}
 
                         {viewMode === 'category' && selectedCategoryId && (
                             <div>

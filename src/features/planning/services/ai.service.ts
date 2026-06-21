@@ -29,6 +29,24 @@ export interface AIResponse<T> {
     model?: string;
 }
 
+/** A single task handed to the organizer. */
+export interface TaskOrganizationInput {
+    id: string;
+    title: string;
+    priority?: string;
+    dueDate?: string;
+}
+
+/** The organizer's proposed categorization for one task. */
+export interface TaskOrganizationSuggestion {
+    id: string;
+    taskTypeId: string | null;
+    kind: 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard';
+    priority: 'urgent' | 'high' | 'medium' | 'low';
+    dueDate: string | null;
+    reason: string;
+}
+
 // ============================================================================
 // Provider Configuration
 // ============================================================================
@@ -108,6 +126,66 @@ Return a JSON object with this structure:
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Task breakdown failed',
+            };
+        }
+    }
+
+    /**
+     * Propose a categorization (type, kind, priority, due date) for a batch of
+     * tasks so the user can approve or adjust them quickly.
+     */
+    async organizeTasks(
+        tasks: TaskOrganizationInput[],
+        taskTypes: Array<{ id: string; name: string }>,
+        todayIso: string,
+    ): Promise<AIResponse<{ suggestions: TaskOrganizationSuggestion[] }>> {
+        const typeList = taskTypes.length
+            ? taskTypes.map(t => `- ${t.name} (id: ${t.id})`).join('\n')
+            : '(no task types defined — use null)';
+        const taskList = tasks
+            .map(t => `- id: ${t.id} | "${t.title}"${t.dueDate ? ` | due ${t.dueDate}` : ''}${t.priority ? ` | priority ${t.priority}` : ''}`)
+            .join('\n');
+
+        const systemPrompt = `You organize a user's task inbox. For each task, propose the best categorization so the user can approve it quickly.
+
+Rules:
+- "taskTypeId" MUST be one of the provided type ids, or null if none fits.
+- "kind" is exactly one of: urgent, deadline, standard, routine, backlog.
+  - urgent: important and should be scheduled now.
+  - deadline: due later, remind as it nears.
+  - standard: everyday task tied to a day.
+  - routine: repeats on a schedule.
+  - backlog: someday / no pressure.
+- "priority" is exactly one of: urgent, high, medium, low.
+- "dueDate" is "YYYY-MM-DD" or null. Today is ${todayIso}. Only set a due date when the task clearly implies one.
+- "reason" is a short justification (8 words max).
+- Return one suggestion per task, keeping the exact id given.
+
+Return a JSON object:
+{
+  "suggestions": [
+    { "id": "...", "taskTypeId": "..." | null, "kind": "standard", "priority": "medium", "dueDate": null, "reason": "..." }
+  ]
+}`;
+
+        const userPrompt = `Task types:
+${typeList}
+
+Tasks to organize:
+${taskList}`;
+
+        try {
+            if (this.config.provider === 'openai') {
+                return await this.generateWithOpenAI(systemPrompt, userPrompt);
+            } else if (this.config.provider === 'anthropic') {
+                return await this.generateWithAnthropic(systemPrompt, userPrompt);
+            } else {
+                return await this.generateWithGemini(systemPrompt, userPrompt);
+            }
+        } catch (error: unknown) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Task organization failed',
             };
         }
     }
