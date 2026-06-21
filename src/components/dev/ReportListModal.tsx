@@ -37,15 +37,38 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
 
   const handleClearAll = async () => {
     if (reports.length === 0 || clearing) return;
-    if (!window.confirm(`Clear all ${reports.length} reports for this page? This cannot be undone.`)) return;
+    if (!window.confirm(`Clear all ${reports.length} reports? This cannot be undone.`)) return;
     setClearing(true);
     try {
-      const success = await deleteAllFeedback(window.location.pathname);
+      const success = await deleteAllFeedback();
       if (success) {
         setSelectedIds(new Set());
         if (onRefresh) onRefresh();
       } else {
         alert('Failed to clear reports.');
+      }
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  const handleDeleteOlderThan = async (days: number) => {
+    if (clearing) return;
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    const stale = reports.filter(r => r.created_at && new Date(r.created_at).getTime() < cutoff);
+    if (stale.length === 0) {
+      alert(`No reports older than ${days} days.`);
+      return;
+    }
+    if (!window.confirm(`Delete ${stale.length} report${stale.length === 1 ? '' : 's'} older than ${days} days?`)) return;
+    setClearing(true);
+    try {
+      const success = await deleteManyFeedback(stale.map(r => r.id!));
+      if (success) {
+        setSelectedIds(new Set());
+        if (onRefresh) onRefresh();
+      } else {
+        alert('Failed to delete old reports.');
       }
     } finally {
       setClearing(false);
@@ -164,6 +187,28 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                 Delete selected
               </button>
             )}
+            {!exportedMarkdown && reports.length > 0 && selectedIds.size === 0 && (
+              <>
+                <button
+                  onClick={() => handleDeleteOlderThan(7)}
+                  disabled={clearing}
+                  className="flex items-center gap-2 border border-gray-300 text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  title="Delete reports older than 7 days"
+                >
+                  <Trash2 size={16} />
+                  Older than 7d
+                </button>
+                <button
+                  onClick={() => handleDeleteOlderThan(30)}
+                  disabled={clearing}
+                  className="flex items-center gap-2 border border-gray-300 text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                  title="Delete reports older than 30 days"
+                >
+                  <Trash2 size={16} />
+                  Older than 30d
+                </button>
+              </>
+            )}
             {!exportedMarkdown && reports.length > 0 && (
               <button
                 onClick={handleClearAll}
@@ -211,7 +256,7 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
             {reports.length === 0 ? (
               <div className="p-12 text-center text-gray-500">
                 <MessageSquare className="mx-auto mb-3 opacity-20" size={48} />
-                <p>No feedback reported for this page yet.</p>
+                <p>No feedback reported yet.</p>
               </div>
             ) : (
               <div className="min-w-full inline-block align-middle">

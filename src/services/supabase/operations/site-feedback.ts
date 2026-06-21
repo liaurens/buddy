@@ -36,6 +36,28 @@ export async function saveFeedback(feedback: SiteFeedback): Promise<SiteFeedback
   return data;
 }
 
+/**
+ * Fetch every feedback report, newest first. The app is a single SPA route
+ * (no router), so per-page scoping never applied — one list shows everything.
+ */
+export async function getAllFeedback(): Promise<SiteFeedback[]> {
+  if (!isSupabaseConfigured) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('site_feedback')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching feedback:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
 export async function getFeedbackForPath(pathname: string): Promise<SiteFeedback[]> {
   if (!isSupabaseConfigured) {
     return [];

@@ -3,7 +3,7 @@ import { InspectorOverlay } from './InspectorOverlay';
 import { ReportFormModal } from './ReportFormModal';
 import { ReportListModal } from './ReportListModal';
 import { Bug, X, FileText, List } from 'lucide-react';
-import { getFeedbackForPath } from '../../services/supabase/operations/site-feedback';
+import { getAllFeedback } from '../../services/supabase/operations/site-feedback';
 import type { SiteFeedback } from '../../services/supabase/operations/site-feedback';
 
 export function DevPortal() {
@@ -27,7 +27,7 @@ export function DevPortal() {
 
   const loadFeedback = async () => {
     try {
-      const data = await getFeedbackForPath(window.location.pathname);
+      const data = await getAllFeedback();
       setFeedbackData(data);
       calculateNotePositions(data);
     } catch (e) {
@@ -89,30 +89,31 @@ export function DevPortal() {
 
   return (
     <>
-      <div className="fixed bottom-4 right-4 z-[9999] flex flex-col items-end space-y-2 pointer-events-none">
+      {/* Small, faded dev cluster, tucked bottom-left clear of the Capture FAB. */}
+      <div className="fixed bottom-4 left-4 z-[9999] flex flex-col items-start gap-2 pointer-events-none">
         {isActive && (
-          <div className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-full shadow-lg font-mono pointer-events-auto shadow-blue-500/20 mb-2 border border-blue-500 animate-pulse">
-            Inspector Mode Active - Click elements to inspect
+          <div className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-full shadow-lg font-mono pointer-events-auto shadow-blue-500/20 border border-blue-500 animate-pulse">
+            Inspector Mode — click an element to report
           </div>
         )}
         <div className="flex gap-2 pointer-events-auto">
-          {isActive && (
-            <button
-              onClick={() => setIsListOpen(true)}
-              className="p-3 rounded-full shadow-xl text-white bg-slate-700 hover:bg-slate-800 transition-all font-mono animate-in slide-in-from-right-4"
-              title="View all reported feedback"
-            >
-              <List size={24} />
-            </button>
-          )}
+          <button
+            onClick={() => setIsListOpen(true)}
+            className="p-2 rounded-full shadow-lg text-white bg-slate-700/80 hover:bg-slate-800 opacity-60 hover:opacity-100 transition-all"
+            title="View reported feedback"
+          >
+            <List size={18} />
+          </button>
           <button
             onClick={() => setIsActive(!isActive)}
-            className={`p-3 rounded-full shadow-xl text-white transition-all ${
-              isActive ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-600 hover:bg-blue-700'
+            className={`p-2 rounded-full shadow-lg text-white transition-all ${
+              isActive
+                ? 'bg-red-500 hover:bg-red-600 opacity-100'
+                : 'bg-blue-600/80 hover:bg-blue-700 opacity-60 hover:opacity-100'
             }`}
-            title="Toggle Feedback & Notes Portal"
+            title="Toggle inspect & report mode"
           >
-            {isActive ? <X size={24} /> : <Bug size={24} />}
+            {isActive ? <X size={18} /> : <Bug size={18} />}
           </button>
         </div>
       </div>
