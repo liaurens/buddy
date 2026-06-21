@@ -23,10 +23,21 @@ interface DynamicRule {
   confidence: number
 }
 
-// Build static rule list from all registered tools (at import time)
-const STATIC_RULES: RegisteredRule[] = ALL_TOOLS.flatMap(tool =>
-  tool.rules.map(rule => ({ ...rule, domain: tool.domain }))
-)
+// Build static rule list from all registered tools.
+//
+// Built lazily on first use (not at module load). Reading ALL_TOOLS at import
+// time hits its temporal dead zone via the registry → system.tool → rule-engine
+// → registry import cycle and throws "Cannot access 'ALL_TOOLS' before
+// initialization", crashing the edge function at boot. Deferring to first call
+// sidesteps the cycle. See command-parser.ts for the same fix.
+let staticRules: RegisteredRule[] | null = null
+function getStaticRules(): RegisteredRule[] {
+  if (staticRules) return staticRules
+  staticRules = ALL_TOOLS.flatMap(tool =>
+    tool.rules.map(rule => ({ ...rule, domain: tool.domain }))
+  )
+  return staticRules
+}
 
 /**
  * Tries to match input against static registered rules.
@@ -34,7 +45,7 @@ const STATIC_RULES: RegisteredRule[] = ALL_TOOLS.flatMap(tool =>
  */
 export function matchRules(input: string): RoutedCommand | null {
   // Check static rules first
-  for (const rule of STATIC_RULES) {
+  for (const rule of getStaticRules()) {
     const match = rule.pattern.exec(input)
     if (match) {
       const params = rule.extractParams
@@ -105,5 +116,5 @@ export async function loadDynamicRules(
  * Get all static rules (useful for debugging/HR agent).
  */
 export function getAllRules(): RegisteredRule[] {
-  return STATIC_RULES
+  return getStaticRules()
 }

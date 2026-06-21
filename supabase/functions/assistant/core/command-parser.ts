@@ -13,12 +13,25 @@ interface CommandEntry {
   action: Intent
 }
 
-// Build command map from all registered tools
-const COMMAND_MAP = new Map<string, CommandEntry>()
-for (const tool of ALL_TOOLS) {
-  for (const cmd of tool.commands) {
-    COMMAND_MAP.set(cmd.command, { domain: tool.domain, action: cmd.action })
+// Build command map from all registered tools.
+//
+// Built lazily on first use (not at module load). ALL_TOOLS lives in registry.ts,
+// which participates in an import cycle: registry → system.tool → command-parser →
+// registry. Reading ALL_TOOLS at module-load time runs while registry.ts is still
+// evaluating, so the binding is in its temporal dead zone and throws
+// "Cannot access 'ALL_TOOLS' before initialization" — crashing the whole edge
+// function at boot. Deferring the read until first call sidesteps the cycle.
+let commandMap: Map<string, CommandEntry> | null = null
+function getCommandMap(): Map<string, CommandEntry> {
+  if (commandMap) return commandMap
+  const map = new Map<string, CommandEntry>()
+  for (const tool of ALL_TOOLS) {
+    for (const cmd of tool.commands) {
+      map.set(cmd.command, { domain: tool.domain, action: cmd.action })
+    }
   }
+  commandMap = map
+  return map
 }
 
 // Legacy flag → slash command mapping. Keeps Dutch/EN flag style usable
@@ -65,7 +78,7 @@ export function parseSlashCommand(input: string): RoutedCommand | null {
   // e.g. "/task.list" should match before "/task"
   let bestMatch: { command: string; entry: CommandEntry } | null = null
 
-  for (const [command, entry] of COMMAND_MAP) {
+  for (const [command, entry] of getCommandMap()) {
     if (input === command || input.startsWith(command + ' ')) {
       if (!bestMatch || command.length > bestMatch.command.length) {
         bestMatch = { command, entry }
@@ -108,7 +121,7 @@ export function parseLegacyFlag(input: string): RoutedCommand | null {
     const command = LEGACY_FLAG_MAP[flag]
     if (command) {
       const content = input.replace(/-\w+/, '').trim()
-      const entry = COMMAND_MAP.get(command)
+      const entry = getCommandMap().get(command)
       if (entry) {
         return {
           domain: entry.domain,

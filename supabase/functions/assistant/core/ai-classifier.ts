@@ -28,7 +28,14 @@ function buildDomainList(): string {
   return Array.from(domains).join(', ')
 }
 
-const SYSTEM_PROMPT = `You are an intent classifier for a personal productivity assistant.
+// Built lazily on first use (not at module load). buildDomainList()/buildIntentList()
+// read ALL_TOOLS, which lives in a module participating in an import cycle; reading
+// it at import time would hit its temporal dead zone and crash the edge function at
+// boot. Deferring to first call sidesteps the cycle. See command-parser.ts.
+let systemPrompt: string | null = null
+function getSystemPrompt(): string {
+  if (systemPrompt) return systemPrompt
+  systemPrompt = `You are an intent classifier for a personal productivity assistant.
 Classify the user input into exactly one intent and domain.
 
 Available domains: ${buildDomainList()}
@@ -50,6 +57,8 @@ Reply with ONLY valid JSON in this format:
 {"intent": "...", "domain": "...", "params": {"content": "..."}, "confidence": 0.0, "alternatives": [{"intent": "...", "domain": "...", "label": "short user-facing label"}]}
 
 Do not include any other text.`
+  return systemPrompt
+}
 
 export interface ClarifyCandidate {
   intent: Intent
@@ -95,7 +104,7 @@ export async function classifyWithAI(
       model: aiModel,
       maxTokens: 200,
       temperature: 0,
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt: getSystemPrompt(),
     })
 
     const parsed = JSON.parse(aiResult.content || '{}')
