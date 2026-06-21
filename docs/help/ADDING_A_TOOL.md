@@ -4,7 +4,7 @@ This guide walks through adding a new tool to the multi-agent assistant so that 
 
 Everything downstream — the General Manager, Domain Managers, command parser, rule engine, agent loop, and `/help` — auto-discovers from the tool registry. Your job is to produce one `ToolDefinition` and register it. The agent loop only exposes actions that declare an `inputSchema`.
 
-Related reading: `ARCHITECTURE_PLAN.md` (big picture), `CLAUDE.md` (table names and gotchas).
+Related reading: `../reference/ARCHITECTURE_PLAN.md` (big picture), `CLAUDE.md` (table names and gotchas).
 
 ---
 
@@ -175,7 +175,7 @@ create policy "own rows" on public.flashcards
 ```
 
 3. Apply the migration. Preferred path on this project is Supabase MCP (project id `kdwgznfszbrysepsltua`); CLI push also works.
-4. Document the table in `CLAUDE.md` under "Table → Purpose mapping" and `ARCHITECTURE_PLAN.md` under "Core App Tables".
+4. Document the table in `CLAUDE.md` under "Table → Purpose mapping" and `../reference/ARCHITECTURE_PLAN.md` under "Core App Tables".
 
 **Naming gotchas** (from `CLAUDE.md`): tasks live in `todos`, health check-ins live in `entries`. Don't invent plural forms.
 

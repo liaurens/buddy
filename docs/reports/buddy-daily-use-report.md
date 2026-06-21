@@ -1,6 +1,6 @@
 # Buddy — Daily-Use Report
 
-**Scope:** Why the app isn't being used consistently, and what changes would most increase the probability of daily use. Based on a full read of the repository as of commit `eda309e` (README, PROJECT_DESCRIPTION.md, CLAUDE.md, docs/buddy_streamlining_plan.md, docs/five_pillars_plan.md, source code, edge functions, commit history Jan–May 2026).
+**Scope:** Why the app isn't being used consistently, and what changes would most increase the probability of daily use. Based on a full read of the repository as of commit `eda309e` (README, PROJECT_DESCRIPTION.md, CLAUDE.md, docs/plans/buddy_streamlining_plan.md, docs/plans/five_pillars_plan.md, source code, edge functions, commit history Jan–May 2026).
 
 ---
 
