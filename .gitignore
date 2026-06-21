@@ -45,3 +45,6 @@ blob-report/
 
 # Supabase CLI temp files
 supabase/.temp/
+
+# Claude Code per-"part" progress journals (local scratch, resumable)
+.claude/progress/

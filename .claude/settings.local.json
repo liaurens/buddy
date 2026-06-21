@@ -114,7 +114,25 @@
       "PowerShell(npx tsc -b 2>&1 | Select-Object -First 30; \"tsc exit: $LASTEXITCODE\")",
       "PowerShell(npm install -D typescript@latest 2>&1 | Select-Object -Last 3 && npx tsc -b 2>&1 | Select-Object -First 25; \"tsc exit: $LASTEXITCODE\")",
       "PowerShell(npx tsc -b 2>&1 | Select-Object -First 25; \"tsc exit: $LASTEXITCODE\")",
-      "PowerShell(Test-Path *)"
+      "PowerShell(Test-Path *)",
+      "PowerShell(npx supabase functions deploy assistant --project-ref kdwgznfszbrysepsltua --use-api 2>&1 | Select-Object -Last 15)",
+      "PowerShell(npx supabase functions delete correlations-agent --project-ref kdwgznfszbrysepsltua 2>&1 | Select-Object -Last 5)",
+      "PowerShell(git push *)",
+      "PowerShell(Get-ChildItem src/features/notifications -Recurse -File | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path + '\\\\', ''\\) })",
+      "PowerShell(Get-ChildItem src/features/day -Recurse -File | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path + '\\\\', ''\\) }; Get-ChildItem src/services/settings -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path + '\\\\', ''\\) })",
+      "PowerShell(Get-ChildItem src/services/notifications -File | Select-Object Name; Get-ChildItem supabase/functions/schedule-notifications, supabase/functions/send-notification -Recurse -File | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path + '\\\\', ''\\) })",
+      "Bash(echo \"EXIT: $?\")",
+      "mcp__claude_ai_Supabase__get_publishable_keys",
+      "Bash(echo \"===== 1\\) OPTIONS preflight \\(no Authorization header, like a browser\\) =====\")",
+      "Bash(curl -s -i -X OPTIONS https://kdwgznfszbrysepsltua.supabase.co/functions/v1/assistant -H 'Origin: https://example.com' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: authorization,content-type')",
+      "Bash(echo \"deno: $\\(command -v deno || echo MISSING\\)\")",
+      "Bash(command -v supabase)",
+      "Bash(echo \"supabase: $\\(command -v supabase || echo MISSING\\)\")",
+      "Bash(echo \"===== OPTIONS preflight \\(browser-style\\) — expect 200, NOT 500 =====\")",
+      "Bash(curl -s -o /dev/null -w 'HTTP %{http_code}\\\\n' -X OPTIONS https://kdwgznfszbrysepsltua.supabase.co/functions/v1/assistant -H 'Origin: https://example.com' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: authorization,content-type')",
+      "Bash(echo \"\")",
+      "Bash(echo \"===== POST with anon bearer — expect clean JSON \\(401 auth\\), NOT WORKER_ERROR 500 =====\")",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -X POST https://kdwgznfszbrysepsltua.supabase.co/functions/v1/assistant -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtkd2d6bmZzemJyeXNlcHNsdHVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MTQ4NDMsImV4cCI6MjA4NDM5MDg0M30.nqb5FXp0V-5Q5vE4Az_n6U_6ztbW-jIzcjqkxmIsoGo' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtkd2d6bmZzemJyeXNlcHNsdHVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4MTQ4NDMsImV4cCI6MjA4NDM5MDg0M30.nqb5FXp0V-5Q5vE4Az_n6U_6ztbW-jIzcjqkxmIsoGo' -H 'Content-Type: application/json' -d '{\"input\":\"test ping\",\"source\":\"web\"}')"
     ]
   },
   "enabledMcpjsonServers": [

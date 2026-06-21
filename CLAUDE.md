@@ -146,3 +146,20 @@ Edge functions (`supabase/functions/`) use the **service role key** — they byp
 Numbered migrations live in `supabase/migrations/`. Two unnumbered legacy files (`smart_notes_migration.sql`, `daily_planning_migration.sql`) were applied manually and are NOT tracked by the CLI. Use `supabase migration repair` if the CLI history gets out of sync (see memory for the full repair pattern).
 
 Some migrations also schedule Postgres cron jobs (e.g. `20260130000000_setup_notification_cron.sql`, `20260501000001_off_track_scanner_cron.sql`) that invoke edge functions over HTTP — keep these in mind when renaming or removing functions.
+
+## Working on a part (progress journal workflow)
+
+Any multi-step task ("part" — a feature, refactor, or investigation) uses a tracked, resumable journal so work survives across sessions and durable knowledge reaches this file and the docs.
+
+1. **Start:** run `/start-part <name>`. It creates `.claude/progress/<date>-<slug>.md` from `.claude/templates/progress.md` (Goal, Status checklist, Key context, Errors & gotchas, Next steps, Candidate learnings). These journals are **gitignored** local scratch. A SessionStart hook surfaces any unfinished journal so you can resume immediately.
+2. **During:** keep the journal updated as you go — especially **Errors & gotchas** and **Next steps** — so a cold session can continue with no other context. Park anything project-wide under **Candidate learnings for CLAUDE.md**.
+3. **Finish:** run `/finish-part`. It folds durable learnings into this CLAUDE.md, updates `docs/DESIGN.md` (Status buckets + dated Changelog), and — only if the part is significant (new feature module, new Supabase domain/table/migration, new edge function, or ~8+ files) — generates a Mermaid diagram under `docs/diagrams/` plus a `docs/<feature>.md` page. Then it archives the journal to `.claude/progress/done/`.
+
+`docs/DESIGN.md` is the living status/architecture overview — check it for what's Done vs Planned.
+
+## Claude Code helpers in this repo
+
+- **Hooks** (`.claude/settings.json`, scripts in `.claude/hooks/`): advisory quality guard + Prettier format-on-edit (PostToolUse), a Stop audit, and the SessionStart resume hook. All advisory — they never block.
+- **Agents** (`.claude/agents/`): `supabase-domain` (scaffold a data domain), `edge-fn` (edge functions + migrations), `pwa-reviewer` (review against these hard rules), `vitest-author` (tests).
+- **Commands** (`.claude/commands/`): `/check`, `/new-domain`, `/new-migration`, `/deploy-fn`, `/db`, `/start-part`, `/finish-part`.
+- **Formatting:** Prettier (`npm run format` / `format:check`) + a husky pre-commit running `lint-staged` on staged files only.

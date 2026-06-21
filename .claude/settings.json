@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "node .claude/hooks/quality-guard.mjs" },
+          { "type": "command", "command": "node .claude/hooks/format-edited.mjs" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "node .claude/hooks/stop-audit.mjs" }]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "node .claude/hooks/resume-context.mjs" }]
+      }
+    ]
+  }
+}
