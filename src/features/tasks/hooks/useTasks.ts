@@ -4,12 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../../../hooks/useAuth';
 import type { Task, TaskState, RecurrencePattern, RecurrenceConfig } from '../types';
 import { calculateNextDueDate } from '../utils/recurrence';
-import {
-    supabase,
-    dbToTodo,
-    todoToDb,
-    type DbTodo,
-} from '../../../services/supabase';
+import { supabase, dbToTodo, todoToDb, type DbTodo } from '../../../services/supabase';
 import {
     scheduleTaskReminders,
     cancelTaskReminders,
@@ -113,264 +108,341 @@ export const useTasks = (): TaskState => {
         enabled: !!userId,
     });
 
-    const addTask = useCallback(async (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig, dueTime?: string) => {
-        if (!userId) throw new Error('Not authenticated');
+    const addTask = useCallback(
+        async (
+            title: string,
+            priority?: Task['priority'],
+            estimatedTime?: number,
+            dueDate?: string,
+            recurrence?: RecurrencePattern,
+            recurrenceConfig?: RecurrenceConfig,
+            dueTime?: string,
+        ) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const newTask: Task = {
-            id: uuidv4(),
-            title,
-            completed: false,
-            createdAt: new Date().toISOString(),
-            priority: priority || 'medium',
-            estimatedTime,
-            dueDate,
-            dueTime,
-            subtasks: [],
-            recurrence: recurrence || 'none',
-            recurrenceConfig,
-        };
+            const newTask: Task = {
+                id: uuidv4(),
+                title,
+                completed: false,
+                createdAt: new Date().toISOString(),
+                priority: priority || 'medium',
+                estimatedTime,
+                dueDate,
+                dueTime,
+                subtasks: [],
+                recurrence: recurrence || 'none',
+                recurrenceConfig,
+                // Deliberate adds (routines, plan-day) are already sorted — they skip the inbox.
+                triagedAt: new Date().toISOString(),
+            };
 
-        const dbTask = todoToDb(newTask, userId);
-        const { error } = await supabase.from('todos').insert(dbTask);
+            const dbTask = todoToDb(newTask, userId);
+            const { error } = await supabase.from('todos').insert(dbTask);
 
-        if (error) throw error;
-        await syncTaskReminders(userId, newTask);
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-        return newTask.id;
-    }, [userId, queryClient]);
+            if (error) throw error;
+            await syncTaskReminders(userId, newTask);
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+            return newTask.id;
+        },
+        [userId, queryClient],
+    );
 
-    const addTaskFull = useCallback(async (partial: Partial<Task> & { title: string }) => {
-        if (!userId) throw new Error('Not authenticated');
+    const addTaskFull = useCallback(
+        async (partial: Partial<Task> & { title: string }) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const newTask: Task = applyKindWriteThrough({
-            id: uuidv4(),
-            completed: false,
-            createdAt: new Date().toISOString(),
-            priority: 'medium',
-            subtasks: [],
-            recurrence: 'none',
-            ...partial,
-        });
-
-        const dbTask = todoToDb(newTask, userId);
-        const { error } = await supabase.from('todos').insert(dbTask);
-
-        if (error) throw error;
-        await syncTaskReminders(userId, newTask);
-        void syncTaskToGoogle(newTask);
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-        return newTask.id;
-    }, [userId, queryClient]);
-
-    const toggleTask = useCallback(async (id: string) => {
-        if (!userId) throw new Error('Not authenticated');
-
-        const task = tasks.find(t => t.id === id);
-        if (!task) return;
-
-        const nowCompleting = !task.completed;
-        const { error } = await supabase
-            .from('todos')
-            .update({
-                completed: nowCompleting,
-                completed_at: nowCompleting ? new Date().toISOString() : null,
-            })
-            .eq('id', id)
-            .eq('user_id', userId);
-
-        if (error) throw error;
-
-        // Cancel reminders when completing; nothing to do when uncompleting (caller can resave to reschedule).
-        if (nowCompleting) {
-            await cancelTaskReminders(userId, id);
-        }
-        void syncTaskToGoogle({ ...task, completed: nowCompleting });
-
-        // Spawn next occurrence for recurring tasks
-        if (nowCompleting && task.recurrence && task.recurrence !== 'none') {
-            const nextDue = calculateNextDueDate(task.dueDate, task.recurrence, task.recurrenceConfig);
-            const nextTask = todoToDb({
-                ...task,
+            const newTask: Task = applyKindWriteThrough({
                 id: uuidv4(),
                 completed: false,
                 createdAt: new Date().toISOString(),
-                dueDate: nextDue || undefined,
-                completedAt: undefined,
-                startedAt: undefined,
-                actualMinutes: undefined,
-            }, userId);
-            const { error: insertError } = await supabase.from('todos').insert({
-                ...nextTask,
-                created_at: new Date().toISOString(),
+                priority: 'medium',
+                subtasks: [],
+                recurrence: 'none',
+                ...partial,
             });
-            if (insertError) console.error('Failed to create next recurrence:', insertError);
-        }
 
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, tasks, queryClient]);
+            const dbTask = todoToDb(newTask, userId);
+            const { error } = await supabase.from('todos').insert(dbTask);
 
-    const deleteTask = useCallback(async (id: string) => {
-        if (!userId) throw new Error('Not authenticated');
+            if (error) throw error;
+            await syncTaskReminders(userId, newTask);
+            void syncTaskToGoogle(newTask);
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+            return newTask.id;
+        },
+        [userId, queryClient],
+    );
 
-        const task = tasks.find(t => t.id === id);
+    const toggleTask = useCallback(
+        async (id: string) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const { error } = await supabase
-            .from('todos')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', userId);
+            const task = tasks.find((t) => t.id === id);
+            if (!task) return;
 
-        if (error) throw error;
-        await cancelTaskReminders(userId, id);
-        if (task?.googleEventId) void removeTaskFromGoogle(task);
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, tasks, queryClient]);
+            const nowCompleting = !task.completed;
+            const { error } = await supabase
+                .from('todos')
+                .update({
+                    completed: nowCompleting,
+                    completed_at: nowCompleting ? new Date().toISOString() : null,
+                })
+                .eq('id', id)
+                .eq('user_id', userId);
 
-    const updateTask = useCallback(async (updatedTask: Task) => {
-        if (!userId) throw new Error('Not authenticated');
+            if (error) throw error;
 
-        const finalTask = applyKindWriteThrough(updatedTask);
-        const { id, ...updates } = finalTask;
-        const dbUpdates = {
-            title: updates.title,
-            completed: updates.completed,
-            due_date: updates.dueDate || null,
-            due_time: updates.dueTime || null,
-            location: updates.location || null,
-            labels: updates.labels || null,
-            priority: updates.priority || null,
-            estimated_time: updates.estimatedTime || null,
-            subtasks: updates.subtasks || null,
-            recurrence: updates.recurrence || 'none',
-            recurrence_config: updates.recurrenceConfig || null,
-            reminder_enabled: updates.reminderEnabled || false,
-            reminder_offset_minutes: updates.reminderOffsetMinutes ?? null,
-            reminder_at: updates.reminderAt || null,
-            reminder_cadence: updates.reminderCadence || null,
-            task_type_id: updates.taskTypeId || null,
-            energy: updates.energy || null,
-            context: updates.context || null,
-            routine_id: updates.routineId || null,
-            routine_order: updates.routineOrder ?? null,
-            kind: updates.kind || null,
-            parent_todo_id: updates.parentTodoId || null,
-            notes: updates.notes || null,
-        };
+            // Cancel reminders when completing; nothing to do when uncompleting (caller can resave to reschedule).
+            if (nowCompleting) {
+                await cancelTaskReminders(userId, id);
+            }
+            void syncTaskToGoogle({ ...task, completed: nowCompleting });
 
-        const { error } = await supabase
-            .from('todos')
-            .update(dbUpdates)
-            .eq('id', id)
-            .eq('user_id', userId);
+            // Spawn next occurrence for recurring tasks
+            if (nowCompleting && task.recurrence && task.recurrence !== 'none') {
+                const nextDue = calculateNextDueDate(
+                    task.dueDate,
+                    task.recurrence,
+                    task.recurrenceConfig,
+                );
+                const nextTask = todoToDb(
+                    {
+                        ...task,
+                        id: uuidv4(),
+                        completed: false,
+                        createdAt: new Date().toISOString(),
+                        dueDate: nextDue || undefined,
+                        completedAt: undefined,
+                        startedAt: undefined,
+                        actualMinutes: undefined,
+                    },
+                    userId,
+                );
+                const { error: insertError } = await supabase.from('todos').insert({
+                    ...nextTask,
+                    created_at: new Date().toISOString(),
+                });
+                if (insertError) console.error('Failed to create next recurrence:', insertError);
+            }
 
-        if (error) throw error;
-        await syncTaskReminders(userId, finalTask);
-        void syncTaskToGoogle(finalTask);
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, queryClient]);
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        },
+        [userId, tasks, queryClient],
+    );
 
-    const startTask = useCallback(async (id: string) => {
-        if (!userId) throw new Error('Not authenticated');
+    const deleteTask = useCallback(
+        async (id: string) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const { error } = await supabase
-            .from('todos')
-            .update({ started_at: new Date().toISOString() })
-            .eq('id', id)
-            .eq('user_id', userId);
+            const task = tasks.find((t) => t.id === id);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, queryClient]);
+            const { error } = await supabase
+                .from('todos')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', userId);
 
-    const completeTaskWithDuration = useCallback(async (id: string, actualMinutes: number) => {
-        if (!userId) throw new Error('Not authenticated');
+            if (error) throw error;
+            await cancelTaskReminders(userId, id);
+            if (task?.googleEventId) void removeTaskFromGoogle(task);
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        },
+        [userId, tasks, queryClient],
+    );
 
-        const task = tasks.find(t => t.id === id);
-        if (!task) return;
+    const updateTask = useCallback(
+        async (updatedTask: Task) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        // Add to historical minutes (keep last 10)
-        const historicalMinutes = task.historicalMinutes || [];
-        const updatedHistory = [...historicalMinutes, actualMinutes].slice(-10);
+            const finalTask = applyKindWriteThrough(updatedTask);
+            const { id, ...updates } = finalTask;
+            const dbUpdates = {
+                title: updates.title,
+                completed: updates.completed,
+                due_date: updates.dueDate || null,
+                due_time: updates.dueTime || null,
+                location: updates.location || null,
+                labels: updates.labels || null,
+                priority: updates.priority || null,
+                estimated_time: updates.estimatedTime || null,
+                subtasks: updates.subtasks || null,
+                recurrence: updates.recurrence || 'none',
+                recurrence_config: updates.recurrenceConfig || null,
+                reminder_enabled: updates.reminderEnabled || false,
+                reminder_offset_minutes: updates.reminderOffsetMinutes ?? null,
+                reminder_at: updates.reminderAt || null,
+                reminder_cadence: updates.reminderCadence || null,
+                task_type_id: updates.taskTypeId || null,
+                energy: updates.energy || null,
+                context: updates.context || null,
+                routine_id: updates.routineId || null,
+                routine_order: updates.routineOrder ?? null,
+                kind: updates.kind || null,
+                parent_todo_id: updates.parentTodoId || null,
+                notes: updates.notes || null,
+                triaged_at: updates.triagedAt || null,
+                assignment_id: updates.assignmentId || null,
+                hardness: updates.hardness || null,
+                auto_triaged: updates.autoTriaged ?? false,
+                triage_destination: updates.triageDestination || null,
+            };
 
-        const { error } = await supabase
-            .from('todos')
-            .update({
-                completed: true,
-                actual_minutes: actualMinutes,
-                completed_at: new Date().toISOString(),
-                historical_minutes: updatedHistory,
-            })
-            .eq('id', id)
-            .eq('user_id', userId);
+            const { error } = await supabase
+                .from('todos')
+                .update(dbUpdates)
+                .eq('id', id)
+                .eq('user_id', userId);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, tasks, queryClient]);
+            if (error) throw error;
+            await syncTaskReminders(userId, finalTask);
+            void syncTaskToGoogle(finalTask);
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        },
+        [userId, queryClient],
+    );
 
-    const rescheduleMany = useCallback(async (ids: string[], isoDate: string) => {
-        if (!userId || ids.length === 0) return;
-        const { error } = await supabase
-            .from('todos')
-            .update({ due_date: isoDate })
-            .in('id', ids)
-            .eq('user_id', userId);
-        if (error) throw error;
-        // Mirror the new schedule to Google (urgent tasks land on the calendar; already-synced tasks move).
-        ids.forEach(id => {
-            const task = tasks.find(t => t.id === id);
-            if (task) void syncTaskToGoogle({ ...task, dueDate: isoDate });
-        });
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, tasks, queryClient]);
+    const startTask = useCallback(
+        async (id: string) => {
+            if (!userId) throw new Error('Not authenticated');
 
-    const completeMany = useCallback(async (ids: string[]) => {
-        if (!userId || ids.length === 0) return;
-        const nowIso = new Date().toISOString();
-        const { error } = await supabase
-            .from('todos')
-            .update({ completed: true, completed_at: nowIso })
-            .in('id', ids)
-            .eq('user_id', userId);
-        if (error) throw error;
-        await Promise.all(ids.map(id => cancelTaskReminders(userId, id)));
-        tasks.filter(t => ids.includes(t.id) && t.googleEventId).forEach(t => void removeTaskFromGoogle(t));
+            const { error } = await supabase
+                .from('todos')
+                .update({ started_at: new Date().toISOString() })
+                .eq('id', id)
+                .eq('user_id', userId);
 
-        // Spawn next occurrence for any recurring tasks we just completed
-        const completed = tasks.filter(t => ids.includes(t.id) && t.recurrence && t.recurrence !== 'none');
-        if (completed.length > 0) {
-            const rows = completed.map(task => ({
-                ...todoToDb({
-                    ...task,
-                    id: uuidv4(),
-                    completed: false,
-                    createdAt: new Date().toISOString(),
-                    dueDate: calculateNextDueDate(task.dueDate, task.recurrence!, task.recurrenceConfig) || undefined,
-                    completedAt: undefined,
-                    startedAt: undefined,
-                    actualMinutes: undefined,
-                }, userId),
-                created_at: new Date().toISOString(),
-            }));
-            const { error: insertError } = await supabase.from('todos').insert(rows);
-            if (insertError) console.error('Failed to create next recurrences:', insertError);
-        }
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        },
+        [userId, queryClient],
+    );
 
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, tasks, queryClient]);
+    const completeTaskWithDuration = useCallback(
+        async (id: string, actualMinutes: number) => {
+            if (!userId) throw new Error('Not authenticated');
 
-    const deleteMany = useCallback(async (ids: string[]) => {
-        if (!userId || ids.length === 0) return;
-        const toUnsync = tasks.filter(t => ids.includes(t.id) && t.googleEventId);
-        const { error } = await supabase
-            .from('todos')
-            .delete()
-            .in('id', ids)
-            .eq('user_id', userId);
-        if (error) throw error;
-        await Promise.all(ids.map(id => cancelTaskReminders(userId, id)));
-        toUnsync.forEach(t => void removeTaskFromGoogle(t));
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, tasks, queryClient]);
+            const task = tasks.find((t) => t.id === id);
+            if (!task) return;
 
-    return { tasks, isLoading, addTask, addTaskFull, toggleTask, deleteTask, updateTask, startTask, completeTaskWithDuration, rescheduleMany, completeMany, deleteMany };
+            // Add to historical minutes (keep last 10)
+            const historicalMinutes = task.historicalMinutes || [];
+            const updatedHistory = [...historicalMinutes, actualMinutes].slice(-10);
+
+            const { error } = await supabase
+                .from('todos')
+                .update({
+                    completed: true,
+                    actual_minutes: actualMinutes,
+                    completed_at: new Date().toISOString(),
+                    historical_minutes: updatedHistory,
+                })
+                .eq('id', id)
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        },
+        [userId, tasks, queryClient],
+    );
+
+    const rescheduleMany = useCallback(
+        async (ids: string[], isoDate: string) => {
+            if (!userId || ids.length === 0) return;
+            const { error } = await supabase
+                .from('todos')
+                .update({ due_date: isoDate })
+                .in('id', ids)
+                .eq('user_id', userId);
+            if (error) throw error;
+            // Mirror the new schedule to Google (urgent tasks land on the calendar; already-synced tasks move).
+            ids.forEach((id) => {
+                const task = tasks.find((t) => t.id === id);
+                if (task) void syncTaskToGoogle({ ...task, dueDate: isoDate });
+            });
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        },
+        [userId, tasks, queryClient],
+    );
+
+    const completeMany = useCallback(
+        async (ids: string[]) => {
+            if (!userId || ids.length === 0) return;
+            const nowIso = new Date().toISOString();
+            const { error } = await supabase
+                .from('todos')
+                .update({ completed: true, completed_at: nowIso })
+                .in('id', ids)
+                .eq('user_id', userId);
+            if (error) throw error;
+            await Promise.all(ids.map((id) => cancelTaskReminders(userId, id)));
+            tasks
+                .filter((t) => ids.includes(t.id) && t.googleEventId)
+                .forEach((t) => void removeTaskFromGoogle(t));
+
+            // Spawn next occurrence for any recurring tasks we just completed
+            const completed = tasks.filter(
+                (t) => ids.includes(t.id) && t.recurrence && t.recurrence !== 'none',
+            );
+            if (completed.length > 0) {
+                const rows = completed.map((task) => ({
+                    ...todoToDb(
+                        {
+                            ...task,
+                            id: uuidv4(),
+                            completed: false,
+                            createdAt: new Date().toISOString(),
+                            dueDate:
+                                calculateNextDueDate(
+                                    task.dueDate,
+                                    task.recurrence!,
+                                    task.recurrenceConfig,
+                                ) || undefined,
+                            completedAt: undefined,
+                            startedAt: undefined,
+                            actualMinutes: undefined,
+                        },
+                        userId,
+                    ),
+                    created_at: new Date().toISOString(),
+                }));
+                const { error: insertError } = await supabase.from('todos').insert(rows);
+                if (insertError) console.error('Failed to create next recurrences:', insertError);
+            }
+
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        },
+        [userId, tasks, queryClient],
+    );
+
+    const deleteMany = useCallback(
+        async (ids: string[]) => {
+            if (!userId || ids.length === 0) return;
+            const toUnsync = tasks.filter((t) => ids.includes(t.id) && t.googleEventId);
+            const { error } = await supabase
+                .from('todos')
+                .delete()
+                .in('id', ids)
+                .eq('user_id', userId);
+            if (error) throw error;
+            await Promise.all(ids.map((id) => cancelTaskReminders(userId, id)));
+            toUnsync.forEach((t) => void removeTaskFromGoogle(t));
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        },
+        [userId, tasks, queryClient],
+    );
+
+    return {
+        tasks,
+        isLoading,
+        addTask,
+        addTaskFull,
+        toggleTask,
+        deleteTask,
+        updateTask,
+        startTask,
+        completeTaskWithDuration,
+        rescheduleMany,
+        completeMany,
+        deleteMany,
+    };
 };
