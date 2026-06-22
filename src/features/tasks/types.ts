@@ -9,6 +9,11 @@ export type TaskContext = 'computer' | 'phone' | 'home' | 'out' | 'anywhere';
 // (priority/recurrence/dueDate/reminder) via deriveTaskKind(); an explicit value overrides.
 export type TaskKind = 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard';
 
+// Hardness — can the planner move this task?
+//   fixed    = tied to a real-world moment (appointment, exam, hard deadline); planner locks it.
+//   flexible = has a target but can slide; planner may reschedule it.
+export type Hardness = 'fixed' | 'flexible';
+
 // Recurrence Types
 export type RecurrencePattern = 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays';
 
@@ -69,6 +74,17 @@ export interface Task {
     parentTodoId?: string;
     // Free-form "important info" captured during the urgent scheduling flow
     notes?: string;
+
+    // Triage: when the task was routed to a destination. Unset = still in the
+    // capture inbox (the morning triage router sorts these).
+    triagedAt?: string;
+
+    // Hardness axis — drives planner locking + reminder escalation.
+    hardness?: Hardness;
+    // AI routed this without confirmation; shown in the "I sorted these" review, cleared on confirm/correct.
+    autoTriaged?: boolean;
+    // Destination triage routed the task to ('urgent'/'today'/'someday'/'school'/'routine').
+    triageDestination?: string;
 
     // Google Calendar write sync (Phase 1)
     googleEventId?: string;

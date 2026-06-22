@@ -38,6 +38,10 @@ export interface DbTodo {
     kind?: 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard' | null;
     parent_todo_id?: string | null;
     notes?: string | null;
+    triaged_at?: string | null;
+    hardness?: 'fixed' | 'flexible' | null;
+    auto_triaged?: boolean | null;
+    triage_destination?: string | null;
     google_event_id?: string | null;
     google_calendar_id?: string | null;
     google_synced_at?: string | null;
