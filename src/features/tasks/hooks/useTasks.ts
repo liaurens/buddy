@@ -11,6 +11,7 @@ import {
 } from '../../../services/notifications/scheduler.service';
 import { getCategorySettings } from '../../../services/settings';
 import { deriveTaskKind, kindSignalPatch } from '../utils/taskKind';
+import { isLocked } from '../utils/triageRouting';
 import { eagerTriageTask } from '../services/eagerTriage';
 import {
     pushTaskToGoogle,
@@ -353,14 +354,20 @@ export const useTasks = (): TaskState => {
     const rescheduleMany = useCallback(
         async (ids: string[], isoDate: string) => {
             if (!userId || ids.length === 0) return;
+            // Fixed tasks tied to a real moment must not be auto-moved.
+            const movable = ids.filter((id) => {
+                const t = tasks.find((x) => x.id === id);
+                return t ? !isLocked(t) : true;
+            });
+            if (movable.length === 0) return;
             const { error } = await supabase
                 .from('todos')
                 .update({ due_date: isoDate })
-                .in('id', ids)
+                .in('id', movable)
                 .eq('user_id', userId);
             if (error) throw error;
             // Mirror the new schedule to Google (urgent tasks land on the calendar; already-synced tasks move).
-            ids.forEach((id) => {
+            movable.forEach((id) => {
                 const task = tasks.find((t) => t.id === id);
                 if (task) void syncTaskToGoogle({ ...task, dueDate: isoDate });
             });

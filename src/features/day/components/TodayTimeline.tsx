@@ -1,8 +1,9 @@
 import React from 'react';
-import { Calendar as CalendarIcon, Check, MapPin, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, MapPin, Clock, Lock } from 'lucide-react';
 import type { Task } from '../../tasks/types';
 import type { CalendarEvent } from '../../planning/types';
 import type { TimelineItem } from '../hooks/useTodayItems';
+import { isLocked } from '../../tasks/utils/triageRouting';
 
 interface TodayTimelineProps {
     /** Time-ordered events + timed picks. */
@@ -81,15 +82,26 @@ function PickRow({
                 className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors mt-0.5 ${
                     task.completed
                         ? 'border-green-500 bg-green-500'
-                        : isClickable ? cls.pickCheck : cls.pickDot
+                        : isClickable
+                          ? cls.pickCheck
+                          : cls.pickDot
                 } ${isClickable ? 'cursor-pointer' : ''}`}
                 aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
             >
                 {task.completed && <Check size={11} className="text-white" />}
             </button>
             <div className="min-w-0 flex-1">
-                <p className={`text-sm font-medium ${task.completed ? 'text-green-800 line-through' : 'text-slate-800'} truncate`}>
-                    {task.title}
+                <p
+                    className={`flex items-center gap-1 text-sm font-medium ${task.completed ? 'text-green-800 line-through' : 'text-slate-800'}`}
+                >
+                    {isLocked(task) && (
+                        <Lock
+                            size={11}
+                            className="flex-shrink-0 text-amber-600"
+                            aria-label="Fixed — won't be moved"
+                        />
+                    )}
+                    <span className="truncate">{task.title}</span>
                 </p>
                 {task.estimatedTime && (
                     <p className="text-xs text-slate-400 mt-0.5">{task.estimatedTime}m</p>
@@ -134,24 +146,30 @@ const TodayTimeline: React.FC<TodayTimelineProps> = ({
         <div className="space-y-3">
             {hasTimed && (
                 <div className="space-y-1.5">
-                    {timedItems.map(item => {
+                    {timedItems.map((item) => {
                         const time = item.time;
                         return (
-                            <div key={`${item.kind}-${item.kind === 'event' ? item.event.id : item.task.id}`} className="flex items-start gap-3">
-                                <div className={`w-12 flex-shrink-0 pt-2 font-mono text-xs ${item.kind === 'event' ? 'text-slate-500' : cls.timeText}`}>
+                            <div
+                                key={`${item.kind}-${item.kind === 'event' ? item.event.id : item.task.id}`}
+                                className="flex items-start gap-3"
+                            >
+                                <div
+                                    className={`w-12 flex-shrink-0 pt-2 font-mono text-xs ${item.kind === 'event' ? 'text-slate-500' : cls.timeText}`}
+                                >
                                     {time}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    {item.kind === 'event'
-                                        ? <EventRow event={item.event} />
-                                        : <PickRow
+                                    {item.kind === 'event' ? (
+                                        <EventRow event={item.event} />
+                                    ) : (
+                                        <PickRow
                                             task={item.task}
                                             accent={accent}
                                             onToggle={onTogglePick}
                                             onClearTime={onClearPickTime}
                                             interaction={pickInteraction}
                                         />
-                                    }
+                                    )}
                                 </div>
                             </div>
                         );
@@ -160,8 +178,10 @@ const TodayTimeline: React.FC<TodayTimelineProps> = ({
             )}
             {hasUntimed && (
                 <div className="space-y-1.5">
-                    <p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium pl-1">Anytime</p>
-                    {untimedPicks.map(task => (
+                    <p className="text-[11px] uppercase tracking-wider text-slate-400 font-medium pl-1">
+                        Anytime
+                    </p>
+                    {untimedPicks.map((task) => (
                         <PickRow
                             key={task.id}
                             task={task}
