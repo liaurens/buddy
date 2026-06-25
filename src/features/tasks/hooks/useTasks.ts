@@ -11,6 +11,7 @@ import {
 } from '../../../services/notifications/scheduler.service';
 import { getCategorySettings } from '../../../services/settings';
 import { deriveTaskKind, kindSignalPatch } from '../utils/taskKind';
+import { eagerTriageTask } from '../services/eagerTriage';
 import {
     pushTaskToGoogle,
     updateTaskOnGoogle,
@@ -132,8 +133,7 @@ export const useTasks = (): TaskState => {
                 subtasks: [],
                 recurrence: recurrence || 'none',
                 recurrenceConfig,
-                // Deliberate adds (routines, plan-day) are already sorted — they skip the inbox.
-                triagedAt: new Date().toISOString(),
+                // Captures land in the inbox (triagedAt unset); eager triage may sort them below.
             };
 
             const dbTask = todoToDb(newTask, userId);
@@ -142,6 +142,11 @@ export const useTasks = (): TaskState => {
             if (error) throw error;
             await syncTaskReminders(userId, newTask);
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+
+            // Eager on-capture sort — non-fatal, skipped offline / when no AI key is set.
+            void eagerTriageTask(userId, newTask, []).then(() =>
+                queryClient.invalidateQueries({ queryKey: ['todos', userId] }),
+            );
             return newTask.id;
         },
         [userId, queryClient],
