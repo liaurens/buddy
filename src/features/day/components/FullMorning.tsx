@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
 import {
     ChevronLeft, ChevronRight, Mail, Activity, Check, Settings, Plus,
-    Clock, RefreshCw, Dumbbell, Calendar as CalendarIcon,
+    Clock, RefreshCw, Dumbbell, Calendar as CalendarIcon, Inbox,
 } from 'lucide-react';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { useAuth } from '../../../hooks/useAuth';
@@ -24,12 +24,14 @@ import CommsSettingsModal from './CommsSettingsModal';
 import SchoolPlanningPicker from './SchoolPlanningPicker';
 import type { Task } from '../../tasks/types';
 import { deriveTaskKind } from '../../tasks/utils/taskKind';
+import { pickSomeday } from '../../tasks/utils/somedayPick';
+import { TriageInbox } from '../../tasks';
 import { v4 as uuidv4 } from 'uuid';
 
-type Step = 0 | 1 | 2 | 3;
+type Step = 0 | 1 | 2 | 3 | 4;
 
-const STEP_LABELS = ['Comms', 'Log Yesterday', 'Routines', 'Plan day'];
-const STEP_ICONS = [Mail, Activity, Dumbbell, CalendarIcon];
+const STEP_LABELS = ['Comms', 'Log Yesterday', 'Routines', 'Sort inbox', 'Plan day'];
+const STEP_ICONS = [Mail, Activity, Dumbbell, Inbox, CalendarIcon];
 
 const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
 
@@ -240,7 +242,22 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
     useEffect(() => {
         try { sessionStorage.setItem(`backlog_choice_${dateKey}`, backlogChoice); } catch { /* ignore */ }
     }, [backlogChoice, dateKey]);
-    const backlogSatisfied = backlog.length === 0 || backlogChoice !== 'pending';
+    // One-a-day someday: surface exactly one no-pressure task. "Show another" skips
+    // the current one for the rest of the session so a different one comes up.
+    const [somedaySkipped, setSomedaySkipped] = useState<string[]>(() => {
+        try { return JSON.parse(sessionStorage.getItem(`someday_skipped_${dateKey}`) || '[]') as string[]; }
+        catch { return []; }
+    });
+    useEffect(() => {
+        try { sessionStorage.setItem(`someday_skipped_${dateKey}`, JSON.stringify(somedaySkipped)); }
+        catch { /* ignore */ }
+    }, [somedaySkipped, dateKey]);
+    const somedayPick = useMemo(
+        () => pickSomeday(backlog, { skip: somedaySkipped }),
+        [backlog, somedaySkipped],
+    );
+    // Satisfied when there's no pending someday card to act on (none left, or chosen).
+    const backlogSatisfied = !somedayPick || backlogChoice !== 'pending';
 
     const handleAddBacklogPick = async (task: Task) => {
         try {
@@ -532,8 +549,22 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
                 </div>
             )}
 
-            {/* Step 3 — Plan today */}
+            {/* Step 3 — Sort inbox (optional, skippable) */}
             {step === 3 && (
+                <div className="space-y-4">
+                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-1">
+                        <h2 className="font-semibold text-slate-900">Sort your captures</h2>
+                        <p className="text-sm text-slate-500">
+                            Let AI pre-sort what you captured, fix anything it got wrong, and route it all in one tap.
+                            Optional — tap Next to skip and do it later.
+                        </p>
+                    </div>
+                    <TriageInbox variant="embedded" />
+                </div>
+            )}
+
+            {/* Step 4 — Plan today */}
+            {step === 4 && (
                 <div className="space-y-4">
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
                         <div>
@@ -553,34 +584,38 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
                         </div>
                     </div>
 
-                    {/* Backlog forcing — pull one "someday" task into today */}
-                    {backlog.length > 0 && backlogChoice === 'pending' && (
+                    {/* One-a-day someday — surface a single no-pressure task */}
+                    {somedayPick && backlogChoice === 'pending' && (
                         <div className="bg-white rounded-2xl border border-violet-200 shadow-sm p-5 space-y-3">
                             <div>
-                                <h3 className="font-semibold text-slate-900">Pick one from someday</h3>
+                                <h3 className="font-semibold text-slate-900">One small thing from someday</h3>
                                 <p className="text-sm text-slate-500 mt-0.5">
-                                    Move one no-pressure task into today — or skip it if today isn't the day.
+                                    No pressure — just one, if you have room.
                                 </p>
                             </div>
-                            <ul className="space-y-1 max-h-48 overflow-y-auto">
-                                {backlog.slice(0, 12).map(task => (
-                                    <li key={task.id}>
-                                        <button
-                                            onClick={() => handleAddBacklogPick(task)}
-                                            className="w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left hover:bg-violet-50 transition-colors"
-                                        >
-                                            <Plus size={14} className="text-violet-500 flex-shrink-0" />
-                                            <span className="text-sm flex-1 truncate text-slate-800">{task.title}</span>
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                            <button
-                                onClick={() => setBacklogChoice('skip')}
-                                className="text-xs font-medium text-slate-500 hover:text-slate-700"
-                            >
-                                Not today
-                            </button>
+                            <div className="rounded-xl border border-violet-200 bg-violet-50 p-3 text-sm font-medium text-slate-800">
+                                🗂️ {somedayPick.title}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    onClick={() => handleAddBacklogPick(somedayPick)}
+                                    className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700"
+                                >
+                                    Do it today
+                                </button>
+                                <button
+                                    onClick={() => setSomedaySkipped(prev => [...prev, somedayPick.id])}
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                                >
+                                    Show another
+                                </button>
+                                <button
+                                    onClick={() => setBacklogChoice('skip')}
+                                    className="rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50"
+                                >
+                                    Not today
+                                </button>
+                            </div>
                         </div>
                     )}
                     {backlog.length > 0 && backlogChoice === 'picked' && (
@@ -767,7 +802,7 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
                         <ChevronLeft size={16} /> Back
                     </button>
                 )}
-                {step < 3 ? (
+                {step < 4 ? (
                     <button
                         onClick={() => setStep((step + 1) as Step)}
                         className="ml-auto flex items-center gap-1 px-5 py-2 text-sm font-medium bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors"

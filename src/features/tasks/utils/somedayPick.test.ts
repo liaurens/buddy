@@ -4,8 +4,7 @@ import type { Task } from '../types';
 
 function task(p: Partial<Task> & { id: string }): Task {
     return {
-        id: p.id,
-        title: p.title ?? p.id,
+        title: p.id,
         completed: false,
         createdAt: '2026-06-01T00:00:00.000Z',
         subtasks: [],
