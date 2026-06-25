@@ -6,6 +6,8 @@ import type { Assignment, AssignmentStatus } from '../../../services/supabase/co
 import { useAssignments } from '../../school/hooks/useAssignments';
 import { useClasses } from '../../school/hooks/useClasses';
 import { AssignmentForm } from '../../school/components/AssignmentForm';
+import { useTasks } from '../../tasks/hooks/useTasks';
+import type { Task } from '../../tasks/types';
 
 type Accent = 'amber' | 'indigo';
 type AssignmentFilter = 'open' | 'due_soon' | 'overdue' | 'submitted' | 'all';
@@ -53,7 +55,7 @@ function storageKey(dateKey: string): string {
 function readSelected(dateKey: string): string[] {
     try {
         const raw = sessionStorage.getItem(storageKey(dateKey));
-        return raw ? JSON.parse(raw) as string[] : [];
+        return raw ? (JSON.parse(raw) as string[]) : [];
     } catch {
         return [];
     }
@@ -87,22 +89,37 @@ function matchesFilter(assignment: Assignment, filter: AssignmentFilter, now: Da
     return !isDone(assignment);
 }
 
-const SchoolPlanningPicker: React.FC<SchoolPlanningPickerProps> = ({ dateKey, accent, onNavigate }) => {
+const SchoolPlanningPicker: React.FC<SchoolPlanningPickerProps> = ({
+    dateKey,
+    accent,
+    onNavigate,
+}) => {
     const cls = ACCENTS[accent];
     const { classes } = useClasses();
     const { assignments, addAssignment, setStatus } = useAssignments();
-    const activeClasses = useMemo(() => classes.filter(c => !c.archived), [classes]);
+    const { tasks, rescheduleMany, updateTask } = useTasks();
+    const activeClasses = useMemo(() => classes.filter((c) => !c.archived), [classes]);
     const [selectedClassId, setSelectedClassId] = useState<string>('');
     const [filter, setFilter] = useState<AssignmentFilter>('open');
     const [query, setQuery] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>(() => readSelected(dateKey));
     const [showAssignmentForm, setShowAssignmentForm] = useState(false);
+    const [promoteTask, setPromoteTask] = useState<Task | null>(null);
+
+    // Loose school tasks: captured notes routed to "school" with no assignment match.
+    const looseSchoolTasks = useMemo(
+        () =>
+            tasks.filter(
+                (t) => !t.completed && t.triageDestination === 'school' && !t.assignmentId,
+            ),
+        [tasks],
+    );
 
     useEffect(() => {
         writeSelected(dateKey, selectedIds);
     }, [dateKey, selectedIds]);
 
-    const classMap = useMemo(() => new Map(classes.map(c => [c.id, c])), [classes]);
+    const classMap = useMemo(() => new Map(classes.map((c) => [c.id, c])), [classes]);
     const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
     const now = useMemo(() => new Date(), []);
     const effectiveClassId = selectedClassId || activeClasses[0]?.id || '';
@@ -110,27 +127,31 @@ const SchoolPlanningPicker: React.FC<SchoolPlanningPickerProps> = ({ dateKey, ac
     const visibleAssignments = useMemo(() => {
         const normalized = query.trim().toLowerCase();
         return assignments
-            .filter(assignment => !effectiveClassId || assignment.classId === effectiveClassId)
-            .filter(assignment => matchesFilter(assignment, filter, now))
-            .filter(assignment => {
+            .filter((assignment) => !effectiveClassId || assignment.classId === effectiveClassId)
+            .filter((assignment) => matchesFilter(assignment, filter, now))
+            .filter((assignment) => {
                 if (!normalized) return true;
                 const className = classMap.get(assignment.classId)?.name ?? '';
-                return `${assignment.title} ${assignment.description ?? ''} ${className}`.toLowerCase().includes(normalized);
+                return `${assignment.title} ${assignment.description ?? ''} ${className}`
+                    .toLowerCase()
+                    .includes(normalized);
             })
             .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
     }, [assignments, classMap, effectiveClassId, filter, now, query]);
 
     const selectedAssignments = useMemo(
-        () => selectedIds
-            .map(id => assignments.find(assignment => assignment.id === id))
-            .filter((assignment): assignment is Assignment => Boolean(assignment)),
-        [assignments, selectedIds]
+        () =>
+            selectedIds
+                .map((id) => assignments.find((assignment) => assignment.id === id))
+                .filter((assignment): assignment is Assignment => Boolean(assignment)),
+        [assignments, selectedIds],
     );
 
     const toggleSelected = (assignment: Assignment) => {
-        setSelectedIds(prev => prev.includes(assignment.id)
-            ? prev.filter(id => id !== assignment.id)
-            : [...prev, assignment.id]
+        setSelectedIds((prev) =>
+            prev.includes(assignment.id)
+                ? prev.filter((id) => id !== assignment.id)
+                : [...prev, assignment.id],
         );
     };
 
@@ -158,7 +179,8 @@ const SchoolPlanningPicker: React.FC<SchoolPlanningPickerProps> = ({ dateKey, ac
                 <div>
                     <h3 className="font-semibold text-slate-900">School planning</h3>
                     <p className="text-sm text-slate-500 mt-0.5">
-                        Pick a class, review assignments, and keep school deadlines separate from regular tasks.
+                        Pick a class, review assignments, and keep school deadlines separate from
+                        regular tasks.
                     </p>
                 </div>
                 <button
@@ -173,14 +195,18 @@ const SchoolPlanningPicker: React.FC<SchoolPlanningPickerProps> = ({ dateKey, ac
             {activeClasses.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
                     Add a class in School before planning assignments.
-                    <button onClick={openInSchool} className={`ml-2 font-medium ${cls.text}`}>Open School</button>
+                    <button onClick={openInSchool} className={`ml-2 font-medium ${cls.text}`}>
+                        Open School
+                    </button>
                 </div>
             ) : (
                 <>
                     <div className="flex gap-2 overflow-x-auto pb-1">
-                        {activeClasses.map(schoolClass => {
+                        {activeClasses.map((schoolClass) => {
                             const active = effectiveClassId === schoolClass.id;
-                            const openCount = assignments.filter(a => a.classId === schoolClass.id && !isDone(a)).length;
+                            const openCount = assignments.filter(
+                                (a) => a.classId === schoolClass.id && !isDone(a),
+                            ).length;
                             return (
                                 <button
                                     key={schoolClass.id}
@@ -189,7 +215,10 @@ const SchoolPlanningPicker: React.FC<SchoolPlanningPickerProps> = ({ dateKey, ac
                                         active ? cls.soft : 'border-slate-200 hover:bg-slate-50'
                                     }`}
                                 >
-                                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: schoolClass.color }} />
+                                    <span
+                                        className="h-2 w-2 rounded-full"
+                                        style={{ backgroundColor: schoolClass.color }}
+                                    />
                                     {schoolClass.name}
                                     <span className="text-slate-400">{openCount}</span>
                                 </button>
@@ -199,39 +228,91 @@ const SchoolPlanningPicker: React.FC<SchoolPlanningPickerProps> = ({ dateKey, ac
 
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
                         <label className="relative block">
-                            <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Search
+                                size={13}
+                                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+                            />
                             <input
                                 value={query}
-                                onChange={e => setQuery(e.target.value)}
+                                onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search assignments"
                                 className={`w-full rounded-lg border border-slate-200 py-2 pl-8 pr-3 text-xs focus:outline-none focus:ring-2 ${cls.ring}`}
                             />
                         </label>
                         <select
                             value={filter}
-                            onChange={e => setFilter(e.target.value as AssignmentFilter)}
+                            onChange={(e) => setFilter(e.target.value as AssignmentFilter)}
                             className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs bg-white"
                         >
                             {Object.entries(FILTER_LABELS).map(([value, label]) => (
-                                <option key={value} value={value}>{label}</option>
+                                <option key={value} value={value}>
+                                    {label}
+                                </option>
                             ))}
                         </select>
                     </div>
 
                     {selectedAssignments.length > 0 && (
                         <section className={`rounded-xl border p-3 space-y-2 ${cls.soft}`}>
-                            <p className={`text-xs font-semibold ${cls.text}`}>Today's school focus</p>
+                            <p className={`text-xs font-semibold ${cls.text}`}>
+                                Today's school focus
+                            </p>
                             <ul className="space-y-1.5">
-                                {selectedAssignments.map(assignment => {
+                                {selectedAssignments.map((assignment) => {
                                     const schoolClass = classMap.get(assignment.classId);
                                     return (
-                                        <li key={assignment.id} className="flex items-center gap-2 text-xs text-slate-700">
-                                            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: schoolClass?.color ?? '#6366f1' }} />
-                                            <span className="min-w-0 flex-1 truncate">{assignment.title}</span>
-                                            <span className="text-slate-500">{schoolClass?.name}</span>
+                                        <li
+                                            key={assignment.id}
+                                            className="flex items-center gap-2 text-xs text-slate-700"
+                                        >
+                                            <span
+                                                className="h-1.5 w-1.5 rounded-full"
+                                                style={{
+                                                    backgroundColor:
+                                                        schoolClass?.color ?? '#6366f1',
+                                                }}
+                                            />
+                                            <span className="min-w-0 flex-1 truncate">
+                                                {assignment.title}
+                                            </span>
+                                            <span className="text-slate-500">
+                                                {schoolClass?.name}
+                                            </span>
                                         </li>
                                     );
                                 })}
+                            </ul>
+                        </section>
+                    )}
+
+                    {looseSchoolTasks.length > 0 && (
+                        <section className="rounded-xl border border-slate-100 bg-white p-3 space-y-2">
+                            <p className="text-xs font-semibold text-slate-600">
+                                Captured school tasks
+                            </p>
+                            <ul className="space-y-1.5">
+                                {looseSchoolTasks.map((task) => (
+                                    <li
+                                        key={task.id}
+                                        className="flex items-center gap-2 text-xs text-slate-700"
+                                    >
+                                        <span className="min-w-0 flex-1 truncate">
+                                            {task.title}
+                                        </span>
+                                        <button
+                                            onClick={() => void rescheduleMany([task.id], dateKey)}
+                                            className={`shrink-0 rounded-lg px-2 py-1 font-medium text-white ${cls.button}`}
+                                        >
+                                            Add to today
+                                        </button>
+                                        <button
+                                            onClick={() => setPromoteTask(task)}
+                                            className="shrink-0 rounded-lg px-2 py-1 font-medium text-slate-500 hover:bg-slate-50"
+                                        >
+                                            Make assignment
+                                        </button>
+                                    </li>
+                                ))}
                             </ul>
                         </section>
                     )}
@@ -242,49 +323,94 @@ const SchoolPlanningPicker: React.FC<SchoolPlanningPickerProps> = ({ dateKey, ac
                         </div>
                     ) : (
                         <ul className="max-h-72 space-y-2 overflow-y-auto">
-                            {visibleAssignments.map(assignment => {
+                            {visibleAssignments.map((assignment) => {
                                 const schoolClass = classMap.get(assignment.classId);
                                 const selected = selectedSet.has(assignment.id);
                                 const done = isDone(assignment);
                                 const deadline = new Date(assignment.deadline);
                                 const overdue = !done && deadline < now;
                                 return (
-                                    <li key={assignment.id} className="rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+                                    <li
+                                        key={assignment.id}
+                                        className="rounded-xl border border-slate-100 bg-slate-50/60 p-3"
+                                    >
                                         <div className="flex items-start gap-3">
                                             <button
                                                 onClick={() => toggleSelected(assignment)}
                                                 className={`mt-0.5 h-5 w-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                                                    selected ? `${cls.button} border-transparent text-white` : 'border-slate-300 bg-white'
+                                                    selected
+                                                        ? `${cls.button} border-transparent text-white`
+                                                        : 'border-slate-300 bg-white'
                                                 }`}
-                                                title={selected ? 'Remove from today focus' : 'Add to today focus'}
+                                                title={
+                                                    selected
+                                                        ? 'Remove from today focus'
+                                                        : 'Add to today focus'
+                                                }
                                             >
                                                 {selected && <Check size={11} />}
                                             </button>
                                             <div className="min-w-0 flex-1">
-                                                <p className={`text-sm font-medium truncate ${done ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                                                <p
+                                                    className={`text-sm font-medium truncate ${done ? 'text-slate-400 line-through' : 'text-slate-900'}`}
+                                                >
                                                     {assignment.title}
                                                 </p>
                                                 <p className="mt-0.5 text-xs text-slate-500 truncate">
-                                                    <span style={{ color: schoolClass?.color ?? '#6366f1' }}>{schoolClass?.name ?? 'Class'}</span>
+                                                    <span
+                                                        style={{
+                                                            color: schoolClass?.color ?? '#6366f1',
+                                                        }}
+                                                    >
+                                                        {schoolClass?.name ?? 'Class'}
+                                                    </span>
                                                     {' · '}
-                                                    <span className={overdue ? 'text-red-600 font-medium' : ''}>
+                                                    <span
+                                                        className={
+                                                            overdue
+                                                                ? 'text-red-600 font-medium'
+                                                                : ''
+                                                        }
+                                                    >
                                                         {format(deadline, 'MMM d, h:mm a')}
                                                     </span>
-                                                    {assignment.estimatedMinutes && ` · ${assignment.estimatedMinutes}m`}
-                                                    {assignment.checkpoints?.length ? ` · ${assignment.checkpoints.length} steps` : ''}
+                                                    {assignment.estimatedMinutes &&
+                                                        ` · ${assignment.estimatedMinutes}m`}
+                                                    {assignment.checkpoints?.length
+                                                        ? ` · ${assignment.checkpoints.length} steps`
+                                                        : ''}
                                                 </p>
                                                 {assignment.description && (
-                                                    <p className="mt-1 line-clamp-2 text-xs text-slate-500">{assignment.description}</p>
+                                                    <p className="mt-1 line-clamp-2 text-xs text-slate-500">
+                                                        {assignment.description}
+                                                    </p>
                                                 )}
                                             </div>
-                                            {assignment.checkpoints?.length ? <ListChecks size={15} className="mt-1 text-slate-400 flex-shrink-0" /> : <GraduationCap size={15} className="mt-1 text-slate-300 flex-shrink-0" />}
+                                            {assignment.checkpoints?.length ? (
+                                                <ListChecks
+                                                    size={15}
+                                                    className="mt-1 text-slate-400 flex-shrink-0"
+                                                />
+                                            ) : (
+                                                <GraduationCap
+                                                    size={15}
+                                                    className="mt-1 text-slate-300 flex-shrink-0"
+                                                />
+                                            )}
                                         </div>
                                         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 pl-8">
-                                            <span className="text-[11px] text-slate-400">{STATUS_LABELS[assignment.status]}</span>
+                                            <span className="text-[11px] text-slate-400">
+                                                {STATUS_LABELS[assignment.status]}
+                                            </span>
                                             <div className="flex items-center gap-1.5">
                                                 {!done && assignment.status !== 'in_progress' && (
                                                     <button
-                                                        onClick={() => setAssignmentStatus(assignment, 'in_progress')}
+                                                        onClick={() =>
+                                                            setAssignmentStatus(
+                                                                assignment,
+                                                                'in_progress',
+                                                            )
+                                                        }
                                                         className="rounded-lg px-2 py-1 text-[11px] font-medium text-slate-500 hover:bg-white hover:text-indigo-700"
                                                     >
                                                         Start
@@ -292,7 +418,12 @@ const SchoolPlanningPicker: React.FC<SchoolPlanningPickerProps> = ({ dateKey, ac
                                                 )}
                                                 {!done && (
                                                     <button
-                                                        onClick={() => setAssignmentStatus(assignment, 'submitted')}
+                                                        onClick={() =>
+                                                            setAssignmentStatus(
+                                                                assignment,
+                                                                'submitted',
+                                                            )
+                                                        }
                                                         className="rounded-lg px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50"
                                                     >
                                                         Submitted
@@ -320,6 +451,25 @@ const SchoolPlanningPicker: React.FC<SchoolPlanningPickerProps> = ({ dateKey, ac
                     defaultClassId={effectiveClassId}
                     onClose={() => setShowAssignmentForm(false)}
                     onSubmit={submitAssignment}
+                />
+            )}
+
+            {promoteTask && (
+                <AssignmentForm
+                    classes={activeClasses}
+                    defaultClassId={effectiveClassId}
+                    onClose={() => setPromoteTask(null)}
+                    onSubmit={async (params) => {
+                        const id = await addAssignment(params);
+                        // Link the todo to the new assignment — it leaves the general list
+                        // (todos query filters assignment_id IS NULL) and becomes a school item.
+                        await updateTask({
+                            ...promoteTask,
+                            assignmentId: id,
+                            triageDestination: 'school',
+                        });
+                        setPromoteTask(null);
+                    }}
                 />
             )}
         </div>
