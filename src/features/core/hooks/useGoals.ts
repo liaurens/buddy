@@ -6,7 +6,7 @@ import { supabase } from '../../../services/supabase';
 import { dbToGoal, dbToGoalLog, type Goal, type GoalType, type GoalLog } from '../../../services/supabase/converters/goal';
 import type { DbGoal, DbGoalLog } from '../../../services/supabase/types/goal-types';
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_ARRAY: never[] = [];
 
 export function useGoals(statusFilter: Goal['status'] | 'all' = 'active', targetDate?: string) {
     const { user } = useAuth();

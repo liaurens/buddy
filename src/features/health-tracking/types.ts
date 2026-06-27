@@ -41,7 +41,7 @@ export interface Entry {
     textValue?: string; // For text type trackers
     timestamp: string;
     notes?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface TrackerState {

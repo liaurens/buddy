@@ -69,6 +69,7 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({ task, isOpen,
                     dueDate: prepDate,
                     priority: 'high',
                     parentTodoId: task.id,
+                    triagedAt: new Date().toISOString(),
                 });
             }));
 

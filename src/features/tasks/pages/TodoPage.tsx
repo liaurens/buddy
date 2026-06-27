@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Settings, Repeat, LayoutGrid, CalendarDays, BookOpen, Flame, Sparkles } from 'lucide-react';
+import { Settings, Repeat, LayoutGrid, CalendarDays, BookOpen, Flame, Sparkles, X } from 'lucide-react';
 import { isToday, isPast, differenceInCalendarDays } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTasks } from '../hooks/useTasks';
@@ -19,6 +19,7 @@ import TaskBulkActionBar from '../components/TaskBulkActionBar';
 import TaskSettingsModal from '../components/TaskSettingsModal';
 import TasksOrganizationModal from '../components/TasksOrganizationModal';
 import AIOrganizeModal from '../components/AIOrganizeModal';
+import TriageInbox from '../components/TriageInbox';
 import RoutinePicker from '../components/RoutinePicker';
 
 interface TodoPageProps {
@@ -55,6 +56,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
     const [showSettings, setShowSettings] = useState(false);
     const [showOrganize, setShowOrganize] = useState(false);
     const [showOrganizeAI, setShowOrganizeAI] = useState(false);
+    const [showTriage, setShowTriage] = useState(false);
     const [showRoutines, setShowRoutines] = useState(false);
     const [flashMessage, setFlashMessage] = useState<string | null>(null);
 
@@ -91,6 +93,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
 
     const activeTasks = useMemo(() => allTodos.filter(t => !t.completed), [allTodos]);
     const completedTasks = useMemo(() => allTodos.filter(t => t.completed).slice(0, 10), [allTodos]);
+
+    // Capture inbox = active tasks not yet routed by triage.
+    const inboxCount = useMemo(() => allTodos.filter(t => !t.completed && !t.triagedAt).length, [allTodos]);
 
     // "Unorganized" inbox = active tasks without a type; the AI organizer targets these.
     const organizeCandidates = useMemo(() => activeTasks.filter(t => !t.taskTypeId), [activeTasks]);
@@ -209,6 +214,22 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
 
             <UpcomingDeadlinesBanner onOpenSchool={onNavigate ? () => onNavigate('school') : undefined} />
 
+            {/* Capture inbox — sort newly captured tasks into their destinations */}
+            {inboxCount > 0 && (
+                <button
+                    onClick={() => setShowTriage(true)}
+                    className="flex w-full items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-left transition-colors hover:bg-indigo-100"
+                >
+                    <span className="flex items-center gap-2">
+                        <Sparkles size={16} className="text-indigo-600" />
+                        <span className="text-sm font-medium text-indigo-900">
+                            {inboxCount} captured {inboxCount === 1 ? 'task' : 'tasks'} to sort
+                        </span>
+                    </span>
+                    <span className="text-xs font-semibold text-indigo-700">Sort now →</span>
+                </button>
+            )}
+
             {/* Quick capture */}
             <div>
                 <QuickCapture
@@ -223,6 +244,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             priority: draft.priority || 'medium',
                             energy: draft.energy,
                             kind: draft.kind,
+                            // An explicit kind means the user already sorted it — skip the
+                            // triage inbox. A bare capture stays untriaged for the morning router.
+                            triagedAt: draft.kind ? new Date().toISOString() : undefined,
                         });
                     }}
                 />
@@ -434,6 +458,36 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                 onClose={() => setShowRoutines(false)}
                 onRan={(count) => setFlashMessage(`Added ${count} ${count === 1 ? 'task' : 'tasks'} for today`)}
             />
+
+            {showTriage && (
+                <div
+                    className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+                    onClick={() => setShowTriage(false)}
+                >
+                    <div
+                        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                            <div className="flex items-center gap-2">
+                                <Sparkles size={18} className="text-indigo-500" />
+                                <h2 className="text-base font-semibold text-slate-900">Sort your inbox</h2>
+                            </div>
+                            <button onClick={() => setShowTriage(false)} className="app-icon-button" aria-label="Close">
+                                <X size={18} />
+                            </button>
+                        </header>
+                        <div className="flex-1 overflow-y-auto p-5">
+                            <TriageInbox
+                                onDone={(n) => {
+                                    setShowTriage(false);
+                                    if (n > 0) setFlashMessage(`Sorted ${n} ${n === 1 ? 'task' : 'tasks'}`);
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

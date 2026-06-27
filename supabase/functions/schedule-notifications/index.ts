@@ -278,15 +278,6 @@ async function buildAnchorBody(
   }
 }
 
-interface NotificationSubscription {
-  id: string;
-  user_id: string;
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-  is_active: boolean;
-}
-
 /**
  * Send notification via Edge Function
  */

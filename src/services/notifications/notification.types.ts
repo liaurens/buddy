@@ -63,7 +63,7 @@ export interface ScheduledNotification {
   scheduledFor: string; // ISO timestamp
   title: string;
   body: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   status: NotificationStatus;
   createdAt: string;
   sentAt: string | null;
@@ -96,7 +96,7 @@ export interface NotificationPayload {
   icon?: string;
   badge?: string;
   tag?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   actions?: NotificationAction[];
   requireInteraction?: boolean;
   silent?: boolean;
@@ -117,7 +117,7 @@ export interface ServiceWorkerNotificationOptions {
     icon?: string;
     badge?: string;
     tag?: string;
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
     actions?: NotificationAction[];
     requireInteraction?: boolean;
     silent?: boolean;
@@ -134,7 +134,7 @@ export interface ScheduleNotificationRequest {
   scheduledFor: Date;
   title: string;
   body: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   sourceType?: string;
   sourceId?: string;
   dedupKey?: string;

@@ -252,7 +252,7 @@ export async function isSubscribed(): Promise<boolean> {
 export async function showLocalNotification(
   title: string,
   body: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): Promise<void> {
   if (!isPushSupported()) {
     throw new Error('Notifications not supported');

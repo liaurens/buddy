@@ -15,7 +15,7 @@ import {
     type DbEntry,
 } from '../../../services/supabase';
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_ARRAY: never[] = [];
 
 export const useTrackers = (): TrackerState => {
     const { user } = useAuth();

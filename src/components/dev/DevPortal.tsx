@@ -48,7 +48,7 @@ export function DevPortal() {
               left: rect.left + window.scrollX + rect.width - 20
             };
           }
-        } catch (e) {
+        } catch {
           // Selector might be invalid if DOM changed significantly
         }
       }
