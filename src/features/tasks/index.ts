@@ -9,6 +9,7 @@ export { default as NotesPage } from './pages/NotesPage';
 export { default as AITaskSplitter } from './components/AITaskSplitter';
 export { default as AIOrganizeModal } from './components/AIOrganizeModal';
 export { default as UrgentScheduleModal } from './components/UrgentScheduleModal';
+export { default as TriageInbox } from './components/TriageInbox';
 
 // Utils — task kind classification
 export { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from './utils/taskKind';
