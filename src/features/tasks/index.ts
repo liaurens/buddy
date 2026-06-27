@@ -14,10 +14,14 @@ export { default as TriageInbox } from './components/TriageInbox';
 // Utils — task kind classification
 export { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from './utils/taskKind';
 
+// Utils — triage routing
+export { TRIAGE_DESTINATION_META, TRIAGE_DESTINATION_ORDER } from './utils/triageRouting';
+
 // Hooks
 export { useTaskRecommendation } from './hooks/useTaskRecommendation';
 export { useTaskTypes } from './hooks/useTaskTypes';
 export { useRoutines } from './hooks/useRoutines';
+export { useTaskTriage } from './hooks/useTaskTriage';
 
 // Utils
 export { getRecommendedTask, getRankedTasks } from './utils/taskRecommender';

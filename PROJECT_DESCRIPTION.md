@@ -223,6 +223,22 @@ require choosing every field up front, but richer fields are available later:
 priority, estimate, due date, labels, project, recurrence, task type, reminder
 cadence, class, checkpoints, and more.
 
+For tasks specifically, the gap between "captured" and "organized" is handled by
+a **triage router**. A task captured with no explicit kind lands in a capture
+inbox (`todos` rows where `triaged_at IS NULL` and the task is still active). A
+dedicated triage step — surfaced both as a banner on the Tasks page and as an
+optional "Sort inbox" step in the morning routine — lets the user route each
+inbox task to one of five destinations: **urgent** (schedule it on the
+calendar), **today** (onto today's plan), **school** (link it to a class
+assignment), **routine** (repeats on a schedule), or **someday** (no pressure,
+stays until picked). An AI pass can pre-fill the suggested destination per task,
+but the flow works entirely by hand when no AI key is configured. Each
+destination reuses an existing downstream flow rather than inventing a new one,
+and applying a route stamps `triaged_at` so the task leaves the inbox. When the
+user overrides an AI suggestion, the correction is appended to a small growing
+"learning doc" (stored in `settings`) that is fed back into the next triage
+run's prompt as worked examples, so the routing adapts to the user over time.
+
 ### 4.3 Plan
 
 Planning turns open obligations and current capacity into a realistic day.
@@ -484,7 +500,25 @@ The tasks feature supports:
 - Bulk actions.
 - Snoozing.
 - AI task splitting.
+- AI-assisted triage of the capture inbox into destinations.
 - Deep links from notifications.
+
+Tasks also carry a **kind** dimension: `urgent`, `deadline`, `standard`,
+`routine`, or `backlog` (someday / no pressure). Kind is hybrid — an explicit
+`todos.kind` value wins, otherwise it is derived from recurrence, priority, due
+date, and reminder settings (`deriveTaskKind`). Kind drives how a task is
+grouped in the UI and what happens to it downstream. In particular, an
+**urgent** task gets a home-screen takeover (the Urgent inbox card) that forces
+a "when + prep" decision and then schedules the task as a real event in the
+user's **Google Calendar**. A **backlog** task is treated as a no-pressure
+someday item; the morning plan-day step can surface one backlog item at a time
+so the pile does not become a source of overwhelm.
+
+Google Calendar write-through is built end-to-end (see Section 6.6) but is
+gated: it only activates when Google OAuth is configured, and only `urgent`
+scheduled tasks auto-create events. Once a task has a Google event id,
+rescheduling updates the event and completing/deleting removes it, regardless of
+kind.
 
 (The habit dashboard, streak calendar, and streak calculator were removed in
 the June 2026 prune — streak mechanics conflicted with the product guardrail
@@ -520,6 +554,10 @@ modes:
 Morning and midday have dedicated full/light components. Night routes into
 reflection. The selected routine mode is persisted locally so the user can keep a
 preferred default.
+
+The full morning routine includes an optional, skippable "Sort inbox" step that
+runs the task triage router (Section 4.2) on any untriaged captured tasks, so
+sorting the inbox becomes part of the daily on-ramp rather than a separate chore.
 
 Routines are not just checklists. They are transition aids. Their job is to help
 the user move from ambiguity into action at predictable points in the day.
@@ -562,6 +600,19 @@ ambiguity and enough flexibility to survive interruptions.
 Time blocks can represent planned work, routines, breaks, school sessions, and
 other commitments. Reflection closes the loop so future plans can become more
 realistic.
+
+The calendar also supports **two-way Google Calendar integration via write**.
+Connecting an account uses an OAuth authorization-code + PKCE flow: the
+secret-bearing token exchange runs in the `google-calendar-auth` Edge Function,
+and tokens live in a service-role-only `google_calendar_credentials` table (the
+frontend never reads the tokens, only the connection status). Scheduling an
+urgent task creates a corresponding Google Calendar event through the
+`google-calendar-write` Edge Function, using a deterministic event id derived
+from the task id so create/update is idempotent. Writes that fail offline queue
+in an IndexedDB outbox and flush when connectivity returns. This integration is
+configured per-environment: it stays dormant unless the Google OAuth client id
+and edge secrets are present, which keeps the rest of the app fully usable
+without it.
 
 ### 6.7 Focus
 
@@ -1034,7 +1085,10 @@ The backend is Supabase:
 
 Product tables include:
 
-- `todos`: tasks.
+- `todos`: tasks. Carries the triage column `triaged_at` (NULL = still in the
+  capture inbox), the hybrid `kind` dimension plus `parent_todo_id` and `notes`,
+  and Google Calendar sync columns (`google_event_id`, `google_calendar_id`,
+  `google_synced_at`).
 - `entries`: tracker entries/check-ins.
 - `trackers`: tracker definitions.
 - `smart_notes`: notes and note-like content.
@@ -1058,7 +1112,10 @@ Product tables include:
 - `experiments`: personal experiments.
 - `experiment_logs` / `experiment_checkins`: experiment data.
 - `checklists`: reusable checklists.
-- `settings`: user settings and AI configuration.
+- `settings`: user settings and AI configuration. Also stores the triage
+  "learning doc" that adapts task routing to the user's corrections.
+- `google_calendar_credentials`: OAuth tokens for Google Calendar write,
+  service-role only (token columns are revoked from anon/authenticated roles).
 - `site_feedback`: user bug/feedback reports.
 
 Assistant infrastructure tables include:
@@ -1249,6 +1306,8 @@ Important Edge Functions include:
 - `send-notification`: sends Web Push notifications.
 - `quick-note`: fast note capture.
 - `calendar-proxy`: calendar integration helper.
+- `google-calendar-auth`: Google OAuth token exchange (PKCE), connection status.
+- `google-calendar-write`: creates/updates/deletes Google Calendar events.
 - `experiment-agent`: experiment support.
 - `school-import`: course PDF analysis and import.
 
@@ -1398,6 +1457,26 @@ features:
   journal forms, the top-correlations card, and the `correlations-agent`
   function were deleted; the unused `study_sessions` and
   `planner_drift_events` tables were dropped.
+
+Later in June 2026 the focus moved from triggers/closure to the path *after*
+capture — turning the raw phone-captured inbox into correctly-routed,
+low-overwhelm work:
+
+- **Task kinds**: `urgent`/`deadline`/`standard`/`routine`/`backlog` as a
+  hybrid dimension on `todos` (explicit `kind` or derived), driving UI grouping
+  and downstream behavior.
+- **Google Calendar write**: urgent scheduled tasks become real Google Calendar
+  events via `google-calendar-auth` / `google-calendar-write`, with an offline
+  outbox and a service-role-only credentials vault. Built and committed, but
+  dormant until the OAuth client id and edge secrets are configured for an
+  environment (not yet activated in production).
+- **Triage router**: a capture inbox (`todos.triaged_at`) plus an AI-assisted
+  (and fully manual-capable) flow that routes each inbox task to urgent / today /
+  school / routine / someday, surfaced both as a Tasks-page banner and an
+  optional morning "Sort inbox" step. User overrides feed a small learning doc
+  that adapts future routing.
+- Still open: a dedicated "no-pressure, one-at-a-time" focus mode that draws
+  single items from the someday/backlog pile.
 
 ---
 

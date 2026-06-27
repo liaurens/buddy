@@ -17,6 +17,9 @@ export default defineConfig({
       manifest: false, // Use public/manifest.json
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // The main bundle includes the AI SDKs and exceeds the 2 MiB default;
+        // raise the precache ceiling so the offline-first app caches it.
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
     })
   ],

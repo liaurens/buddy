@@ -39,7 +39,7 @@ export async function scheduleNotificationAt(
   scheduledFor: Date,
   title: string,
   body: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): Promise<ScheduledNotification | null> {
   const request: ScheduleNotificationRequest = {
     userId,
@@ -65,7 +65,7 @@ export async function scheduleNotificationWithSource(
   title: string,
   body: string,
   options: {
-    data?: Record<string, any>;
+    data?: Record<string, unknown>;
     sourceType?: string;
     sourceId?: string;
     dedupKey?: string;
@@ -98,7 +98,7 @@ export async function scheduleDailyNotification(
   timeString: string, // HH:MM format (e.g., "20:00")
   title: string,
   body: string,
-  data?: Record<string, any>,
+  data?: Record<string, unknown>,
   daysOfWeek?: number[]
 ): Promise<ScheduledNotification | null> {
   const scheduledFor = parseTimeToNextOccurrence(timeString, daysOfWeek);
@@ -125,7 +125,7 @@ export async function scheduleNotificationIn(
   minutes: number,
   title: string,
   body: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): Promise<ScheduledNotification | null> {
   const scheduledFor = new Date(Date.now() + minutes * 60 * 1000);
 
@@ -214,7 +214,7 @@ export async function rescheduleRecurringNotification(
   timeString: string,
   title: string,
   body: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): Promise<ScheduledNotification | null> {
   // Cancel existing notifications for this tool
   await cancelToolNotifications(userId, toolCategory);

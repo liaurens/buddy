@@ -16,7 +16,7 @@ interface CheckinFormProps {
     existingDoses?: Dose[];
 }
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_ARRAY: never[] = [];
 
 const DEFAULT_SCALE: TrackerScale = {
     min: 1, max: 10, step: 1, lowLabel: 'Low', highLabel: 'High', direction: 'higher_better',

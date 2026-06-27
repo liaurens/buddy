@@ -18,7 +18,7 @@ import {
     type DbDose,
 } from '../../../services/supabase';
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_ARRAY: never[] = [];
 
 interface ProtocolContextType {
     protocols: Protocol[];

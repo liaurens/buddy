@@ -4,6 +4,48 @@ import { supabase } from '../../../services/supabase';
 
 type Tab = 'errors' | 'findings' | 'rules' | 'learnings';
 
+interface ErrorLogRow {
+  id: string;
+  error_type?: string;
+  step?: string;
+  domain?: string;
+  error_message?: string;
+  created_at: string;
+  input?: string;
+  intent?: string;
+  ai_provider?: string;
+  ai_model?: string;
+  error_stack?: string;
+  context?: Record<string, unknown>;
+}
+
+interface FindingRow {
+  id: string;
+  severity?: string;
+  type?: string;
+  status?: string;
+  data?: { summary?: string } & Record<string, unknown>;
+  created_at: string;
+}
+
+interface RuleRow {
+  id: string;
+  pattern?: string;
+  action?: string;
+  domain?: string;
+  confidence: number;
+  source?: string;
+  active: boolean;
+}
+
+interface LearningRow {
+  id: string;
+  type?: string;
+  active?: boolean;
+  content?: { finding_type?: string; source?: string } & Record<string, unknown>;
+  created_at: string;
+}
+
 interface Props {
   userId: string;
 }
@@ -13,10 +55,10 @@ const AssistantDevPanel: React.FC<Props> = ({ userId }) => {
   const [loading, setLoading] = useState(false);
 
   // Data
-  const [errorLogs, setErrorLogs] = useState<any[]>([]);
-  const [findings, setFindings] = useState<any[]>([]);
-  const [rules, setRules] = useState<any[]>([]);
-  const [learnings, setLearnings] = useState<any[]>([]);
+  const [errorLogs, setErrorLogs] = useState<ErrorLogRow[]>([]);
+  const [findings, setFindings] = useState<FindingRow[]>([]);
+  const [rules, setRules] = useState<RuleRow[]>([]);
+  const [learnings, setLearnings] = useState<LearningRow[]>([]);
 
   // Expanded rows
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -81,8 +123,8 @@ const AssistantDevPanel: React.FC<Props> = ({ userId }) => {
       if (error) throw error;
       setAgentResult(`HR Agent: ${data?.findings || 0} findings, ${data?.users_analyzed || 0} users analyzed${data?.trainer_triggered ? ' → Trainer triggered' : ''}`);
       fetchData();
-    } catch (err: any) {
-      setAgentResult(`HR Agent error: ${err.message || err}`);
+    } catch (err) {
+      setAgentResult(`HR Agent error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setHrRunning(false);
     }
@@ -98,8 +140,8 @@ const AssistantDevPanel: React.FC<Props> = ({ userId }) => {
       if (error) throw error;
       setAgentResult(`Trainer: ${data?.findings_processed || 0} findings processed, ${data?.rules_created || 0} rules created`);
       fetchData();
-    } catch (err: any) {
-      setAgentResult(`Trainer error: ${err.message || err}`);
+    } catch (err) {
+      setAgentResult(`Trainer error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setTrainerRunning(false);
     }

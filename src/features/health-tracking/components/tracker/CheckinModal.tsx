@@ -12,7 +12,7 @@ interface CheckinModalProps {
     existingDoses?: Dose[]; // Existing doses for the date
 }
 
-const EMPTY_ARRAY: any[] = [];
+const EMPTY_ARRAY: never[] = [];
 
 const CheckinModal: React.FC<CheckinModalProps> = ({ 
     isOpen, 

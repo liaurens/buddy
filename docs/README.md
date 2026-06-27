@@ -13,6 +13,7 @@ Docs are grouped by purpose. Start here.
 - [`QUICKSTART.md`](help/QUICKSTART.md) — local dev setup (clone, env, run, build).
 - [`ADDING_A_TOOL.md`](help/ADDING_A_TOOL.md) — add a new assistant tool end-to-end.
 - [`iphone_shortcut_setup.md`](help/iphone_shortcut_setup.md) — iPhone Back-Tap quick-capture shortcut (also `.html` / `.pdf` for sharing).
+- [`hosting-migration.md`](help/hosting-migration.md) — move the app to a new Netlify site / domain: env vars, Google OAuth re-registration, PWA re-add, what stays on Supabase.
 
 ## `plans/` — forward-looking plans & backlog (not all executed)
 - [`buddy_streamlining_plan.md`](plans/buddy_streamlining_plan.md) — IA streamlining (phases 1/2/5 done; 3/4/6 partial/open).
