@@ -6,6 +6,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import NotificationPermissionPrompt from '../../../components/notifications/NotificationPermissionPrompt';
 import AssistantPromptBar from '../../assistant/components/AssistantPromptBar';
 import DailyRoutineCard from '../components/DailyRoutineCard';
+import TriageInboxCard from '../components/TriageInboxCard';
 import TodayCard from '../components/TodayCard';
 import InsightCard from '../components/InsightCard';
 
@@ -24,11 +25,19 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     // One-time push permission prompt; hides itself once subscribed, and stays
     // away after an explicit dismiss.
     const [pushPromptDismissed, setPushPromptDismissed] = useState(() => {
-        try { return localStorage.getItem(PUSH_PROMPT_DISMISSED_KEY) === '1'; } catch { return true; }
+        try {
+            return localStorage.getItem(PUSH_PROMPT_DISMISSED_KEY) === '1';
+        } catch {
+            return true;
+        }
     });
     const dismissPushPrompt = () => {
         setPushPromptDismissed(true);
-        try { localStorage.setItem(PUSH_PROMPT_DISMISSED_KEY, '1'); } catch { /* ignore */ }
+        try {
+            localStorage.setItem(PUSH_PROMPT_DISMISSED_KEY, '1');
+        } catch {
+            /* ignore */
+        }
     };
 
     return (
@@ -36,9 +45,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <header className="flex items-start justify-between gap-4 pt-1">
                 <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                        <h1 className="app-title truncate">
-                            {format(today, 'EEEE, MMMM d')}
-                        </h1>
+                        <h1 className="app-title truncate">{format(today, 'EEEE, MMMM d')}</h1>
                         <Sun size={23} className="hidden text-slate-400 sm:block" />
                     </div>
                     <p className="mt-1 text-sm leading-6 text-slate-600 sm:text-base">
@@ -66,7 +73,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 </div>
             </header>
 
-            <AssistantPromptBar onNavigate={onNavigate} />
+            <AssistantPromptBar onNavigate={onNavigate} compact />
 
             {user && !pushPromptDismissed && (
                 <NotificationPermissionPrompt userId={user.id} onClose={dismissPushPrompt} />
@@ -77,6 +84,8 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.85fr)] lg:items-start lg:gap-6">
                 <section className="space-y-5">
                     <DailyRoutineCard onNavigate={onNavigate} />
+
+                    <TriageInboxCard />
 
                     <div className="hidden lg:block">
                         <InsightCard />
