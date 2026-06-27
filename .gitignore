@@ -48,3 +48,9 @@ supabase/.temp/
 
 # Claude Code per-"part" progress journals (local scratch, resumable)
 .claude/progress/
+
+# Active-part quick-notes scratchpad (local, OneDrive-synced, fed by /note + iPhone shortcut)
+journal-notes.md
+
+# git worktrees (isolated workspaces; never tracked)
+.claude/worktrees/
