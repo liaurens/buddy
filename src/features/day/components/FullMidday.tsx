@@ -4,6 +4,7 @@ import { Sunrise, Calendar as CalendarIcon } from 'lucide-react';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { useTodayItems, formatMinutesTotal } from '../hooks/useTodayItems';
 import TodayTimeline from './TodayTimeline';
+import MiddayTaskReview from './MiddayTaskReview';
 import MiddayFinishButton from './MiddayFinishButton';
 
 interface Props {
@@ -18,7 +19,11 @@ const FullMidday: React.FC<Props> = ({ onGoToMorning }) => {
     const items = useTodayItems(dateKey);
 
     const intention = (() => {
-        try { return sessionStorage.getItem(`light_intention_${dateKey}`) ?? ''; } catch { return ''; }
+        try {
+            return sessionStorage.getItem(`light_intention_${dateKey}`) ?? '';
+        } catch {
+            return '';
+        }
     })();
 
     if (items.totalCount === 0 && items.events.length === 0) {
@@ -53,7 +58,8 @@ const FullMidday: React.FC<Props> = ({ onGoToMorning }) => {
                     <h2 className="font-semibold text-slate-900">Today</h2>
                     {intention && (
                         <p className="text-xs text-slate-500 mt-0.5">
-                            Today's word: <span className="font-medium text-indigo-700">{intention}</span>
+                            Today's word:{' '}
+                            <span className="font-medium text-indigo-700">{intention}</span>
                         </p>
                     )}
                 </div>
@@ -67,13 +73,21 @@ const FullMidday: React.FC<Props> = ({ onGoToMorning }) => {
                 untimedPicks={items.untimedPicks}
                 accent="indigo"
                 pickInteraction="check"
-                onTogglePick={(t) => { void toggleTask(t.id); }}
+                onTogglePick={(t) => {
+                    void toggleTask(t.id);
+                }}
             />
 
             <div className="pt-3 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
-                <span>{items.totalCount} picked{totalTimeLabel ? ` · est. ~${totalTimeLabel}` : ''}</span>
-                <span className="text-slate-400">{items.events.length} event{items.events.length === 1 ? '' : 's'}</span>
+                <span>
+                    {items.totalCount} picked{totalTimeLabel ? ` · est. ~${totalTimeLabel}` : ''}
+                </span>
+                <span className="text-slate-400">
+                    {items.events.length} event{items.events.length === 1 ? '' : 's'}
+                </span>
             </div>
+
+            <MiddayTaskReview dateKey={dateKey} accent="indigo" />
 
             <MiddayFinishButton dateKey={dateKey} accent="indigo" />
         </div>
