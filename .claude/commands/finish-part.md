@@ -27,6 +27,17 @@ Do these in order:
 
    If NOT significant: skip diagrams/docs — only the Status + Changelog update from step 3.
 
-5. **Archive the journal.** Move the progress file to `.claude/progress/done/` (create the folder if needed). Do not delete unless I confirm.
+5. **Fold quick notes.** If `journal-notes.md` (project root) exists and its `ACTIVE PART` header
+   names the part being finished, append its bullet lines to the journal under a new
+   `## Personal notes` section. Then reset `journal-notes.md` to its empty state:
+
+       # Quick notes — (no active part)
+
+       > Start or resume a part to attach notes here. Appended from the iPhone shortcut and `/note`,
+       > folded into the part's journal on `/finish-part`.
+
+   If the header names a different part (or `(no active part)`), leave `journal-notes.md` untouched.
+
+6. **Archive the journal.** Move the progress file to `.claude/progress/done/` (create the folder if needed). Do not delete unless I confirm.
 
 Report what you folded into CLAUDE.md, what changed in docs/DESIGN.md, and whether a diagram/feature doc was generated.
