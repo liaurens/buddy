@@ -1,0 +1,67 @@
+/**
+ * TriageInboxCard — home-screen entry to the capture-inbox triage flow.
+ *
+ * Sits at the same visual weight as the Daily Routine card. Counts the inbox
+ * locally (no AI sort fires on the home screen) and links to the Tasks-tab
+ * triage modal. Hides itself when the inbox is empty.
+ */
+
+import React from 'react';
+import { Inbox, Sparkles, ChevronRight } from 'lucide-react';
+import { useTasks } from '../../tasks/hooks/useTasks';
+import { countInbox } from '../../tasks/utils/inbox';
+import type { AppRoute } from '../../../constants/routes';
+
+interface Props {
+    onNavigate: (tab: AppRoute, params?: Record<string, unknown>) => void;
+}
+
+const TriageInboxCard: React.FC<Props> = ({ onNavigate }) => {
+    const { tasks } = useTasks();
+    const count = countInbox(tasks);
+
+    if (count === 0) return null;
+
+    const openTriage = () => onNavigate('tasks', { view: 'triage' });
+
+    return (
+        <section className="app-surface">
+            <button type="button" onClick={openTriage} className="group w-full p-5 text-left">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
+                            <Inbox size={18} className="text-indigo-600" />
+                        </span>
+                        <div>
+                            <h2 className="text-base font-semibold text-slate-950">
+                                Reorganize tasks
+                            </h2>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                                {count} captured {count === 1 ? 'task' : 'tasks'} to sort
+                            </p>
+                        </div>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-sm font-semibold text-indigo-700">
+                        {count}
+                    </span>
+                </div>
+
+                <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+                    <Sparkles size={14} className="text-violet-500" />
+                    AI pre-sorts them — review &amp; route in one tap.
+                </div>
+            </button>
+
+            <button
+                type="button"
+                onClick={openTriage}
+                className="flex w-full items-center justify-between border-t border-slate-100 px-5 py-3 text-sm font-medium text-indigo-900 transition-colors hover:bg-slate-50"
+            >
+                <span>Sort inbox</span>
+                <ChevronRight size={15} className="text-slate-400" />
+            </button>
+        </section>
+    );
+};
+
+export default TriageInboxCard;
