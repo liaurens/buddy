@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Bell, Search, Sun } from 'lucide-react';
+import { Bell, ChevronDown, ChevronUp, Search, Sun } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
 import { useAuth } from '../../../hooks/useAuth';
 import NotificationPermissionPrompt from '../../../components/notifications/NotificationPermissionPrompt';
@@ -8,7 +8,7 @@ import AssistantPromptBar from '../../assistant/components/AssistantPromptBar';
 import DailyRoutineCard from '../components/DailyRoutineCard';
 import TriageInboxCard from '../components/TriageInboxCard';
 import TodayCard from '../components/TodayCard';
-import InsightCard from '../components/InsightCard';
+import TodayFocusCard from '../components/TodayFocusCard';
 
 interface HomePageProps {
     onNavigate: (tab: AppRoute, params?: Record<string, unknown>) => void;
@@ -39,6 +39,10 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             /* ignore */
         }
     };
+
+    // Everything that isn't picks/capture/close-day lives behind a fold —
+    // visible-but-unused surfaces are demand load, not neutral.
+    const [showMore, setShowMore] = useState(false);
 
     return (
         <div className="mx-auto w-full max-w-7xl space-y-5 pb-28 lg:space-y-7 lg:pb-10">
@@ -79,26 +83,32 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 <NotificationPermissionPrompt userId={user.id} onClose={dismissPushPrompt} />
             )}
 
-            {/* Routine-central: the daily routine leads, with a light today summary
-                alongside. Task management lives on its own Tasks tab. */}
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.85fr)] lg:items-start lg:gap-6">
-                <section className="space-y-5">
-                    <DailyRoutineCard onNavigate={onNavigate} />
+            {/* Three-touch home: today's picks lead (done/snooze/split + evening
+                close-day), the capture bar sits above, and the inbox surfaces only
+                when it has items. Everything else folds. */}
+            <div className="mx-auto max-w-3xl space-y-5">
+                <TodayFocusCard onNavigate={onNavigate} />
 
-                    <TriageInboxCard />
+                <TriageInboxCard />
 
-                    <div className="hidden lg:block">
-                        <InsightCard />
+                <button
+                    type="button"
+                    onClick={() => setShowMore((v) => !v)}
+                    className="flex w-full items-center justify-center gap-1 py-1 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600"
+                >
+                    {showMore ? (
+                        <>Less <ChevronUp size={14} /></>
+                    ) : (
+                        <>More — routine & stats <ChevronDown size={14} /></>
+                    )}
+                </button>
+
+                {showMore && (
+                    <div className="space-y-5">
+                        <DailyRoutineCard onNavigate={onNavigate} />
+                        <TodayCard onNavigate={onNavigate} />
                     </div>
-                </section>
-
-                <aside className="space-y-5 lg:sticky lg:top-8">
-                    <TodayCard onNavigate={onNavigate} />
-
-                    <div className="lg:hidden">
-                        <InsightCard />
-                    </div>
-                </aside>
+                )}
             </div>
         </div>
     );

@@ -10,50 +10,22 @@
  * come from useTodayItems; the date math + partitioning live in middayReview.
  */
 
-import React, { useRef, useState } from 'react';
-import { Check, CalendarClock, ListChecks, CalendarArrowUp } from 'lucide-react';
+import React from 'react';
+import { Check, CalendarArrowUp } from 'lucide-react';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { useTodayItems } from '../hooks/useTodayItems';
-import SnoozeMenu from '../../tasks/components/SnoozeMenu';
-import type { Task, Subtask } from '../../tasks/types';
-import {
-    partitionPicks,
-    subtaskProgress,
-    allSubtasksDone,
-    tomorrowIso,
-} from '../utils/middayReview';
+import PickRow, { PICK_ACCENTS } from './PickRow';
+import { partitionPicks, tomorrowIso } from '../utils/middayReview';
 
 interface Props {
     dateKey: string;
     accent: 'amber' | 'indigo';
 }
 
-interface Accent {
-    text: string;
-    solid: string;
-    softBg: string;
-    softText: string;
-}
-
-const ACCENTS: Record<Props['accent'], Accent> = {
-    indigo: {
-        text: 'text-indigo-600',
-        solid: 'bg-indigo-600 hover:bg-indigo-700',
-        softBg: 'bg-indigo-50',
-        softText: 'text-indigo-700',
-    },
-    amber: {
-        text: 'text-amber-600',
-        solid: 'bg-amber-500 hover:bg-amber-600',
-        softBg: 'bg-amber-50',
-        softText: 'text-amber-700',
-    },
-};
-
 const MiddayTaskReview: React.FC<Props> = ({ dateKey, accent }) => {
     const { picks, completedCount, totalCount } = useTodayItems(dateKey);
     const { toggleTask, updateTask, rescheduleMany } = useTasks();
-    const a = ACCENTS[accent];
+    const a = PICK_ACCENTS[accent];
 
     if (picks.length === 0) return null;
 
@@ -88,7 +60,7 @@ const MiddayTaskReview: React.FC<Props> = ({ dateKey, accent }) => {
             {open.length > 0 && (
                 <ul className="space-y-2">
                     {open.map((task) => (
-                        <ReviewRow
+                        <PickRow
                             key={task.id}
                             task={task}
                             accent={a}
@@ -138,165 +110,5 @@ const MiddayTaskReview: React.FC<Props> = ({ dateKey, accent }) => {
     );
 };
 
-interface RowProps {
-    task: Task;
-    accent: Accent;
-    onDone: () => void;
-    onReschedule: (date: string, time?: string) => void;
-    onUpdate: (task: Task) => void;
-}
-
-const ReviewRow: React.FC<RowProps> = ({ task, accent, onDone, onReschedule, onUpdate }) => {
-    const [expanded, setExpanded] = useState(false);
-    const [showSnooze, setShowSnooze] = useState(false);
-    const [newSubtask, setNewSubtask] = useState('');
-    const [note, setNote] = useState(task.notes ?? '');
-    const snoozeBtnRef = useRef<HTMLButtonElement>(null);
-
-    const progress = subtaskProgress(task);
-    const suggestDone = allSubtasksDone(task);
-
-    const addSubtask = () => {
-        const title = newSubtask.trim();
-        if (!title) return;
-        const next: Subtask = { id: crypto.randomUUID(), title, completed: false };
-        onUpdate({ ...task, subtasks: [...(task.subtasks ?? []), next] });
-        setNewSubtask('');
-    };
-
-    const toggleSubtask = (id: string) => {
-        const subtasks = (task.subtasks ?? []).map((s) =>
-            s.id === id ? { ...s, completed: !s.completed } : s,
-        );
-        onUpdate({ ...task, subtasks });
-    };
-
-    const saveNote = () => {
-        const trimmed = note.trim();
-        if ((task.notes ?? '') === trimmed) return;
-        onUpdate({ ...task, notes: trimmed || undefined });
-    };
-
-    return (
-        <li className="rounded-xl border border-slate-200 bg-white">
-            <div className="flex items-center gap-2 p-2.5">
-                <button
-                    type="button"
-                    onClick={onDone}
-                    aria-label="Mark done"
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-300 text-slate-300 transition-colors hover:border-emerald-400 hover:text-emerald-500"
-                >
-                    <Check size={15} />
-                </button>
-
-                <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">{task.title}</p>
-                    {progress && (
-                        <p className="text-xs text-slate-400">
-                            {progress.done}/{progress.total} subtasks
-                        </p>
-                    )}
-                </div>
-
-                {suggestDone && (
-                    <button
-                        type="button"
-                        onClick={onDone}
-                        className="shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
-                    >
-                        Mark done?
-                    </button>
-                )}
-
-                <button
-                    type="button"
-                    ref={snoozeBtnRef}
-                    onClick={() => setShowSnooze((v) => !v)}
-                    aria-label="Reschedule"
-                    className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
-                >
-                    <CalendarClock size={16} />
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setExpanded((v) => !v)}
-                    aria-label="Needs work"
-                    className={`shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600 ${expanded ? accent.text : ''}`}
-                >
-                    <ListChecks size={16} />
-                </button>
-            </div>
-
-            {showSnooze && (
-                <SnoozeMenu
-                    anchorRef={snoozeBtnRef}
-                    onSnooze={(date, time) => {
-                        onReschedule(date, time);
-                        setShowSnooze(false);
-                    }}
-                    onClose={() => setShowSnooze(false)}
-                />
-            )}
-
-            {expanded && (
-                <div className="space-y-2.5 border-t border-slate-100 px-2.5 pb-3 pt-2.5">
-                    {(task.subtasks ?? []).length > 0 && (
-                        <ul className="space-y-1">
-                            {(task.subtasks ?? []).map((s) => (
-                                <li key={s.id} className="flex items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleSubtask(s.id)}
-                                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${s.completed ? 'border-emerald-400 bg-emerald-500 text-white' : 'border-slate-300 text-transparent'}`}
-                                    >
-                                        <Check size={12} />
-                                    </button>
-                                    <span
-                                        className={`text-sm ${s.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}
-                                    >
-                                        {s.title}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="text"
-                            value={newSubtask}
-                            onChange={(e) => setNewSubtask(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') addSubtask();
-                            }}
-                            placeholder="Add subtask…"
-                            className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm"
-                        />
-                        <button
-                            type="button"
-                            onClick={addSubtask}
-                            disabled={!newSubtask.trim()}
-                            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors disabled:opacity-40 ${accent.solid}`}
-                        >
-                            Add
-                        </button>
-                    </div>
-
-                    <label className="block text-xs text-slate-500">
-                        Adjustment / note
-                        <input
-                            type="text"
-                            value={note}
-                            onChange={(e) => setNote(e.target.value)}
-                            onBlur={saveNote}
-                            placeholder="A quick tweak for next time…"
-                            className="mt-1 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-700"
-                        />
-                    </label>
-                </div>
-            )}
-        </li>
-    );
-};
 
 export default MiddayTaskReview;

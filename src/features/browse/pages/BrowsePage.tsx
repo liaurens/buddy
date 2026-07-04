@@ -14,6 +14,7 @@ import {
     Sun,
 } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
+import InsightCard from '../../core/components/InsightCard';
 
 interface BrowsePageProps {
     onNavigate: (tab: AppRoute, params?: Record<string, unknown>) => void;
@@ -53,6 +54,8 @@ const BrowsePage: React.FC<BrowsePageProps> = ({ onNavigate }) => {
             </header>
 
             <div className="mx-auto max-w-3xl space-y-7 lg:mx-0 lg:max-w-5xl">
+                <InsightCard />
+
                 <section className="space-y-3">
                     <h2 className="text-sm font-semibold text-slate-950">Shortcuts</h2>
                     <div className="grid grid-cols-5 gap-2.5">
