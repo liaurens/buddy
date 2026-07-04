@@ -30,9 +30,11 @@ interface Props {
     onNavigate?: (tab: AppRoute) => void;
     /** Deep-link from the morning anchor: land straight on the Plan step. */
     startAtPlan?: boolean;
+    /** Morning pick slots (1 on survival days, 3 normally). */
+    pickSlots?: number;
 }
 
-const LightMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
+const LightMorning: React.FC<Props> = ({ onNavigate, startAtPlan, pickSlots = 3 }) => {
     const today = new Date();
     const dateKey = format(today, 'yyyy-MM-dd');
     const todayStr = dateKey;
@@ -313,6 +315,7 @@ const LightMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                     <MorningPickCard
                         dateKey={dateKey}
                         accent="amber"
+                        slots={pickSlots}
                         fullPickerOpen={showFullPicker}
                         onToggleFullPicker={() => setShowFullPicker(prev => !prev)}
                     />

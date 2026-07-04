@@ -79,6 +79,40 @@ function inQuietHours(localMinutes: number, start: string, end: string): boolean
   return localMinutes >= sMin || localMinutes < eMin;
 }
 
+/** Local calendar date (yyyy-MM-dd) in the given IANA timezone. */
+function localDateInTz(timezone: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
+}
+
+/** Whether the user declared today a survival day (daily_plans.capacity). */
+async function isSurvivalDay(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  timezone: string
+): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from('daily_plans')
+      .select('capacity')
+      .eq('user_id', userId)
+      .eq('date', localDateInTz(timezone))
+      .maybeSingle();
+    return data?.capacity === 'survival';
+  } catch (error) {
+    console.error('Failed to check survival day, assuming normal:', error);
+    return false;
+  }
+}
+
 /** Minutes from the given local time until quiet hours end. */
 function minutesUntilQuietEnd(localMinutes: number, end: string): number {
   const [eh, em] = parseHHMM(end, [7, 0]);
@@ -395,6 +429,26 @@ serve(async (req) => {
         }
         deferredCount += userNotifications.length;
         continue;
+      }
+
+      // Survival day: only the anchor rhythm reaches the user — every other
+      // notification is pushed 24h out (tomorrow is a new day, new capacity).
+      if (await isSurvivalDay(supabase, userId, prefs.timezone)) {
+        const tomorrow = new Date(Date.now() + 24 * 60 * 60_000);
+        let deferredForSurvival = 0;
+        for (const notification of userNotifications) {
+          if (notification.notification_type !== 'routine_reminder') {
+            await deferNotification(supabase, notification.id, tomorrow);
+            deferredForSurvival++;
+          }
+        }
+        deferredCount += deferredForSurvival;
+        const remaining = userNotifications.filter(
+          (n) => n.notification_type === 'routine_reminder'
+        );
+        if (remaining.length === 0) continue;
+        userNotifications.length = 0;
+        userNotifications.push(...remaining);
       }
 
       // Get subscriptions for this user (all rows are active; invalid ones get deleted)

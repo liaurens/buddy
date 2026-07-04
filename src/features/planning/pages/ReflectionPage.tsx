@@ -20,6 +20,7 @@ import {
     type ReflectionFocusPick,
 } from '../services/reflectionCapture';
 import { useReflectionHistory } from '../hooks/useReflectionHistory';
+import { getDayCapacity } from '../../day/services/dayCapacity';
 import { useGoals } from '../../../features/core/hooks/useGoals';
 import type { Goal } from '../../../features/core/hooks/useGoals';
 import { useSkills } from '../../growth/hooks/useSkills';
@@ -62,6 +63,7 @@ const ReflectionPage: React.FC = () => {
     const [savedAt, setSavedAt] = useState<string | null>(null);
     const [hasExistingData, setHasExistingData] = useState(false);
     const [captureError, setCaptureError] = useState<string | null>(null);
+    const [survivalDay, setSurvivalDay] = useState(false);
 
     const { data: historyPoints = [] } = useReflectionHistory(14);
     const { goals, todayLogs, logGoalToday } = useGoals('active', selectedDate);
@@ -127,11 +129,15 @@ const ReflectionPage: React.FC = () => {
 
     const loadCapture = useCallback(async () => {
         if (!user?.id) return;
-        const [existing, picks] = await Promise.all([
+        const [existing, picks, capacity] = await Promise.all([
             loadReflectionForDate(user.id, selectedDate),
             loadReflectionFocus(user.id, selectedDate),
+            getDayCapacity(user.id, selectedDate).catch(() => 'normal' as const),
         ]);
-        setMemory(existing.memory || existing.wins[0] || '');
+        const survival = capacity === 'survival';
+        setSurvivalDay(survival);
+        // Survival days pre-fill the win: showing up was the assignment.
+        setMemory(existing.memory || existing.wins[0] || (survival ? 'Showed up on a survival day.' : ''));
         setGratitude(existing.gratitude || existing.wins[1] || '');
         setChallenge(existing.challenge || existing.blocker || '');
         setPriority(existing.priority || '');
@@ -216,6 +222,12 @@ const ReflectionPage: React.FC = () => {
                         </button>
                     </div>
                 </div>
+
+                {survivalDay && (
+                    <div className="rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800">
+                        Survival day — closing it counts double. One line is plenty; everything below is optional.
+                    </div>
+                )}
 
                 {/* Sparkline */}
                 <div className="app-surface p-5">
