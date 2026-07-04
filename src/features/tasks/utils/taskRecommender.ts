@@ -28,9 +28,10 @@ const PRIORITY_WEIGHTS: Record<string, number> = {
 };
 
 /**
- * Score a single task based on due date and priority
+ * Score a single task based on due date and priority.
+ * Exported so other pick policies (e.g. the morning pick) can compose it.
  */
-function scoreTask(task: Task, today: Date): { score: number; reason: string } {
+export function scoreTask(task: Task, today: Date): { score: number; reason: string } {
     let score = 0;
     const reasons: string[] = [];
 

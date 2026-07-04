@@ -20,6 +20,7 @@ import { useRoutineProgress } from '../hooks/useRoutineProgress';
 import TodayTimeline from './TodayTimeline';
 import LogYesterdayStep from './LogYesterdayStep';
 import MorningProtocolsCard from './MorningProtocolsCard';
+import MorningPickCard from './MorningPickCard';
 import CommsSettingsModal from './CommsSettingsModal';
 import SchoolPlanningPicker from './SchoolPlanningPicker';
 import type { Task } from '../../tasks/types';
@@ -226,6 +227,7 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
     const [addTaskError, setAddTaskError] = useState<string | null>(null);
     const [syncing, setSyncing] = useState(false);
     const [planSource, setPlanSource] = useState<'tasks' | 'school'>('tasks');
+    const [showFullPicker, setShowFullPicker] = useState(false);
 
     const pickedIds = useMemo(() => new Set(items.picks.map(p => p.id)), [items.picks]);
 
@@ -584,6 +586,14 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
                         </div>
                     </div>
 
+                    {/* Deterministic morning pick — the default way to fill today */}
+                    <MorningPickCard
+                        dateKey={dateKey}
+                        accent="indigo"
+                        fullPickerOpen={showFullPicker}
+                        onToggleFullPicker={() => setShowFullPicker(prev => !prev)}
+                    />
+
                     {/* One-a-day someday — surface a single no-pressure task */}
                     {somedayPick && backlogChoice === 'pending' && (
                         <div className="bg-white rounded-2xl border border-violet-200 shadow-sm p-5 space-y-3">
@@ -692,6 +702,8 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
                         </div>
                     )}
 
+                    {showFullPicker && (
+                    <>
                     <div className="app-segmented">
                         <button
                             onClick={() => setPlanSource('tasks')}
@@ -779,6 +791,8 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
                         </div>
                     ) : (
                         <SchoolPlanningPicker dateKey={dateKey} accent="indigo" onNavigate={onNavigate} />
+                    )}
+                    </>
                     )}
 
                     {/* Untimed picks reminder */}

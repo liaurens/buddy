@@ -14,6 +14,7 @@ import { useRoutineProgress } from '../hooks/useRoutineProgress';
 import TodayTimeline from './TodayTimeline';
 import LogYesterdayStep from './LogYesterdayStep';
 import MorningProtocolsCard from './MorningProtocolsCard';
+import MorningPickCard from './MorningPickCard';
 import CommsSettingsModal from './CommsSettingsModal';
 import SchoolPlanningPicker from './SchoolPlanningPicker';
 import type { Task } from '../../tasks/types';
@@ -102,6 +103,7 @@ const LightMorning: React.FC<Props> = ({ onNavigate }) => {
     const [addTaskError, setAddTaskError] = useState<string | null>(null);
     const [syncing, setSyncing] = useState(false);
     const [planSource, setPlanSource] = useState<'tasks' | 'school'>('tasks');
+    const [showFullPicker, setShowFullPicker] = useState(false);
 
     const pickedIds = useMemo(() => new Set(items.picks.map(p => p.id)), [items.picks]);
 
@@ -304,6 +306,14 @@ const LightMorning: React.FC<Props> = ({ onNavigate }) => {
                         </div>
                     </div>
 
+                    {/* Deterministic morning pick — the default way to fill today */}
+                    <MorningPickCard
+                        dateKey={dateKey}
+                        accent="amber"
+                        fullPickerOpen={showFullPicker}
+                        onToggleFullPicker={() => setShowFullPicker(prev => !prev)}
+                    />
+
                     {/* Timeline */}
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
                         <div className="flex items-center justify-between">
@@ -334,6 +344,8 @@ const LightMorning: React.FC<Props> = ({ onNavigate }) => {
                         </div>
                     </div>
 
+                    {showFullPicker && (
+                    <>
                     <div className="app-segmented">
                         <button
                             onClick={() => setPlanSource('tasks')}
@@ -421,6 +433,8 @@ const LightMorning: React.FC<Props> = ({ onNavigate }) => {
                         </div>
                     ) : (
                         <SchoolPlanningPicker dateKey={dateKey} accent="amber" onNavigate={onNavigate} />
+                    )}
+                    </>
                     )}
 
                     {/* Set times on untimed picks */}
