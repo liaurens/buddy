@@ -38,6 +38,8 @@ const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, 
 
 interface Props {
     onNavigate?: (tab: AppRoute) => void;
+    /** Deep-link from the morning anchor: land straight on the Plan step. */
+    startAtPlan?: boolean;
 }
 
 const routineMapKey = (dateKey: string) => `full_routine_map_${dateKey}`;
@@ -53,7 +55,7 @@ function writeRoutineMap(dateKey: string, map: Record<string, string>) {
     try { sessionStorage.setItem(routineMapKey(dateKey), JSON.stringify(map)); } catch { /* ignore */ }
 }
 
-const FullMorning: React.FC<Props> = ({ onNavigate }) => {
+const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
     const today = new Date();
     const dateKey = format(today, 'yyyy-MM-dd');
     const todayStr = dateKey;
@@ -65,6 +67,7 @@ const FullMorning: React.FC<Props> = ({ onNavigate }) => {
     const routineProgress = useRoutineProgress(dateKey);
 
     const [step, setStep] = useState<Step>(() => {
+        if (startAtPlan) return 4;
         try {
             const saved = sessionStorage.getItem(`full_morning_step_${dateKey}`);
             return (saved !== null ? (Number(saved) as Step) : 0);

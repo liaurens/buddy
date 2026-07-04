@@ -25,11 +25,21 @@ const TABS: Array<{ key: Mode; label: string; Icon: typeof Sun }> = [
 
 interface DayPageProps {
     onNavigate?: (tab: import('../../../constants/routes').AppRoute) => void;
+    /** Deep-link params (e.g. { step: 'morning' } from an anchor notification). */
+    initialParams?: Record<string, unknown> | null;
 }
 
-const DayPage: React.FC<DayPageProps> = ({ onNavigate }) => {
+function isMode(value: unknown): value is Mode {
+    return value === 'morning' || value === 'midday' || value === 'night';
+}
+
+const DayPage: React.FC<DayPageProps> = ({ onNavigate, initialParams }) => {
     const today = new Date();
-    const [mode, setMode] = useState<Mode>(modeForHour(today.getHours()));
+    const deepLinkStep = isMode(initialParams?.step) ? initialParams.step : null;
+    const [mode, setMode] = useState<Mode>(deepLinkStep ?? modeForHour(today.getHours()));
+    // An anchor deep link means "get me to the pick/close flow" — skip straight
+    // to the plan step inside the morning wizard.
+    const startAtPlan = deepLinkStep === 'morning';
     const [routineMode, setRoutineMode] = useState<RoutineMode>(() => {
         try {
             const saved = localStorage.getItem('routine_mode');
@@ -89,8 +99,8 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate }) => {
             {mode !== 'night' && <TriggeredChecklistsCard />}
 
             {mode === 'morning' && (isLight
-                ? <LightMorning onNavigate={onNavigate} />
-                : <FullMorning onNavigate={onNavigate} />)}
+                ? <LightMorning onNavigate={onNavigate} startAtPlan={startAtPlan} />
+                : <FullMorning onNavigate={onNavigate} startAtPlan={startAtPlan} />)}
             {mode === 'midday' && (isLight
                 ? <LightMidday onGoToMorning={() => setMode('morning')} />
                 : <FullMidday onGoToMorning={() => setMode('morning')} />)}

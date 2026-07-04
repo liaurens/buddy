@@ -51,9 +51,10 @@ export async function reapplyNotificationSchedule(userId: string, settings?: Not
             'routine_morning',
             'routine_reminder',
             s.morningTime,
-            'Morning routine',
+            // Copy is deliberately non-imperative: an invitation to choose, not a demand.
+            'Pick what today gets',
             // Body is replaced with live counts (due/overdue/school) at send time.
-            'Plan today — open to see what\'s due.',
+            'Three small things. Tap to choose.',
             { route: 'today', step: 'morning', daysOfWeek: s.morningDays },
             s.morningDays,
         );
@@ -65,8 +66,8 @@ export async function reapplyNotificationSchedule(userId: string, settings?: Not
             'routine_midday',
             'routine_reminder',
             s.middayTime,
-            'Midday replan',
-            'Check in and adjust your afternoon blocks.',
+            'Check the plan',
+            "Mark done, snooze, or split what's stuck.",
             { route: 'today', step: 'midday', daysOfWeek: s.middayDays },
             s.middayDays,
         );
@@ -78,8 +79,8 @@ export async function reapplyNotificationSchedule(userId: string, settings?: Not
             'routine_night',
             'routine_reminder',
             s.nightTime,
-            'Night reflection',
-            "Close the day — 90 seconds: wins, blocker, tomorrow's one thing.",
+            'Close the day',
+            "90 seconds: what got done, one line for tomorrow.",
             { route: 'reflection', step: 'night', daysOfWeek: s.nightDays },
             s.nightDays,
         );

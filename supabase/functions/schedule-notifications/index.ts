@@ -264,14 +264,14 @@ async function buildAnchorBody(
     const school = assignmentsRes.count ?? 0;
 
     if (due === 0 && overdue === 0 && school === 0) {
-      return 'Plan today — nothing due yet. Capture what matters.';
+      return "Pick today's 3 — nothing due. Choose from your backlog.";
     }
 
     const parts: string[] = [];
     if (due > 0) parts.push(`${due} due today`);
     if (overdue > 0) parts.push(`${overdue} overdue`);
     if (school > 0) parts.push(`${school} school deadline${school === 1 ? '' : 's'} this week`);
-    return `Plan today — ${parts.join(' · ')}.`;
+    return `Pick today's 3 — ${parts.join(' · ')}.`;
   } catch (error) {
     console.error('Failed to build anchor body, using stored body:', error);
     return notification.body;

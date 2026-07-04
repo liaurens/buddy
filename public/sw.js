@@ -87,7 +87,12 @@ self.addEventListener('notificationclick', (event) => {
 
   const data = event.notification.data || {};
   let urlToOpen = '/';
-  if (data.route) urlToOpen = `/?route=${encodeURIComponent(data.route)}`;
+  if (data.route) {
+    urlToOpen = `/?route=${encodeURIComponent(data.route)}`;
+    // Anchor notifications carry a step (morning/midday/night) so the app can
+    // land directly on the right part of the day flow.
+    if (data.step) urlToOpen += `&step=${encodeURIComponent(data.step)}`;
+  }
 
   // For task action buttons, route to the todo page with intent params so the
   // app can complete or snooze the task on focus.

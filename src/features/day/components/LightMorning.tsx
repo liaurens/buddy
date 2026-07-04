@@ -28,9 +28,11 @@ const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, 
 
 interface Props {
     onNavigate?: (tab: AppRoute) => void;
+    /** Deep-link from the morning anchor: land straight on the Plan step. */
+    startAtPlan?: boolean;
 }
 
-const LightMorning: React.FC<Props> = ({ onNavigate }) => {
+const LightMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
     const today = new Date();
     const dateKey = format(today, 'yyyy-MM-dd');
     const todayStr = dateKey;
@@ -42,6 +44,7 @@ const LightMorning: React.FC<Props> = ({ onNavigate }) => {
     const routineProgress = useRoutineProgress(dateKey);
 
     const [step, setStep] = useState<Step>(() => {
+        if (startAtPlan) return 2;
         try {
             const saved = sessionStorage.getItem(`light_morning_step_${dateKey}`);
             return (saved !== null ? (Number(saved) as Step) : 0);

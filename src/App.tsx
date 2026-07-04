@@ -72,8 +72,12 @@ const App: React.FC = () => {
       setActiveTab(route);
       const intent = params.get('intent');
       const taskId = params.get('taskId');
+      const step = params.get('step');
       if (intent && taskId) {
         setNavParams({ intent, taskId });
+      } else if (step) {
+        // Anchor notifications carry the day-flow step (morning/midday/night).
+        setNavParams({ step });
       }
     } else if (sharedText) {
       // Seed the capture input with the shared content; the user confirms before submit.
@@ -180,7 +184,7 @@ const App: React.FC = () => {
       case 'me':
         return <MePage />;
       case 'today':
-        return <DayPage onNavigate={handleNavigate} />;
+        return <DayPage onNavigate={handleNavigate} initialParams={navParams} />;
       case 'goals':
         return <ReflectionPage />;
       case 'notifications':
