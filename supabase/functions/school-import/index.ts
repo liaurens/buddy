@@ -363,6 +363,26 @@ async function handleCommit(
       if (error) throw error
       insertedAssignmentIds.push(inserted.id)
       assignmentsCount += 1
+
+      // Mirror the deadline onto a linked todo (same shape as the client's
+      // buildAssignmentTodo) so imported deadlines land on the task surface.
+      const nowIso = new Date().toISOString()
+      const { error: todoError } = await supabase.from('todos').insert({
+        id: crypto.randomUUID(),
+        user_id: userId,
+        title: assignment.title,
+        completed: false,
+        created_at: nowIso,
+        due_date: deadline.toISOString().slice(0, 10),
+        kind: 'deadline',
+        priority: 'medium',
+        estimated_time: assignment.estimatedMinutes ?? null,
+        assignment_id: inserted.id,
+        triage_destination: 'school',
+        triaged_at: nowIso,
+        recurrence: 'none',
+      })
+      if (todoError) throw todoError
     }
 
     const includedSessions = payload.sessions.filter(s => s.include !== false)
@@ -451,6 +471,12 @@ async function rollbackInsertedRows(
     await supabase.from('class_sessions').delete().eq('user_id', userId).in('id', rows.sessionIds)
   }
   if (rows.assignmentIds.length > 0) {
+    // Linked todos first — they reference the assignments being removed.
+    await supabase
+      .from('todos')
+      .delete()
+      .eq('user_id', userId)
+      .in('assignment_id', rows.assignmentIds)
     await supabase.from('assignments').delete().eq('user_id', userId).in('id', rows.assignmentIds)
   }
 }

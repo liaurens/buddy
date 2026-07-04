@@ -97,11 +97,12 @@ export const useTasks = (): TaskState => {
         queryKey: ['todos', userId],
         queryFn: async () => {
             if (!userId) return [];
+            // Assignment-linked todos are included on purpose: a school deadline
+            // belongs on the one trusted task surface, not hidden in the module.
             const { data, error } = await supabase
                 .from('todos')
                 .select('*')
                 .eq('user_id', userId)
-                .is('assignment_id', null)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -203,6 +204,24 @@ export const useTasks = (): TaskState => {
                 await cancelTaskReminders(userId, id);
             }
             void syncTaskToGoogle({ ...task, completed: nowCompleting });
+
+            // Mirror completion to the linked assignment (done todo = submitted).
+            // Graded assignments stay graded. Non-fatal.
+            if (task.assignmentId) {
+                const { error: assignmentError } = await supabase
+                    .from('assignments')
+                    .update({
+                        status: nowCompleting ? 'submitted' : 'in_progress',
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', task.assignmentId)
+                    .eq('user_id', userId)
+                    .neq('status', 'graded');
+                if (assignmentError) {
+                    console.error('Failed to sync assignment status:', assignmentError);
+                }
+                queryClient.invalidateQueries({ queryKey: ['assignments', userId] });
+            }
 
             // Spawn next occurrence for recurring tasks
             if (nowCompleting && task.recurrence && task.recurrence !== 'none') {
@@ -390,6 +409,23 @@ export const useTasks = (): TaskState => {
             tasks
                 .filter((t) => ids.includes(t.id) && t.googleEventId)
                 .forEach((t) => void removeTaskFromGoogle(t));
+
+            // Mirror completion to linked assignments (graded ones stay graded).
+            const assignmentIds = tasks
+                .filter((t) => ids.includes(t.id) && t.assignmentId)
+                .map((t) => t.assignmentId as string);
+            if (assignmentIds.length > 0) {
+                const { error: assignmentError } = await supabase
+                    .from('assignments')
+                    .update({ status: 'submitted', updated_at: nowIso })
+                    .in('id', assignmentIds)
+                    .eq('user_id', userId)
+                    .neq('status', 'graded');
+                if (assignmentError) {
+                    console.error('Failed to sync assignment statuses:', assignmentError);
+                }
+                queryClient.invalidateQueries({ queryKey: ['assignments', userId] });
+            }
 
             // Spawn next occurrence for any recurring tasks we just completed
             const completed = tasks.filter(

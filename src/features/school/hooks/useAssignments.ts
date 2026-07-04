@@ -1,5 +1,7 @@
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase } from '../../../services/supabase';
 import {
@@ -9,6 +11,8 @@ import {
     type AssignmentStatus,
 } from '../../../services/supabase/converters/school';
 import type { DbAssignment } from '../../../services/supabase/types/school-types';
+import { todoToDb } from '../../../services/supabase/converters/todo';
+import { buildAssignmentTodo } from '../utils/assignmentTodo';
 
 const EMPTY: Assignment[] = [];
 
@@ -69,8 +73,31 @@ export function useAssignments(options: UseAssignmentsOptions = {}) {
                 .select('id')
                 .single();
             if (error) throw error;
+            const assignmentId = (data as { id: string }).id;
+
+            // Mirror the deadline onto a linked todo so it shows on the one
+            // trusted task surface. Non-fatal: the assignment stands either way.
+            try {
+                const todo = buildAssignmentTodo(
+                    {
+                        id: assignmentId,
+                        title: params.title,
+                        deadline: params.deadline,
+                        estimatedMinutes: params.estimatedMinutes ?? null,
+                    },
+                    new Date(),
+                );
+                const { error: todoError } = await supabase
+                    .from('todos')
+                    .insert(todoToDb({ ...todo, id: uuidv4() }, userId));
+                if (todoError) throw todoError;
+            } catch (todoErr) {
+                console.error('Failed to create linked todo for assignment:', todoErr);
+            }
+
             queryClient.invalidateQueries({ queryKey: ['assignments', userId] });
-            return (data as { id: string }).id;
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+            return assignmentId;
         },
         [userId, queryClient],
     );
@@ -96,7 +123,42 @@ export function useAssignments(options: UseAssignmentsOptions = {}) {
                 .eq('id', id)
                 .eq('user_id', userId);
             if (error) throw error;
+
+            // Keep the linked todo in sync (non-fatal — assignment update stands).
+            try {
+                if (patch.deadline !== undefined) {
+                    // Move the todo with the deadline, unless the user already
+                    // pulled it into today (or earlier) on purpose.
+                    const todayIso = format(new Date(), 'yyyy-MM-dd');
+                    const { error: dueError } = await supabase
+                        .from('todos')
+                        .update({ due_date: format(new Date(patch.deadline), 'yyyy-MM-dd') })
+                        .eq('assignment_id', id)
+                        .eq('user_id', userId)
+                        .eq('completed', false)
+                        .gt('due_date', todayIso);
+                    if (dueError) throw dueError;
+                }
+                if (patch.status !== undefined) {
+                    const finished = patch.status === 'submitted' || patch.status === 'graded';
+                    const { error: statusError } = await supabase
+                        .from('todos')
+                        .update(
+                            finished
+                                ? { completed: true, completed_at: new Date().toISOString() }
+                                : { completed: false, completed_at: null },
+                        )
+                        .eq('assignment_id', id)
+                        .eq('user_id', userId)
+                        .eq('completed', !finished);
+                    if (statusError) throw statusError;
+                }
+            } catch (todoErr) {
+                console.error('Failed to sync linked todo for assignment:', todoErr);
+            }
+
             queryClient.invalidateQueries({ queryKey: ['assignments', userId] });
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
         },
         [userId, queryClient],
     );
