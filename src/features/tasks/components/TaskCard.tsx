@@ -9,6 +9,7 @@ import { format, isPast, isToday, isTomorrow, differenceInCalendarDays, addDays 
 import type { Task, Subtask, TaskType, TaskEnergy } from '../types';
 import { calculateNextDueDate } from '../utils/recurrence';
 import { getTypeColors } from '../utils/typeColors';
+import { isStale } from '../utils/staleness';
 import AITaskSplitter from './AITaskSplitter';
 import SnoozeMenu from './SnoozeMenu';
 import PortalMenu from './PortalMenu';
@@ -95,6 +96,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
     const subtaskDone = task.subtasks?.filter(st => st.completed).length ?? 0;
     const hasSubtasks = subtaskCount > 0;
     const progress = hasSubtasks ? Math.round((subtaskDone / subtaskCount) * 100) : 0;
+    // Stuck signal: repeatedly snoozed or due/overdue and untouched — offer a split.
+    const stale = isStale(task, new Date());
 
     const handleSubtaskToggle = (subtaskId: string) => {
         const updatedSubtasks = task.subtasks?.map(st =>
@@ -165,6 +168,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             <p className="font-medium text-slate-800 leading-tight">{task.title}</p>
                             {isTopPick && (
                                 <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">Top pick</span>
+                            )}
+                            {stale && !hasSubtasks && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setSplitting(s => !s); }}
+                                    className="flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 transition-colors hover:bg-amber-100"
+                                    title="This task looks stuck — break it into smaller steps"
+                                >
+                                    <Sparkles size={10} /> Split this?
+                                </button>
                             )}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs">

@@ -45,6 +45,8 @@ export interface DbTodo {
     google_event_id?: string | null;
     google_calendar_id?: string | null;
     google_synced_at?: string | null;
+    snooze_count?: number | null;
+    last_touched_at?: string | null;
 }
 
 export interface DbTaskType {

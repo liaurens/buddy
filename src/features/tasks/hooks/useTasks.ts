@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
+import { format } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import type { Task, TaskState, RecurrencePattern, RecurrenceConfig } from '../types';
 import { calculateNextDueDate } from '../utils/recurrence';
+import { isSnooze } from '../utils/staleness';
 import { supabase, dbToTodo, todoToDb, type DbTodo } from '../../../services/supabase';
 import {
     scheduleTaskReminders,
@@ -193,6 +195,7 @@ export const useTasks = (): TaskState => {
                 .update({
                     completed: nowCompleting,
                     completed_at: nowCompleting ? new Date().toISOString() : null,
+                    last_touched_at: new Date().toISOString(),
                 })
                 .eq('id', id)
                 .eq('user_id', userId);
@@ -281,7 +284,19 @@ export const useTasks = (): TaskState => {
 
             const finalTask = applyKindWriteThrough(updatedTask);
             const { id, ...updates } = finalTask;
+
+            // Stuck signals: every edit is a touch; pushing a due/overdue task
+            // to a later date counts as a snooze.
+            const prev = tasks.find((t) => t.id === id);
+            const todayIso = format(new Date(), 'yyyy-MM-dd');
+            const snoozeCount =
+                prev && isSnooze(prev.dueDate, updates.dueDate, todayIso)
+                    ? (prev.snoozeCount ?? 0) + 1
+                    : (prev?.snoozeCount ?? updates.snoozeCount ?? 0);
+
             const dbUpdates = {
+                snooze_count: snoozeCount,
+                last_touched_at: new Date().toISOString(),
                 title: updates.title,
                 completed: updates.completed,
                 due_date: updates.dueDate || null,
@@ -323,7 +338,7 @@ export const useTasks = (): TaskState => {
             void syncTaskToGoogle(finalTask);
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
         },
-        [userId, queryClient],
+        [userId, tasks, queryClient],
     );
 
     const startTask = useCallback(
@@ -332,7 +347,10 @@ export const useTasks = (): TaskState => {
 
             const { error } = await supabase
                 .from('todos')
-                .update({ started_at: new Date().toISOString() })
+                .update({
+                    started_at: new Date().toISOString(),
+                    last_touched_at: new Date().toISOString(),
+                })
                 .eq('id', id)
                 .eq('user_id', userId);
 
@@ -359,6 +377,7 @@ export const useTasks = (): TaskState => {
                     completed: true,
                     actual_minutes: actualMinutes,
                     completed_at: new Date().toISOString(),
+                    last_touched_at: new Date().toISOString(),
                     historical_minutes: updatedHistory,
                 })
                 .eq('id', id)
@@ -379,12 +398,30 @@ export const useTasks = (): TaskState => {
                 return t ? !isLocked(t) : true;
             });
             if (movable.length === 0) return;
+            const nowIso = new Date().toISOString();
             const { error } = await supabase
                 .from('todos')
-                .update({ due_date: isoDate })
+                .update({ due_date: isoDate, last_touched_at: nowIso })
                 .in('id', movable)
                 .eq('user_id', userId);
             if (error) throw error;
+
+            // Count pushes to a later date as snoozes (stuck signal); pulling a
+            // task into today (the morning pick) is planning, not avoidance.
+            const todayIso = format(new Date(), 'yyyy-MM-dd');
+            const snoozed = movable.filter((id) => {
+                const t = tasks.find((x) => x.id === id);
+                return t && isSnooze(t.dueDate, isoDate, todayIso);
+            });
+            for (const id of snoozed) {
+                const t = tasks.find((x) => x.id === id);
+                const { error: snoozeError } = await supabase
+                    .from('todos')
+                    .update({ snooze_count: (t?.snoozeCount ?? 0) + 1 })
+                    .eq('id', id)
+                    .eq('user_id', userId);
+                if (snoozeError) console.error('Failed to bump snooze count:', snoozeError);
+            }
             // Mirror the new schedule to Google (urgent tasks land on the calendar; already-synced tasks move).
             movable.forEach((id) => {
                 const task = tasks.find((t) => t.id === id);
@@ -401,7 +438,7 @@ export const useTasks = (): TaskState => {
             const nowIso = new Date().toISOString();
             const { error } = await supabase
                 .from('todos')
-                .update({ completed: true, completed_at: nowIso })
+                .update({ completed: true, completed_at: nowIso, last_touched_at: nowIso })
                 .in('id', ids)
                 .eq('user_id', userId);
             if (error) throw error;

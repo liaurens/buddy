@@ -90,6 +90,11 @@ export interface Task {
     googleEventId?: string;
     googleCalendarId?: string;
     googleSyncedAt?: string;
+
+    // Stuck signals — times pushed later while incomplete, and last user
+    // interaction (edit/toggle/start/reschedule). Drive the "split this" chip.
+    snoozeCount?: number;
+    lastTouchedAt?: string;
 }
 
 // Task Types (user-defined categories like Email, Home, Study)

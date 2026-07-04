@@ -45,6 +45,8 @@ export function dbToTodo(db: DbTodo): Task {
         googleEventId: db.google_event_id || undefined,
         googleCalendarId: db.google_calendar_id || undefined,
         googleSyncedAt: db.google_synced_at || undefined,
+        snoozeCount: db.snooze_count ?? 0,
+        lastTouchedAt: db.last_touched_at || undefined,
     };
 }
 
@@ -89,5 +91,7 @@ export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: strin
         google_event_id: todo.googleEventId || null,
         google_calendar_id: todo.googleCalendarId || null,
         google_synced_at: todo.googleSyncedAt || null,
+        snooze_count: todo.snoozeCount ?? 0,
+        last_touched_at: todo.lastTouchedAt || null,
     };
 }

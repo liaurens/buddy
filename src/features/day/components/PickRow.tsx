@@ -8,10 +8,12 @@
  */
 
 import React, { useRef, useState } from 'react';
-import { Check, CalendarClock, ListChecks } from 'lucide-react';
+import { Check, CalendarClock, ListChecks, Sparkles } from 'lucide-react';
 import SnoozeMenu from '../../tasks/components/SnoozeMenu';
+import AITaskSplitter from '../../tasks/components/AITaskSplitter';
 import type { Task, Subtask } from '../../tasks/types';
 import { subtaskProgress, allSubtasksDone } from '../utils/middayReview';
+import { isStale } from '../../tasks/utils/staleness';
 
 export interface PickAccent {
     text: string;
@@ -46,12 +48,15 @@ interface PickRowProps {
 const PickRow: React.FC<PickRowProps> = ({ task, accent, onDone, onReschedule, onUpdate }) => {
     const [expanded, setExpanded] = useState(false);
     const [showSnooze, setShowSnooze] = useState(false);
+    const [splitting, setSplitting] = useState(false);
     const [newSubtask, setNewSubtask] = useState('');
     const [note, setNote] = useState(task.notes ?? '');
     const snoozeBtnRef = useRef<HTMLButtonElement>(null);
 
     const progress = subtaskProgress(task);
     const suggestDone = allSubtasksDone(task);
+    // Stuck signal: repeatedly snoozed or due/overdue and untouched — offer a split.
+    const stale = isStale(task, new Date()) && (task.subtasks ?? []).length === 0;
 
     const addSubtask = () => {
         const title = newSubtask.trim();
@@ -95,6 +100,17 @@ const PickRow: React.FC<PickRowProps> = ({ task, accent, onDone, onReschedule, o
                     )}
                 </div>
 
+                {stale && (
+                    <button
+                        type="button"
+                        onClick={() => setSplitting((v) => !v)}
+                        className="flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                        title="This task looks stuck — break it into smaller steps"
+                    >
+                        <Sparkles size={12} /> Split this?
+                    </button>
+                )}
+
                 {suggestDone && (
                     <button
                         type="button"
@@ -133,6 +149,19 @@ const PickRow: React.FC<PickRowProps> = ({ task, accent, onDone, onReschedule, o
                     }}
                     onClose={() => setShowSnooze(false)}
                 />
+            )}
+
+            {splitting && (
+                <div className="border-t border-slate-100 px-2.5 pb-3 pt-2.5">
+                    <AITaskSplitter
+                        task={task}
+                        onSplit={(subtasks) => {
+                            onUpdate({ ...task, subtasks });
+                            setSplitting(false);
+                        }}
+                        onCancel={() => setSplitting(false)}
+                    />
+                </div>
             )}
 
             {expanded && (
