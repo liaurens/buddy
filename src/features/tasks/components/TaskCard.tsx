@@ -63,6 +63,8 @@ export interface TaskCardProps {
     allTaskTypes?: TaskType[];
     isSelected: boolean;
     isTopPick?: boolean;
+    /** Why the recommender ranked this first (shown as a muted hint on the top pick). */
+    topPickReason?: string;
     onToggleSelect: (id: string) => void;
     onToggleComplete: (id: string) => void;
     onDelete: (id: string) => void;
@@ -76,6 +78,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     allTaskTypes,
     isSelected,
     isTopPick = false,
+    topPickReason,
     onToggleSelect,
     onToggleComplete,
     onDelete,
@@ -179,6 +182,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 </button>
                             )}
                         </div>
+                        {isTopPick && topPickReason && (
+                            <p className="mt-0.5 text-xs text-indigo-400">Why: {topPickReason}</p>
+                        )}
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs">
                             {task.energy && (
                                 <span className="flex items-center gap-1 text-slate-500" title={ENERGY_LABEL[task.energy]}>

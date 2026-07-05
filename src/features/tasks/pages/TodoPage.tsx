@@ -9,6 +9,7 @@ import type { Task, TaskKind } from '../types';
 import { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from '../utils/taskKind';
 import { kindToDestination } from '../utils/triageRouting';
 import { countInbox } from '../utils/inbox';
+import { sortTasksCanonical } from '../utils/taskOrdering';
 import { UpcomingDeadlinesBanner } from '../../school';
 import type { AppRoute } from '../../../constants/routes';
 
@@ -123,8 +124,10 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
     }), [activeTasks, filter]);
     const scoreById = useMemo(() => new Map(ranked.map(r => [r.task.id, r.score])), [ranked]);
     const topPickId = ranked[0]?.task.id;
+    const topPickReason = ranked[0]?.reason;
 
-    // Group by task type for the Type view.
+    // Group by task type for the Type view. Every view sorts canonically so
+    // the same tasks keep the same relative order across tabs.
     const byType = useMemo(() => {
         const groups = new Map<string, Task[]>();
         const untyped: Task[] = [];
@@ -134,15 +137,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
             arr.push(t);
             groups.set(t.taskTypeId, arr);
         }
-        const sortFn = (a: Task, b: Task) => {
-            const aHas = !!a.dueDate, bHas = !!b.dueDate;
-            if (aHas !== bHas) return aHas ? -1 : 1;
-            if (aHas && bHas && a.dueDate !== b.dueDate) return a.dueDate! < b.dueDate! ? -1 : 1;
-            return (scoreById.get(b.id) ?? 0) - (scoreById.get(a.id) ?? 0);
-        };
-        groups.forEach(arr => arr.sort(sortFn));
-        untyped.sort(sortFn);
-        return { groups, untyped };
+        const sorted = new Map<string, Task[]>();
+        groups.forEach((arr, key) => sorted.set(key, sortTasksCanonical(arr, scoreById)));
+        return { groups: sorted, untyped: sortTasksCanonical(untyped, scoreById) };
     }, [filteredActive, scoreById]);
 
     // Bucket by due date for the Schedule view.
@@ -157,8 +154,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
             else if (diff <= 7) buckets.week.push(t);
             else buckets.later.push(t);
         }
-        const byScore = (a: Task, b: Task) => (scoreById.get(b.id) ?? 0) - (scoreById.get(a.id) ?? 0);
-        (Object.keys(buckets) as BucketId[]).forEach(k => buckets[k].sort(byScore));
+        (Object.keys(buckets) as BucketId[]).forEach(k => {
+            buckets[k] = sortTasksCanonical(buckets[k], scoreById);
+        });
         return buckets;
     }, [filteredActive, scoreById]);
 
@@ -171,9 +169,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
             arr.push(t);
             groups.set(k, arr);
         }
-        const byScore = (a: Task, b: Task) => (scoreById.get(b.id) ?? 0) - (scoreById.get(a.id) ?? 0);
-        groups.forEach(arr => arr.sort(byScore));
-        return groups;
+        const sorted = new Map<TaskKind, Task[]>();
+        groups.forEach((arr, key) => sorted.set(key, sortTasksCanonical(arr, scoreById)));
+        return sorted;
     }, [filteredActive, scoreById]);
 
     const toggleSelected = (id: string) => {
@@ -322,6 +320,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             allTaskTypes={taskTypes}
                             selectedIds={selectedIds}
                             topPickId={topPickId}
+                            topPickReason={topPickReason}
                             onToggleSelect={toggleSelected}
                             onToggleComplete={toggleTask}
                             onDelete={deleteTask}
@@ -335,6 +334,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             allTaskTypes={taskTypes}
                             selectedIds={selectedIds}
                             topPickId={topPickId}
+                            topPickReason={topPickReason}
                             onToggleSelect={toggleSelected}
                             onToggleComplete={toggleTask}
                             onDelete={deleteTask}
@@ -365,6 +365,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                                             allTaskTypes={taskTypes}
                                             isSelected={selectedIds.has(t.id)}
                                             isTopPick={t.id === topPickId && selectedIds.size === 0}
+                                            topPickReason={topPickReason}
                                             onToggleSelect={toggleSelected}
                                             onToggleComplete={toggleTask}
                                             onDelete={deleteTask}
@@ -406,6 +407,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                                             allTaskTypes={taskTypes}
                                             isSelected={selectedIds.has(t.id)}
                                             isTopPick={t.id === topPickId && selectedIds.size === 0}
+                                            topPickReason={topPickReason}
                                             onToggleSelect={toggleSelected}
                                             onToggleComplete={toggleTask}
                                             onDelete={deleteTask}

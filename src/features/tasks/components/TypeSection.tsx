@@ -10,6 +10,7 @@ interface TypeSectionProps {
     allTaskTypes?: TaskType[];
     selectedIds: Set<string>;
     topPickId?: string | null;
+    topPickReason?: string;
     onToggleSelect: (id: string) => void;
     onToggleComplete: (id: string) => void;
     onDelete: (id: string) => void;
@@ -23,6 +24,7 @@ const TypeSection: React.FC<TypeSectionProps> = ({
     allTaskTypes,
     selectedIds,
     topPickId,
+    topPickReason,
     onToggleSelect,
     onToggleComplete,
     onDelete,
@@ -58,6 +60,7 @@ const TypeSection: React.FC<TypeSectionProps> = ({
                             allTaskTypes={allTaskTypes}
                             isSelected={selectedIds.has(task.id)}
                             isTopPick={task.id === topPickId && selectedIds.size === 0}
+                            topPickReason={topPickReason}
                             onToggleSelect={onToggleSelect}
                             onToggleComplete={onToggleComplete}
                             onDelete={onDelete}
