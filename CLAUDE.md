@@ -9,7 +9,7 @@ Student Buddy App — a PWA for executive function, self-regulation, and holisti
 ## Commands
 
 - **Dev server**: `npm run dev`
-- **Build**: `npm run build` (runs `tsc -b && vite build`)
+- **Build**: `npm run build` (runs `tsc -b && vite build`). Note: the PWA precache limit is raised to 4 MiB in `vite.config.ts` (`maximumFileSizeToCacheInBytes`) because the vendor/AI-SDK chunk exceeds the 2 MiB Workbox default — don't lower it or the build fails at precache.
 - **Lint**: `npm run lint`
 - **Tests**: `npm test` (watch mode), `npm run test:run` (single run)
 - **Single test**: `npx vitest run src/features/assistant/tests/rule-engine.test.ts`
@@ -91,7 +91,7 @@ All tables live in the `public` schema with RLS enabled. Edge functions use the 
 
 | Table | Feature | Notes |
 | --- | --- | --- |
-| `todos` | Tasks | NOT called `tasks`. Has `recurrence` + `recurrence_config`, per-task reminder columns (`reminder_enabled`, `reminder_offset_minutes`, `reminder_at`, `reminder_cadence`, `last_reminded_at`), and `task_type_id` FK. |
+| `todos` | Tasks | NOT called `tasks`. Has `recurrence` + `recurrence_config`, per-task reminder columns (`reminder_enabled`, `reminder_offset_minutes`, `reminder_at`, `reminder_cadence`, `last_reminded_at`), `task_type_id` FK, triage columns `triaged_at` (NULL = still in the capture inbox), `hardness` (`fixed`/`flexible`/NULL), `auto_triaged` (AI routed without confirmation), `triage_destination` (`urgent`/`today`/`someday`/`school`/`routine`), school linkage `assignment_id` FK (every assignment mirrors onto a todo; completion syncs both ways), and stuck signals `snooze_count` + `last_touched_at`. |
 | `task_types` | User-defined task type taxonomy | Referenced by `todos.task_type_id`. |
 | `task_routines` | Recurring task routine definitions | Owns `task_routine_items`. |
 | `task_routine_items` | Items in a task routine | FK to `task_routines`. |
@@ -111,7 +111,7 @@ All tables live in the `public` schema with RLS enabled. Edge functions use the 
 | `experiment_logs` | Experiment daily journals | — |
 | `checklists` | Reusable routine checklists | — |
 | `strategies` | Personal strategy library | — |
-| `settings` | Per-user key/value store | AI keys (`ai_aiProvider`, `ai_aiApiKey`, `ai_aiModel`), preferences. |
+| `settings` | Per-user key/value store | AI keys (`ai_aiProvider`, `ai_aiApiKey`, `ai_aiModel`), preferences, and `triage_learnings` (single growing text doc, capped ~40 lines, fed back into the triage AI prompt as worked examples). |
 | `assistant_logs` | AI assistant interaction log | Columns: `detection_method` (`rule/ai/command/legacy`), `domain`, `tool_id`, `routing_method`, `ai_calls`, `processing_steps`. |
 | `assistant_learnings` | Assistant learned patterns | Type: `new_rule/correction/behavior/note`. |
 | `assistant_findings` | Assistant anomaly findings | Used by HR agent. |
@@ -136,6 +136,14 @@ All tables live in the `public` schema with RLS enabled. Edge functions use the 
 - Health tracker entries = **`entries`** (never `tracker_entries`)
 - Tasks/todos = **`todos`** (never `tasks`)
 - The edge function `supabase/functions/assistant/tools/tracker.tool.ts` must use `entries`, not `tracker_entries`
+
+### Tasks feature invariants
+
+- **Due-date parsing**: all due-date math goes through `src/features/tasks/utils/dueDates.ts` (`parseDueDate` anchors plain dates at local noon). `new Date('YYYY-MM-DD')` parses as UTC midnight and shifts the calendar day — never use it on a due date.
+- **One write path**: full task updates persist via `persistTaskUpdate` (`src/features/tasks/services/taskWrites.ts`); triage routing (manual, auto-apply, eager) builds the final task via `applyTriagePatch` (`services/applyTriage.ts`). Don't hand-write todo columns.
+- **`school` TaskKind is derived-only** (from `assignment_id` / `triage_destination='school'`): never written to `todos.kind` — the DB CHECK rejects it and `todoToDb` nulls it. Kind pickers use `PICKABLE_TASK_KINDS`.
+- **One canonical order**: every task list sorts with `sortTasksCanonical` (`utils/taskOrdering.ts`) over `getRankedTasks` scores — score desc, dueDate asc (undated last), createdAt, id.
+- Completed tasks older than 30 days are filtered out of the `useTasks` query (rows stay in the DB).
 
 ### Edge function table access
 
