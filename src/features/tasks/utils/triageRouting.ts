@@ -156,3 +156,22 @@ export function isDestinationReady(
 export function isLocked(task: Pick<Task, 'hardness' | 'dueDate'>): boolean {
     return task.hardness === 'fixed' && !!task.dueDate;
 }
+
+/**
+ * The destination an explicit capture kind implies, so kind-stamped captures
+ * carry a truthful `triageDestination` like routed ones do. The dated kinds
+ * (standard/deadline) map to the dated destination.
+ */
+export function kindToDestination(kind: NonNullable<Task['kind']>): TriageDestination {
+    switch (kind) {
+        case 'urgent':
+            return 'urgent';
+        case 'backlog':
+            return 'someday';
+        case 'routine':
+            return 'routine';
+        case 'deadline':
+        case 'standard':
+            return 'today';
+    }
+}

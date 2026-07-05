@@ -7,6 +7,7 @@ import { useTaskTypes } from '../hooks/useTaskTypes';
 import { useTaskRecommendation } from '../hooks/useTaskRecommendation';
 import type { Task, TaskKind } from '../types';
 import { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from '../utils/taskKind';
+import { kindToDestination } from '../utils/triageRouting';
 import { UpcomingDeadlinesBanner } from '../../school';
 import type { AppRoute } from '../../../constants/routes';
 
@@ -242,8 +243,10 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             energy: draft.energy,
                             kind: draft.kind,
                             // An explicit kind means the user already sorted it — skip the
-                            // triage inbox. A bare capture stays untriaged for the morning router.
+                            // triage inbox and record where it went, like routed tasks do.
+                            // A bare capture stays untriaged for the morning router.
                             triagedAt: draft.kind ? new Date().toISOString() : undefined,
+                            triageDestination: draft.kind ? kindToDestination(draft.kind) : undefined,
                         });
                     }}
                 />

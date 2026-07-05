@@ -7,87 +7,16 @@ import type { Task, TaskState, RecurrencePattern, RecurrenceConfig } from '../ty
 import { calculateNextDueDate } from '../utils/recurrence';
 import { isSnooze } from '../utils/staleness';
 import { supabase, dbToTodo, todoToDb, type DbTodo } from '../../../services/supabase';
-import {
-    scheduleTaskReminders,
-    cancelTaskReminders,
-} from '../../../services/notifications/scheduler.service';
-import { getCategorySettings } from '../../../services/settings';
-import { deriveTaskKind, kindSignalPatch } from '../utils/taskKind';
+import { cancelTaskReminders } from '../../../services/notifications/scheduler.service';
 import { isLocked } from '../utils/triageRouting';
 import { eagerTriageTask } from '../services/eagerTriage';
+import { removeTaskFromGoogle } from '../../planning/services/google-calendar.service';
 import {
-    pushTaskToGoogle,
-    updateTaskOnGoogle,
-    removeTaskFromGoogle,
-} from '../../planning/services/google-calendar.service';
-
-/** Build the absolute due moment from dueDate (YYYY-MM-DD) + optional dueTime (HH:MM). */
-function resolveDueAt(dueDate?: string, dueTime?: string): Date | undefined {
-    if (!dueDate) return undefined;
-    const time = dueTime || '09:00';
-    const dt = new Date(`${dueDate}T${time}:00`);
-    return isNaN(dt.getTime()) ? undefined : dt;
-}
-
-/** Push a task's reminder configuration to scheduled_notifications. */
-async function syncTaskReminders(userId: string, task: Task): Promise<void> {
-    try {
-        if (task.completed) {
-            await cancelTaskReminders(userId, task.id);
-            return;
-        }
-        if (!task.reminderEnabled) {
-            await cancelTaskReminders(userId, task.id);
-            return;
-        }
-        const absoluteAt = task.reminderAt ? new Date(task.reminderAt) : undefined;
-        const dueAt = resolveDueAt(task.dueDate, task.dueTime);
-        if (!absoluteAt && !dueAt) {
-            await cancelTaskReminders(userId, task.id);
-            return;
-        }
-        // Per-task cadence wins; otherwise the user's default from
-        // notification settings (cached in memory after the first read).
-        const defaultCadence = task.reminderCadence
-            ? undefined
-            : (await getCategorySettings(userId, 'notifications')).taskReminderCadence;
-        await scheduleTaskReminders({
-            userId,
-            taskId: task.id,
-            taskTitle: task.title,
-            dueAt,
-            absoluteAt,
-            offsetMinutes: task.reminderOffsetMinutes,
-            cadence: task.reminderCadence || defaultCadence || 'smart',
-            priority: task.priority,
-        });
-    } catch (e) {
-        console.error('Failed to sync task reminders:', e);
-    }
-}
-
-/** Hybrid write-through: seed the canonical signal for an explicit kind so the two never drift. */
-function applyKindWriteThrough(task: Task): Task {
-    return task.kind ? { ...task, ...kindSignalPatch(task.kind) } : task;
-}
-
-/**
- * Mirror a task to Google Calendar. Always non-fatal — a missing connection or
- * a Google error must never break the local task save. Network failures are
- * queued by the service itself.
- */
-async function syncTaskToGoogle(task: Task): Promise<void> {
-    try {
-        if (task.googleEventId) {
-            if (task.completed || !task.dueDate) await removeTaskFromGoogle(task);
-            else await updateTaskOnGoogle(task);
-        } else if (!task.completed && task.dueDate && deriveTaskKind(task) === 'urgent') {
-            await pushTaskToGoogle(task);
-        }
-    } catch (e) {
-        console.warn('Google Calendar sync skipped:', e);
-    }
-}
+    applyKindWriteThrough,
+    persistTaskUpdate,
+    syncTaskReminders,
+    syncTaskToGoogle,
+} from '../services/taskWrites';
 
 export const useTasks = (): TaskState => {
     const { user } = useAuth();
@@ -148,9 +77,11 @@ export const useTasks = (): TaskState => {
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
 
             // Eager on-capture sort — non-fatal, skipped offline / when no AI key is set.
-            void eagerTriageTask(userId, newTask, []).then(() =>
-                queryClient.invalidateQueries({ queryKey: ['todos', userId] }),
-            );
+            if (!newTask.triagedAt) {
+                void eagerTriageTask(userId, newTask).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['todos', userId] }),
+                );
+            }
             return newTask.id;
         },
         [userId, queryClient],
@@ -177,6 +108,14 @@ export const useTasks = (): TaskState => {
             await syncTaskReminders(userId, newTask);
             void syncTaskToGoogle(newTask);
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+
+            // Eager on-capture sort for bare captures; an explicit triagedAt
+            // means the user (or caller) already routed it.
+            if (!newTask.triagedAt) {
+                void eagerTriageTask(userId, newTask).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['todos', userId] }),
+                );
+            }
             return newTask.id;
         },
         [userId, queryClient],
@@ -282,60 +221,21 @@ export const useTasks = (): TaskState => {
         async (updatedTask: Task) => {
             if (!userId) throw new Error('Not authenticated');
 
-            const finalTask = applyKindWriteThrough(updatedTask);
-            const { id, ...updates } = finalTask;
-
             // Stuck signals: every edit is a touch; pushing a due/overdue task
-            // to a later date counts as a snooze.
-            const prev = tasks.find((t) => t.id === id);
+            // to a later date counts as a snooze. Column writes, reminder sync,
+            // and the Google mirror all live in persistTaskUpdate (one write path).
+            const prev = tasks.find((t) => t.id === updatedTask.id);
             const todayIso = format(new Date(), 'yyyy-MM-dd');
             const snoozeCount =
-                prev && isSnooze(prev.dueDate, updates.dueDate, todayIso)
+                prev && isSnooze(prev.dueDate, updatedTask.dueDate, todayIso)
                     ? (prev.snoozeCount ?? 0) + 1
-                    : (prev?.snoozeCount ?? updates.snoozeCount ?? 0);
+                    : (prev?.snoozeCount ?? updatedTask.snoozeCount ?? 0);
 
-            const dbUpdates = {
-                snooze_count: snoozeCount,
-                last_touched_at: new Date().toISOString(),
-                title: updates.title,
-                completed: updates.completed,
-                due_date: updates.dueDate || null,
-                due_time: updates.dueTime || null,
-                location: updates.location || null,
-                labels: updates.labels || null,
-                priority: updates.priority || null,
-                estimated_time: updates.estimatedTime || null,
-                subtasks: updates.subtasks || null,
-                recurrence: updates.recurrence || 'none',
-                recurrence_config: updates.recurrenceConfig || null,
-                reminder_enabled: updates.reminderEnabled || false,
-                reminder_offset_minutes: updates.reminderOffsetMinutes ?? null,
-                reminder_at: updates.reminderAt || null,
-                reminder_cadence: updates.reminderCadence || null,
-                task_type_id: updates.taskTypeId || null,
-                energy: updates.energy || null,
-                context: updates.context || null,
-                routine_id: updates.routineId || null,
-                routine_order: updates.routineOrder ?? null,
-                kind: updates.kind || null,
-                parent_todo_id: updates.parentTodoId || null,
-                notes: updates.notes || null,
-                triaged_at: updates.triagedAt || null,
-                assignment_id: updates.assignmentId || null,
-                hardness: updates.hardness || null,
-                auto_triaged: updates.autoTriaged ?? false,
-                triage_destination: updates.triageDestination || null,
-            };
-
-            const { error } = await supabase
-                .from('todos')
-                .update(dbUpdates)
-                .eq('id', id)
-                .eq('user_id', userId);
-
-            if (error) throw error;
-            await syncTaskReminders(userId, finalTask);
-            void syncTaskToGoogle(finalTask);
+            await persistTaskUpdate(userId, {
+                ...updatedTask,
+                snoozeCount,
+                lastTouchedAt: new Date().toISOString(),
+            });
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
         },
         [userId, tasks, queryClient],

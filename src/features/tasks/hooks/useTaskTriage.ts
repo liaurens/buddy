@@ -26,11 +26,11 @@ import {
 import { sanitizeTriageSuggestions } from '../utils/sanitizeTriageSuggestions';
 import { splitByConfidence, suggestionToDetail } from '../utils/triageConfidence';
 import {
-    routeTaskPatch,
     isDestinationReady,
     type TriageDestination,
     type TriageDetail,
 } from '../utils/triageRouting';
+import { applyTriagePatch } from '../services/applyTriage';
 import {
     loadTriageLearnings,
     recordTriageCorrections,
@@ -63,8 +63,6 @@ export interface UseTaskTriageReturn {
     refetch: () => void;
     /** Apply the routes; returns how many tasks were routed. */
     applyRoutes: (decisions: TriageDecision[]) => Promise<number>;
-    /** Eager single-task sort used right after capture. */
-    triageOne: (task: Task) => Promise<void>;
 }
 
 export function useTaskTriage(): UseTaskTriageReturn {
@@ -176,11 +174,13 @@ export function useTaskTriage(): UseTaskTriageReturn {
             for (const s of fresh) {
                 const task = byId.get(s.id);
                 if (!task) continue;
-                const patch = routeTaskPatch(s.destination, suggestionToDetail(s), {
-                    nowIso,
-                    todayIso,
-                });
-                await updateTask({ ...task, ...patch, autoTriaged: true });
+                await updateTask(
+                    applyTriagePatch(task, s.destination, suggestionToDetail(s), {
+                        nowIso,
+                        todayIso,
+                        autoTriaged: true,
+                    }),
+                );
             }
         })();
     }, [suggestions, untriaged, userId, updateTask]);
@@ -206,9 +206,14 @@ export function useTaskTriage(): UseTaskTriageReturn {
             for (const d of decisions) {
                 const task = byId.get(d.taskId);
                 if (!task || !isDestinationReady(d.destination, d.detail)) continue;
-                const patch = routeTaskPatch(d.destination, d.detail, { nowIso, todayIso });
                 // A human confirmed/corrected this — it is no longer an unreviewed auto-apply.
-                await updateTask({ ...task, ...patch, autoTriaged: false });
+                await updateTask(
+                    applyTriagePatch(task, d.destination, d.detail, {
+                        nowIso,
+                        todayIso,
+                        autoTriaged: false,
+                    }),
+                );
                 applied += 1;
                 if (d.destination !== d.aiDestination) {
                     corrections.push({
@@ -225,47 +230,6 @@ export function useTaskTriage(): UseTaskTriageReturn {
         [userId, tasks, updateTask],
     );
 
-    const triageOne = useCallback(
-        async (task: Task): Promise<void> => {
-            if (!userId || !isAIConfigured()) return; // offline / no key → leave for the morning batch
-            try {
-                const ai = getAIService();
-                if (!ai) return;
-                const nowIso = new Date().toISOString();
-                const todayIso = nowIso.slice(0, 10);
-                const learnings = await loadTriageLearnings(userId);
-                const result = await ai.triageTasks(
-                    [
-                        {
-                            id: task.id,
-                            title: task.title,
-                            dueDate: task.dueDate,
-                            priority: task.priority,
-                        },
-                    ],
-                    assignmentOptions,
-                    learnings,
-                    todayIso,
-                );
-                if (!result.success || !result.data) return;
-                const [s] = sanitizeTriageSuggestions(
-                    result.data,
-                    [task.id],
-                    assignmentOptions.map((a) => a.id),
-                );
-                if (!s || s.confidence !== 'high') return; // low confidence → stays in inbox for review
-                const patch = routeTaskPatch(s.destination, suggestionToDetail(s), {
-                    nowIso,
-                    todayIso,
-                });
-                await updateTask({ ...task, ...patch, autoTriaged: true });
-            } catch (e) {
-                console.warn('Eager triage skipped:', e); // fail soft — morning batch will catch it
-            }
-        },
-        [userId, assignmentOptions, updateTask],
-    );
-
     return {
         ready,
         reviewInbox,
@@ -276,6 +240,5 @@ export function useTaskTriage(): UseTaskTriageReturn {
         error,
         refetch,
         applyRoutes,
-        triageOne,
     };
 }

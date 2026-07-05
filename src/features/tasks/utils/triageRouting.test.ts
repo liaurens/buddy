@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { routeTaskPatch, isDestinationReady, isLocked, type TriageDetail } from './triageRouting';
+import { routeTaskPatch, isDestinationReady, isLocked, kindToDestination, type TriageDetail } from './triageRouting';
 
 const opts = { nowIso: '2026-06-21T08:00:00.000Z', todayIso: '2026-06-21' };
 
@@ -100,5 +100,15 @@ describe('isLocked', () => {
     });
     it('is false for a flexible task', () => {
         expect(isLocked({ hardness: 'flexible', dueDate: '2026-06-22' })).toBe(false);
+    });
+});
+
+describe('kindToDestination', () => {
+    it('maps each explicit capture kind to its destination', () => {
+        expect(kindToDestination('urgent')).toBe('urgent');
+        expect(kindToDestination('backlog')).toBe('someday');
+        expect(kindToDestination('routine')).toBe('routine');
+        expect(kindToDestination('deadline')).toBe('today');
+        expect(kindToDestination('standard')).toBe('today');
     });
 });
