@@ -7,8 +7,8 @@
  * everything by hand, while still letting an explicit choice win.
  */
 
-import { differenceInCalendarDays } from 'date-fns';
 import type { Task, TaskKind } from '../types';
+import { daysUntilDue } from './dueDates';
 
 /** A due date this many days out (or more) with a reminder reads as a "deadline" item. */
 export const DEADLINE_HORIZON_DAYS = 3;
@@ -16,17 +16,19 @@ export const DEADLINE_HORIZON_DAYS = 3;
 /**
  * Resolve the effective kind of a task.
  * Precedence: explicit kind → routine → urgent → deadline → backlog → standard.
+ *
+ * @param today Injectable clock for deterministic tests; defaults to now.
  */
 export function deriveTaskKind(task: Pick<Task,
     'kind' | 'recurrence' | 'priority' | 'dueDate' | 'reminderEnabled' | 'reminderAt'
->): TaskKind {
+>, today: Date = new Date()): TaskKind {
     if (task.kind) return task.kind;
 
     if (task.recurrence && task.recurrence !== 'none') return 'routine';
     if (task.priority === 'urgent') return 'urgent';
 
     if (task.dueDate) {
-        const daysOut = differenceInCalendarDays(new Date(task.dueDate), new Date());
+        const daysOut = daysUntilDue(task.dueDate, today);
         const hasReminder = !!task.reminderEnabled || !!task.reminderAt;
         if (daysOut >= DEADLINE_HORIZON_DAYS && hasReminder) return 'deadline';
         return 'standard';

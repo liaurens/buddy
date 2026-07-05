@@ -5,6 +5,7 @@ import { useNextUp } from '../hooks/useNextUp';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import type { AppRoute } from '../../../constants/routes';
 import type { Task } from '../../tasks/types';
+import { parseDueDate } from '../../tasks/utils/dueDates';
 
 interface Props {
     onNavigate: (tab: AppRoute, params?: Record<string, unknown>) => void;
@@ -192,7 +193,7 @@ function taskMetaLabel(task: Task, reason: string): string {
     const parts: string[] = [];
 
     if (task.dueDate) {
-        const due = new Date(task.dueDate);
+        const due = parseDueDate(task.dueDate);
         if (!Number.isNaN(due.getTime())) {
             const day = isToday(due) ? 'Today' : isTomorrow(due) ? 'Tomorrow' : format(due, 'MMM d');
             parts.push(task.dueTime ? `${day}, ${task.dueTime}` : day);

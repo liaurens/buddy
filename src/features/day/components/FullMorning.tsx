@@ -24,6 +24,7 @@ import MorningPickCard from './MorningPickCard';
 import CommsSettingsModal from './CommsSettingsModal';
 import SchoolPlanningPicker from './SchoolPlanningPicker';
 import type { Task } from '../../tasks/types';
+import { parseDueDate } from '../../tasks/utils/dueDates';
 import { deriveTaskKind } from '../../tasks/utils/taskKind';
 import { pickSomeday } from '../../tasks/utils/somedayPick';
 import { TriageInbox } from '../../tasks';
@@ -743,7 +744,7 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                                                     </span>
                                                     {task.dueDate && (
                                                         <span className={`text-xs flex-shrink-0 ${isOverdue ? 'text-red-600 font-medium' : 'text-slate-400'}`}>
-                                                            {isOverdue ? 'overdue' : format(new Date(task.dueDate), 'MMM d')}
+                                                            {isOverdue ? 'overdue' : format(parseDueDate(task.dueDate), 'MMM d')}
                                                         </span>
                                                     )}
                                                     {task.estimatedTime && (

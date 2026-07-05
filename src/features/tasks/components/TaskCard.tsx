@@ -5,11 +5,12 @@ import {
     ChevronDown, ChevronRight, Repeat, Bell, Trash2, Plus, MoreHorizontal,
     Clock, Layers,
 } from 'lucide-react';
-import { format, isPast, isToday, isTomorrow, differenceInCalendarDays, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import type { Task, Subtask, TaskType, TaskEnergy } from '../types';
 import { calculateNextDueDate } from '../utils/recurrence';
 import { getTypeColors } from '../utils/typeColors';
 import { isStale } from '../utils/staleness';
+import { parseDueDate, daysUntilDue } from '../utils/dueDates';
 import AITaskSplitter from './AITaskSplitter';
 import SnoozeMenu from './SnoozeMenu';
 import PortalMenu from './PortalMenu';
@@ -36,23 +37,22 @@ function recurrenceLabel(task: Task): string | null {
     if (!task.recurrence || task.recurrence === 'none') return null;
     const next = calculateNextDueDate(task.dueDate, task.recurrence, task.recurrenceConfig);
     if (!next) return null;
-    const d = new Date(next);
-    if (isToday(d)) return 'Next: today';
-    if (isToday(addDays(d, -1))) return 'Next: tomorrow';
-    const diff = differenceInCalendarDays(d, new Date());
+    const d = parseDueDate(next);
+    const diff = daysUntilDue(next, new Date());
+    if (diff === 0) return 'Next: today';
+    if (diff === 1) return 'Next: tomorrow';
     if (diff >= 0 && diff < 7) return `Next: ${format(d, 'EEE')}`;
     return `Next: ${format(d, 'MMM d')}`;
 }
 
 function deadlineInfo(dueDate: string): { label: string; className: string } {
-    const d = new Date(dueDate);
-    if (isPast(d) && !isToday(d)) {
-        const days = differenceInCalendarDays(new Date(), d);
-        return { label: `${days}d overdue`, className: 'text-rose-600 bg-rose-50 font-bold' };
+    const d = parseDueDate(dueDate);
+    const diff = daysUntilDue(dueDate, new Date());
+    if (diff < 0) {
+        return { label: `${-diff}d overdue`, className: 'text-rose-600 bg-rose-50 font-bold' };
     }
-    if (isToday(d)) return { label: 'Due today', className: 'text-amber-700 bg-amber-50 font-bold' };
-    if (isTomorrow(d)) return { label: 'Tomorrow', className: 'text-amber-600 bg-amber-50 font-semibold' };
-    const diff = differenceInCalendarDays(d, new Date());
+    if (diff === 0) return { label: 'Due today', className: 'text-amber-700 bg-amber-50 font-bold' };
+    if (diff === 1) return { label: 'Tomorrow', className: 'text-amber-600 bg-amber-50 font-semibold' };
     if (diff <= 7) return { label: `${format(d, 'EEE')} (${diff}d)`, className: 'text-slate-500 bg-slate-50' };
     return { label: format(d, 'MMM d'), className: 'text-slate-400' };
 }

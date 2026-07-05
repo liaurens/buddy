@@ -7,6 +7,7 @@
  */
 
 import { isSameDay, startOfDay, endOfDay, addDays } from 'date-fns';
+import { parseDueDate } from '../../tasks/utils/dueDates';
 
 /** Assignments with a deadline within this many days count as "due soon". */
 export const ASSIGNMENT_HORIZON_DAYS = 7;
@@ -44,7 +45,7 @@ export function summarizeToday(
     let dueToday = 0;
     for (const task of tasks) {
         if (task.completed || !task.dueDate) continue;
-        const due = new Date(task.dueDate);
+        const due = parseDueDate(task.dueDate);
         if (Number.isNaN(due.getTime())) continue;
         if (isSameDay(due, now)) {
             dueToday += 1;

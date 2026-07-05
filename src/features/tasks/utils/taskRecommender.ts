@@ -6,8 +6,8 @@
  * If a task has subtasks, surfaces the first incomplete subtask.
  */
 
-import { differenceInCalendarDays, startOfDay } from 'date-fns';
 import type { Task, Subtask } from '../types';
+import { daysUntilDue as daysUntilDueHelper } from './dueDates';
 
 export interface TaskRecommendation {
     /** The recommended task */
@@ -45,9 +45,7 @@ export function scoreTask(task: Task, today: Date): { score: number; reason: str
         return { score, reason: reasons.join(', ') };
     }
 
-    const dueDate = startOfDay(new Date(task.dueDate));
-    const todayStart = startOfDay(today);
-    const daysUntilDue = differenceInCalendarDays(dueDate, todayStart);
+    const daysUntilDue = daysUntilDueHelper(task.dueDate, today);
 
     if (daysUntilDue < 0) {
         // Overdue

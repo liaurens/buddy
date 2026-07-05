@@ -44,6 +44,16 @@ describe('deriveTaskKind', () => {
     it('classifies a task with no due date as backlog', () => {
         expect(deriveTaskKind({ ...base })).toBe('backlog');
     });
+
+    it('is timezone-safe: horizon boundary holds with an injected late-night clock', () => {
+        // Late-night "today": a UTC-midnight parse would push the due date a day
+        // off and flip deadline/standard at the horizon boundary.
+        const today = new Date(2026, 6, 4, 23, 30);
+        const dueDate = format(addDays(today, DEADLINE_HORIZON_DAYS), 'yyyy-MM-dd');
+        expect(deriveTaskKind({ ...base, dueDate, reminderEnabled: true }, today)).toBe('deadline');
+        const nearDate = format(addDays(today, DEADLINE_HORIZON_DAYS - 1), 'yyyy-MM-dd');
+        expect(deriveTaskKind({ ...base, dueDate: nearDate, reminderEnabled: true }, today)).toBe('standard');
+    });
 });
 
 describe('kindSignalPatch', () => {

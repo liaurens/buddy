@@ -15,6 +15,7 @@
 import type { Task } from '../../tasks/types';
 import { scoreTask } from '../../tasks/utils/taskRecommender';
 import { isLocked } from '../../tasks/utils/triageRouting';
+import { parseDueDate } from '../../tasks/utils/dueDates';
 
 export interface MorningPickOptions {
     /** Today's date, yyyy-MM-dd (injected — no internal clock). */
@@ -55,8 +56,7 @@ function isSchool(task: Task): boolean {
  */
 export function rankMorningCandidates(tasks: Task[], opts: MorningPickOptions): MorningCandidate[] {
     const smallCutoff = opts.smallTaskMinutes ?? SMALL_TASK_MINUTES;
-    // Noon avoids day-boundary drift when the date string is parsed as local time.
-    const now = new Date(`${opts.today}T12:00:00`);
+    const now = parseDueDate(opts.today);
 
     return tasks
         .filter(

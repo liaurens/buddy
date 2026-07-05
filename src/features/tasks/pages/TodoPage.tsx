@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Settings, Repeat, LayoutGrid, CalendarDays, BookOpen, Flame, Sparkles, X } from 'lucide-react';
-import { isToday, isPast, differenceInCalendarDays } from 'date-fns';
+import { daysUntilDue } from '../utils/dueDates';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTasks } from '../hooks/useTasks';
 import { useTaskTypes } from '../hooks/useTaskTypes';
@@ -137,14 +137,11 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
         const buckets: Record<BucketId, Task[]> = { overdue: [], today: [], week: [], later: [] };
         for (const t of filteredActive) {
             if (!t.dueDate) { buckets.later.push(t); continue; }
-            const due = new Date(t.dueDate);
-            if (isToday(due)) buckets.today.push(t);
-            else if (isPast(due)) buckets.overdue.push(t);
-            else {
-                const diff = differenceInCalendarDays(due, today);
-                if (diff <= 7) buckets.week.push(t);
-                else buckets.later.push(t);
-            }
+            const diff = daysUntilDue(t.dueDate, today);
+            if (diff === 0) buckets.today.push(t);
+            else if (diff < 0) buckets.overdue.push(t);
+            else if (diff <= 7) buckets.week.push(t);
+            else buckets.later.push(t);
         }
         const byScore = (a: Task, b: Task) => (scoreById.get(b.id) ?? 0) - (scoreById.get(a.id) ?? 0);
         (Object.keys(buckets) as BucketId[]).forEach(k => buckets[k].sort(byScore));

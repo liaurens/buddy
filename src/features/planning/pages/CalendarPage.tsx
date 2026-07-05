@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTasks } from '../../tasks/hooks/useTasks';
+import { parseDueDate } from '../../tasks/utils/dueDates';
 import { useClasses } from '../../school/hooks/useClasses';
 import { useClassSessions } from '../../school/hooks/useClassSessions';
 import { useAssignments } from '../../school/hooks/useAssignments';
@@ -59,7 +60,7 @@ const CalendarPage: React.FC = () => {
     }, [user?.id, currentDate]);
 
     const getTodosForDay = (date: Date) => {
-        return allTodos.filter(t => t.dueDate && isSameDay(new Date(t.dueDate), date));
+        return allTodos.filter(t => t.dueDate && isSameDay(parseDueDate(t.dueDate), date));
     };
 
     const getCalendarEventsForDay = (date: Date) => {

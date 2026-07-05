@@ -18,6 +18,7 @@ import MorningPickCard from './MorningPickCard';
 import CommsSettingsModal from './CommsSettingsModal';
 import SchoolPlanningPicker from './SchoolPlanningPicker';
 import type { Task } from '../../tasks/types';
+import { parseDueDate } from '../../tasks/utils/dueDates';
 
 type Step = 0 | 1 | 2;
 
@@ -388,7 +389,7 @@ const LightMorning: React.FC<Props> = ({ onNavigate, startAtPlan, pickSlots = 3 
                                                     </span>
                                                     {task.dueDate && (
                                                         <span className={`text-xs flex-shrink-0 ${isOverdue ? 'text-red-600 font-medium' : 'text-slate-400'}`}>
-                                                            {isOverdue ? 'overdue' : format(new Date(task.dueDate), 'MMM d')}
+                                                            {isOverdue ? 'overdue' : format(parseDueDate(task.dueDate), 'MMM d')}
                                                         </span>
                                                     )}
                                                     {task.estimatedTime && (
