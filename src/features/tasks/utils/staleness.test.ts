@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isSnooze, isStale, STALE_SNOOZE_COUNT } from './staleness';
+import { isSnooze, isStale, nextSnoozeCount, STALE_SNOOZE_COUNT } from './staleness';
 import type { Task } from '../types';
 
 const NOW = new Date(2026, 6, 4, 12, 0); // 2026-07-04 local
@@ -27,6 +27,21 @@ describe('isSnooze', () => {
         expect(isSnooze('2026-07-10', '2026-07-05', TODAY)).toBe(false); // pulling closer
         expect(isSnooze('2026-07-10', '2026-07-12', TODAY)).toBe(false); // both in future
         expect(isSnooze(TODAY, undefined, TODAY)).toBe(false); // clearing the date
+    });
+});
+
+describe('nextSnoozeCount', () => {
+    it('increments when the move is a snooze', () => {
+        expect(nextSnoozeCount({ dueDate: TODAY, snoozeCount: 1 }, '2026-07-06', TODAY)).toBe(2);
+    });
+
+    it('keeps the count for planning moves', () => {
+        expect(nextSnoozeCount({ dueDate: '2026-07-10', snoozeCount: 1 }, TODAY, TODAY)).toBe(1);
+        expect(nextSnoozeCount({ dueDate: undefined, snoozeCount: 1 }, TODAY, TODAY)).toBe(1);
+    });
+
+    it('treats a missing previous task as zero', () => {
+        expect(nextSnoozeCount(undefined, '2026-07-06', TODAY)).toBe(0);
     });
 });
 

@@ -138,10 +138,17 @@ export class AIService {
         taskTitle: string,
         taskDescription: string,
         estimatedMinutes: number,
+        promptOverride?: { system: string; user: string },
     ): Promise<AIResponse<{ subtasks: Array<{ title: string; estimatedMinutes: number }> }>> {
-        const systemPrompt = `You are a task breakdown expert. Break down tasks into actionable subtasks.`;
+        // Callers may supply a richer prompt (e.g. the task splitter's
+        // learning-aware one); it must request the same JSON shape.
+        const systemPrompt =
+            promptOverride?.system ??
+            `You are a task breakdown expert. Break down tasks into actionable subtasks.`;
 
-        const userPrompt = `Break down this task into 3-5 concrete subtasks:
+        const userPrompt =
+            promptOverride?.user ??
+            `Break down this task into 3-5 concrete subtasks:
 
 Task: ${taskTitle}
 ${taskDescription ? `Description: ${taskDescription}` : ''}

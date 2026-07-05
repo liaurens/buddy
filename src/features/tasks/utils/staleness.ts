@@ -29,6 +29,20 @@ export function isSnooze(
     return prevDueDate <= today && nextDueDate > prevDueDate;
 }
 
+/**
+ * The snooze count a task should carry after a due-date change. Single source
+ * for every writer (updateTask, rescheduleMany) so counting can't diverge.
+ */
+export function nextSnoozeCount(
+    prev: Pick<Task, 'dueDate' | 'snoozeCount'> | undefined,
+    nextDueDate: string | undefined,
+    todayIso: string,
+): number {
+    const current = prev?.snoozeCount ?? 0;
+    if (!prev) return current;
+    return isSnooze(prev.dueDate, nextDueDate, todayIso) ? current + 1 : current;
+}
+
 /** Whether any subtask progress was made (some but not all complete). */
 function hasSubtaskProgress(task: Task): boolean {
     const subs = task.subtasks ?? [];

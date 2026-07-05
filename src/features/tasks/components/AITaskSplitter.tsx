@@ -146,9 +146,14 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
 
         try {
             const learning = getLearningData();
-            buildSplitPrompt(task, learning);
+            const prompt = buildSplitPrompt(task, learning);
 
-            const result = await aiService.breakdownTask(task.title, '', task.estimatedTime || 60);
+            const result = await aiService.breakdownTask(
+                task.title,
+                '',
+                task.estimatedTime || 60,
+                prompt,
+            );
 
             if (result.success && result.data?.subtasks) {
                 setSuggestions(result.data.subtasks);

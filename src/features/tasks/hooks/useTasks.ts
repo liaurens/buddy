@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import type { Task, TaskState, RecurrencePattern, RecurrenceConfig } from '../types';
 import { calculateNextDueDate } from '../utils/recurrence';
-import { isSnooze } from '../utils/staleness';
+import { nextSnoozeCount } from '../utils/staleness';
 import { supabase, dbToTodo, todoToDb, type DbTodo } from '../../../services/supabase';
 import { cancelTaskReminders } from '../../../services/notifications/scheduler.service';
 import { isLocked } from '../utils/triageRouting';
@@ -226,14 +226,12 @@ export const useTasks = (): TaskState => {
             // and the Google mirror all live in persistTaskUpdate (one write path).
             const prev = tasks.find((t) => t.id === updatedTask.id);
             const todayIso = format(new Date(), 'yyyy-MM-dd');
-            const snoozeCount =
-                prev && isSnooze(prev.dueDate, updatedTask.dueDate, todayIso)
-                    ? (prev.snoozeCount ?? 0) + 1
-                    : (prev?.snoozeCount ?? updatedTask.snoozeCount ?? 0);
 
             await persistTaskUpdate(userId, {
                 ...updatedTask,
-                snoozeCount,
+                snoozeCount: prev
+                    ? nextSnoozeCount(prev, updatedTask.dueDate, todayIso)
+                    : (updatedTask.snoozeCount ?? 0),
                 lastTouchedAt: new Date().toISOString(),
             });
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
@@ -299,28 +297,42 @@ export const useTasks = (): TaskState => {
             });
             if (movable.length === 0) return;
             const nowIso = new Date().toISOString();
-            const { error } = await supabase
-                .from('todos')
-                .update({ due_date: isoDate, last_touched_at: nowIso })
-                .in('id', movable)
-                .eq('user_id', userId);
-            if (error) throw error;
-
-            // Count pushes to a later date as snoozes (stuck signal); pulling a
-            // task into today (the morning pick) is planning, not avoidance.
             const todayIso = format(new Date(), 'yyyy-MM-dd');
-            const snoozed = movable.filter((id) => {
+
+            // Pushes to a later date count as snoozes (stuck signal); pulling a
+            // task into today (the morning pick) is planning, not avoidance.
+            // Snoozed tasks get one combined write each (count differs per task);
+            // the rest move in a single bulk update.
+            const snoozed: Task[] = [];
+            const plainIds: string[] = [];
+            for (const id of movable) {
                 const t = tasks.find((x) => x.id === id);
-                return t && isSnooze(t.dueDate, isoDate, todayIso);
-            });
-            for (const id of snoozed) {
-                const t = tasks.find((x) => x.id === id);
-                const { error: snoozeError } = await supabase
+                if (t && nextSnoozeCount(t, isoDate, todayIso) !== (t.snoozeCount ?? 0)) {
+                    snoozed.push(t);
+                } else {
+                    plainIds.push(id);
+                }
+            }
+
+            if (plainIds.length > 0) {
+                const { error } = await supabase
                     .from('todos')
-                    .update({ snooze_count: (t?.snoozeCount ?? 0) + 1 })
-                    .eq('id', id)
+                    .update({ due_date: isoDate, last_touched_at: nowIso })
+                    .in('id', plainIds)
                     .eq('user_id', userId);
-                if (snoozeError) console.error('Failed to bump snooze count:', snoozeError);
+                if (error) throw error;
+            }
+            for (const t of snoozed) {
+                const { error } = await supabase
+                    .from('todos')
+                    .update({
+                        due_date: isoDate,
+                        last_touched_at: nowIso,
+                        snooze_count: nextSnoozeCount(t, isoDate, todayIso),
+                    })
+                    .eq('id', t.id)
+                    .eq('user_id', userId);
+                if (error) throw error;
             }
             // Mirror the new schedule to Google (urgent tasks land on the calendar; already-synced tasks move).
             movable.forEach((id) => {
