@@ -9,7 +9,7 @@ import type { Task, TaskKind } from '../types';
 import { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from '../utils/taskKind';
 import { kindToDestination } from '../utils/triageRouting';
 import { countInbox } from '../utils/inbox';
-import { sortTasksCanonical } from '../utils/taskOrdering';
+import { sortTasksCanonical, isQuickWin } from '../utils/taskOrdering';
 import { UpcomingDeadlinesBanner } from '../../school';
 import type { AppRoute } from '../../../constants/routes';
 
@@ -56,6 +56,8 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
     const [onlyKind, setOnlyKind] = useState<TaskKind | null>(deepLinkUrgent ? 'urgent' : null);
     // Mobile "Done" chip: force the completed footer open.
     const [showDone, setShowDone] = useState(false);
+    // Mobile "Quick wins" chip: only tasks doable in a spare quarter hour.
+    const [quickWinsOnly, setQuickWinsOnly] = useState(false);
     const [filter, setFilter] = useState<FilterState>({ typeId: 'all', energy: 'all' });
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showSettings, setShowSettings] = useState(false);
@@ -116,12 +118,13 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
     const organizeCandidates = useMemo(() => activeTasks.filter(t => !t.taskTypeId), [activeTasks]);
 
     const filteredActive = useMemo(() => activeTasks.filter(t => {
+        if (quickWinsOnly && !isQuickWin(t)) return false;
         if (filter.typeId === 'all') { /* allow all */ }
         else if (filter.typeId === '') { if (t.taskTypeId) return false; }
         else if (t.taskTypeId !== filter.typeId) return false;
         if (filter.energy !== 'all' && t.energy !== filter.energy) return false;
         return true;
-    }), [activeTasks, filter]);
+    }), [activeTasks, filter, quickWinsOnly]);
     const scoreById = useMemo(() => new Map(ranked.map(r => [r.task.id, r.score])), [ranked]);
     const topPickId = ranked[0]?.task.id;
     const topPickReason = ranked[0]?.reason;
@@ -268,10 +271,11 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                 <>
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-4 lg:hidden">
                     {[
-                        { label: 'All', active: view === 'type' && filter.typeId === 'all' && filter.energy === 'all' && !showDone, onClick: () => { setFilter({ typeId: 'all', energy: 'all' }); setOnlyKind(null); setShowDone(false); setView('type'); } },
+                        { label: 'All', active: view === 'type' && filter.typeId === 'all' && filter.energy === 'all' && !showDone && !quickWinsOnly, onClick: () => { setFilter({ typeId: 'all', energy: 'all' }); setOnlyKind(null); setShowDone(false); setQuickWinsOnly(false); setView('type'); } },
                         { label: 'Urgent', active: view === 'kind' && onlyKind === 'urgent', onClick: () => { setOnlyKind('urgent'); setShowDone(false); setView('kind'); } },
                         { label: 'Today', active: view === 'schedule', onClick: () => { setOnlyKind(null); setShowDone(false); setView('schedule'); } },
                         { label: 'Someday', active: view === 'kind' && onlyKind === 'backlog', onClick: () => { setOnlyKind('backlog'); setShowDone(false); setView('kind'); } },
+                        { label: '⚡ Quick wins', active: quickWinsOnly, onClick: () => { setQuickWinsOnly(v => !v); setShowDone(false); } },
                         { label: 'Done', active: showDone, onClick: () => { setOnlyKind(null); setView('type'); setShowDone(true); } },
                     ].map(chip => (
                         <button

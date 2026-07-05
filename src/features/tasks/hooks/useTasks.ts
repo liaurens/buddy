@@ -30,10 +30,14 @@ export const useTasks = (): TaskState => {
             if (!userId) return [];
             // Assignment-linked todos are included on purpose: a school deadline
             // belongs on the one trusted task surface, not hidden in the module.
+            // Completed tasks fade from the app after 30 days (rows stay in the
+            // DB — nothing is deleted, so this is reversible).
+            const fadeCutoff = new Date(Date.now() - 30 * 86_400_000).toISOString();
             const { data, error } = await supabase
                 .from('todos')
                 .select('*')
                 .eq('user_id', userId)
+                .or(`completed.eq.false,completed_at.gt.${fadeCutoff}`)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
