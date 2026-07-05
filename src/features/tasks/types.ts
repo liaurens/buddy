@@ -7,7 +7,9 @@ export type TaskContext = 'computer' | 'phone' | 'home' | 'out' | 'anywhere';
 // Task Kind — behavioral classification that drives capture, scheduling, and surfacing.
 // Hybrid model: when `kind` is unset it is derived from existing signals
 // (priority/recurrence/dueDate/reminder) via deriveTaskKind(); an explicit value overrides.
-export type TaskKind = 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard';
+// 'school' is DERIVED-ONLY (assignmentId / triage destination) — it is never
+// written to the todos.kind column and kind pickers must not offer it.
+export type TaskKind = 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard' | 'school';
 
 // Hardness — can the planner move this task?
 //   fixed    = tied to a real-world moment (appointment, exam, hard deadline); planner locks it.

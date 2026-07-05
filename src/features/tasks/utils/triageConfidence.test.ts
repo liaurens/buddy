@@ -16,6 +16,7 @@ function sug(p: Partial<TaskTriageSuggestion>): TaskTriageSuggestion {
         context: null,
         energy: null,
         estimatedMinutes: null,
+        taskTypeId: null,
         reason: '',
         ...p,
     };
@@ -54,6 +55,11 @@ describe('suggestionToDetail', () => {
             estimatedMinutes: 30,
         });
     });
+    it('carries a resolved taskTypeId', () => {
+        expect(suggestionToDetail(sug({ taskTypeId: 'type-1' })).taskTypeId).toBe('type-1');
+        expect(suggestionToDetail(sug({})).taskTypeId).toBeUndefined();
+    });
+
     it('carries assignmentId for school and recurrence for routine', () => {
         expect(
             suggestionToDetail(sug({ destination: 'school', assignmentId: 'a1' })).assignmentId,

@@ -56,6 +56,32 @@ describe('applyTriagePatch', () => {
         );
     });
 
+    it('fills profile gaps but never overwrites what the task already has', () => {
+        const existing = task({ energy: 'high', estimatedTime: 45, taskTypeId: 'type-1' });
+        const out = applyTriagePatch(
+            existing,
+            'today',
+            { energy: 'low', estimatedMinutes: 10, taskTypeId: 'type-2', context: 'home' },
+            OPTS,
+        );
+        expect(out.energy).toBe('high'); // kept
+        expect(out.estimatedTime).toBe(45); // kept
+        expect(out.taskTypeId).toBe('type-1'); // kept
+        expect(out.context).toBe('home'); // gap filled
+    });
+
+    it('does not clobber existing profile values with undefined', () => {
+        const existing = task({ energy: 'high', location: 'Library' });
+        const out = applyTriagePatch(existing, 'someday', {}, OPTS);
+        expect(out.energy).toBe('high');
+        expect(out.location).toBe('Library');
+    });
+
+    it('urgent still clears the due date on purpose', () => {
+        const out = applyTriagePatch(task({ dueDate: '2026-07-10' }), 'urgent', {}, OPTS);
+        expect(out.dueDate).toBeUndefined();
+    });
+
     it('records autoTriaged as given (default false)', () => {
         expect(applyTriagePatch(task(), 'someday', {}, OPTS).autoTriaged).toBe(false);
         expect(

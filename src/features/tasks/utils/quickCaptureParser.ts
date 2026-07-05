@@ -21,13 +21,13 @@ export interface ParsedDraft {
 // Keyword → preset task type NAME. Hits matched against the name on the user's
 // task_types row, so renaming the preset still works as long as the name stays.
 const TYPE_KEYWORDS: Record<string, string[]> = {
-    Email:   ['email', 'reply', 'inbox', 'mail', 'send', 'forward'],
-    Home:    ['clean', 'laundry', 'dishes', 'room', 'vacuum', 'tidy', 'wash', 'kitchen', 'bathroom', 'trash', 'fold'],
-    Study:   ['read', 'study', 'chapter', 'homework', 'assignment', 'essay', 'paper', 'review', 'flashcard', 'notes'],
-    Errands: ['buy', 'pickup', 'pick up', 'shop', 'pharmacy', 'groceries', 'grocery', 'store', 'return'],
-    Admin:   ['call', 'appt', 'appointment', 'form', 'pay', 'bill', 'schedule', 'book', 'submit', 'sign'],
-    Health:  ['gym', 'workout', 'walk', 'run', 'stretch', 'meditate', 'yoga', 'sleep', 'water'],
-    Work:    ['meeting', 'deck', 'report', 'presentation', 'standup', 'sync', 'review pr', 'deploy'],
+    Email:   ['email', 'reply', 'inbox', 'mail', 'send', 'forward', 'respond', 'mailen'],
+    Home:    ['clean', 'laundry', 'dishes', 'room', 'vacuum', 'tidy', 'wash', 'kitchen', 'bathroom', 'trash', 'fold', 'repair', 'opruimen', 'stofzuigen', 'afwas'],
+    Study:   ['read', 'study', 'chapter', 'homework', 'assignment', 'essay', 'paper', 'review', 'flashcard', 'notes', 'exam', 'lecture', 'tentamen', 'toets', 'huiswerk', 'leren', 'samenvatting', 'college'],
+    Errands: ['buy', 'pickup', 'pick up', 'shop', 'pharmacy', 'groceries', 'grocery', 'store', 'return', 'boodschappen', 'kopen', 'ophalen', 'supermarkt', 'apotheek'],
+    Admin:   ['call', 'appt', 'appointment', 'form', 'pay', 'bill', 'schedule', 'book', 'submit', 'sign', 'renew', 'cancel', 'bellen', 'afspraak', 'betalen', 'rekening', 'formulier', 'verzekering', 'opzeggen'],
+    Health:  ['gym', 'workout', 'walk', 'run', 'stretch', 'meditate', 'yoga', 'sleep', 'water', 'sporten', 'hardlopen', 'wandelen', 'dokter', 'tandarts', 'huisarts', 'medicijn'],
+    Work:    ['meeting', 'deck', 'report', 'presentation', 'standup', 'sync', 'review pr', 'deploy', 'shift', 'dienst', 'rooster', 'stage', 'sollicitatie'],
 };
 
 const WEEKDAY_INDEX: Record<string, number> = {

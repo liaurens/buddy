@@ -28,5 +28,6 @@ export function suggestionToDetail(s: TaskTriageSuggestion): TriageDetail {
     if (s.context) detail.context = s.context;
     if (s.energy) detail.energy = s.energy;
     if (s.estimatedMinutes != null) detail.estimatedMinutes = s.estimatedMinutes;
+    if (s.taskTypeId) detail.taskTypeId = s.taskTypeId;
     return detail;
 }

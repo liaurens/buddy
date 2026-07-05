@@ -17,7 +17,7 @@ import type { TaskOrganizationSuggestion } from '../../planning/services/ai.serv
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase } from '../../../services/supabase';
 import { sanitizeOrganizeSuggestions } from '../utils/organizeSuggestions';
-import { TASK_KIND_META, TASK_KIND_ORDER, kindSignalPatch } from '../utils/taskKind';
+import { TASK_KIND_META, PICKABLE_TASK_KINDS, kindSignalPatch } from '../utils/taskKind';
 import type { Task, TaskType } from '../types';
 
 interface AIOrganizeModalProps {
@@ -191,7 +191,7 @@ const AIOrganizeModal: React.FC<AIOrganizeModalProps> = ({ candidates, taskTypes
                                             disabled={isSkipped}
                                             className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700"
                                         >
-                                            {TASK_KIND_ORDER.map(k => (
+                                            {PICKABLE_TASK_KINDS.map(k => (
                                                 <option key={k} value={k}>{TASK_KIND_META[k].emoji} {TASK_KIND_META[k].label}</option>
                                             ))}
                                         </select>

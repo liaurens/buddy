@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Sparkles, Calendar as CalendarIcon, Plus } from 'lucide-react';
 import type { TaskType, TaskKind } from '../types';
 import { parseQuickCapture } from '../utils/quickCaptureParser';
-import { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from '../utils/taskKind';
+import { deriveTaskKind, TASK_KIND_META, PICKABLE_TASK_KINDS } from '../utils/taskKind';
 
 interface QuickCaptureProps {
     taskTypes: TaskType[];
@@ -71,7 +71,7 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
                     hint={kindChoice === 'auto' ? `→ ${TASK_KIND_META[effectiveKind].label}` : undefined}
                     onClick={() => setKindChoice('auto')}
                 />
-                {TASK_KIND_ORDER.map(k => (
+                {PICKABLE_TASK_KINDS.map(k => (
                     <KindButton
                         key={k}
                         label={`${TASK_KIND_META[k].emoji} ${TASK_KIND_META[k].label}`}

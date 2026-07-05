@@ -62,6 +62,12 @@ export interface TriageAssignmentOption {
     className?: string;
 }
 
+/** A user-defined task type the triage router may assign. */
+export interface TriageTaskTypeOption {
+    id: string;
+    name: string;
+}
+
 export type TriageDestinationValue = 'urgent' | 'today' | 'someday' | 'school' | 'routine';
 
 /** The router's proposed destination + full profile for one captured task. */
@@ -85,6 +91,8 @@ export interface TaskTriageSuggestion {
     context: 'computer' | 'phone' | 'home' | 'out' | 'anywhere' | null;
     energy: 'low' | 'medium' | 'high' | null;
     estimatedMinutes: number | null;
+    /** Resolved from the AI's taskTypeName by the sanitizer; null = leave untyped. */
+    taskTypeId: string | null;
     reason: string;
 }
 
@@ -253,6 +261,7 @@ ${taskList}`;
         assignments: TriageAssignmentOption[],
         learningsDoc: string,
         todayIso: string,
+        taskTypes: TriageTaskTypeOption[] = [],
     ): Promise<AIResponse<{ suggestions: TaskTriageSuggestion[] }>> {
         const assignmentList = assignments.length
             ? assignments
@@ -262,6 +271,9 @@ ${taskList}`;
                   )
                   .join('\n')
             : '(no active assignments — never use the school destination)';
+        const typeList = taskTypes.length
+            ? taskTypes.map((t) => `- "${t.name}"`).join('\n')
+            : '(the user has no task types — always use null)';
         const taskList = tasks
             .map(
                 (t) =>
@@ -293,6 +305,8 @@ Profile fields (infer when reasonably implied, else null):
 - "context": one of computer, phone, home, out, anywhere — or null.
 - "energy": low, medium, or high — or null.
 - "estimatedMinutes": a positive integer estimate, or null.
+- "taskTypeName": EXACTLY one of the user's task type names listed below, or null. Never invent one.
+${typeList}
 - "reason": a short justification (8 words max).
 
 Rules:
@@ -302,7 +316,7 @@ Rules:
 Return a JSON object:
 {
   "suggestions": [
-    { "id": "...", "destination": "today", "confidence": "low", "hardness": null, "dueDate": null, "dueTime": null, "assignmentId": null, "recurrence": null, "location": null, "context": null, "energy": null, "estimatedMinutes": null, "reason": "..." }
+    { "id": "...", "destination": "today", "confidence": "low", "hardness": null, "dueDate": null, "dueTime": null, "assignmentId": null, "recurrence": null, "location": null, "context": null, "energy": null, "estimatedMinutes": null, "taskTypeName": null, "reason": "..." }
   ]
 }`;
 

@@ -81,7 +81,8 @@ export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: strin
         context: todo.context || null,
         routine_id: todo.routineId || null,
         routine_order: todo.routineOrder ?? null,
-        kind: todo.kind || null,
+        // 'school' is a derived-only kind — the DB CHECK doesn't allow it.
+        kind: todo.kind === 'school' ? null : todo.kind || null,
         parent_todo_id: todo.parentTodoId || null,
         notes: todo.notes || null,
         triaged_at: todo.triagedAt || null,

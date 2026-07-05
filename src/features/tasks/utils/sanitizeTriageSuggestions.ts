@@ -42,6 +42,7 @@ interface RawSuggestion {
     context?: unknown;
     energy?: unknown;
     estimatedMinutes?: unknown;
+    taskTypeName?: unknown;
     reason?: unknown;
 }
 
@@ -65,12 +66,15 @@ function asMinutes(value: unknown): number | null {
  * @param assignmentIds Known assignment ids — a "school" suggestion to an unknown
  *                      id keeps the school destination but with a null assignment
  *                      (a loose school task), so it can't silently vanish.
+ * @param taskTypes     The user's real task types; the AI's taskTypeName resolves
+ *                      to an id case-insensitively, unknown names become null.
  * @returns             One sanitized suggestion per known task id (first wins).
  */
 export function sanitizeTriageSuggestions(
     raw: unknown,
     inboxIds: Iterable<string>,
     assignmentIds: Iterable<string>,
+    taskTypes: Iterable<{ id: string; name: string }> = [],
 ): TaskTriageSuggestion[] {
     const list: unknown = Array.isArray(raw)
         ? raw
@@ -79,6 +83,9 @@ export function sanitizeTriageSuggestions(
 
     const ids = new Set(inboxIds);
     const assignments = new Set(assignmentIds);
+    const typeIdByName = new Map(
+        Array.from(taskTypes, (t) => [t.name.trim().toLowerCase(), t.id] as const),
+    );
     const seen = new Set<string>();
     const out: TaskTriageSuggestion[] = [];
 
@@ -127,6 +134,9 @@ export function sanitizeTriageSuggestions(
             context: asEnum<TaskContext>(entry?.context, VALID_CONTEXT),
             energy: asEnum<TaskEnergy>(entry?.energy, VALID_ENERGY),
             estimatedMinutes: asMinutes(entry?.estimatedMinutes),
+            taskTypeId:
+                typeIdByName.get(asString(entry?.taskTypeName)?.trim().toLowerCase() ?? '') ??
+                null,
             reason: asString(entry?.reason) ?? '',
         });
     }

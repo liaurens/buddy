@@ -3,7 +3,10 @@ import { addDays, format } from 'date-fns';
 import { deriveTaskKind, kindSignalPatch, DEADLINE_HORIZON_DAYS } from './taskKind';
 import type { Task } from '../types';
 
-const base: Pick<Task, 'kind' | 'recurrence' | 'priority' | 'dueDate' | 'reminderEnabled' | 'reminderAt'> = {
+const base: Pick<Task,
+    'kind' | 'recurrence' | 'priority' | 'dueDate' | 'reminderEnabled' | 'reminderAt'
+    | 'assignmentId' | 'triageDestination'
+> = {
     recurrence: 'none',
 };
 
@@ -26,14 +29,23 @@ describe('deriveTaskKind', () => {
         expect(deriveTaskKind({ ...base, priority: 'urgent' })).toBe('urgent');
     });
 
-    it('classifies a far-out due date with a reminder as deadline', () => {
+    it('classifies a far-out due date as deadline (no reminder required)', () => {
         const dueDate = iso(addDays(new Date(), DEADLINE_HORIZON_DAYS + 5));
         expect(deriveTaskKind({ ...base, dueDate, reminderEnabled: true })).toBe('deadline');
+        expect(deriveTaskKind({ ...base, dueDate })).toBe('deadline');
     });
 
-    it('classifies a far-out due date WITHOUT a reminder as standard', () => {
-        const dueDate = iso(addDays(new Date(), DEADLINE_HORIZON_DAYS + 5));
-        expect(deriveTaskKind({ ...base, dueDate })).toBe('standard');
+    it('classifies school linkage as school, beating date and recurrence signals', () => {
+        expect(deriveTaskKind({ ...base, assignmentId: 'a1' })).toBe('school');
+        expect(deriveTaskKind({ ...base, triageDestination: 'school' })).toBe('school');
+        expect(
+            deriveTaskKind({ ...base, assignmentId: 'a1', dueDate: iso(addDays(new Date(), 10)) }),
+        ).toBe('school');
+        expect(deriveTaskKind({ ...base, assignmentId: 'a1', recurrence: 'daily' })).toBe('school');
+    });
+
+    it('lets an explicit kind beat school linkage', () => {
+        expect(deriveTaskKind({ ...base, kind: 'urgent', assignmentId: 'a1' })).toBe('urgent');
     });
 
     it('classifies a near due date as standard', () => {

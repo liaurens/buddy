@@ -14,6 +14,7 @@ import {
     getAIService,
     isAIConfigured,
     type TriageAssignmentOption,
+    type TriageTaskTypeOption,
 } from '../../planning/services/ai.service';
 import { sanitizeTriageSuggestions } from '../utils/sanitizeTriageSuggestions';
 import { suggestionToDetail } from '../utils/triageConfidence';
@@ -35,6 +36,19 @@ async function loadAssignmentOptions(userId: string): Promise<TriageAssignmentOp
     return (data ?? []).map((a: { id: string; title: string }) => ({ id: a.id, title: a.title }));
 }
 
+/** The user's task types, so eager sorting can assign one. */
+async function loadTaskTypeOptions(userId: string): Promise<TriageTaskTypeOption[]> {
+    const { data, error } = await supabase
+        .from('task_types')
+        .select('id, name')
+        .eq('user_id', userId);
+    if (error) {
+        console.warn('Eager triage: could not load task types:', error.message);
+        return [];
+    }
+    return (data ?? []).map((t: { id: string; name: string }) => ({ id: t.id, name: t.name }));
+}
+
 export async function eagerTriageTask(userId: string, task: Task): Promise<void> {
     if (!isAIConfigured()) return;
     try {
@@ -42,21 +56,24 @@ export async function eagerTriageTask(userId: string, task: Task): Promise<void>
         if (!ai) return;
         const nowIso = new Date().toISOString();
         const todayIso = nowIso.slice(0, 10);
-        const [learnings, assignmentOptions] = await Promise.all([
+        const [learnings, assignmentOptions, typeOptions] = await Promise.all([
             loadTriageLearnings(userId),
             loadAssignmentOptions(userId),
+            loadTaskTypeOptions(userId),
         ]);
         const result = await ai.triageTasks(
             [{ id: task.id, title: task.title, dueDate: task.dueDate, priority: task.priority }],
             assignmentOptions,
             learnings,
             todayIso,
+            typeOptions,
         );
         if (!result.success || !result.data) return;
         const [s] = sanitizeTriageSuggestions(
             result.data,
             [task.id],
             assignmentOptions.map((a) => a.id),
+            typeOptions,
         );
         if (!s || s.confidence !== 'high') return; // unsure → leave for the morning batch
         await applyTriage(userId, task, s.destination, suggestionToDetail(s), {

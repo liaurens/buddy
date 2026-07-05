@@ -161,3 +161,46 @@ describe('sanitizeTriageSuggestions', () => {
         expect(big.estimatedMinutes).toBe(1440); // capped at one day
     });
 });
+
+describe('taskTypeName resolution', () => {
+    const types = [
+        { id: 'type-study', name: 'Study' },
+        { id: 'type-admin', name: 'Admin' },
+    ];
+
+    it('resolves a known name case-insensitively to its id', () => {
+        const [s] = sanitizeTriageSuggestions(
+            { suggestions: [{ id: 't1', destination: 'today', taskTypeName: 'study' }] },
+            inbox,
+            assignments,
+            types,
+        );
+        expect(s.taskTypeId).toBe('type-study');
+    });
+
+    it('drops unknown or missing names to null', () => {
+        const [unknown] = sanitizeTriageSuggestions(
+            { suggestions: [{ id: 't1', destination: 'today', taskTypeName: 'Hobbies' }] },
+            inbox,
+            assignments,
+            types,
+        );
+        expect(unknown.taskTypeId).toBeNull();
+        const [missing] = sanitizeTriageSuggestions(
+            { suggestions: [{ id: 't2', destination: 'today' }] },
+            inbox,
+            assignments,
+            types,
+        );
+        expect(missing.taskTypeId).toBeNull();
+    });
+
+    it('is null when no task types are provided', () => {
+        const [s] = sanitizeTriageSuggestions(
+            { suggestions: [{ id: 't1', destination: 'today', taskTypeName: 'Study' }] },
+            inbox,
+            assignments,
+        );
+        expect(s.taskTypeId).toBeNull();
+    });
+});

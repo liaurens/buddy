@@ -81,6 +81,8 @@ export interface TriageDetail {
     context?: TaskContext;
     energy?: TaskEnergy;
     estimatedMinutes?: number;
+    /** User-defined task type to assign (validated upstream). */
+    taskTypeId?: string;
 }
 
 /**
@@ -112,6 +114,7 @@ function profilePatch(
         context: detail.context,
         energy: detail.energy,
         estimatedTime: detail.estimatedMinutes,
+        taskTypeId: detail.taskTypeId,
         reminderEnabled: detail.hardness ? true : undefined,
         reminderCadence: cadenceForHardness(detail.hardness),
     };
@@ -170,6 +173,9 @@ export function kindToDestination(kind: NonNullable<Task['kind']>): TriageDestin
             return 'someday';
         case 'routine':
             return 'routine';
+        case 'school':
+            // Not pickable at capture (derived-only kind), but total for safety.
+            return 'school';
         case 'deadline':
         case 'standard':
             return 'today';

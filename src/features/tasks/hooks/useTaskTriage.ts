@@ -15,6 +15,7 @@ import { isSameDay } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase } from '../../../services/supabase';
 import { useTasks } from './useTasks';
+import { useTaskTypes } from './useTaskTypes';
 import { useAssignments } from '../../school/hooks/useAssignments';
 import { useClasses } from '../../school/hooks/useClasses';
 import {
@@ -71,6 +72,7 @@ export function useTaskTriage(): UseTaskTriageReturn {
     const { user } = useAuth();
     const userId = user?.id;
     const { tasks, updateTask } = useTasks();
+    const { taskTypes } = useTaskTypes();
     const { assignments } = useAssignments({ activeOnly: true });
     const { classes } = useClasses();
     const [ready, setReady] = useState(isAIConfigured());
@@ -122,13 +124,17 @@ export function useTaskTriage(): UseTaskTriageReturn {
 
     const inboxKey = untriaged.map((t) => t.id).join(',');
     const assignmentsKey = assignmentOptions.map((a) => a.id).join(',');
+    const typeOptions = useMemo(
+        () => taskTypes.map((t) => ({ id: t.id, name: t.name })),
+        [taskTypes],
+    );
     const {
         data: suggestions,
         isFetching,
         error,
         refetch,
     } = useQuery({
-        queryKey: ['triage-tasks', inboxKey, assignmentsKey],
+        queryKey: ['triage-tasks', inboxKey, assignmentsKey, typeOptions.length],
         enabled: ready && untriaged.length > 0,
         staleTime: Infinity,
         gcTime: 0,
@@ -149,6 +155,7 @@ export function useTaskTriage(): UseTaskTriageReturn {
                 assignmentOptions,
                 learnings,
                 todayIso,
+                typeOptions,
             );
             if (!result.success || !result.data)
                 throw new Error(result.error || 'Failed to sort tasks.');
@@ -156,6 +163,7 @@ export function useTaskTriage(): UseTaskTriageReturn {
                 result.data,
                 untriaged.map((t) => t.id),
                 assignmentOptions.map((a) => a.id),
+                typeOptions,
             );
         },
     });

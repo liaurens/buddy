@@ -7,10 +7,12 @@
  * are always safe.
  */
 
-import type { Task, TaskType, TaskKind } from '../types';
+import type { Task, TaskType } from '../types';
 import type { TaskOrganizationSuggestion } from '../../planning/services/ai.service';
 
-const VALID_KINDS: TaskKind[] = ['urgent', 'backlog', 'deadline', 'routine', 'standard'];
+// Writable kinds only — 'school' is derived from linkage, never assignable.
+type SuggestionKind = TaskOrganizationSuggestion['kind'];
+const VALID_KINDS: SuggestionKind[] = ['urgent', 'backlog', 'deadline', 'routine', 'standard'];
 const VALID_PRIORITIES: TaskOrganizationSuggestion['priority'][] = ['urgent', 'high', 'medium', 'low'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -51,7 +53,7 @@ export function sanitizeOrganizeSuggestions(
         if (!id || !taskIds.has(id) || seen.has(id)) continue;
         seen.add(id);
 
-        const kindRaw = asString(entry?.kind) as TaskKind | null;
+        const kindRaw = asString(entry?.kind) as SuggestionKind | null;
         const kind = kindRaw && VALID_KINDS.includes(kindRaw) ? kindRaw : 'standard';
 
         const prioRaw = asString(entry?.priority) as TaskOrganizationSuggestion['priority'] | null;
