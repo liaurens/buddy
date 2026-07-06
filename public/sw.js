@@ -2,21 +2,24 @@
 /**
  * Service Worker — Buddy App
  *
- * - Uses Workbox (via CDN importScripts) for precaching and offline routing.
+ * - Uses Workbox (bundled at build time by vite-plugin-pwa) for precaching.
+ *   NEVER load workbox via CDN importScripts: a controlling SW that must hit
+ *   the network to boot stalls every page fetch behind it on a slow
+ *   connection (this bit us — pages hung with data requests never sent).
  * - `self.__WB_MANIFEST` is injected at build time by vite-plugin-pwa
  *   (`injectManifest` strategy configured in vite.config.ts).
  * - Keeps native Web Push handlers so push notifications display on iOS
  *   (installed PWA) and Android / desktop Chrome.
+ * - This file only runs as a registered SW in production builds; dev
+ *   sessions unregister any SW (see main.tsx).
  */
 
-importScripts('https://storage.googleapis.com/workbox-cdn/releases/6.5.4/workbox-sw.js');
+import { clientsClaim } from 'workbox-core';
+import { precacheAndRoute } from 'workbox-precaching';
 
-// Precache assets (manifest injected at build)
-if (self.workbox) {
-  self.workbox.core.skipWaiting();
-  self.workbox.core.clientsClaim();
-  self.workbox.precaching.precacheAndRoute(self.__WB_MANIFEST || []);
-}
+self.skipWaiting();
+clientsClaim();
+precacheAndRoute(self.__WB_MANIFEST || []);
 
 // ─── Push notifications ──────────────────────────────────────────────────────
 

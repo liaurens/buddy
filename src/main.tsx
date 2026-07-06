@@ -55,6 +55,29 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 
+// Dev must never run under a (stale) production service worker: it serves
+// old precached bundles and stalls fetches while it boots/updates. Unregister
+// anything controlling this origin and drop its caches, then reload once so
+// the page escapes the old controller.
+if (import.meta.env.DEV && 'serviceWorker' in navigator) {
+  void (async () => {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      if (registrations.length === 0) return;
+      await Promise.all(registrations.map((r) => r.unregister()));
+      const cacheKeys = await caches.keys();
+      await Promise.all(
+        cacheKeys.filter((k) => k.startsWith('workbox-')).map((k) => caches.delete(k)),
+      );
+      if (navigator.serviceWorker.controller) {
+        window.location.reload();
+      }
+    } catch (e) {
+      console.warn('Dev service-worker cleanup failed:', e);
+    }
+  })();
+}
+
 // Catch unhandled promise rejections
 window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled promise rejection:', event.reason);

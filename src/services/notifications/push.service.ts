@@ -131,10 +131,17 @@ export async function subscribeToPush(userId: string): Promise<PushSubscriptionJ
   }
 
   try {
-    // Register service worker if not already registered
+    // Register service worker if not already registered. Dev never registers:
+    // the SW source is an ESM module that only exists bundled in prod builds,
+    // and a (stale) prod SW controlling the dev origin breaks dev sessions.
     let registration = await navigator.serviceWorker.getRegistration();
 
     if (!registration) {
+      if (!import.meta.env.PROD) {
+        throw new SubscriptionFailedError(
+          'Push requires the production service worker — test on a deployed build.',
+        );
+      }
       registration = await navigator.serviceWorker.register('/sw.js');
       await navigator.serviceWorker.ready;
     }
