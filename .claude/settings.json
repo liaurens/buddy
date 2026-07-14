@@ -1,25 +1,34 @@
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit",
-        "hooks": [
-          { "type": "command", "command": "node .claude/hooks/quality-guard.mjs" },
-          { "type": "command", "command": "node .claude/hooks/format-edited.mjs" }
+    "hooks": {
+        "PreToolUse": [
+            {
+                "matcher": "Bash|PowerShell",
+                "hooks": [
+                    { "type": "command", "command": "node .claude/hooks/pre-commit-gate.mjs" }
+                ]
+            }
+        ],
+        "PostToolUse": [
+            {
+                "matcher": "Edit|Write|MultiEdit",
+                "hooks": [
+                    { "type": "command", "command": "node .claude/hooks/quality-guard.mjs" },
+                    { "type": "command", "command": "node .claude/hooks/journal-autostart.mjs" },
+                    { "type": "command", "command": "node .claude/hooks/format-edited.mjs" }
+                ]
+            }
+        ],
+        "Stop": [
+            {
+                "matcher": "",
+                "hooks": [{ "type": "command", "command": "node .claude/hooks/stop-audit.mjs" }]
+            }
+        ],
+        "SessionStart": [
+            {
+                "matcher": "",
+                "hooks": [{ "type": "command", "command": "node .claude/hooks/resume-context.mjs" }]
+            }
         ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [{ "type": "command", "command": "node .claude/hooks/stop-audit.mjs" }]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "",
-        "hooks": [{ "type": "command", "command": "node .claude/hooks/resume-context.mjs" }]
-      }
-    ]
-  }
+    }
 }

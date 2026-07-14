@@ -8,26 +8,53 @@ If you're new here: read the project `CLAUDE.md` first — it holds the hard rul
 
 ## TL;DR — the everyday flow
 
-1. Starting a feature/task? → `/start-part <name>` (creates a resumable journal).
-2. Work as normal. Hooks quietly format your edits and warn about rule violations.
-3. Need the data layer or an edge function? → `/new-domain`, `/new-migration`, `/deploy-fn`, or the matching agent.
-4. Before committing → `/check` (lint + typecheck + tests). Commit triggers auto-format on staged files.
-5. Done? → `/finish-part` (folds learnings into `CLAUDE.md`, updates `docs/DESIGN.md`, generates UML/docs if the change was big).
+1. Starting a feature/task? → just start working — the **journal autostart** hook makes Claude create the progress journal automatically on the first code edit. (`/start-part <name>` still works when you want to name/scope the part yourself.)
+2. Work as normal. Hooks quietly format your edits and warn about rule violations (including migration RLS/timestamp checks and the tasks-feature invariants).
+3. Need the data layer or an edge function? → `/new-domain`, `/new-migration`, `/deploy-fn`, or the matching agent. The Stop hook reminds you about edge functions you edited but didn't deploy.
+4. Commit whenever — the **commit gate** hook runs the typecheck automatically and blocks the commit if `tsc` fails (bypass with `--no-verify`). `/check` is now only needed for the full lint + test pass.
+5. Done? → nothing to remember: once the journal's Status checklist is fully checked, the Stop hook makes Claude run the `/finish-part` folding automatically (learnings into `CLAUDE.md`, `docs/DESIGN.md` update, UML/docs if the change was big, journal archived). `/finish-part` still exists for finishing manually/early.
 
 ---
 
 ## 1. Hooks (automatic, advisory)
 
-Configured in `.claude/settings.json`; scripts live in `.claude/hooks/`. **All hooks are advisory — they never block an edit or a commit.** Node-based, so they work on Windows/PowerShell and macOS/Linux alike.
+Configured in `.claude/settings.json`; scripts live in `.claude/hooks/`. **All hooks are advisory except the commit gate** (the one place a hard stop is worth it). Node-based, so they work on Windows/PowerShell and macOS/Linux alike. All are **silent when everything is clean** — they only inject context on an actual problem, so their token cost is near zero.
 
 | Hook | When | What it does |
 |---|---|---|
-| `quality-guard.mjs` | after every Edit/Write/MultiEdit | Warns (to Claude) if the edit introduces `any`, `console.log` in `src/`, the `tracker_entries` / `from('tasks')` naming gotchas, or raw locale date formatting. Scans code/SQL only — skips docs & markdown. |
+| `pre-commit-gate.mjs` | before any `git commit` (Bash or PowerShell) | Runs `npx tsc -b` automatically. Clean → commit proceeds silently. Errors → the commit is **blocked** and the errors are fed back to Claude to fix. Bypass with `--no-verify`. Lint/tests deliberately excluded (slow; lint baseline isn't clean) — use `/check` for those. |
+| `quality-guard.mjs` | after every Edit/Write/MultiEdit | Warns (to Claude) if the edit introduces `any`, `console.log` in `src/`, the `tracker_entries` / `from('tasks')` naming gotchas, or raw locale date formatting. Also enforces the **tasks-feature invariants** (`new Date('YYYY-MM-DD')` on due dates, direct `todos` writes outside the canonical write path, writing the derived-only `school` kind) and validates **migrations** (`create table` without RLS, timestamp not sorting after the latest migration). Scans code/SQL only — skips docs & markdown. |
 | `format-edited.mjs` | after every Edit/Write/MultiEdit | Runs Prettier on just the file that changed. No-ops silently if Prettier isn't installed. |
-| `stop-audit.mjs` | when a session ends | Scans git-changed `src/` files for leftover `console.log` / `any` / `tracker_entries` and prints a summary. |
+| `journal-autostart.mjs` | after every Edit/Write/MultiEdit | Automates `/start-part`: the first time code is edited (`src/` or `supabase/`) in a session with **no active journal**, it instructs Claude to create the part journal itself and keep it updated — once per session, silent otherwise. Trivial one-off fixes are allowed to skip. |
+| `stop-audit.mjs` | when a session ends | Scans git-changed `src/` files for leftover `console.log` / `any` / `tracker_entries`. Also reminds about **edge functions edited but not deployed** (`/deploy-fn <name>`) and nudges when `src/` changed but the journal hasn't been updated in >2h. **Auto-finish:** if the active journal's Status checklist is fully checked, it holds the stop once and makes Claude perform the whole `/finish-part` folding (learnings → `CLAUDE.md`, `docs/DESIGN.md`, docs/diagrams if significant, archive) automatically. |
 | `resume-context.mjs` | at session start | Lists any unfinished progress journals (`.claude/progress/`) with their Status + Next steps so you can pick up where you left off. |
 
-**Why advisory?** With a known lint baseline, hard blocks would create friction. These nudge Claude to self-correct without stopping work. The real gate is `/check` + the pre-commit hook.
+**Why mostly advisory?** With a known lint baseline, hard blocks would create friction. These nudge Claude to self-correct without stopping work. The exception is the commit gate: the tsc baseline *is* clean, so a tsc failure is always a real regression — blocking there is cheap and safe.
+
+---
+
+## 1b. Recommended permissions allowlist (optional, reduces prompts)
+
+Claude can't grant itself standing permissions, so this is a one-time manual paste. Add a `permissions` block to `.claude/settings.json` (next to `hooks`) to make routine read-only/tooling commands run without approval prompts. Mutating operations (`db push`, `functions deploy`, `git push`, `apply_migration`) intentionally stay prompt-gated.
+
+```json
+"permissions": {
+  "allow": [
+    "Bash(npm run:*)", "Bash(npx tsc:*)", "Bash(npx vitest:*)",
+    "Bash(npx prettier:*)", "Bash(npx eslint:*)",
+    "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)",
+    "Bash(git add:*)", "Bash(date:*)",
+    "PowerShell(npm run *)", "PowerShell(npx tsc *)", "PowerShell(npx vitest *)",
+    "PowerShell(npx prettier *)", "PowerShell(npx eslint *)",
+    "PowerShell(git status *)", "PowerShell(git diff *)", "PowerShell(git log *)",
+    "mcp__postgres__query",
+    "mcp__claude_ai_Supabase__list_tables", "mcp__claude_ai_Supabase__list_migrations",
+    "mcp__claude_ai_Supabase__list_edge_functions", "mcp__claude_ai_Supabase__get_edge_function",
+    "mcp__claude_ai_Supabase__get_logs", "mcp__claude_ai_Supabase__get_advisors",
+    "mcp__claude_ai_Supabase__get_project_url"
+  ]
+}
+```
 
 ---
 
@@ -102,7 +129,9 @@ flowchart LR
   settings.json            # hook wiring (shared)
   settings.local.json      # personal permissions allowlist (not part of this setup)
   hooks/
+    pre-commit-gate.mjs
     quality-guard.mjs
+    journal-autostart.mjs
     format-edited.mjs
     stop-audit.mjs
     resume-context.mjs
@@ -124,6 +153,8 @@ docs/DESIGN.md             # living status/architecture doc
 ## 7. Troubleshooting
 
 - **Hooks aren't running** — they're defined in `.claude/settings.json`; restart the Claude Code session after changing it. Hooks need `node` on PATH (Node 24 in this project).
+- **Commit blocked by the gate but you must commit anyway** — add `--no-verify` to the `git commit` command; the gate (and husky) skip it. Use sparingly.
+- **Commit gate feels slow** — it runs `tsc -b` (incremental) only on `git commit`, never on ordinary commands. ~5–15s warm; the first run after a clean checkout is slower.
 - **Prettier reformats too much** — adjust `.prettierrc.json` or add paths to `.prettierignore`. The format-on-edit hook only touches the single file you edited.
 - **A commit is blocked by eslint** — lint-staged only gates the files you staged. Fix the reported issues, or stage fewer files. (It does not enforce the whole-repo baseline.)
 - **Quality-guard warned on a doc that describes a rule** — it only scans `.ts/.tsx/.js/.jsx/.mjs/.cjs/.sql`; markdown is skipped, so this shouldn't happen. If it does, the file extension is likely code.

@@ -1,18 +1,19 @@
 ---
-description: Run lint, typecheck, and tests; summarize only the failures.
-allowed-tools: Bash(npm run lint), Bash(npx tsc -b), Bash(npm run test:run), Bash(npx prettier --check .)
+description: Run typecheck, lint (changed files only), and tests; report only the failures.
+allowed-tools: Bash(npx tsc:*), Bash(npx eslint:*), Bash(npx vitest:*), Bash(git diff:*), Bash(git ls-files:*)
 ---
 
-Run the project's quality gate and report results concisely.
+Run the project's quality gate. Keep context small: never dump full logs — always trim with `head`/`tail` as shown.
 
-Run these (continue even if earlier ones fail) and collect output:
-1. `npm run lint`
-2. `npx tsc -b`
-3. `npm run test:run`
+Run these (continue even if earlier ones fail):
 
-Then summarize:
-- A one-line PASS/FAIL per step.
-- For FAILs, list only the actual errors (file:line + message), not the full log. Note that the lint step has a known pre-existing baseline of errors — distinguish baseline noise from anything in the user's current diff (`git diff --name-only`) where possible.
-- End with a short verdict: is the working tree safe to commit?
+1. **Typecheck:** `npx tsc -b --pretty false 2>&1 | head -30`
+2. **Lint — changed files ONLY.** The repo has a known ~170-error lint baseline; never run `npm run lint` on everything. Collect changed files (`git diff --name-only HEAD` plus `git ls-files --others --exclude-standard`), keep only `src/**/*.ts|tsx`, then `npx eslint <files> 2>&1 | tail -40`. No changed files → report "lint: skipped (no changed src files)".
+3. **Tests:** `npx vitest run --reporter=dot 2>&1 | tail -30`
+
+Then report:
+- One PASS/FAIL line per step.
+- For FAILs, only the actual errors (file:line + message) — no logs.
+- End with a one-line verdict: is the working tree safe to commit?
 
 Do not attempt fixes unless the user asks — this command only reports.

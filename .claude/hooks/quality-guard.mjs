@@ -10,7 +10,8 @@
  * Rules encoded here come from the Buddy project's CLAUDE.md — NOT the unrelated
  * snowboard-app rules.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import path from 'node:path';
 
 function readStdin() {
     try {
@@ -57,25 +58,82 @@ const warnings = [];
 
 // console.log in app source (Deno edge functions legitimately log to stdout).
 if (inSrc && !inEdgeFn && /\bconsole\.log\s*\(/.test(text)) {
-    warnings.push('console.log found in src/ — remove it or use a proper logger before committing.');
+    warnings.push(
+        'console.log found in src/ — remove it or use a proper logger before committing.',
+    );
 }
 
 // TypeScript strict / no-any.
 if (isTs && /(:\s*any\b|\bas\s+any\b|<any>)/.test(text)) {
-    warnings.push('`any` type detected — this project is TS strict / no-any. Find or declare the real type.');
+    warnings.push(
+        '`any` type detected — this project is TS strict / no-any. Find or declare the real type.',
+    );
 }
 
 // Critical naming gotchas (see CLAUDE.md).
 if (/tracker_entries/.test(text)) {
-    warnings.push("Table `tracker_entries` does not exist — health check-ins live in the `entries` table.");
+    warnings.push(
+        'Table `tracker_entries` does not exist — health check-ins live in the `entries` table.',
+    );
 }
 if (/from\(\s*['"]tasks['"]\s*\)/.test(text)) {
-    warnings.push("Table `tasks` does not exist — todos live in the `todos` table.");
+    warnings.push('Table `tasks` does not exist — todos live in the `todos` table.');
 }
 
 // Raw locale date formatting — project standard is date-fns.
 if (inSrc && /\.toLocaleDateString\s*\(|\.toLocaleString\s*\(/.test(text)) {
     warnings.push('Raw locale date formatting detected — use date-fns `format()` instead.');
+}
+
+// Tasks-feature invariants (see CLAUDE.md "Tasks feature invariants").
+if (inSrc && /new Date\(\s*['"]\d{4}-/.test(text)) {
+    warnings.push(
+        "`new Date('YYYY-MM-DD')` parses as UTC midnight and shifts the calendar day — use `parseDueDate` from src/features/tasks/utils/dueDates.ts for due dates.",
+    );
+}
+const isTaskWritePath =
+    filePath.includes('src/features/tasks/services/') ||
+    filePath.includes('src/services/supabase/');
+if (
+    inSrc &&
+    !isTaskWritePath &&
+    /from\(\s*['"]todos['"]\s*\)/.test(text) &&
+    /\.(update|insert|upsert)\s*\(/.test(text)
+) {
+    warnings.push(
+        'Direct todos write outside the canonical write path — use `persistTaskUpdate` (services/taskWrites.ts) or `applyTriagePatch` (services/applyTriage.ts).',
+    );
+}
+if (inSrc && /kind\s*[:=]\s*['"]school['"]/.test(text)) {
+    warnings.push(
+        '`school` TaskKind is derived-only — never write it to `todos.kind` (DB CHECK rejects it). Derive from assignment_id / triage_destination.',
+    );
+}
+
+// Migration guard (supabase/migrations/*.sql): RLS + timestamp ordering.
+if (/supabase\/migrations\/\d{14}_.*\.sql$/.test(filePath)) {
+    if (/create\s+table/i.test(text) && !/enable\s+row\s+level\s+security/i.test(text)) {
+        warnings.push(
+            'Migration creates a table but never enables RLS — add `alter table public.<t> enable row level security;` plus per-operation policies scoped to auth.uid() = user_id.',
+        );
+    }
+    const fileName = path.basename(filePath);
+    const stamp = fileName.slice(0, 14);
+    try {
+        const dir = path.join(process.cwd(), 'supabase', 'migrations');
+        const latest = readdirSync(dir)
+            .filter((f) => /^\d{14}_/.test(f) && f !== fileName)
+            .map((f) => f.slice(0, 14))
+            .sort()
+            .pop();
+        if (latest && stamp <= latest) {
+            warnings.push(
+                `Migration timestamp ${stamp} does not sort after the latest existing migration (${latest}) — bump the prefix or it will be skipped/misordered by the CLI.`,
+            );
+        }
+    } catch {
+        /* migrations dir unreadable — skip the ordering check */
+    }
 }
 
 if (warnings.length === 0) process.exit(0);

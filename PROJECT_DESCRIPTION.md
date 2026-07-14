@@ -239,6 +239,30 @@ user overrides an AI suggestion, the correction is appended to a small growing
 "learning doc" (stored in `settings`) that is fed back into the next triage
 run's prompt as worked examples, so the routing adapts to the user over time.
 
+The triage layer has two cooperating halves. The first is the **triage router**
+described above: an explicit sorting step (morning "Sort inbox" or standalone)
+where the user reviews inbox tasks and applies a destination to each. The second
+is **self-sorting capture** — an eager pass that runs at capture time (when the
+user is online and an AI key is configured). As soon as a task is captured, the
+assistant infers its full metadata (destination, due date/time, hardness,
+recurrence, candidate assignment). High-confidence inferences are applied
+immediately and the task is stamped `auto_triaged = true`; low-confidence ones
+stay in the inbox for the morning "needs your call" step. Auto-applied tasks are
+not hidden: they surface in an "I sorted these" review section so the user can
+confirm or correct them. Correcting an auto-applied route clears `auto_triaged`
+and appends the correction to the same learning doc, so the AI learns to hedge
+on similar inputs next time. The goal is that an organized inbox costs zero taps
+on a good day, while never silently committing a routing decision the user can't
+see and undo.
+
+Triage also captures a task's **hardness**: `fixed` (a hard commitment — the
+planner locks it against reschedule and reminders escalate), `flexible` (freely
+reschedulable), or unset (treated as flexible). Hardness is orthogonal to kind:
+an *emergency* is simply an urgent task that is also fixed. A fixed task shows a
+lock chip on the day timeline so its immovability is visible, and the one-a-day
+someday surface never locks items because backlog work is by definition not a
+commitment.
+
 ### 4.3 Plan
 
 Planning turns open obligations and current capacity into a realistic day.
@@ -276,7 +300,18 @@ During the day, the app helps the user stay oriented through:
   deep-linking into the Day flow.
 - Pomodoro focus sessions.
 - Task completion and snoozing.
+- A midday task review that re-touches the day's plan partway through.
 - Routines and checklists.
+
+The midday reset includes a **MiddayTaskReview** step: for each task due today
+the user makes one fast decision — Done, Reschedule (not finished), or Needs
+work (partially done; add subtasks or a small adjustment). It opens with a
+header summary (completed vs. total), offers a one-tap "carry all unfinished to
+tomorrow", and auto-suggests completion when a task's subtasks are all checked.
+This exists because the day usually drifts after the first interruption; a
+lightweight midday checkpoint is where drift is caught early and the cost of
+returning is lowered, rather than discovering at night that the plan quietly
+fell apart. It is mounted in both the full and light midday flows.
 
 The anchor notifications are designed to be reliable: the
 `schedule-notifications` function re-enqueues the next day's occurrence after
@@ -501,6 +536,17 @@ The tasks feature supports:
 - Snoozing.
 - AI task splitting.
 - AI-assisted triage of the capture inbox into destinations.
+- Self-sorting capture: eager AI metadata inference at capture time, with
+  high-confidence routes auto-applied and surfaced in an "I sorted these"
+  review, and low-confidence ones held for a morning "needs your call" step.
+- Task hardness (`fixed`/`flexible`), with fixed tasks locked against
+  reschedule and shown with a lock chip on the day timeline.
+- A midday task review (Done / Reschedule / Needs work, plus carry-unfinished-
+  to-tomorrow) inside the midday reset.
+- A one-at-a-time someday surface that draws a single backlog item rather than
+  showing the whole pile.
+- Loose school tasks (triaged to school but not yet linked to an assignment)
+  surfaced in school planning with a "make it an assignment" action.
 - Deep links from notifications.
 
 Tasks also carry a **kind** dimension: `urgent`, `deadline`, `standard`,
@@ -558,6 +604,12 @@ preferred default.
 The full morning routine includes an optional, skippable "Sort inbox" step that
 runs the task triage router (Section 4.2) on any untriaged captured tasks, so
 sorting the inbox becomes part of the daily on-ramp rather than a separate chore.
+
+The midday flows (full and light) include a **MiddayTaskReview** step (Section
+4.4) that walks the day's due tasks for a quick Done / Reschedule / Needs work
+decision and a one-tap carry-unfinished-to-tomorrow. This makes the midday reset
+the place where the morning's plan is reconciled with what actually happened,
+before the night reflection closes the day.
 
 Routines are not just checklists. They are transition aids. Their job is to help
 the user move from ambiguity into action at predictable points in the day.
@@ -1085,10 +1137,15 @@ The backend is Supabase:
 
 Product tables include:
 
-- `todos`: tasks. Carries the triage column `triaged_at` (NULL = still in the
-  capture inbox), the hybrid `kind` dimension plus `parent_todo_id` and `notes`,
-  and Google Calendar sync columns (`google_event_id`, `google_calendar_id`,
-  `google_synced_at`).
+- `todos`: tasks. Carries the triage columns `triaged_at` (NULL = still in the
+  capture inbox), `hardness` (`fixed`/`flexible`/NULL), `auto_triaged` (TRUE =
+  AI routed without human confirmation; drives the "I sorted these" review and
+  is cleared on confirm/correct), and `triage_destination`
+  (`urgent`/`today`/`someday`/`school`/`routine`); the hybrid `kind` dimension
+  plus `parent_todo_id` and `notes`; and Google Calendar sync columns
+  (`google_event_id`, `google_calendar_id`, `google_synced_at`). Partial indexes
+  back the inbox query (untriaged + active per user) and the loose-school query
+  (`triage_destination = 'school'` with no linked assignment).
 - `entries`: tracker entries/check-ins.
 - `trackers`: tracker definitions.
 - `smart_notes`: notes and note-like content.
@@ -1475,8 +1532,28 @@ low-overwhelm work:
   school / routine / someday, surfaced both as a Tasks-page banner and an
   optional morning "Sort inbox" step. User overrides feed a small learning doc
   that adapts future routing.
-- Still open: a dedicated "no-pressure, one-at-a-time" focus mode that draws
-  single items from the someday/backlog pile.
+- **Self-sorting capture**: an eager triage pass at capture time infers a task's
+  full metadata; high-confidence routes auto-apply (`todos.auto_triaged`) and
+  show up in an "I sorted these" review, while low-confidence ones wait for a
+  morning "needs your call" step. Corrections clear `auto_triaged` and feed the
+  same learning doc, so an organized inbox can cost zero taps without ever
+  hiding a routing decision.
+- **Task hardness and lock**: `todos.hardness` (`fixed`/`flexible`) lets the
+  planner lock fixed commitments against reschedule and show a lock chip on the
+  day timeline; an emergency is just urgent + fixed.
+- **One-a-day someday surface**: a single-item backlog card replaced the old
+  multi-item someday picker, closing the previously-open "no-pressure,
+  one-at-a-time" focus mode — the someday pile now yields one item at a time
+  instead of a wall.
+- **Loose school tasks**: tasks triaged to school but not yet linked to an
+  assignment surface in school planning with a "make it an assignment" action,
+  so they are not stranded between the tasks and school modules.
+- **Midday task review**: the midday reset (full and light) now walks the day's
+  due tasks for a Done / Reschedule / Needs work decision plus a one-tap
+  carry-unfinished-to-tomorrow, adding a mid-day checkpoint between the morning
+  plan and the night close so drift is caught while the day can still be saved.
+- Still open: end-to-end activation of Google Calendar write-through in
+  production (the OAuth client id and edge secrets are still unconfigured).
 
 ---
 
