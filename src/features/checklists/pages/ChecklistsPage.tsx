@@ -22,7 +22,7 @@ export const ChecklistsPage: React.FC = () => {
             name: newName,
             emoji: newEmoji,
             items: [],
-            isPinned: false
+            isPinned: false,
         });
 
         setIsCreating(false);
@@ -33,8 +33,11 @@ export const ChecklistsPage: React.FC = () => {
 
     if (selectedChecklist) {
         // Find the fresh version so updates propagate
-        const freshChecklist = checklists.find(c => c.id === selectedChecklist.id) || selectedChecklist;
-        return <ChecklistDetail checklist={freshChecklist} onBack={() => setSelectedChecklist(null)} />;
+        const freshChecklist =
+            checklists.find((c) => c.id === selectedChecklist.id) || selectedChecklist;
+        return (
+            <ChecklistDetail checklist={freshChecklist} onBack={() => setSelectedChecklist(null)} />
+        );
     }
 
     return (
@@ -55,24 +58,30 @@ export const ChecklistsPage: React.FC = () => {
 
             {isCreating && (
                 <div className="app-surface p-5 animate-slideIn">
-                    <h3 className="mb-4 text-lg font-semibold text-slate-900">Create new checklist</h3>
+                    <h3 className="mb-4 text-lg font-semibold text-slate-900">
+                        Create new checklist
+                    </h3>
                     <form onSubmit={handleCreate} className="space-y-4">
                         <div className="flex gap-4">
                             <div className="w-16">
-                                <label className="mb-1 block text-sm font-medium text-slate-700">Icon</label>
+                                <label className="mb-1 block text-sm font-medium text-slate-700">
+                                    Icon
+                                </label>
                                 <input
                                     type="text"
                                     value={newEmoji}
-                                    onChange={e => setNewEmoji(e.target.value)}
+                                    onChange={(e) => setNewEmoji(e.target.value)}
                                     className="w-full rounded-lg border border-slate-200 bg-white p-2 text-center text-2xl"
                                 />
                             </div>
                             <div className="flex-1">
-                                <label className="mb-1 block text-sm font-medium text-slate-700">Name</label>
+                                <label className="mb-1 block text-sm font-medium text-slate-700">
+                                    Name
+                                </label>
                                 <input
                                     type="text"
                                     value={newName}
-                                    onChange={e => setNewName(e.target.value)}
+                                    onChange={(e) => setNewName(e.target.value)}
                                     placeholder="e.g. Packing List, Weekly Review..."
                                     className="w-full rounded-lg border border-slate-200 bg-white p-2.5 outline-none focus:ring-2 focus:ring-indigo-100"
                                     autoFocus
@@ -101,13 +110,13 @@ export const ChecklistsPage: React.FC = () => {
 
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[1, 2, 3].map(i => (
+                    {[1, 2, 3].map((i) => (
                         <div key={i} className="h-40 animate-pulse rounded-xl bg-slate-100" />
                     ))}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {checklists.map(checklist => (
+                    {checklists.map((checklist) => (
                         <ChecklistCard
                             key={checklist.id}
                             checklist={checklist}
@@ -118,8 +127,12 @@ export const ChecklistsPage: React.FC = () => {
                     {checklists.length === 0 && !isCreating && (
                         <div className="col-span-full rounded-xl border border-dashed border-slate-200 bg-slate-50 py-20 text-center">
                             <span className="text-6xl block mb-4">📝</span>
-                            <h3 className="mb-2 text-xl font-medium text-slate-900">No checklists yet</h3>
-                            <p className="mb-6 text-slate-500">Create your first checklist to get started.</p>
+                            <h3 className="mb-2 text-xl font-medium text-slate-900">
+                                No checklists yet
+                            </h3>
+                            <p className="mb-6 text-slate-500">
+                                Create your first checklist to get started.
+                            </p>
                             <button
                                 onClick={() => setIsCreating(true)}
                                 className="text-sm font-medium text-indigo-700 hover:underline"

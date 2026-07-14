@@ -55,11 +55,14 @@ export function useNextUp(): NextUp {
 
     const taskWhen = recommended?.task.dueDate
         ? new Date(recommended.task.dueDate).getTime()
-        : recommended ? Number.MAX_SAFE_INTEGER : undefined;
+        : recommended
+          ? Number.MAX_SAFE_INTEGER
+          : undefined;
     const eventWhen = nextEvent ? new Date(nextEvent.startTime).getTime() : undefined;
 
     // Nearest active assignment by deadline (hook already sorts ascending).
-    const nextAssignment = assignments.find(a => !Number.isNaN(new Date(a.deadline).getTime())) ?? null;
+    const nextAssignment =
+        assignments.find((a) => !Number.isNaN(new Date(a.deadline).getTime())) ?? null;
     const assignmentWhen = nextAssignment ? new Date(nextAssignment.deadline).getTime() : undefined;
 
     const candidates: NextUp[] = [];
@@ -80,6 +83,6 @@ export function useNextUp(): NextUp {
     return candidates.reduce((soonest, candidate) =>
         (candidate.when ?? Number.MAX_SAFE_INTEGER) < (soonest.when ?? Number.MAX_SAFE_INTEGER)
             ? candidate
-            : soonest
+            : soonest,
     );
 }

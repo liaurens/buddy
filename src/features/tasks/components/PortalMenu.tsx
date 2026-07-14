@@ -94,7 +94,7 @@ const PortalMenu: React.FC<PortalMenuProps> = ({
             ref={menuRef}
             style={style}
             className="z-[60] max-h-[60vh] overflow-y-auto rounded-xl border border-slate-200 bg-white text-sm shadow-lg"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
         >
             {children}
         </div>,

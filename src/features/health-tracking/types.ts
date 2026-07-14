@@ -77,7 +77,7 @@ export interface Protocol {
     name: string;
     category: 'peptide' | 'pharmaceutical' | 'supplement' | 'practice' | 'other';
     doseAmount?: number; // Optional for practice-type protocols
-    doseUnit?: string;   // Optional for practice-type protocols
+    doseUnit?: string; // Optional for practice-type protocols
     frequency: string;
     route?: string;
     timingNotes?: string;

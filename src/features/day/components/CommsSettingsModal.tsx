@@ -20,31 +20,38 @@ const CommsSettingsModal: React.FC<Props> = ({ onClose, onSaved }) => {
 
     useEffect(() => {
         if (!user?.id) return;
-        getCategorySettings(user.id, 'comms').then(s => setItems(s.items));
+        getCategorySettings(user.id, 'comms').then((s) => setItems(s.items));
     }, [user?.id]);
 
     const toggleDay = (itemId: string, day: number) => {
-        setItems(prev => prev.map(item => {
-            if (item.id !== itemId) return item;
-            if (item.daysOfWeek === null) {
-                // Switch from "every day" to "only this day"
-                return { ...item, daysOfWeek: [day] };
-            }
-            const has = item.daysOfWeek.includes(day);
-            const next = has ? item.daysOfWeek.filter(d => d !== day) : [...item.daysOfWeek, day].sort();
-            // If all 7 selected → revert to null (every day)
-            return { ...item, daysOfWeek: next.length === 7 || next.length === 0 ? null : next };
-        }));
+        setItems((prev) =>
+            prev.map((item) => {
+                if (item.id !== itemId) return item;
+                if (item.daysOfWeek === null) {
+                    // Switch from "every day" to "only this day"
+                    return { ...item, daysOfWeek: [day] };
+                }
+                const has = item.daysOfWeek.includes(day);
+                const next = has
+                    ? item.daysOfWeek.filter((d) => d !== day)
+                    : [...item.daysOfWeek, day].sort();
+                // If all 7 selected → revert to null (every day)
+                return {
+                    ...item,
+                    daysOfWeek: next.length === 7 || next.length === 0 ? null : next,
+                };
+            }),
+        );
     };
 
     const addItem = () => {
         const label = newLabel.trim();
         if (!label) return;
-        setItems(prev => [...prev, { id: uuidv4(), label, daysOfWeek: null }]);
+        setItems((prev) => [...prev, { id: uuidv4(), label, daysOfWeek: null }]);
         setNewLabel('');
     };
 
-    const removeItem = (id: string) => setItems(prev => prev.filter(i => i.id !== id));
+    const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
 
     const handleSave = async () => {
         if (!user?.id) return;
@@ -70,14 +77,17 @@ const CommsSettingsModal: React.FC<Props> = ({ onClose, onSaved }) => {
 
                 <div className="overflow-y-auto p-5 space-y-4 flex-1">
                     <p className="text-sm text-slate-500">
-                        Each item appears in your morning comms step. Set specific days to show it only on those days.
+                        Each item appears in your morning comms step. Set specific days to show it
+                        only on those days.
                     </p>
 
                     <ul className="space-y-3">
-                        {items.map(item => (
+                        {items.map((item) => (
                             <li key={item.id} className="bg-slate-50 rounded-xl p-3 space-y-2">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-slate-800 flex-1">{item.label}</span>
+                                    <span className="text-sm font-medium text-slate-800 flex-1">
+                                        {item.label}
+                                    </span>
                                     <button
                                         onClick={() => removeItem(item.id)}
                                         className="p-1 text-slate-400 hover:text-red-500 transition-colors"
@@ -87,7 +97,9 @@ const CommsSettingsModal: React.FC<Props> = ({ onClose, onSaved }) => {
                                 </div>
                                 <div className="flex gap-1">
                                     {DAY_LABELS.map((label, day) => {
-                                        const active = item.daysOfWeek === null || item.daysOfWeek.includes(day);
+                                        const active =
+                                            item.daysOfWeek === null ||
+                                            item.daysOfWeek.includes(day);
                                         return (
                                             <button
                                                 key={day}
@@ -106,7 +118,7 @@ const CommsSettingsModal: React.FC<Props> = ({ onClose, onSaved }) => {
                                 <p className="text-xs text-slate-400">
                                     {item.daysOfWeek === null
                                         ? 'Every day'
-                                        : item.daysOfWeek.map(d => DAY_LABELS[d]).join(', ')}
+                                        : item.daysOfWeek.map((d) => DAY_LABELS[d]).join(', ')}
                                 </p>
                             </li>
                         ))}
@@ -115,8 +127,8 @@ const CommsSettingsModal: React.FC<Props> = ({ onClose, onSaved }) => {
                     <div className="flex gap-2">
                         <input
                             value={newLabel}
-                            onChange={e => setNewLabel(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && addItem()}
+                            onChange={(e) => setNewLabel(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && addItem()}
                             placeholder="Add item…"
                             className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"
                         />

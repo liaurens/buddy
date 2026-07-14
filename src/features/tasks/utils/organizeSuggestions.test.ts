@@ -8,17 +8,40 @@ describe('sanitizeOrganizeSuggestions', () => {
     it('accepts a well-formed object payload', () => {
         const raw = {
             suggestions: [
-                { id: 't1', taskTypeId: 'email', kind: 'urgent', priority: 'high', dueDate: '2026-07-01', reason: 'time-sensitive' },
+                {
+                    id: 't1',
+                    taskTypeId: 'email',
+                    kind: 'urgent',
+                    priority: 'high',
+                    dueDate: '2026-07-01',
+                    reason: 'time-sensitive',
+                },
             ],
         };
         const out = sanitizeOrganizeSuggestions(raw, tasks, taskTypes);
         expect(out).toEqual([
-            { id: 't1', taskTypeId: 'email', kind: 'urgent', priority: 'high', dueDate: '2026-07-01', reason: 'time-sensitive' },
+            {
+                id: 't1',
+                taskTypeId: 'email',
+                kind: 'urgent',
+                priority: 'high',
+                dueDate: '2026-07-01',
+                reason: 'time-sensitive',
+            },
         ]);
     });
 
     it('accepts a bare array payload', () => {
-        const raw = [{ id: 't2', taskTypeId: 'home', kind: 'standard', priority: 'medium', dueDate: null, reason: '' }];
+        const raw = [
+            {
+                id: 't2',
+                taskTypeId: 'home',
+                kind: 'standard',
+                priority: 'medium',
+                dueDate: null,
+                reason: '',
+            },
+        ];
         const out = sanitizeOrganizeSuggestions(raw, tasks, taskTypes);
         expect(out).toHaveLength(1);
         expect(out[0].id).toBe('t2');
@@ -37,7 +60,17 @@ describe('sanitizeOrganizeSuggestions', () => {
     });
 
     it('nulls out unknown task types and malformed dates', () => {
-        const raw = { suggestions: [{ id: 't1', taskTypeId: 'does-not-exist', kind: 'backlog', priority: 'low', dueDate: '07/01/2026' }] };
+        const raw = {
+            suggestions: [
+                {
+                    id: 't1',
+                    taskTypeId: 'does-not-exist',
+                    kind: 'backlog',
+                    priority: 'low',
+                    dueDate: '07/01/2026',
+                },
+            ],
+        };
         const [s] = sanitizeOrganizeSuggestions(raw, tasks, taskTypes);
         expect(s.taskTypeId).toBeNull();
         expect(s.dueDate).toBeNull();

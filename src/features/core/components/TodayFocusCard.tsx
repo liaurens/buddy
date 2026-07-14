@@ -56,7 +56,9 @@ const TodayFocusCard: React.FC<Props> = ({ onNavigate }) => {
             <div className="flex items-center justify-between gap-3">
                 <h2 className="font-semibold text-slate-900">Today</h2>
                 {totalCount > 0 && (
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${accent.softBg} ${accent.softText}`}>
+                    <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${accent.softBg} ${accent.softText}`}
+                    >
                         {completedCount} / {totalCount} done
                     </span>
                 )}
@@ -71,7 +73,11 @@ const TodayFocusCard: React.FC<Props> = ({ onNavigate }) => {
                             accent={accent}
                             onDone={() => toggleTask(task.id)}
                             onReschedule={(date, time) =>
-                                updateTask({ ...task, dueDate: date, dueTime: time ?? task.dueTime })
+                                updateTask({
+                                    ...task,
+                                    dueDate: date,
+                                    dueTime: time ?? task.dueTime,
+                                })
                             }
                             onUpdate={updateTask}
                         />

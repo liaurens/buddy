@@ -40,10 +40,14 @@ const TypeSection: React.FC<TypeSectionProps> = ({
         <section className="space-y-2">
             <button
                 type="button"
-                onClick={() => setCollapsed(c => !c)}
+                onClick={() => setCollapsed((c) => !c)}
                 className="flex w-full items-center gap-2 px-1 py-1 text-left transition-colors"
             >
-                {collapsed ? <ChevronRight size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+                {collapsed ? (
+                    <ChevronRight size={14} className="text-slate-400" />
+                ) : (
+                    <ChevronDown size={14} className="text-slate-400" />
+                )}
                 {taskType?.emoji && <span className="text-base">{taskType.emoji}</span>}
                 <span className={`text-sm font-semibold ${colors.text}`}>
                     {taskType?.name || 'Uncategorized'}
@@ -52,7 +56,7 @@ const TypeSection: React.FC<TypeSectionProps> = ({
             </button>
             {!collapsed && (
                 <div className={`app-surface overflow-hidden border-l-2 ${colors.border}`}>
-                    {tasks.map(task => (
+                    {tasks.map((task) => (
                         <TaskCard
                             key={task.id}
                             task={task}

@@ -55,128 +55,145 @@ export const useTrackers = (): TrackerState => {
         enabled: !!userId,
     });
 
-    const addEntry = useCallback(async (entry: Omit<Entry, 'id'>) => {
-        if (!userId) throw new Error('Not authenticated');
+    const addEntry = useCallback(
+        async (entry: Omit<Entry, 'id'>) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const newEntry: Entry = {
-            ...entry,
-            id: uuidv4(),
-            timestamp: entry.timestamp || new Date().toISOString(),
-        };
+            const newEntry: Entry = {
+                ...entry,
+                id: uuidv4(),
+                timestamp: entry.timestamp || new Date().toISOString(),
+            };
 
-        const dbEntry = entryToDb(newEntry, userId);
-        const { error } = await supabase.from('entries').insert(dbEntry);
+            const dbEntry = entryToDb(newEntry, userId);
+            const { error } = await supabase.from('entries').insert(dbEntry);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['entries', userId] });
-    }, [userId, queryClient]);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+        },
+        [userId, queryClient],
+    );
 
-    const updateEntry = useCallback(async (updatedEntry: Entry) => {
-        if (!userId) throw new Error('Not authenticated');
+    const updateEntry = useCallback(
+        async (updatedEntry: Entry) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const { id, ...updates } = updatedEntry;
-        const dbUpdates = {
-            tracker_id: updates.trackerId,
-            value: updates.value,
-            text_value: updates.textValue || null,
-            timestamp: updates.timestamp,
-            notes: updates.notes || null,
-            metadata: updates.metadata || null,
-        };
+            const { id, ...updates } = updatedEntry;
+            const dbUpdates = {
+                tracker_id: updates.trackerId,
+                value: updates.value,
+                text_value: updates.textValue || null,
+                timestamp: updates.timestamp,
+                notes: updates.notes || null,
+                metadata: updates.metadata || null,
+            };
 
-        const { error } = await supabase
-            .from('entries')
-            .update(dbUpdates)
-            .eq('id', id)
-            .eq('user_id', userId);
+            const { error } = await supabase
+                .from('entries')
+                .update(dbUpdates)
+                .eq('id', id)
+                .eq('user_id', userId);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['entries', userId] });
-    }, [userId, queryClient]);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+        },
+        [userId, queryClient],
+    );
 
-    const deleteEntry = useCallback(async (id: string) => {
-        if (!userId) throw new Error('Not authenticated');
+    const deleteEntry = useCallback(
+        async (id: string) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const { error } = await supabase
-            .from('entries')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', userId);
+            const { error } = await supabase
+                .from('entries')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', userId);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['entries', userId] });
-    }, [userId, queryClient]);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+        },
+        [userId, queryClient],
+    );
 
-    const addTracker = useCallback(async (tracker: TrackerDefinition) => {
-        if (!userId) throw new Error('Not authenticated');
+    const addTracker = useCallback(
+        async (tracker: TrackerDefinition) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const dbTracker = trackerToDb(tracker, userId);
-        const { error } = await supabase.from('trackers').insert(dbTracker);
+            const dbTracker = trackerToDb(tracker, userId);
+            const { error } = await supabase.from('trackers').insert(dbTracker);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
-    }, [userId, queryClient]);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
+        },
+        [userId, queryClient],
+    );
 
-    const updateTracker = useCallback(async (tracker: TrackerDefinition) => {
-        if (!userId) throw new Error('Not authenticated');
+    const updateTracker = useCallback(
+        async (tracker: TrackerDefinition) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const { id, ...updates } = tracker;
-        const dbUpdates = {
-            name: updates.name,
-            emoji: updates.emoji || null,
-            type: updates.type,
-            unit: updates.unit || null,
-            group: updates.group || null,
-            goal: updates.goal || null,
-            checkin_config: updates.checkinConfig || null,
-        };
+            const { id, ...updates } = tracker;
+            const dbUpdates = {
+                name: updates.name,
+                emoji: updates.emoji || null,
+                type: updates.type,
+                unit: updates.unit || null,
+                group: updates.group || null,
+                goal: updates.goal || null,
+                checkin_config: updates.checkinConfig || null,
+            };
 
-        const { error } = await supabase
-            .from('trackers')
-            .update(dbUpdates)
-            .eq('id', id)
-            .eq('user_id', userId);
+            const { error } = await supabase
+                .from('trackers')
+                .update(dbUpdates)
+                .eq('id', id)
+                .eq('user_id', userId);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
-    }, [userId, queryClient]);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
+        },
+        [userId, queryClient],
+    );
 
-    const deleteTracker = useCallback(async (id: string) => {
-        if (!userId) throw new Error('Not authenticated');
+    const deleteTracker = useCallback(
+        async (id: string) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        // Delete related entries first
-        await supabase
-            .from('entries')
-            .delete()
-            .eq('tracker_id', id)
-            .eq('user_id', userId);
+            // Delete related entries first
+            await supabase.from('entries').delete().eq('tracker_id', id).eq('user_id', userId);
 
-        // Delete the tracker
-        const { error } = await supabase
-            .from('trackers')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', userId);
+            // Delete the tracker
+            const { error } = await supabase
+                .from('trackers')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', userId);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
-        queryClient.invalidateQueries({ queryKey: ['entries', userId] });
-    }, [userId, queryClient]);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
+            queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+        },
+        [userId, queryClient],
+    );
 
     const exportData = useCallback(async () => {
         if (!userId) throw new Error('Not authenticated');
         return await exportAllData(userId);
     }, [userId]);
 
-    const importData = useCallback(async (jsonData: string): Promise<boolean> => {
-        if (!userId) throw new Error('Not authenticated');
-        const success = await importAllData(jsonData, userId);
-        if (success) {
-            queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
-            queryClient.invalidateQueries({ queryKey: ['entries', userId] });
-        }
-        return success;
-    }, [userId, queryClient]);
+    const importData = useCallback(
+        async (jsonData: string): Promise<boolean> => {
+            if (!userId) throw new Error('Not authenticated');
+            const success = await importAllData(jsonData, userId);
+            if (success) {
+                queryClient.invalidateQueries({ queryKey: ['trackers', userId] });
+                queryClient.invalidateQueries({ queryKey: ['entries', userId] });
+            }
+            return success;
+        },
+        [userId, queryClient],
+    );
 
     return {
         entries,

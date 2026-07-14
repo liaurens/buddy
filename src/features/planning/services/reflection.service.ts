@@ -54,10 +54,7 @@ export interface LearningPattern {
 /**
  * Generate reflection for a specific day
  */
-export async function generateDayReflection(
-    userId: string,
-    date: string
-): Promise<DayReflection> {
+export async function generateDayReflection(userId: string, date: string): Promise<DayReflection> {
     try {
         // Fetch all blocks for this day's plan
         const { data: plan } = await supabase
@@ -83,8 +80,8 @@ export async function generateDayReflection(
 
         // Calculate completions
         const completions: TimeBlockCompletion[] = blocks
-            .filter(b => b.status === 'completed' && b.actual_minutes)
-            .map(b => {
+            .filter((b) => b.status === 'completed' && b.actual_minutes)
+            .map((b) => {
                 const variance = b.actual_minutes! - b.estimated_minutes;
                 const variancePercent = (variance / b.estimated_minutes) * 100;
 
@@ -101,17 +98,18 @@ export async function generateDayReflection(
             });
 
         // Categorize by accuracy
-        const underestimated = completions.filter(c => c.variancePercent > 10);
-        const overestimated = completions.filter(c => c.variancePercent < -10);
-        const accurate = completions.filter(c => Math.abs(c.variancePercent) <= 10);
+        const underestimated = completions.filter((c) => c.variancePercent > 10);
+        const overestimated = completions.filter((c) => c.variancePercent < -10);
+        const accurate = completions.filter((c) => Math.abs(c.variancePercent) <= 10);
 
         // Calculate totals
         const totalEstimatedMinutes = blocks.reduce((sum, b) => sum + b.estimated_minutes, 0);
         const totalActualMinutes = completions.reduce((sum, c) => sum + c.actualMinutes, 0);
         const totalVariance = totalActualMinutes - totalEstimatedMinutes;
-        const avgVariancePercent = completions.length > 0
-            ? completions.reduce((sum, c) => sum + c.variancePercent, 0) / completions.length
-            : 0;
+        const avgVariancePercent =
+            completions.length > 0
+                ? completions.reduce((sum, c) => sum + c.variancePercent, 0) / completions.length
+                : 0;
 
         return {
             date,
@@ -141,7 +139,7 @@ export async function generateDayReflection(
  */
 export async function detectPatterns(
     userId: string,
-    days: number = 30
+    days: number = 30,
 ): Promise<LearningPattern[]> {
     try {
         const cutoffDate = new Date();
@@ -163,7 +161,7 @@ export async function detectPatterns(
         const patterns: LearningPattern[] = [];
 
         // Pattern 1: Overall estimation accuracy
-        const variances = blocks.map(b => {
+        const variances = blocks.map((b) => {
             const variance = b.actual_minutes! - b.estimated_minutes;
             return (variance / b.estimated_minutes) * 100;
         });
@@ -172,22 +170,24 @@ export async function detectPatterns(
 
         if (Math.abs(avgVariance) > 15) {
             patterns.push({
-                pattern: avgVariance > 0
-                    ? `You typically underestimate tasks by ${Math.round(avgVariance)}%`
-                    : `You typically overestimate tasks by ${Math.round(Math.abs(avgVariance))}%`,
+                pattern:
+                    avgVariance > 0
+                        ? `You typically underestimate tasks by ${Math.round(avgVariance)}%`
+                        : `You typically overestimate tasks by ${Math.round(Math.abs(avgVariance))}%`,
                 category: 'general',
                 avgVariancePercent: avgVariance,
                 sampleSize: blocks.length,
-                recommendation: avgVariance > 0
-                    ? `Add ${Math.round(avgVariance)}% buffer to all task estimates`
-                    : 'You can be more ambitious with your planning',
+                recommendation:
+                    avgVariance > 0
+                        ? `Add ${Math.round(avgVariance)}% buffer to all task estimates`
+                        : 'You can be more ambitious with your planning',
             });
         }
 
         // Pattern 2: Specific task types (e.g., "meeting", "email", "coding")
         const taskGroups = new Map<string, number[]>();
 
-        blocks.forEach(b => {
+        blocks.forEach((b) => {
             const titleLower = b.title.toLowerCase();
             let category = 'other';
 
@@ -195,9 +195,17 @@ export async function detectPatterns(
                 category = 'meetings';
             } else if (titleLower.includes('email') || titleLower.includes('message')) {
                 category = 'communication';
-            } else if (titleLower.includes('code') || titleLower.includes('develop') || titleLower.includes('programming')) {
+            } else if (
+                titleLower.includes('code') ||
+                titleLower.includes('develop') ||
+                titleLower.includes('programming')
+            ) {
                 category = 'coding';
-            } else if (titleLower.includes('write') || titleLower.includes('document') || titleLower.includes('report')) {
+            } else if (
+                titleLower.includes('write') ||
+                titleLower.includes('document') ||
+                titleLower.includes('report')
+            ) {
                 category = 'writing';
             }
 
@@ -205,26 +213,30 @@ export async function detectPatterns(
                 taskGroups.set(category, []);
             }
 
-            const variance = ((b.actual_minutes! - b.estimated_minutes) / b.estimated_minutes) * 100;
+            const variance =
+                ((b.actual_minutes! - b.estimated_minutes) / b.estimated_minutes) * 100;
             taskGroups.get(category)!.push(variance);
         });
 
         // Analyze each category
         taskGroups.forEach((variances, category) => {
-            if (variances.length >= 3) { // Need at least 3 samples
+            if (variances.length >= 3) {
+                // Need at least 3 samples
                 const avg = variances.reduce((a, b) => a + b, 0) / variances.length;
 
                 if (Math.abs(avg) > 20) {
                     patterns.push({
-                        pattern: avg > 0
-                            ? `${category} tasks typically take ${Math.round(avg)}% longer than estimated`
-                            : `${category} tasks typically take ${Math.round(Math.abs(avg))}% less time than estimated`,
+                        pattern:
+                            avg > 0
+                                ? `${category} tasks typically take ${Math.round(avg)}% longer than estimated`
+                                : `${category} tasks typically take ${Math.round(Math.abs(avg))}% less time than estimated`,
                         category: 'task_type',
                         avgVariancePercent: avg,
                         sampleSize: variances.length,
-                        recommendation: avg > 0
-                            ? `Increase ${category} estimates by ${Math.round(avg)}%`
-                            : `Reduce ${category} estimates by ${Math.round(Math.abs(avg))}%`,
+                        recommendation:
+                            avg > 0
+                                ? `Increase ${category} estimates by ${Math.round(avg)}%`
+                                : `Reduce ${category} estimates by ${Math.round(Math.abs(avg))}%`,
                     });
                 }
             }
@@ -236,4 +248,3 @@ export async function detectPatterns(
         return [];
     }
 }
-

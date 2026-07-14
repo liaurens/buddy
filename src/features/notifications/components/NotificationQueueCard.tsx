@@ -6,7 +6,10 @@ import {
     getPendingNotifications,
     updateNotificationStatus,
 } from '../../../services/notifications/notification.service';
-import type { ScheduledNotification, ToolCategory } from '../../../services/notifications/notification.types';
+import type {
+    ScheduledNotification,
+    ToolCategory,
+} from '../../../services/notifications/notification.types';
 
 const CATEGORY_LABELS: Partial<Record<ToolCategory, string>> = {
     routine_morning: 'Morning',
@@ -54,7 +57,9 @@ const NotificationQueueCard: React.FC = () => {
         }
     }, [user?.id]);
 
-    useEffect(() => { void refresh(); }, [refresh]);
+    useEffect(() => {
+        void refresh();
+    }, [refresh]);
 
     const cancelOne = async (id: string) => {
         if (busy) return;
@@ -63,7 +68,7 @@ const NotificationQueueCard: React.FC = () => {
         try {
             const ok = await updateNotificationStatus(id, 'cancelled');
             if (!ok) throw new Error('Could not cancel this notification.');
-            setPending(prev => prev.filter(n => n.id !== id));
+            setPending((prev) => prev.filter((n) => n.id !== id));
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Cancel failed');
         } finally {
@@ -73,12 +78,19 @@ const NotificationQueueCard: React.FC = () => {
 
     const cancelAll = async () => {
         if (busy || pending.length === 0) return;
-        if (!window.confirm(`Cancel all ${pending.length} queued notifications? Routine reminders come back when you save settings.`)) return;
+        if (
+            !window.confirm(
+                `Cancel all ${pending.length} queued notifications? Routine reminders come back when you save settings.`,
+            )
+        )
+            return;
         setBusy(true);
         setError(null);
         try {
-            const results = await Promise.all(pending.map(n => updateNotificationStatus(n.id, 'cancelled')));
-            if (results.some(ok => !ok)) {
+            const results = await Promise.all(
+                pending.map((n) => updateNotificationStatus(n.id, 'cancelled')),
+            );
+            if (results.some((ok) => !ok)) {
                 setError('Some notifications could not be cancelled.');
             }
             await refresh();
@@ -124,7 +136,9 @@ const NotificationQueueCard: React.FC = () => {
             </p>
 
             {error && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    {error}
+                </p>
             )}
 
             {loading ? (
@@ -133,13 +147,17 @@ const NotificationQueueCard: React.FC = () => {
                 <p className="text-sm text-slate-400 py-2">Nothing queued right now.</p>
             ) : (
                 <ul className="divide-y divide-slate-100">
-                    {pending.map(n => (
+                    {pending.map((n) => (
                         <li key={n.id} className="flex items-center gap-3 py-2.5">
-                            <span className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium ${CATEGORY_STYLES[n.toolCategory] ?? 'bg-slate-100 text-slate-600'}`}>
+                            <span
+                                className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium ${CATEGORY_STYLES[n.toolCategory] ?? 'bg-slate-100 text-slate-600'}`}
+                            >
                                 {CATEGORY_LABELS[n.toolCategory] ?? n.toolCategory}
                             </span>
                             <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-slate-800">{n.title}</p>
+                                <p className="truncate text-sm font-medium text-slate-800">
+                                    {n.title}
+                                </p>
                                 <p className="truncate text-xs text-slate-500">{n.body}</p>
                             </div>
                             <span className="shrink-0 text-xs text-slate-500">

@@ -39,55 +39,64 @@ export const useExperiments = (): ExperimentContextType => {
         enabled: !!userId,
     });
 
-    const addExperiment = useCallback(async (experiment: Omit<Experiment, 'id' | 'active'>) => {
-        if (!userId) throw new Error('Not authenticated');
+    const addExperiment = useCallback(
+        async (experiment: Omit<Experiment, 'id' | 'active'>) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const id = uuidv4();
-        const newExperiment = {
-            ...experiment,
-            id,
-            active: experiment.status === 'active',
-        };
+            const id = uuidv4();
+            const newExperiment = {
+                ...experiment,
+                id,
+                active: experiment.status === 'active',
+            };
 
-        const dbExperiment = experimentToDb(newExperiment, userId);
-        const { error } = await supabase.from('experiments').insert(dbExperiment);
+            const dbExperiment = experimentToDb(newExperiment, userId);
+            const { error } = await supabase.from('experiments').insert(dbExperiment);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['experiments', userId] });
-        return id;
-    }, [userId, queryClient]);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['experiments', userId] });
+            return id;
+        },
+        [userId, queryClient],
+    );
 
-    const updateExperiment = useCallback(async (experiment: Experiment) => {
-        if (!userId) throw new Error('Not authenticated');
+    const updateExperiment = useCallback(
+        async (experiment: Experiment) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const dbExp = experimentToDb(experiment, userId);
-        const { id: _id, user_id: _uid, ...updates } = dbExp as Record<string, unknown>;
+            const dbExp = experimentToDb(experiment, userId);
+            const { id: _id, user_id: _uid, ...updates } = dbExp as Record<string, unknown>;
 
-        const { error } = await supabase
-            .from('experiments')
-            .update(updates)
-            .eq('id', experiment.id)
-            .eq('user_id', userId);
+            const { error } = await supabase
+                .from('experiments')
+                .update(updates)
+                .eq('id', experiment.id)
+                .eq('user_id', userId);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['experiments', userId] });
-    }, [userId, queryClient]);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['experiments', userId] });
+        },
+        [userId, queryClient],
+    );
 
-    const deleteExperiment = useCallback(async (id: string) => {
-        if (!userId) throw new Error('Not authenticated');
+    const deleteExperiment = useCallback(
+        async (id: string) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const { error } = await supabase
-            .from('experiments')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', userId);
+            const { error } = await supabase
+                .from('experiments')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', userId);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['experiments', userId] });
-    }, [userId, queryClient]);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['experiments', userId] });
+        },
+        [userId, queryClient],
+    );
 
     const getActiveExperiments = useCallback(() => {
-        return experiments.filter(e => e.status === 'active');
+        return experiments.filter((e) => e.status === 'active');
     }, [experiments]);
 
     return {
@@ -95,6 +104,6 @@ export const useExperiments = (): ExperimentContextType => {
         addExperiment,
         updateExperiment,
         deleteExperiment,
-        getActiveExperiments
+        getActiveExperiments,
     };
 };

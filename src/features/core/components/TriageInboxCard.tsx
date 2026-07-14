@@ -12,7 +12,7 @@ import React, { useState } from 'react';
 import { Inbox, Sparkles, ChevronRight, X } from 'lucide-react';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { countInbox } from '../../tasks/utils/inbox';
-import { TriageInbox } from '../../tasks';
+import TriageInbox from '../../tasks/components/TriageInbox';
 
 const TriageInboxCard: React.FC = () => {
     const { tasks } = useTasks();

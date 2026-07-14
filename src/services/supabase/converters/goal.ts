@@ -52,7 +52,10 @@ export function dbToGoal(db: DbGoal): Goal {
     };
 }
 
-export function goalToDb(goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Omit<DbGoal, 'id' | 'created_at' | 'updated_at'> {
+export function goalToDb(
+    goal: Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>,
+    userId: string,
+): Omit<DbGoal, 'id' | 'created_at' | 'updated_at'> {
     return {
         user_id: userId,
         title: goal.title,

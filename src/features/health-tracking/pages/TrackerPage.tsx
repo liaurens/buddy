@@ -17,7 +17,7 @@ interface TrackerPageProps {
 
 const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
     const [trackerSubTab, setTrackerSubTab] = useState<'dashboard' | 'add' | 'analysis'>(
-        initialParams?.subTab || 'dashboard'
+        initialParams?.subTab || 'dashboard',
     );
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingTracker, setEditingTracker] = useState<TrackerDefinition | undefined>(undefined);
@@ -60,22 +60,23 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
             <div className="app-segmented">
                 <button
                     onClick={() => setTrackerSubTab('dashboard')}
-                    className={`app-segment ${trackerSubTab === 'dashboard' ? 'app-segment-active' : ''
-                        }`}
+                    className={`app-segment ${
+                        trackerSubTab === 'dashboard' ? 'app-segment-active' : ''
+                    }`}
                 >
                     Dashboard
                 </button>
                 <button
                     onClick={() => setTrackerSubTab('add')}
-                    className={`app-segment ${trackerSubTab === 'add' ? 'app-segment-active' : ''
-                        }`}
+                    className={`app-segment ${trackerSubTab === 'add' ? 'app-segment-active' : ''}`}
                 >
                     Add Entry
                 </button>
                 <button
                     onClick={() => setTrackerSubTab('analysis')}
-                    className={`app-segment ${trackerSubTab === 'analysis' ? 'app-segment-active' : ''
-                        }`}
+                    className={`app-segment ${
+                        trackerSubTab === 'analysis' ? 'app-segment-active' : ''
+                    }`}
                 >
                     Analysis
                 </button>
@@ -90,11 +91,11 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
                 />
             )}
             {trackerSubTab === 'add' && (
-                <EntryForm 
+                <EntryForm
                     onManageTrackers={() => {
                         setEditingTracker(undefined);
                         setIsCreateModalOpen(true);
-                    }} 
+                    }}
                 />
             )}
             {trackerSubTab === 'analysis' && (

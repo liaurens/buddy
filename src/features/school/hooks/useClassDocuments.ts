@@ -1,7 +1,10 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../hooks/useAuth';
-import type { ClassDocument, ClassDocumentKind } from '../../../services/supabase/converters/school';
+import type {
+    ClassDocument,
+    ClassDocumentKind,
+} from '../../../services/supabase/converters/school';
 import {
     deleteCourseDocument,
     listClassDocuments,
@@ -27,33 +30,49 @@ export function useClassDocuments(classId?: string) {
         enabled: !!classId && !!userId,
     });
 
-    const uploadDocument = useCallback(async (
-        file: File,
-        kind: ClassDocumentKind,
-        metadata?: { folder?: string; tags?: string[]; notes?: string | null }
-    ) => {
-        if (!classId) throw new Error('Missing class');
-        const document = await uploadCourseDocument(classId, file, kind, metadata);
-        queryClient.invalidateQueries({ queryKey });
-        return document;
-    }, [classId, queryClient, queryKey]);
+    const uploadDocument = useCallback(
+        async (
+            file: File,
+            kind: ClassDocumentKind,
+            metadata?: { folder?: string; tags?: string[]; notes?: string | null },
+        ) => {
+            if (!classId) throw new Error('Missing class');
+            const document = await uploadCourseDocument(classId, file, kind, metadata);
+            queryClient.invalidateQueries({ queryKey });
+            return document;
+        },
+        [classId, queryClient, queryKey],
+    );
 
-    const updateDocument = useCallback(async (
-        document: Pick<ClassDocument, 'id'>,
-        patch: Partial<Pick<ClassDocument, 'name' | 'kind' | 'folder' | 'tags' | 'notes'>>
-    ) => {
-        await updateCourseDocument(document, patch);
-        queryClient.invalidateQueries({ queryKey });
-    }, [queryClient, queryKey]);
+    const updateDocument = useCallback(
+        async (
+            document: Pick<ClassDocument, 'id'>,
+            patch: Partial<Pick<ClassDocument, 'name' | 'kind' | 'folder' | 'tags' | 'notes'>>,
+        ) => {
+            await updateCourseDocument(document, patch);
+            queryClient.invalidateQueries({ queryKey });
+        },
+        [queryClient, queryKey],
+    );
 
-    const deleteDocument = useCallback(async (document: ClassDocument) => {
-        await deleteCourseDocument(document);
-        queryClient.invalidateQueries({ queryKey });
-    }, [queryClient, queryKey]);
+    const deleteDocument = useCallback(
+        async (document: ClassDocument) => {
+            await deleteCourseDocument(document);
+            queryClient.invalidateQueries({ queryKey });
+        },
+        [queryClient, queryKey],
+    );
 
     const refreshDocuments = useCallback(() => {
         queryClient.invalidateQueries({ queryKey });
     }, [queryClient, queryKey]);
 
-    return { documents, isLoading, uploadDocument, updateDocument, deleteDocument, refreshDocuments };
+    return {
+        documents,
+        isLoading,
+        uploadDocument,
+        updateDocument,
+        deleteDocument,
+        refreshDocuments,
+    };
 }

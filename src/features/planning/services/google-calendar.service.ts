@@ -8,7 +8,9 @@
 
 import { supabase } from '../../../services/supabase';
 import {
-    googleCalendarOutbox, type GoogleEventPayload, type GoogleCalendarOutboxItem,
+    googleCalendarOutbox,
+    type GoogleEventPayload,
+    type GoogleCalendarOutboxItem,
 } from '../../../services/offline/googleCalendarOutbox';
 import type { Task } from '../../tasks/types';
 
@@ -51,7 +53,8 @@ async function sha256Challenge(verifier: string): Promise<string> {
 
 /** Begin the consent flow: stash PKCE + state, then redirect to Google. */
 export async function startGoogleAuth(): Promise<void> {
-    if (!CLIENT_ID) throw new Error('Google Calendar is not configured (VITE_GOOGLE_OAUTH_CLIENT_ID).');
+    if (!CLIENT_ID)
+        throw new Error('Google Calendar is not configured (VITE_GOOGLE_OAUTH_CLIENT_ID).');
     const codeVerifier = randomString(48);
     const state = randomString(16);
     const codeChallenge = await sha256Challenge(codeVerifier);
@@ -84,11 +87,19 @@ export async function completeGoogleAuth(code: string, state: string): Promise<C
     const raw = sessionStorage.getItem(PKCE_STORAGE_KEY);
     sessionStorage.removeItem(PKCE_STORAGE_KEY);
     if (!raw) throw new Error('Missing PKCE state — please start the connection again.');
-    const { codeVerifier, state: savedState } = JSON.parse(raw) as { codeVerifier: string; state: string };
+    const { codeVerifier, state: savedState } = JSON.parse(raw) as {
+        codeVerifier: string;
+        state: string;
+    };
     if (savedState !== state) throw new Error('State mismatch — possible CSRF, aborting.');
 
     const { data, error } = await supabase.functions.invoke('google-calendar-auth', {
-        body: { action: 'exchange', code, code_verifier: codeVerifier, redirect_uri: googleRedirectUri() },
+        body: {
+            action: 'exchange',
+            code,
+            code_verifier: codeVerifier,
+            redirect_uri: googleRedirectUri(),
+        },
     });
     if (error) throw new Error(error.message || 'Token exchange failed');
     if (data?.error) throw new Error(data.error);
@@ -96,13 +107,22 @@ export async function completeGoogleAuth(code: string, state: string): Promise<C
 }
 
 export async function getConnectionStatus(): Promise<ConnectionStatus> {
-    const { data, error } = await supabase.functions.invoke('google-calendar-auth', { body: { action: 'status' } });
-    if (error || data?.error) return { connected: false, googleEmail: null, status: 'disconnected' };
-    return { connected: !!data.connected, googleEmail: data.googleEmail ?? null, status: data.status ?? 'disconnected' };
+    const { data, error } = await supabase.functions.invoke('google-calendar-auth', {
+        body: { action: 'status' },
+    });
+    if (error || data?.error)
+        return { connected: false, googleEmail: null, status: 'disconnected' };
+    return {
+        connected: !!data.connected,
+        googleEmail: data.googleEmail ?? null,
+        status: data.status ?? 'disconnected',
+    };
 }
 
 export async function disconnectGoogle(): Promise<void> {
-    const { error } = await supabase.functions.invoke('google-calendar-auth', { body: { action: 'disconnect' } });
+    const { error } = await supabase.functions.invoke('google-calendar-auth', {
+        body: { action: 'disconnect' },
+    });
     if (error) throw new Error(error.message || 'Disconnect failed');
 }
 
@@ -117,7 +137,11 @@ function isNetworkError(error: { name?: string; message?: string }): boolean {
 
 /** Local timezone for event payloads. */
 function localTimeZone(): string {
-    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
+    try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    } catch {
+        return 'UTC';
+    }
 }
 
 /** Build a Google event payload from a scheduled task. Returns null if not schedulable. */
@@ -125,13 +149,23 @@ export function taskToGooglePayload(task: Task): GoogleEventPayload | null {
     if (!task.dueDate) return null;
     const timeZone = localTimeZone();
     const summary = task.title;
-    const base = { summary, description: task.notes || undefined, location: task.location || undefined };
+    const base = {
+        summary,
+        description: task.notes || undefined,
+        location: task.location || undefined,
+    };
 
     if (task.dueTime) {
         const start = new Date(`${task.dueDate}T${task.dueTime}`);
         const durationMin = task.estimatedTime && task.estimatedTime > 0 ? task.estimatedTime : 30;
         const end = new Date(start.getTime() + durationMin * 60_000);
-        return { ...base, start: start.toISOString(), end: end.toISOString(), isAllDay: false, timeZone };
+        return {
+            ...base,
+            start: start.toISOString(),
+            end: end.toISOString(),
+            isAllDay: false,
+            timeZone,
+        };
     }
     // All-day: Google's end date is exclusive, so use the next day.
     const startDate = task.dueDate;
@@ -143,7 +177,12 @@ export function taskToGooglePayload(task: Task): GoogleEventPayload | null {
 
 type WriteOp = 'create' | 'update' | 'delete';
 
-async function invokeWrite(op: WriteOp, todoId: string, payload?: GoogleEventPayload, googleEventId?: string): Promise<void> {
+async function invokeWrite(
+    op: WriteOp,
+    todoId: string,
+    payload?: GoogleEventPayload,
+    googleEventId?: string,
+): Promise<void> {
     const { data, error } = await supabase.functions.invoke('google-calendar-write', {
         body: { action: op, todoId, googleEventId, event: payload },
     });
@@ -175,7 +214,9 @@ export async function updateTaskOnGoogle(task: Task): Promise<void> {
 }
 
 /** Remove the event (on complete/delete) if one exists. */
-export async function removeTaskFromGoogle(task: Pick<Task, 'id' | 'googleEventId'>): Promise<void> {
+export async function removeTaskFromGoogle(
+    task: Pick<Task, 'id' | 'googleEventId'>,
+): Promise<void> {
     if (!task.googleEventId) return;
     await invokeWrite('delete', task.id, undefined, task.googleEventId);
 }
@@ -185,7 +226,12 @@ export async function flushGoogleCalendarOutbox(): Promise<void> {
     await googleCalendarOutbox.flush(async (item: GoogleCalendarOutboxItem) => {
         try {
             const { data, error } = await supabase.functions.invoke('google-calendar-write', {
-                body: { action: item.op, todoId: item.todoId, googleEventId: item.googleEventId, event: item.payload },
+                body: {
+                    action: item.op,
+                    todoId: item.todoId,
+                    googleEventId: item.googleEventId,
+                    event: item.payload,
+                },
             });
             if (error) return isNetworkError(error) ? 'retry' : 'delivered';
             if (data?.error && data.error !== 'not_connected') return 'delivered';

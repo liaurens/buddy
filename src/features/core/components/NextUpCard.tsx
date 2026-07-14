@@ -1,5 +1,13 @@
 import React from 'react';
-import { ArrowRight, Calendar as CalendarIcon, Check, CheckCircle2, Clock3, GraduationCap, Target } from 'lucide-react';
+import {
+    ArrowRight,
+    Calendar as CalendarIcon,
+    Check,
+    CheckCircle2,
+    Clock3,
+    GraduationCap,
+    Target,
+} from 'lucide-react';
 import { differenceInCalendarDays, format, isPast, isToday, isTomorrow } from 'date-fns';
 import { useNextUp } from '../hooks/useNextUp';
 import { useTasks } from '../../tasks/hooks/useTasks';
@@ -23,7 +31,9 @@ const NextUpCard: React.FC<Props> = ({ onNavigate }) => {
                 </div>
                 <div className="flex items-center gap-3 rounded-lg border border-dashed border-slate-200 bg-slate-50/70 p-4 text-slate-500">
                     <CheckCircle2 size={20} />
-                    <p className="text-sm">Nothing scheduled. Capture a task above to get started.</p>
+                    <p className="text-sm">
+                        Nothing scheduled. Capture a task above to get started.
+                    </p>
                 </div>
             </section>
         );
@@ -106,8 +116,13 @@ const NextUpCard: React.FC<Props> = ({ onNavigate }) => {
                     <GraduationCap size={19} className="text-slate-400" />
                 </div>
 
-                <div className={`mb-3 flex items-center gap-2 text-xs font-medium ${isPast(deadline) ? 'text-rose-600' : 'text-slate-600'}`}>
-                    <Clock3 size={15} className={isPast(deadline) ? 'text-rose-500' : 'text-slate-500'} />
+                <div
+                    className={`mb-3 flex items-center gap-2 text-xs font-medium ${isPast(deadline) ? 'text-rose-600' : 'text-slate-600'}`}
+                >
+                    <Clock3
+                        size={15}
+                        className={isPast(deadline) ? 'text-rose-500' : 'text-slate-500'}
+                    />
                     <span>{assignmentDeadlineLabel(deadline)}</span>
                 </div>
 
@@ -117,7 +132,9 @@ const NextUpCard: React.FC<Props> = ({ onNavigate }) => {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                        <p className="line-clamp-2 text-xl font-semibold leading-tight text-slate-950">{a.title}</p>
+                        <p className="line-clamp-2 text-xl font-semibold leading-tight text-slate-950">
+                            {a.title}
+                        </p>
                         <div className="mt-4 inline-flex rounded-md bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800">
                             School assignment
                         </div>
@@ -149,7 +166,10 @@ const NextUpCard: React.FC<Props> = ({ onNavigate }) => {
 
                 <div className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-600">
                     <Clock3 size={15} className="text-slate-500" />
-                    <span>{startsAt}{endsAt ? ` - ${endsAt}` : ''}</span>
+                    <span>
+                        {startsAt}
+                        {endsAt ? ` - ${endsAt}` : ''}
+                    </span>
                 </div>
 
                 <div className="flex items-start gap-4">
@@ -158,8 +178,12 @@ const NextUpCard: React.FC<Props> = ({ onNavigate }) => {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                        <p className="line-clamp-2 text-xl font-semibold leading-tight text-slate-950">{e.title}</p>
-                        {e.location && <p className="mt-1 truncate text-sm text-slate-500">{e.location}</p>}
+                        <p className="line-clamp-2 text-xl font-semibold leading-tight text-slate-950">
+                            {e.title}
+                        </p>
+                        {e.location && (
+                            <p className="mt-1 truncate text-sm text-slate-500">{e.location}</p>
+                        )}
 
                         <div className="mt-5">
                             <button
@@ -195,7 +219,11 @@ function taskMetaLabel(task: Task, reason: string): string {
     if (task.dueDate) {
         const due = parseDueDate(task.dueDate);
         if (!Number.isNaN(due.getTime())) {
-            const day = isToday(due) ? 'Today' : isTomorrow(due) ? 'Tomorrow' : format(due, 'MMM d');
+            const day = isToday(due)
+                ? 'Today'
+                : isTomorrow(due)
+                  ? 'Tomorrow'
+                  : format(due, 'MMM d');
             parts.push(task.dueTime ? `${day}, ${task.dueTime}` : day);
         }
     }

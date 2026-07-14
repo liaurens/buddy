@@ -37,24 +37,29 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
     // Step 4: Phases & Schedule
     const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [phases, setPhases] = useState<ExperimentPhase[]>([]);
-    const [checkinSchedule, setCheckinSchedule] = useState<'daily' | 'twice_daily' | 'weekly'>('daily');
+    const [checkinSchedule, setCheckinSchedule] = useState<'daily' | 'twice_daily' | 'weekly'>(
+        'daily',
+    );
 
     // Auto-generate name when variables selected
     useEffect(() => {
         if (!name && (independentIds.length > 0 || tracker2Id)) {
-            const t1s = independentIds.map(id =>
-                trackers.find(t => t.id === id)?.name ||
-                protocols.find(p => p.id === id)?.name
-            ).filter(Boolean);
-            const t2 = trackers.find(t => t.id === tracker2Id);
+            const t1s = independentIds
+                .map(
+                    (id) =>
+                        trackers.find((t) => t.id === id)?.name ||
+                        protocols.find((p) => p.id === id)?.name,
+                )
+                .filter(Boolean);
+            const t2 = trackers.find((t) => t.id === tracker2Id);
             if (t1s.length > 0 && t2) {
                 setName(`Effect of ${t1s.join(' + ')} on ${t2.name}`);
             }
         }
     }, [independentIds, tracker2Id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const handleNext = () => setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
-    const handleBack = () => setStep(prev => Math.max(prev - 1, 1));
+    const handleNext = () => setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
+    const handleBack = () => setStep((prev) => Math.max(prev - 1, 1));
 
     const addTag = () => {
         if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -79,15 +84,15 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
     };
 
     const setBaselinePhase = (id: string) => {
-        setPhases(phases.map(p => ({ ...p, isBaseline: p.id === id })));
+        setPhases(phases.map((p) => ({ ...p, isBaseline: p.id === id })));
     };
 
     const updatePhase = (id: string, updates: Partial<ExperimentPhase>) => {
-        setPhases(phases.map(p => p.id === id ? { ...p, ...updates } : p));
+        setPhases(phases.map((p) => (p.id === id ? { ...p, ...updates } : p)));
     };
 
     const removePhase = (id: string) => {
-        setPhases(phases.filter(p => p.id !== id).map((p, i) => ({ ...p, order: i })));
+        setPhases(phases.filter((p) => p.id !== id).map((p, i) => ({ ...p, order: i })));
     };
 
     const handleSubmit = async () => {
@@ -138,8 +143,11 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
 
                 {/* Steps indicator */}
                 <div className="flex p-4 gap-2">
-                    {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map(s => (
-                        <div key={s} className={`h-1 flex-1 rounded-full ${s <= step ? 'bg-indigo-600' : 'bg-slate-200'}`} />
+                    {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
+                        <div
+                            key={s}
+                            className={`h-1 flex-1 rounded-full ${s <= step ? 'bg-indigo-600' : 'bg-slate-200'}`}
+                        />
                     ))}
                 </div>
 
@@ -154,11 +162,13 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Name
+                                </label>
                                 <input
                                     type="text"
                                     value={name}
-                                    onChange={e => setName(e.target.value)}
+                                    onChange={(e) => setName(e.target.value)}
                                     placeholder="e.g. Starting Ritalin 10mg"
                                     className="w-full p-3 border border-slate-200 rounded-xl"
                                     autoFocus
@@ -166,10 +176,12 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Hypothesis</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Hypothesis
+                                </label>
                                 <textarea
                                     value={hypothesis}
-                                    onChange={e => setHypothesis(e.target.value)}
+                                    onChange={(e) => setHypothesis(e.target.value)}
                                     placeholder="e.g. Ritalin will improve my focus and reduce mid-afternoon energy crashes"
                                     className="w-full p-3 border border-slate-200 rounded-xl resize-none"
                                     rows={3}
@@ -177,10 +189,12 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Description (optional)</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Description (optional)
+                                </label>
                                 <textarea
                                     value={description}
-                                    onChange={e => setDescription(e.target.value)}
+                                    onChange={(e) => setDescription(e.target.value)}
                                     placeholder="Any additional context..."
                                     className="w-full p-3 border border-slate-200 rounded-xl resize-none"
                                     rows={2}
@@ -188,12 +202,22 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Tags</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Tags
+                                </label>
                                 <div className="flex gap-2 mb-2 flex-wrap">
-                                    {tags.map(tag => (
-                                        <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs">
+                                    {tags.map((tag) => (
+                                        <span
+                                            key={tag}
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs"
+                                        >
                                             {tag}
-                                            <button onClick={() => setTags(tags.filter(t => t !== tag))} className="hover:text-indigo-900">
+                                            <button
+                                                onClick={() =>
+                                                    setTags(tags.filter((t) => t !== tag))
+                                                }
+                                                className="hover:text-indigo-900"
+                                            >
                                                 <X size={12} />
                                             </button>
                                         </span>
@@ -203,12 +227,20 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                     <input
                                         type="text"
                                         value={tagInput}
-                                        onChange={e => setTagInput(e.target.value)}
-                                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                                        onChange={(e) => setTagInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                addTag();
+                                            }
+                                        }}
                                         placeholder="Add a tag..."
                                         className="flex-1 p-2 border border-slate-200 rounded-lg text-sm"
                                     />
-                                    <button onClick={addTag} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">
+                                    <button
+                                        onClick={addTag}
+                                        className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200"
+                                    >
                                         <Plus size={16} />
                                     </button>
                                 </div>
@@ -220,62 +252,101 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                     {step === 2 && (
                         <div className="space-y-5">
                             <div className="text-center mb-4">
-                                <h3 className="text-xl font-semibold text-slate-800">Link Trackers (Optional)</h3>
-                                <p className="text-slate-500 text-sm">Link to existing trackers for correlation analysis</p>
+                                <h3 className="text-xl font-semibold text-slate-800">
+                                    Link Trackers (Optional)
+                                </h3>
+                                <p className="text-slate-500 text-sm">
+                                    Link to existing trackers for correlation analysis
+                                </p>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">Independent Variable(s) — The Cause</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Independent Variable(s) — The Cause
+                                </label>
                                 <div className="border border-slate-200 rounded-xl bg-slate-50 max-h-48 overflow-y-auto p-2 space-y-1">
-                                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 py-1">Trackers</div>
-                                    {trackers.map(t => (
-                                        <label key={t.id} className="flex items-center gap-2 p-2 hover:bg-white rounded-lg cursor-pointer">
+                                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 py-1">
+                                        Trackers
+                                    </div>
+                                    {trackers.map((t) => (
+                                        <label
+                                            key={t.id}
+                                            className="flex items-center gap-2 p-2 hover:bg-white rounded-lg cursor-pointer"
+                                        >
                                             <input
                                                 type="checkbox"
                                                 checked={independentIds.includes(t.id)}
-                                                onChange={e => {
-                                                    if (e.target.checked) setIndependentIds(prev => [...prev, t.id]);
-                                                    else setIndependentIds(prev => prev.filter(id => id !== t.id));
+                                                onChange={(e) => {
+                                                    if (e.target.checked)
+                                                        setIndependentIds((prev) => [
+                                                            ...prev,
+                                                            t.id,
+                                                        ]);
+                                                    else
+                                                        setIndependentIds((prev) =>
+                                                            prev.filter((id) => id !== t.id),
+                                                        );
                                                 }}
                                                 className="w-4 h-4 text-indigo-600 rounded"
                                             />
-                                            <span className="text-sm">{t.emoji} {t.name}</span>
+                                            <span className="text-sm">
+                                                {t.emoji} {t.name}
+                                            </span>
                                         </label>
                                     ))}
-                                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 py-1 mt-2">Protocols</div>
-                                    {protocols.filter(p => p.active).map(p => (
-                                        <label key={p.id} className="flex items-center gap-2 p-2 hover:bg-white rounded-lg cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={independentIds.includes(p.id)}
-                                                onChange={e => {
-                                                    if (e.target.checked) setIndependentIds(prev => [...prev, p.id]);
-                                                    else setIndependentIds(prev => prev.filter(id => id !== p.id));
-                                                }}
-                                                className="w-4 h-4 text-indigo-600 rounded"
-                                            />
-                                            <span className="text-sm">💊 {p.name}</span>
-                                        </label>
-                                    ))}
+                                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 py-1 mt-2">
+                                        Protocols
+                                    </div>
+                                    {protocols
+                                        .filter((p) => p.active)
+                                        .map((p) => (
+                                            <label
+                                                key={p.id}
+                                                className="flex items-center gap-2 p-2 hover:bg-white rounded-lg cursor-pointer"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={independentIds.includes(p.id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked)
+                                                            setIndependentIds((prev) => [
+                                                                ...prev,
+                                                                p.id,
+                                                            ]);
+                                                        else
+                                                            setIndependentIds((prev) =>
+                                                                prev.filter((id) => id !== p.id),
+                                                            );
+                                                    }}
+                                                    className="w-4 h-4 text-indigo-600 rounded"
+                                                />
+                                                <span className="text-sm">💊 {p.name}</span>
+                                            </label>
+                                        ))}
                                 </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Dependent Variable — The Effect</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Dependent Variable — The Effect
+                                </label>
                                 <select
                                     value={tracker2Id}
-                                    onChange={e => setTracker2Id(e.target.value)}
+                                    onChange={(e) => setTracker2Id(e.target.value)}
                                     className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50"
                                 >
                                     <option value="">None (use custom metrics only)</option>
-                                    {trackers.map(t => (
-                                        <option key={t.id} value={t.id}>{t.emoji} {t.name}</option>
+                                    {trackers.map((t) => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.emoji} {t.name}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
 
                             <p className="text-xs text-slate-500">
-                                You can skip this step and rely entirely on custom metrics in the next step.
+                                You can skip this step and rely entirely on custom metrics in the
+                                next step.
                             </p>
                         </div>
                     )}
@@ -284,10 +355,17 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                     {step === 3 && (
                         <div className="space-y-4">
                             <div className="text-center mb-2">
-                                <h3 className="text-xl font-semibold text-slate-800">Custom Check-in Metrics</h3>
-                                <p className="text-slate-500 text-sm">What will you measure daily?</p>
+                                <h3 className="text-xl font-semibold text-slate-800">
+                                    Custom Check-in Metrics
+                                </h3>
+                                <p className="text-slate-500 text-sm">
+                                    What will you measure daily?
+                                </p>
                             </div>
-                            <ExperimentMetricBuilder metrics={customMetrics} onChange={setCustomMetrics} />
+                            <ExperimentMetricBuilder
+                                metrics={customMetrics}
+                                onChange={setCustomMetrics}
+                            />
                         </div>
                     )}
 
@@ -295,25 +373,35 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                     {step === 4 && (
                         <div className="space-y-5">
                             <div className="text-center mb-2">
-                                <h3 className="text-xl font-semibold text-slate-800">Phases & Schedule</h3>
-                                <p className="text-slate-500 text-sm">Structure your experiment timeline</p>
+                                <h3 className="text-xl font-semibold text-slate-800">
+                                    Phases & Schedule
+                                </h3>
+                                <p className="text-slate-500 text-sm">
+                                    Structure your experiment timeline
+                                </p>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Start Date
+                                </label>
                                 <input
                                     type="date"
                                     value={startDate}
-                                    onChange={e => setStartDate(e.target.value)}
+                                    onChange={(e) => setStartDate(e.target.value)}
                                     className="w-full p-3 border border-slate-200 rounded-xl"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Check-in Frequency</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Check-in Frequency
+                                </label>
                                 <select
                                     value={checkinSchedule}
-                                    onChange={e => setCheckinSchedule(e.target.value as typeof checkinSchedule)}
+                                    onChange={(e) =>
+                                        setCheckinSchedule(e.target.value as typeof checkinSchedule)
+                                    }
                                     className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50"
                                 >
                                     <option value="daily">Daily</option>
@@ -324,7 +412,9 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
 
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="text-sm font-medium text-slate-700">Phases (optional)</label>
+                                    <label className="text-sm font-medium text-slate-700">
+                                        Phases (optional)
+                                    </label>
                                     <button
                                         onClick={addPhase}
                                         className="text-xs px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100"
@@ -338,17 +428,29 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
 
                                 <div className="space-y-2">
                                     {phases.map((phase, i) => (
-                                        <div key={phase.id} className="border border-slate-200 rounded-xl p-3 space-y-2">
+                                        <div
+                                            key={phase.id}
+                                            className="border border-slate-200 rounded-xl p-3 space-y-2"
+                                        >
                                             <div className="flex items-center gap-2">
-                                                <span className="text-xs font-semibold text-slate-400 w-4">{i + 1}</span>
+                                                <span className="text-xs font-semibold text-slate-400 w-4">
+                                                    {i + 1}
+                                                </span>
                                                 <input
                                                     type="text"
                                                     value={phase.name}
-                                                    onChange={e => updatePhase(phase.id, { name: e.target.value })}
+                                                    onChange={(e) =>
+                                                        updatePhase(phase.id, {
+                                                            name: e.target.value,
+                                                        })
+                                                    }
                                                     className="flex-1 p-1.5 border border-slate-200 rounded-lg text-sm"
                                                     placeholder="Phase name"
                                                 />
-                                                <button onClick={() => removePhase(phase.id)} className="text-slate-400 hover:text-red-500">
+                                                <button
+                                                    onClick={() => removePhase(phase.id)}
+                                                    className="text-slate-400 hover:text-red-500"
+                                                >
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>
@@ -356,14 +458,24 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                                 <input
                                                     type="date"
                                                     value={phase.startDate}
-                                                    onChange={e => updatePhase(phase.id, { startDate: e.target.value })}
+                                                    onChange={(e) =>
+                                                        updatePhase(phase.id, {
+                                                            startDate: e.target.value,
+                                                        })
+                                                    }
                                                     className="flex-1 p-1.5 border border-slate-200 rounded-lg text-xs"
                                                 />
-                                                <span className="text-slate-400 self-center text-xs">to</span>
+                                                <span className="text-slate-400 self-center text-xs">
+                                                    to
+                                                </span>
                                                 <input
                                                     type="date"
                                                     value={phase.endDate || ''}
-                                                    onChange={e => updatePhase(phase.id, { endDate: e.target.value || undefined })}
+                                                    onChange={(e) =>
+                                                        updatePhase(phase.id, {
+                                                            endDate: e.target.value || undefined,
+                                                        })
+                                                    }
                                                     className="flex-1 p-1.5 border border-slate-200 rounded-lg text-xs"
                                                 />
                                             </div>
@@ -375,7 +487,9 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                                     onChange={() => setBaselinePhase(phase.id)}
                                                     className="accent-indigo-600"
                                                 />
-                                                <span>Baseline phase (used as comparison in analysis)</span>
+                                                <span>
+                                                    Baseline phase (used as comparison in analysis)
+                                                </span>
                                             </label>
                                         </div>
                                     ))}
@@ -391,13 +505,17 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                 <div className="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
                                     <FlaskConical size={28} />
                                 </div>
-                                <h3 className="text-xl font-semibold text-slate-800">Ready to Start?</h3>
+                                <h3 className="text-xl font-semibold text-slate-800">
+                                    Ready to Start?
+                                </h3>
                             </div>
 
                             <div className="bg-slate-50 p-4 rounded-xl space-y-2 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Name</span>
-                                    <span className="font-medium text-slate-800 truncate ml-2">{name}</span>
+                                    <span className="font-medium text-slate-800 truncate ml-2">
+                                        {name}
+                                    </span>
                                 </div>
                                 {hypothesis && (
                                     <div>
@@ -407,19 +525,27 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                 )}
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Custom Metrics</span>
-                                    <span className="font-medium text-slate-800">{customMetrics.length}</span>
+                                    <span className="font-medium text-slate-800">
+                                        {customMetrics.length}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Phases</span>
-                                    <span className="font-medium text-slate-800">{phases.length || 'Single phase'}</span>
+                                    <span className="font-medium text-slate-800">
+                                        {phases.length || 'Single phase'}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Start Date</span>
-                                    <span className="font-medium text-slate-800">{format(new Date(startDate), 'MMM d, yyyy')}</span>
+                                    <span className="font-medium text-slate-800">
+                                        {format(new Date(startDate), 'MMM d, yyyy')}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-slate-500">Check-ins</span>
-                                    <span className="font-medium text-slate-800 capitalize">{checkinSchedule.replace('_', ' ')}</span>
+                                    <span className="font-medium text-slate-800 capitalize">
+                                        {checkinSchedule.replace('_', ' ')}
+                                    </span>
                                 </div>
                             </div>
                         </div>

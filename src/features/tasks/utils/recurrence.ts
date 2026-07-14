@@ -17,7 +17,9 @@ export function calculateNextDueDate(
 
     switch (recurrence) {
         case 'daily':
-            return addDays(base, config?.interval ?? 1).toISOString().split('T')[0];
+            return addDays(base, config?.interval ?? 1)
+                .toISOString()
+                .split('T')[0];
 
         case 'weekdays': {
             let next = addDays(base, 1);
@@ -32,15 +34,19 @@ export function calculateNextDueDate(
                 const sorted = [...config.daysOfWeek].sort((a, b) => a - b);
                 const todayDow = getDay(base);
                 // Find the next configured weekday strictly after today's day
-                const nextDow = sorted.find(d => d > todayDow) ?? sorted[0];
+                const nextDow = sorted.find((d) => d > todayDow) ?? sorted[0];
                 const candidate = nextDay(base, nextDow as 0 | 1 | 2 | 3 | 4 | 5 | 6);
                 return candidate.toISOString().split('T')[0];
             }
-            return addWeeks(base, config?.interval ?? 1).toISOString().split('T')[0];
+            return addWeeks(base, config?.interval ?? 1)
+                .toISOString()
+                .split('T')[0];
         }
 
         case 'monthly':
-            return addMonths(base, config?.interval ?? 1).toISOString().split('T')[0];
+            return addMonths(base, config?.interval ?? 1)
+                .toISOString()
+                .split('T')[0];
 
         default:
             return null;

@@ -11,7 +11,10 @@
  */
 
 import {
-    type OutboxRecord, type OutboxStore, type DeliveryResult, defaultStore,
+    type OutboxRecord,
+    type OutboxStore,
+    type DeliveryResult,
+    defaultStore,
     createMemoryStore as createMemoryStoreGeneric,
 } from './outboxDb';
 
@@ -66,7 +69,9 @@ export class CaptureOutbox {
      * failure so ordering is preserved across retries. Concurrent calls are
      * coalesced — a flush already in progress wins.
      */
-    async flush(deliver: (text: string) => Promise<DeliveryResult>): Promise<{ delivered: number; remaining: number }> {
+    async flush(
+        deliver: (text: string) => Promise<DeliveryResult>,
+    ): Promise<{ delivered: number; remaining: number }> {
         if (this.flushing) {
             return { delivered: 0, remaining: await this.count() };
         }
@@ -94,8 +99,12 @@ export class CaptureOutbox {
     /** Subscribe to pending-count changes. Fires immediately with the current count. */
     subscribe(listener: CountListener): () => void {
         this.listeners.add(listener);
-        this.count().then(listener).catch(() => listener(0));
-        return () => { this.listeners.delete(listener); };
+        this.count()
+            .then(listener)
+            .catch(() => listener(0));
+        return () => {
+            this.listeners.delete(listener);
+        };
     }
 
     private async notify(): Promise<void> {

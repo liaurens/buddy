@@ -170,6 +170,7 @@ export function kindToDestination(kind: NonNullable<Task['kind']>): TriageDestin
         case 'urgent':
             return 'urgent';
         case 'backlog':
+        case 'waiting':
             return 'someday';
         case 'routine':
             return 'routine';

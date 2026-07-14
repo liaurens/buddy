@@ -13,7 +13,7 @@ interface ParsedEvent {
     description?: string;
     location?: string;
     startTime: string; // ISO
-    endTime: string;   // ISO
+    endTime: string; // ISO
     isAllDay: boolean;
 }
 
@@ -29,7 +29,9 @@ function parseIcalDateTime(value: string): { iso: string; isAllDay: boolean } {
     const v = value.trim();
     // Date-only (all-day)
     if (/^\d{8}$/.test(v)) {
-        const y = v.slice(0, 4), m = v.slice(4, 6), d = v.slice(6, 8);
+        const y = v.slice(0, 4),
+            m = v.slice(4, 6),
+            d = v.slice(6, 8);
         const date = new Date(`${y}-${m}-${d}T00:00:00`);
         return { iso: date.toISOString(), isAllDay: true };
     }
@@ -38,7 +40,10 @@ function parseIcalDateTime(value: string): { iso: string; isAllDay: boolean } {
     if (!match) {
         // Fallback: try to let Date parse it
         const parsed = new Date(v);
-        return { iso: isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString(), isAllDay: false };
+        return {
+            iso: isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString(),
+            isAllDay: false,
+        };
     }
     const [, y, mo, d, h, mi, s, z] = match;
     if (z === 'Z') {
@@ -93,7 +98,10 @@ function parseIcalEvents(icalText: string, includeAllDay: boolean): ParsedEvent[
         const start = parseIcalDateTime(dtstartRaw.value);
         const end = dtendRaw
             ? parseIcalDateTime(dtendRaw.value)
-            : { iso: new Date(new Date(start.iso).getTime() + 60 * 60 * 1000).toISOString(), isAllDay: start.isAllDay };
+            : {
+                  iso: new Date(new Date(start.iso).getTime() + 60 * 60 * 1000).toISOString(),
+                  isAllDay: start.isAllDay,
+              };
 
         if (start.isAllDay && !includeAllDay) continue;
 
@@ -125,7 +133,12 @@ export interface SyncResult {
 export async function syncCalendar(userId: string): Promise<SyncResult> {
     const settings = await getCategorySettings(userId, 'calendar');
     if (!settings.calendarUrl) {
-        return { eventsFound: 0, eventsUpserted: 0, skipped: 0, error: 'No calendar URL configured' };
+        return {
+            eventsFound: 0,
+            eventsUpserted: 0,
+            skipped: 0,
+            error: 'No calendar URL configured',
+        };
     }
 
     // Call the edge function proxy
@@ -134,7 +147,12 @@ export async function syncCalendar(userId: string): Promise<SyncResult> {
     });
 
     if (error) {
-        return { eventsFound: 0, eventsUpserted: 0, skipped: 0, error: `Proxy failed: ${error.message}` };
+        return {
+            eventsFound: 0,
+            eventsUpserted: 0,
+            skipped: 0,
+            error: `Proxy failed: ${error.message}`,
+        };
     }
 
     // Proxy can return either text/calendar or JSON with { ical: "..." } or { error: "..." }
@@ -142,30 +160,38 @@ export async function syncCalendar(userId: string): Promise<SyncResult> {
     if (typeof data === 'string') {
         icalText = data;
     } else if (data && typeof data === 'object') {
-        if ('error' in data) return { eventsFound: 0, eventsUpserted: 0, skipped: 0, error: String(data.error) };
+        if ('error' in data)
+            return { eventsFound: 0, eventsUpserted: 0, skipped: 0, error: String(data.error) };
         if ('ical' in data && typeof data.ical === 'string') icalText = data.ical;
         if ('data' in data && typeof data.data === 'string') icalText = data.data;
     }
     if (!icalText) {
-        return { eventsFound: 0, eventsUpserted: 0, skipped: 0, error: 'Proxy returned no iCal data' };
+        return {
+            eventsFound: 0,
+            eventsUpserted: 0,
+            skipped: 0,
+            error: 'Proxy returned no iCal data',
+        };
     }
 
     const parsed = parseIcalEvents(icalText, settings.includeAllDayEvents);
 
     // Filter by min event duration (0 = keep all)
     const minDurationMs = (settings.minEventDurationMinutes ?? 0) * 60 * 1000;
-    const filtered = parsed.filter(e => {
+    const filtered = parsed.filter((e) => {
         if (e.isAllDay) return true;
         const durationMs = new Date(e.endTime).getTime() - new Date(e.startTime).getTime();
         return durationMs >= minDurationMs;
     });
 
     if (filtered.length === 0) {
-        await updateCategorySettings(userId, 'calendar', { lastSyncTime: new Date().toISOString() });
+        await updateCategorySettings(userId, 'calendar', {
+            lastSyncTime: new Date().toISOString(),
+        });
         return { eventsFound: parsed.length, eventsUpserted: 0, skipped: parsed.length };
     }
 
-    const rows = filtered.map(e => ({
+    const rows = filtered.map((e) => ({
         user_id: userId,
         title: e.title,
         description: e.description ?? null,
@@ -184,7 +210,12 @@ export async function syncCalendar(userId: string): Promise<SyncResult> {
         .upsert(rows, { onConflict: 'user_id,external_id' });
 
     if (upsertError) {
-        return { eventsFound: parsed.length, eventsUpserted: 0, skipped: 0, error: `Upsert failed: ${upsertError.message}` };
+        return {
+            eventsFound: parsed.length,
+            eventsUpserted: 0,
+            skipped: 0,
+            error: `Upsert failed: ${upsertError.message}`,
+        };
     }
 
     await updateCategorySettings(userId, 'calendar', { lastSyncTime: new Date().toISOString() });
@@ -199,7 +230,10 @@ export async function syncCalendar(userId: string): Promise<SyncResult> {
 /**
  * Sync if stale (last sync > maxAgeMinutes). Used for background/auto-sync on app open.
  */
-export async function syncCalendarIfStale(userId: string, maxAgeMinutes = 60): Promise<SyncResult | null> {
+export async function syncCalendarIfStale(
+    userId: string,
+    maxAgeMinutes = 60,
+): Promise<SyncResult | null> {
     const settings = await getCategorySettings(userId, 'calendar');
     if (!settings.calendarUrl) return null;
     if (settings.lastSyncTime) {

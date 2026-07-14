@@ -12,7 +12,7 @@
 import React, { useMemo, useState } from 'react';
 import { Loader2, AlertCircle, Check, SkipForward, ChevronDown, Sparkles } from 'lucide-react';
 import { useTaskTriage, type TriageDecision } from '../hooks/useTaskTriage';
-import type { TaskTriageSuggestion } from '../../planning/services/ai.service';
+import type { TaskTriageSuggestion } from '../../assistant/services/ai-actions.service';
 import {
     TRIAGE_DESTINATION_META,
     TRIAGE_DESTINATION_ORDER,

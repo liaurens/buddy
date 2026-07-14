@@ -26,7 +26,10 @@ export function dbToProtocol(db: DbProtocol): Protocol {
     };
 }
 
-export function protocolToDb(protocol: Omit<Protocol, 'id' | 'createdAt'> & { id?: string }, userId: string): Omit<DbProtocol, 'id' | 'created_at'> & { id?: string } {
+export function protocolToDb(
+    protocol: Omit<Protocol, 'id' | 'createdAt'> & { id?: string },
+    userId: string,
+): Omit<DbProtocol, 'id' | 'created_at'> & { id?: string } {
     return {
         id: protocol.id,
         user_id: userId,
@@ -60,7 +63,10 @@ export function dbToCycle(db: DbCycle): Cycle {
     };
 }
 
-export function cycleToDb(cycle: Omit<Cycle, 'id'> & { id?: string }, userId: string): Omit<DbCycle, 'id'> & { id?: string } {
+export function cycleToDb(
+    cycle: Omit<Cycle, 'id'> & { id?: string },
+    userId: string,
+): Omit<DbCycle, 'id'> & { id?: string } {
     return {
         id: cycle.id,
         user_id: userId,
@@ -88,7 +94,10 @@ export function dbToDose(db: DbDose): Dose {
     };
 }
 
-export function doseToDb(dose: Omit<Dose, 'id'> & { id?: string }, userId: string): Omit<DbDose, 'id'> & { id?: string } {
+export function doseToDb(
+    dose: Omit<Dose, 'id'> & { id?: string },
+    userId: string,
+): Omit<DbDose, 'id'> & { id?: string } {
     return {
         id: dose.id,
         user_id: userId,

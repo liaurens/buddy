@@ -23,7 +23,7 @@ const MorningProtocolsCard: React.FC = () => {
 
     const todayKey = format(new Date(), 'yyyy-MM-dd');
     const doseToday = (protocolId: string) =>
-        doses.find(d => d.protocolId === protocolId && (d.takenAt ?? '').startsWith(todayKey));
+        doses.find((d) => d.protocolId === protocolId && (d.takenAt ?? '').startsWith(todayKey));
 
     const doseLabel = (p: Protocol) =>
         p.doseAmount ? `${p.doseAmount}${p.doseUnit ? ` ${p.doseUnit}` : ''}` : null;
@@ -54,7 +54,7 @@ const MorningProtocolsCard: React.FC = () => {
                 </p>
             </div>
             <ul className="space-y-2">
-                {activeProtocols.map(p => {
+                {activeProtocols.map((p) => {
                     const dose = doseToday(p.id);
                     const done = !!dose && !dose.skipped;
                     const skipped = !!dose && dose.skipped;
@@ -62,15 +62,20 @@ const MorningProtocolsCard: React.FC = () => {
                         <li
                             key={p.id}
                             className={`flex items-center gap-3 p-3 rounded-xl border ${
-                                done ? 'bg-emerald-50 border-emerald-200'
-                                    : skipped ? 'bg-slate-50 border-slate-200'
-                                        : 'border-slate-200'
+                                done
+                                    ? 'bg-emerald-50 border-emerald-200'
+                                    : skipped
+                                      ? 'bg-slate-50 border-slate-200'
+                                      : 'border-slate-200'
                             }`}
                         >
                             <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-slate-800 truncate">{p.name}</p>
+                                <p className="text-sm font-medium text-slate-800 truncate">
+                                    {p.name}
+                                </p>
                                 <p className="text-xs text-slate-400">
-                                    {[doseLabel(p), p.timingNotes].filter(Boolean).join(' · ') || p.frequency}
+                                    {[doseLabel(p), p.timingNotes].filter(Boolean).join(' · ') ||
+                                        p.frequency}
                                 </p>
                             </div>
                             {done ? (

@@ -7,7 +7,8 @@
 import React, { useMemo, useState } from 'react';
 import { Flame, CalendarPlus } from 'lucide-react';
 import { useTasks } from '../../tasks/hooks/useTasks';
-import { deriveTaskKind, UrgentScheduleModal } from '../../tasks';
+import UrgentScheduleModal from '../../tasks/components/UrgentScheduleModal';
+import { deriveTaskKind } from '../../tasks/utils/taskKind';
 import type { Task } from '../../tasks/types';
 import type { AppRoute } from '../../../constants/routes';
 
@@ -21,7 +22,7 @@ const UrgentInboxCard: React.FC<UrgentInboxCardProps> = ({ onNavigate }) => {
 
     // Urgent kind, active, and not yet given a "do date".
     const unscheduled = useMemo(
-        () => tasks.filter(t => !t.completed && !t.dueDate && deriveTaskKind(t) === 'urgent'),
+        () => tasks.filter((t) => !t.completed && !t.dueDate && deriveTaskKind(t) === 'urgent'),
         [tasks],
     );
 
@@ -36,9 +37,12 @@ const UrgentInboxCard: React.FC<UrgentInboxCardProps> = ({ onNavigate }) => {
                     </span>
                     <div>
                         <h2 className="text-sm font-semibold text-rose-900">
-                            {unscheduled.length} urgent {unscheduled.length === 1 ? 'task needs' : 'tasks need'} a plan
+                            {unscheduled.length} urgent{' '}
+                            {unscheduled.length === 1 ? 'task needs' : 'tasks need'} a plan
                         </h2>
-                        <p className="text-xs text-rose-700">Decide when you'll do {unscheduled.length === 1 ? 'it' : 'them'}.</p>
+                        <p className="text-xs text-rose-700">
+                            Decide when you'll do {unscheduled.length === 1 ? 'it' : 'them'}.
+                        </p>
                     </div>
                 </div>
                 <button
@@ -50,9 +54,14 @@ const UrgentInboxCard: React.FC<UrgentInboxCardProps> = ({ onNavigate }) => {
             </div>
 
             <ul className="mt-3 space-y-2">
-                {unscheduled.slice(0, 4).map(task => (
-                    <li key={task.id} className="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2">
-                        <span className="flex-1 min-w-0 truncate text-sm font-medium text-slate-800">{task.title}</span>
+                {unscheduled.slice(0, 4).map((task) => (
+                    <li
+                        key={task.id}
+                        className="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2"
+                    >
+                        <span className="flex-1 min-w-0 truncate text-sm font-medium text-slate-800">
+                            {task.title}
+                        </span>
                         <button
                             onClick={() => setSelected(task)}
                             className="inline-flex flex-shrink-0 items-center gap-1 rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-rose-700"

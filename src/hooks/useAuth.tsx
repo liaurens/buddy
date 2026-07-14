@@ -26,7 +26,10 @@ export function useAuthProvider(): AuthState {
         // Get initial session
         const initAuth = async () => {
             try {
-                const { data: { session }, error } = await supabase.auth.getSession();
+                const {
+                    data: { session },
+                    error,
+                } = await supabase.auth.getSession();
 
                 if (error) {
                     console.error('Error getting session:', error);
@@ -39,7 +42,7 @@ export function useAuthProvider(): AuthState {
                     // Initialize user data if logged in (only once)
                     if (session?.user && !initialized.current) {
                         initialized.current = true;
-                        initializeUserData(session.user.id).catch(err => {
+                        initializeUserData(session.user.id).catch((err) => {
                             if (err?.name !== 'AbortError') {
                                 console.error('Init user data error:', err);
                             }
@@ -62,24 +65,24 @@ export function useAuthProvider(): AuthState {
         initAuth();
 
         // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
-                if (mounted) {
-                    setSession(session);
-                    setUser(session?.user ?? null);
-                    setIsLoading(false);
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (mounted) {
+                setSession(session);
+                setUser(session?.user ?? null);
+                setIsLoading(false);
 
-                    // Initialize user data on sign in
-                    if (event === 'SIGNED_IN' && session?.user) {
-                        initializeUserData(session.user.id).catch(err => {
-                            if (err?.name !== 'AbortError') {
-                                console.error('Init user data error:', err);
-                            }
-                        });
-                    }
+                // Initialize user data on sign in
+                if (event === 'SIGNED_IN' && session?.user) {
+                    initializeUserData(session.user.id).catch((err) => {
+                        if (err?.name !== 'AbortError') {
+                            console.error('Init user data error:', err);
+                        }
+                    });
                 }
             }
-        );
+        });
 
         return () => {
             mounted = false;
@@ -121,11 +124,7 @@ export function useAuthProvider(): AuthState {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const auth = useAuthProvider();
 
-    return (
-        <AuthContext.Provider value={auth}>
-            {children}
-        </AuthContext.Provider>
-    );
+    return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthState {

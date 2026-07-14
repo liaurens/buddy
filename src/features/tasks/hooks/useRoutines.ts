@@ -17,7 +17,10 @@ export interface RoutinesState {
     addRoutine: (r: Omit<Routine, 'id' | 'createdAt' | 'items'>) => Promise<Routine>;
     updateRoutine: (r: Omit<Routine, 'items'>) => Promise<void>;
     deleteRoutine: (id: string) => Promise<void>;
-    setRoutineItems: (routineId: string, items: Array<Omit<RoutineItem, 'id' | 'routineId'>>) => Promise<void>;
+    setRoutineItems: (
+        routineId: string,
+        items: Array<Omit<RoutineItem, 'id' | 'routineId'>>,
+    ) => Promise<void>;
     runRoutine: (routineId: string, dueDate?: string) => Promise<number>;
 }
 
@@ -31,7 +34,11 @@ export const useRoutines = (): RoutinesState => {
         queryFn: async () => {
             if (!userId) return [];
             const [{ data: rRows, error: rErr }, { data: iRows, error: iErr }] = await Promise.all([
-                supabase.from('task_routines').select('*').eq('user_id', userId).order('created_at', { ascending: true }),
+                supabase
+                    .from('task_routines')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('created_at', { ascending: true }),
                 supabase
                     .from('task_routine_items')
                     .select('*, task_routines!inner(user_id)')
@@ -46,105 +53,134 @@ export const useRoutines = (): RoutinesState => {
                 arr.push(item);
                 itemsByRoutine.set(item.routine_id, arr);
             }
-            return (rRows as DbTaskRoutine[]).map(r => dbToRoutine(r, itemsByRoutine.get(r.id) || []));
+            return (rRows as DbTaskRoutine[]).map((r) =>
+                dbToRoutine(r, itemsByRoutine.get(r.id) || []),
+            );
         },
         enabled: !!userId,
     });
 
-    const addRoutine = useCallback(async (r: Omit<Routine, 'id' | 'createdAt' | 'items'>) => {
-        if (!userId) throw new Error('Not authenticated');
-        const row = {
-            id: uuidv4(),
-            user_id: userId,
-            name: r.name,
-            emoji: r.emoji || null,
-            description: r.description || null,
-        };
-        const { data, error } = await supabase.from('task_routines').insert(row).select().single();
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['task_routines', userId] });
-        return dbToRoutine(data as DbTaskRoutine, []);
-    }, [userId, queryClient]);
-
-    const updateRoutine = useCallback(async (r: Omit<Routine, 'items'>) => {
-        if (!userId) throw new Error('Not authenticated');
-        const { error } = await supabase
-            .from('task_routines')
-            .update({
+    const addRoutine = useCallback(
+        async (r: Omit<Routine, 'id' | 'createdAt' | 'items'>) => {
+            if (!userId) throw new Error('Not authenticated');
+            const row = {
+                id: uuidv4(),
+                user_id: userId,
                 name: r.name,
                 emoji: r.emoji || null,
                 description: r.description || null,
-            })
-            .eq('id', r.id)
-            .eq('user_id', userId);
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['task_routines', userId] });
-    }, [userId, queryClient]);
-
-    const deleteRoutine = useCallback(async (id: string) => {
-        if (!userId) throw new Error('Not authenticated');
-        const { error } = await supabase
-            .from('task_routines')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', userId);
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['task_routines', userId] });
-    }, [userId, queryClient]);
-
-    const setRoutineItems = useCallback(async (routineId: string, items: Array<Omit<RoutineItem, 'id' | 'routineId'>>) => {
-        if (!userId) throw new Error('Not authenticated');
-        // Replace-all strategy: delete then insert
-        await supabase.from('task_routine_items').delete().eq('routine_id', routineId);
-        if (items.length > 0) {
-            const rows = items.map((item, idx) => ({
-                id: uuidv4(),
-                routine_id: routineId,
-                title: item.title,
-                task_type_id: item.taskTypeId || null,
-                energy: item.energy || null,
-                estimated_time: item.estimatedTime ?? null,
-                sort_order: item.sortOrder ?? idx,
-            }));
-            const { error } = await supabase.from('task_routine_items').insert(rows);
+            };
+            const { data, error } = await supabase
+                .from('task_routines')
+                .insert(row)
+                .select()
+                .single();
             if (error) throw error;
-        }
-        queryClient.invalidateQueries({ queryKey: ['task_routines', userId] });
-    }, [userId, queryClient]);
+            queryClient.invalidateQueries({ queryKey: ['task_routines', userId] });
+            return dbToRoutine(data as DbTaskRoutine, []);
+        },
+        [userId, queryClient],
+    );
 
-    const runRoutine = useCallback(async (routineId: string, dueDate?: string) => {
-        if (!userId) throw new Error('Not authenticated');
-        const routine = routines.find(r => r.id === routineId);
-        if (!routine || routine.items.length === 0) return 0;
+    const updateRoutine = useCallback(
+        async (r: Omit<Routine, 'items'>) => {
+            if (!userId) throw new Error('Not authenticated');
+            const { error } = await supabase
+                .from('task_routines')
+                .update({
+                    name: r.name,
+                    emoji: r.emoji || null,
+                    description: r.description || null,
+                })
+                .eq('id', r.id)
+                .eq('user_id', userId);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['task_routines', userId] });
+        },
+        [userId, queryClient],
+    );
 
-        const targetDate = dueDate || new Date().toISOString().slice(0, 10);
-        const rows = routine.items
-            .slice()
-            .sort((a, b) => a.sortOrder - b.sortOrder)
-            .map((item, idx) => {
-                const task: Task = {
+    const deleteRoutine = useCallback(
+        async (id: string) => {
+            if (!userId) throw new Error('Not authenticated');
+            const { error } = await supabase
+                .from('task_routines')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', userId);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['task_routines', userId] });
+        },
+        [userId, queryClient],
+    );
+
+    const setRoutineItems = useCallback(
+        async (routineId: string, items: Array<Omit<RoutineItem, 'id' | 'routineId'>>) => {
+            if (!userId) throw new Error('Not authenticated');
+            // Replace-all strategy: delete then insert
+            await supabase.from('task_routine_items').delete().eq('routine_id', routineId);
+            if (items.length > 0) {
+                const rows = items.map((item, idx) => ({
                     id: uuidv4(),
+                    routine_id: routineId,
                     title: item.title,
-                    completed: false,
-                    createdAt: new Date().toISOString(),
-                    priority: 'medium',
-                    subtasks: [],
-                    recurrence: 'none',
-                    dueDate: targetDate,
-                    estimatedTime: item.estimatedTime,
-                    taskTypeId: item.taskTypeId,
-                    energy: item.energy,
-                    routineId: routine.id,
-                    routineOrder: idx,
-                };
-                return todoToDb(task, userId);
-            });
+                    task_type_id: item.taskTypeId || null,
+                    energy: item.energy || null,
+                    estimated_time: item.estimatedTime ?? null,
+                    sort_order: item.sortOrder ?? idx,
+                }));
+                const { error } = await supabase.from('task_routine_items').insert(rows);
+                if (error) throw error;
+            }
+            queryClient.invalidateQueries({ queryKey: ['task_routines', userId] });
+        },
+        [userId, queryClient],
+    );
 
-        const { error } = await supabase.from('todos').insert(rows);
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-        return rows.length;
-    }, [userId, routines, queryClient]);
+    const runRoutine = useCallback(
+        async (routineId: string, dueDate?: string) => {
+            if (!userId) throw new Error('Not authenticated');
+            const routine = routines.find((r) => r.id === routineId);
+            if (!routine || routine.items.length === 0) return 0;
 
-    return { routines, isLoading, addRoutine, updateRoutine, deleteRoutine, setRoutineItems, runRoutine };
+            const targetDate = dueDate || new Date().toISOString().slice(0, 10);
+            const rows = routine.items
+                .slice()
+                .sort((a, b) => a.sortOrder - b.sortOrder)
+                .map((item, idx) => {
+                    const task: Task = {
+                        id: uuidv4(),
+                        title: item.title,
+                        completed: false,
+                        createdAt: new Date().toISOString(),
+                        priority: 'medium',
+                        subtasks: [],
+                        recurrence: 'none',
+                        dueDate: targetDate,
+                        estimatedTime: item.estimatedTime,
+                        taskTypeId: item.taskTypeId,
+                        energy: item.energy,
+                        routineId: routine.id,
+                        routineOrder: idx,
+                    };
+                    return todoToDb(task, userId);
+                });
+
+            const { error } = await supabase.from('todos').insert(rows);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+            return rows.length;
+        },
+        [userId, routines, queryClient],
+    );
+
+    return {
+        routines,
+        isLoading,
+        addRoutine,
+        updateRoutine,
+        deleteRoutine,
+        setRoutineItems,
+        runRoutine,
+    };
 };

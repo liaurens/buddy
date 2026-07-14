@@ -18,7 +18,7 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
             return {
                 date,
                 label: format(date, 'EEE'), // Mon, Tue...
-                fullDate: format(date, 'yyyy-MM-dd')
+                fullDate: format(date, 'yyyy-MM-dd'),
             };
         });
     }, []);
@@ -42,24 +42,29 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {activeTrackers.map(tracker => {
+                {activeTrackers.map((tracker) => {
                     // Get data for this tracker for last 7 days
-                    const trackerEntries = entries.filter(e => e.trackerId === tracker.id);
-                    const relevantEntries = trackerEntries.filter(e => {
+                    const trackerEntries = entries.filter((e) => e.trackerId === tracker.id);
+                    const relevantEntries = trackerEntries.filter((e) => {
                         const d = new Date(e.timestamp);
                         return d >= startOfDay(subDays(new Date(), 6));
                     });
 
                     // Simple max value for scaling (or use goal)
-                    const values = relevantEntries.map(e => e.value);
+                    const values = relevantEntries.map((e) => e.value);
                     const maxVal = Math.max(...values, tracker.goal?.target || 10, 1);
 
                     return (
-                        <div key={tracker.id} className="group p-3 bg-slate-50/50 rounded-lg border border-slate-100 hover:border-slate-200 transition-all relative">
+                        <div
+                            key={tracker.id}
+                            className="group p-3 bg-slate-50/50 rounded-lg border border-slate-100 hover:border-slate-200 transition-all relative"
+                        >
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                     <span className="text-xl">{tracker.emoji}</span>
-                                    <span className="text-sm font-medium text-slate-700 truncate max-w-[100px]">{tracker.name}</span>
+                                    <span className="text-sm font-medium text-slate-700 truncate max-w-[100px]">
+                                        {tracker.name}
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-1">
                                     {onEditTracker && (
@@ -78,7 +83,9 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                             <div className="flex items-end justify-between h-12 gap-1">
                                 {last7Days.map((day) => {
                                     // Find entry for this day
-                                    const dayEntries = relevantEntries.filter(e => isSameDay(new Date(e.timestamp), day.date));
+                                    const dayEntries = relevantEntries.filter((e) =>
+                                        isSameDay(new Date(e.timestamp), day.date),
+                                    );
 
                                     let val = 0;
                                     let hasEntry = false;
@@ -86,10 +93,12 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                                     if (dayEntries.length > 0) {
                                         hasEntry = true;
                                         if (tracker.type === 'boolean') {
-                                            val = dayEntries.some(e => e.value === 1) ? 1 : 0;
+                                            val = dayEntries.some((e) => e.value === 1) ? 1 : 0;
                                         } else if (tracker.type === 'rating') {
                                             // Average
-                                            val = dayEntries.reduce((sum, e) => sum + e.value, 0) / dayEntries.length;
+                                            val =
+                                                dayEntries.reduce((sum, e) => sum + e.value, 0) /
+                                                dayEntries.length;
                                         } else {
                                             // Sum
                                             val = dayEntries.reduce((sum, e) => sum + e.value, 0);
@@ -97,17 +106,25 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                                     }
 
                                     // Calc height percentage
-                                    const height = tracker.type === 'boolean'
-                                        ? (val ? '100%' : '5%')
-                                        : `${Math.min((val / maxVal) * 100, 100)}%`;
+                                    const height =
+                                        tracker.type === 'boolean'
+                                            ? val
+                                                ? '100%'
+                                                : '5%'
+                                            : `${Math.min((val / maxVal) * 100, 100)}%`;
 
                                     // Goal status coloring
                                     let colorClass = 'bg-slate-200';
                                     if (hasEntry) {
                                         if (tracker.goal) {
-                                            if ((tracker.goal.condition === 'gt' && val >= tracker.goal.target) ||
-                                                (tracker.goal.condition === 'lt' && val <= tracker.goal.target) ||
-                                                (tracker.goal.condition === 'eq' && val === tracker.goal.target)) {
+                                            if (
+                                                (tracker.goal.condition === 'gt' &&
+                                                    val >= tracker.goal.target) ||
+                                                (tracker.goal.condition === 'lt' &&
+                                                    val <= tracker.goal.target) ||
+                                                (tracker.goal.condition === 'eq' &&
+                                                    val === tracker.goal.target)
+                                            ) {
                                                 colorClass = 'bg-emerald-400';
                                             } else {
                                                 colorClass = 'bg-amber-300';
@@ -118,10 +135,16 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                                     }
 
                                     return (
-                                        <div key={day.label} className="flex-1 flex flex-col items-center gap-1 group/bar relative">
+                                        <div
+                                            key={day.label}
+                                            className="flex-1 flex flex-col items-center gap-1 group/bar relative"
+                                        >
                                             <div
                                                 className={`w-full rounded-sm transition-all duration-500 ${colorClass}`}
-                                                style={{ height: hasEntry ? height : '4px', opacity: hasEntry ? 1 : 0.3 }}
+                                                style={{
+                                                    height: hasEntry ? height : '4px',
+                                                    opacity: hasEntry ? 1 : 0.3,
+                                                }}
                                             />
                                             {/* Tooltip */}
                                             {hasEntry && (
@@ -134,8 +157,13 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                                 })}
                             </div>
                             <div className="flex justify-between mt-1 px-0.5">
-                                {last7Days.map(d => (
-                                    <span key={d.label} className="text-[9px] text-slate-300 font-medium">{d.label.charAt(0)}</span>
+                                {last7Days.map((d) => (
+                                    <span
+                                        key={d.label}
+                                        className="text-[9px] text-slate-300 font-medium"
+                                    >
+                                        {d.label.charAt(0)}
+                                    </span>
                                 ))}
                             </div>
                         </div>

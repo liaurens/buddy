@@ -9,7 +9,14 @@ export type TaskContext = 'computer' | 'phone' | 'home' | 'out' | 'anywhere';
 // (priority/recurrence/dueDate/reminder) via deriveTaskKind(); an explicit value overrides.
 // 'school' is DERIVED-ONLY (assignmentId / triage destination) — it is never
 // written to the todos.kind column and kind pickers must not offer it.
-export type TaskKind = 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard' | 'school';
+export type TaskKind =
+    | 'urgent'
+    | 'backlog'
+    | 'deadline'
+    | 'routine'
+    | 'standard'
+    | 'waiting'
+    | 'school';
 
 // Hardness — can the planner move this task?
 //   fixed    = tied to a real-world moment (appointment, exam, hard deadline); planner locks it.
@@ -20,8 +27,8 @@ export type Hardness = 'fixed' | 'flexible';
 export type RecurrencePattern = 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays';
 
 export interface RecurrenceConfig {
-    daysOfWeek?: number[];  // 0=Sunday … 6=Saturday; used for 'weekly'
-    interval?: number;       // reserved for "every N days/weeks/months"
+    daysOfWeek?: number[]; // 0=Sunday … 6=Saturday; used for 'weekly'
+    interval?: number; // reserved for "every N days/weeks/months"
 }
 
 // Task Types
@@ -36,19 +43,19 @@ export interface Task {
     title: string;
     completed: boolean;
     dueDate?: string;
-    dueTime?: string;              // HH:MM format for specific time
-    location?: string;             // Location for the task
-    labels?: string[];             // Custom labels/tags for grouping
+    dueTime?: string; // HH:MM format for specific time
+    location?: string; // Location for the task
+    labels?: string[]; // Custom labels/tags for grouping
     createdAt: string;
     priority?: 'urgent' | 'high' | 'medium' | 'low';
     estimatedTime?: number; // in minutes
     subtasks?: Subtask[];
 
     // Time tracking for daily planning
-    actualMinutes?: number;       // Actual time spent when completed
-    startedAt?: string;            // ISO timestamp when task was started
-    completedAt?: string;          // ISO timestamp when task was completed
-    historicalMinutes?: number[];  // Previous durations for similar tasks (learning data)
+    actualMinutes?: number; // Actual time spent when completed
+    startedAt?: string; // ISO timestamp when task was started
+    completedAt?: string; // ISO timestamp when task was completed
+    historicalMinutes?: number[]; // Previous durations for similar tasks (learning data)
 
     // Recurrence
     recurrence?: RecurrencePattern;
@@ -56,8 +63,8 @@ export interface Task {
 
     // Per-task reminders
     reminderEnabled?: boolean;
-    reminderOffsetMinutes?: number;   // minutes before due
-    reminderAt?: string;              // ISO datetime, absolute mode (takes precedence)
+    reminderOffsetMinutes?: number; // minutes before due
+    reminderAt?: string; // ISO datetime, absolute mode (takes precedence)
     reminderCadence?: ReminderCadence;
     lastRemindedAt?: string;
 
@@ -97,6 +104,10 @@ export interface Task {
     // interaction (edit/toggle/start/reschedule). Drive the "split this" chip.
     snoozeCount?: number;
     lastTouchedAt?: string;
+    /** Person or organization that must respond before this task can continue. */
+    waitingOn?: string;
+    /** First day a deadline task should compete for attention (YYYY-MM-DD). */
+    startDate?: string;
 }
 
 // Task Types (user-defined categories like Email, Home, Study)
@@ -108,6 +119,8 @@ export interface TaskType {
     sortOrder: number;
     isPreset: boolean;
     createdAt: string;
+    /** Weekdays where this category naturally belongs (0=Sun ... 6=Sat). */
+    homeDays?: number[];
 }
 
 // Routines (reusable batches of tasks)
@@ -135,7 +148,15 @@ export type ReminderCadence = 'single' | 'smart' | 'aggressive';
 export interface TaskState {
     tasks: Task[];
     isLoading: boolean;
-    addTask: (title: string, priority?: Task['priority'], estimatedTime?: number, dueDate?: string, recurrence?: RecurrencePattern, recurrenceConfig?: RecurrenceConfig, dueTime?: string) => Promise<string>;
+    addTask: (
+        title: string,
+        priority?: Task['priority'],
+        estimatedTime?: number,
+        dueDate?: string,
+        recurrence?: RecurrencePattern,
+        recurrenceConfig?: RecurrenceConfig,
+        dueTime?: string,
+    ) => Promise<string>;
     addTaskFull: (partial: Partial<Task> & { title: string }) => Promise<string>;
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;

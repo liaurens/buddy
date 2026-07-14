@@ -48,7 +48,9 @@ const GoogleOAuthCallbackPage: React.FC = () => {
                 setTimeout(() => finish('/?route=calendar'), 1200);
             } catch (err: unknown) {
                 setPhase('error');
-                setMessage(err instanceof Error ? err.message : 'Could not connect Google Calendar.');
+                setMessage(
+                    err instanceof Error ? err.message : 'Could not connect Google Calendar.',
+                );
                 setTimeout(() => finish('/?route=calendar'), 3000);
             }
         };
@@ -57,7 +59,12 @@ const GoogleOAuthCallbackPage: React.FC = () => {
     }, []);
 
     const Icon = phase === 'done' ? CheckCircle2 : phase === 'error' ? AlertTriangle : Loader2;
-    const tone = phase === 'done' ? 'text-emerald-600' : phase === 'error' ? 'text-rose-600' : 'text-indigo-600';
+    const tone =
+        phase === 'done'
+            ? 'text-emerald-600'
+            : phase === 'error'
+              ? 'text-rose-600'
+              : 'text-indigo-600';
 
     return (
         <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#f7f8fb] p-6 text-center">

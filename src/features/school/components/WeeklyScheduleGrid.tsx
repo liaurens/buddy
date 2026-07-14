@@ -11,8 +11,12 @@ interface WeeklyScheduleGridProps {
     onDelete?: (s: ClassSession) => void;
 }
 
-export const WeeklyScheduleGrid: React.FC<WeeklyScheduleGridProps> = ({ sessions, classes, onDelete }) => {
-    const classMap = new Map(classes.map(c => [c.id, c]));
+export const WeeklyScheduleGrid: React.FC<WeeklyScheduleGridProps> = ({
+    sessions,
+    classes,
+    onDelete,
+}) => {
+    const classMap = new Map(classes.map((c) => [c.id, c]));
 
     const byDay = new Map<number, ClassSession[]>();
     for (const s of sessions) {
@@ -44,13 +48,21 @@ export const WeeklyScheduleGrid: React.FC<WeeklyScheduleGridProps> = ({ sessions
                             </span>
                         </div>
                         <ul className="space-y-2.5">
-                            {list.map(s => {
+                            {list.map((s) => {
                                 const cls = classMap.get(s.classId);
                                 return (
-                                    <li key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-3 transition-colors hover:border-slate-300">
-                                        <span className="h-12 w-1.5 flex-shrink-0 rounded-full" style={{ backgroundColor: cls?.color ?? '#94a3b8' }} />
+                                    <li
+                                        key={s.id}
+                                        className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-3 transition-colors hover:border-slate-300"
+                                    >
+                                        <span
+                                            className="h-12 w-1.5 flex-shrink-0 rounded-full"
+                                            style={{ backgroundColor: cls?.color ?? '#94a3b8' }}
+                                        />
                                         <div className="min-w-0 flex-1">
-                                            <div className="truncate text-base font-semibold text-slate-950">{cls?.name ?? 'Unknown'}</div>
+                                            <div className="truncate text-base font-semibold text-slate-950">
+                                                {cls?.name ?? 'Unknown'}
+                                            </div>
                                             <div className="mt-1 truncate text-sm text-slate-600">
                                                 {s.startTime.slice(0, 5)} – {s.endTime.slice(0, 5)}
                                                 {s.location ? ` · ${s.location}` : ''}

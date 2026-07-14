@@ -3,9 +3,16 @@ import { addDays, format } from 'date-fns';
 import { deriveTaskKind, kindSignalPatch, DEADLINE_HORIZON_DAYS } from './taskKind';
 import type { Task } from '../types';
 
-const base: Pick<Task,
-    'kind' | 'recurrence' | 'priority' | 'dueDate' | 'reminderEnabled' | 'reminderAt'
-    | 'assignmentId' | 'triageDestination'
+const base: Pick<
+    Task,
+    | 'kind'
+    | 'recurrence'
+    | 'priority'
+    | 'dueDate'
+    | 'reminderEnabled'
+    | 'reminderAt'
+    | 'assignmentId'
+    | 'triageDestination'
 > = {
     recurrence: 'none',
 };
@@ -13,6 +20,10 @@ const base: Pick<Task,
 const iso = (d: Date) => format(d, 'yyyy-MM-dd');
 
 describe('deriveTaskKind', () => {
+    it('keeps waiting explicit and never derives it', () => {
+        expect(deriveTaskKind({ ...base, kind: 'waiting' })).toBe('waiting');
+        expect(deriveTaskKind({ ...base })).not.toBe('waiting');
+    });
     it('honors an explicit kind over derived signals', () => {
         expect(deriveTaskKind({ ...base, kind: 'backlog', priority: 'urgent' })).toBe('backlog');
     });
@@ -22,7 +33,9 @@ describe('deriveTaskKind', () => {
     });
 
     it('routine wins over urgent priority', () => {
-        expect(deriveTaskKind({ ...base, recurrence: 'daily', priority: 'urgent' })).toBe('routine');
+        expect(deriveTaskKind({ ...base, recurrence: 'daily', priority: 'urgent' })).toBe(
+            'routine',
+        );
     });
 
     it('classifies urgent priority as urgent', () => {
@@ -64,7 +77,9 @@ describe('deriveTaskKind', () => {
         const dueDate = format(addDays(today, DEADLINE_HORIZON_DAYS), 'yyyy-MM-dd');
         expect(deriveTaskKind({ ...base, dueDate, reminderEnabled: true }, today)).toBe('deadline');
         const nearDate = format(addDays(today, DEADLINE_HORIZON_DAYS - 1), 'yyyy-MM-dd');
-        expect(deriveTaskKind({ ...base, dueDate: nearDate, reminderEnabled: true }, today)).toBe('standard');
+        expect(deriveTaskKind({ ...base, dueDate: nearDate, reminderEnabled: true }, today)).toBe(
+            'standard',
+        );
     });
 });
 

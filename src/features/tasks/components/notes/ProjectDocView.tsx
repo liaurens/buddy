@@ -15,8 +15,8 @@ import type { NoteCategory, SmartNote } from '../../types';
 
 function findProjectCategory(categories: NoteCategory[]): NoteCategory | undefined {
     return (
-        categories.find(c => c.flag.toLowerCase() === 'project') ??
-        categories.find(c => c.name.toLowerCase() === 'project')
+        categories.find((c) => c.flag.toLowerCase() === 'project') ??
+        categories.find((c) => c.name.toLowerCase() === 'project')
     );
 }
 
@@ -65,7 +65,7 @@ const ProjectDocView: React.FC = () => {
     const category = useMemo(() => findProjectCategory(categories), [categories]);
 
     const projectNotes = useMemo(
-        () => (category ? notes.filter(n => n.categoryId === category.id) : []),
+        () => (category ? notes.filter((n) => n.categoryId === category.id) : []),
         [notes, category],
     );
     const groups = useMemo(() => groupByDay(projectNotes), [projectNotes]);
@@ -101,7 +101,8 @@ const ProjectDocView: React.FC = () => {
     if (!category) {
         return (
             <div className="py-12 text-center text-sm text-slate-500">
-                No “Project” category found. Create one in note settings (flag <code className="rounded bg-slate-100 px-1">-project</code>) to start a project doc.
+                No “Project” category found. Create one in note settings (flag{' '}
+                <code className="rounded bg-slate-100 px-1">-project</code>) to start a project doc.
             </div>
         );
     }
@@ -112,24 +113,33 @@ const ProjectDocView: React.FC = () => {
                 <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
                     <FileText className="h-5 w-5" style={{ color: category.color || '#ec4899' }} />
                     {title}
-                    <span className="text-sm font-normal text-slate-500">({projectNotes.length})</span>
+                    <span className="text-sm font-normal text-slate-500">
+                        ({projectNotes.length})
+                    </span>
                 </h2>
                 {projectNotes.length > 0 && (
                     <button
                         onClick={handleCopy}
                         className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
                     >
-                        {copied ? <Check size={15} className="text-emerald-600" /> : <Copy size={15} />}
+                        {copied ? (
+                            <Check size={15} className="text-emerald-600" />
+                        ) : (
+                            <Copy size={15} />
+                        )}
                         {copied ? 'Copied' : 'Copy as Markdown'}
                     </button>
                 )}
             </div>
 
-            <form onSubmit={handleAdd} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100">
+            <form
+                onSubmit={handleAdd}
+                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100"
+            >
                 <input
                     type="text"
                     value={draft}
-                    onChange={e => setDraft(e.target.value)}
+                    onChange={(e) => setDraft(e.target.value)}
                     placeholder="Add a project note…"
                     className="ml-2 flex-1 bg-transparent text-sm text-slate-800 placeholder-slate-400 outline-none"
                     disabled={submitting}
@@ -145,18 +155,27 @@ const ProjectDocView: React.FC = () => {
 
             {groups.length === 0 ? (
                 <div className="py-10 text-center text-sm text-slate-500">
-                    No project notes yet. Add one above, or capture with <code className="rounded bg-slate-100 px-1">-project</code> from the iPhone shortcut.
+                    No project notes yet. Add one above, or capture with{' '}
+                    <code className="rounded bg-slate-100 px-1">-project</code> from the iPhone
+                    shortcut.
                 </div>
             ) : (
                 <div className="space-y-5">
-                    {groups.map(group => (
+                    {groups.map((group) => (
                         <section key={group.key}>
-                            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">{group.label}</h3>
+                            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+                                {group.label}
+                            </h3>
                             <ul className="space-y-1.5">
-                                {group.notes.map(note => (
-                                    <li key={note.id} className="group flex items-start gap-2 rounded-lg border border-slate-100 bg-white px-3 py-2">
+                                {group.notes.map((note) => (
+                                    <li
+                                        key={note.id}
+                                        className="group flex items-start gap-2 rounded-lg border border-slate-100 bg-white px-3 py-2"
+                                    >
                                         <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300" />
-                                        <p className="flex-1 whitespace-pre-wrap text-sm text-slate-700">{note.content}</p>
+                                        <p className="flex-1 whitespace-pre-wrap text-sm text-slate-700">
+                                            {note.content}
+                                        </p>
                                         <button
                                             onClick={() => deleteNote(note.id)}
                                             className="shrink-0 text-slate-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100"

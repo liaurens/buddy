@@ -17,10 +17,10 @@ interface Message {
 }
 
 const SUGGESTED_PROMPTS = [
-    "What metrics should I track?",
-    "Analyze my latest data",
-    "Suggest a phase change",
-    "Is my data meaningful yet?",
+    'What metrics should I track?',
+    'Analyze my latest data',
+    'Suggest a phase change',
+    'Is my data meaningful yet?',
 ];
 
 const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId, experiment }) => {
@@ -60,7 +60,9 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
         setInput('');
 
         try {
-            const { data: { session } } = await supabase.auth.getSession();
+            const {
+                data: { session },
+            } = await supabase.auth.getSession();
             if (!session) throw new Error('Not authenticated');
 
             const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -68,7 +70,7 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`,
+                    Authorization: `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({
                     message: messageText,
@@ -79,7 +81,9 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
             if (!response.ok) throw new Error(`Agent error: ${response.status}`);
             await response.json();
 
-            queryClient.invalidateQueries({ queryKey: ['experiment-agent-conversation', experimentId, user.id] });
+            queryClient.invalidateQueries({
+                queryKey: ['experiment-agent-conversation', experimentId, user.id],
+            });
             queryClient.invalidateQueries({ queryKey: ['experiments', user.id] });
             queryClient.invalidateQueries({ queryKey: ['experiment-checkins', experimentId] });
         } catch (err) {
@@ -110,13 +114,16 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
                             <Bot size={28} className="text-indigo-500" />
                         </div>
                         <div>
-                            <p className="text-sm text-slate-600 font-medium">How can I help with your experiment?</p>
+                            <p className="text-sm text-slate-600 font-medium">
+                                How can I help with your experiment?
+                            </p>
                             <p className="text-xs text-slate-400 mt-1">
-                                I can suggest metrics, analyze your data, recommend phase changes, and more.
+                                I can suggest metrics, analyze your data, recommend phase changes,
+                                and more.
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-2 justify-center pt-2">
-                            {SUGGESTED_PROMPTS.map(prompt => (
+                            {SUGGESTED_PROMPTS.map((prompt) => (
                                 <button
                                     key={prompt}
                                     onClick={() => send(prompt)}
@@ -134,16 +141,26 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
                             key={i}
                             className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                         >
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                msg.role === 'user' ? 'bg-slate-200' : 'bg-gradient-to-br from-indigo-500 to-purple-600'
-                            }`}>
-                                {msg.role === 'user' ? <User size={14} className="text-slate-600" /> : <Bot size={14} className="text-white" />}
+                            <div
+                                className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                    msg.role === 'user'
+                                        ? 'bg-slate-200'
+                                        : 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                                }`}
+                            >
+                                {msg.role === 'user' ? (
+                                    <User size={14} className="text-slate-600" />
+                                ) : (
+                                    <Bot size={14} className="text-white" />
+                                )}
                             </div>
-                            <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
-                                msg.role === 'user'
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-slate-100 text-slate-800'
-                            }`}>
+                            <div
+                                className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
+                                    msg.role === 'user'
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'bg-slate-100 text-slate-800'
+                                }`}
+                            >
                                 <div className="whitespace-pre-wrap">{msg.content}</div>
                             </div>
                         </div>
@@ -167,8 +184,13 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
                 <input
                     type="text"
                     value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            send(input);
+                        }
+                    }}
                     placeholder="Ask about your experiment..."
                     disabled={sending}
                     className="flex-1 p-2.5 border border-slate-200 rounded-xl text-sm disabled:bg-slate-50"

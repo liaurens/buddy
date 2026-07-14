@@ -22,10 +22,12 @@ interface Props {
 export function describeDays(days: number[]): string {
     const set = new Set(days);
     if (set.size === 7) return 'Every day';
-    if (set.size === 5 && WEEKDAYS.every(d => set.has(d))) return 'Weekdays';
+    if (set.size === 5 && WEEKDAYS.every((d) => set.has(d))) return 'Weekdays';
     if (set.size === 2 && set.has(0) && set.has(6)) return 'Weekends';
     if (set.size === 0) return 'Never';
-    return DAYS.filter(d => set.has(d.value)).map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.value]).join(', ');
+    return DAYS.filter((d) => set.has(d.value))
+        .map((d) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.value])
+        .join(', ');
 }
 
 /** Pill row for picking which weekdays a reminder fires on. */

@@ -2,13 +2,18 @@
  * Daily Journal Entry Operations
  */
 
-import type { DailyJournalEntry, JournalPromptResponse } from '../../../features/health-tracking/types';
+import type {
+    DailyJournalEntry,
+    JournalPromptResponse,
+} from '../../../features/health-tracking/types';
 import type { DbDailyJournalEntry } from '../types';
 import { supabase } from '../client';
 import { dbToDailyJournalEntry } from '../converters/experiment';
 
 export async function getJournalEntry(date: string): Promise<DailyJournalEntry | null> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
     const { data, error } = await supabase
@@ -30,7 +35,9 @@ export async function saveJournalEntry(entry: {
     energyRating?: number;
     wins: string[];
 }): Promise<DailyJournalEntry> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
     const row = {
@@ -53,8 +60,13 @@ export async function saveJournalEntry(entry: {
     return dbToDailyJournalEntry(data as DbDailyJournalEntry);
 }
 
-export async function getJournalEntries(dateRange: { from: string; to: string }): Promise<DailyJournalEntry[]> {
-    const { data: { user } } = await supabase.auth.getUser();
+export async function getJournalEntries(dateRange: {
+    from: string;
+    to: string;
+}): Promise<DailyJournalEntry[]> {
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
     const { data, error } = await supabase

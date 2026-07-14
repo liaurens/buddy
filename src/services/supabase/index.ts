@@ -7,23 +7,53 @@ export { supabase, isSupabaseConfigured } from './client';
 
 // Database types
 export type {
-    DbTracker, DbEntry,
-    DbProtocol, DbCycle, DbDose,
-    DbExperiment, DbCorrelation, DbExperimentLog, DbExperimentCheckinEntry, DbDailyJournalEntry, DbExperimentAgentConversation,
+    DbTracker,
+    DbEntry,
+    DbProtocol,
+    DbCycle,
+    DbDose,
+    DbExperiment,
+    DbCorrelation,
+    DbExperimentLog,
+    DbExperimentCheckinEntry,
+    DbDailyJournalEntry,
+    DbExperimentAgentConversation,
     DbStrategy,
-    DbTodo, DbTaskType, DbTaskRoutine, DbTaskRoutineItem, TaskEnergy, TaskContext,
-    DbNoteCategory, DbSmartNote,
-    DbActivityTemplate, DbCalendarEvent,
+    DbTodo,
+    DbTaskType,
+    DbTaskRoutine,
+    DbTaskRoutineItem,
+    TaskEnergy,
+    TaskContext,
+    DbNoteCategory,
+    DbSmartNote,
+    DbActivityTemplate,
+    DbCalendarEvent,
 } from './types';
 
 // Converters - Tracker
 export { dbToTracker, trackerToDb, dbToEntry, entryToDb } from './converters/tracker';
 
 // Converters - Protocol
-export { dbToProtocol, protocolToDb, dbToCycle, cycleToDb, dbToDose, doseToDb } from './converters/protocol';
+export {
+    dbToProtocol,
+    protocolToDb,
+    dbToCycle,
+    cycleToDb,
+    dbToDose,
+    doseToDb,
+} from './converters/protocol';
 
 // Converters - Experiment
-export { dbToExperiment, experimentToDb, dbToExperimentLog, experimentLogToDb, dbToCorrelation, dbToExperimentCheckinEntry, dbToDailyJournalEntry } from './converters/experiment';
+export {
+    dbToExperiment,
+    experimentToDb,
+    dbToExperimentLog,
+    experimentLogToDb,
+    dbToCorrelation,
+    dbToExperimentCheckinEntry,
+    dbToDailyJournalEntry,
+} from './converters/experiment';
 
 // Converters - Strategy
 export { dbToStrategy, strategyToDb } from './converters/strategy';
@@ -38,14 +68,28 @@ export { dbToTaskType, taskTypeToDb } from './converters/taskTypes';
 export { dbToRoutine, routineToDb, dbToRoutineItem, routineItemToDb } from './converters/routines';
 
 // Converters - Goal
-export { dbToGoal, goalToDb, dbToGoalLog, type Goal, type GoalLog, type GoalType } from './converters/goal';
+export {
+    dbToGoal,
+    goalToDb,
+    dbToGoalLog,
+    type Goal,
+    type GoalLog,
+    type GoalType,
+} from './converters/goal';
 
 // Converters - School
 export {
-    dbToClass, classToDb,
-    dbToAssignment, assignmentToDb,
-    dbToClassSession, classSessionToDb,
-    type SchoolClass, type Assignment, type ClassSession, type ClassDocument, type AssignmentStatus,
+    dbToClass,
+    classToDb,
+    dbToAssignment,
+    assignmentToDb,
+    dbToClassSession,
+    classSessionToDb,
+    type SchoolClass,
+    type Assignment,
+    type ClassSession,
+    type ClassDocument,
+    type AssignmentStatus,
 } from './converters/school';
 
 // Converters - Notes
@@ -53,8 +97,10 @@ export { dbToNoteCategory, dbToSmartNote, smartNoteToDb } from './converters/not
 
 // Converters - Planning
 export {
-    dbToActivityTemplate, activityTemplateToDb,
-    dbToCalendarEvent, calendarEventToDb,
+    dbToActivityTemplate,
+    activityTemplateToDb,
+    dbToCalendarEvent,
+    calendarEventToDb,
 } from './converters/planning';
 
 // Operations

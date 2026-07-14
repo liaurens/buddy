@@ -11,28 +11,147 @@ import type { Task, TaskType, TaskEnergy, TaskKind } from '../types';
 export interface ParsedDraft {
     title: string;
     taskTypeId?: string;
-    dueDate?: string;        // YYYY-MM-DD
-    dueTime?: string;        // HH:MM
+    dueDate?: string; // YYYY-MM-DD
+    dueTime?: string; // HH:MM
     priority?: Task['priority'];
     energy?: TaskEnergy;
-    kind?: TaskKind;         // explicit kind detected from text (e.g. "!!!" → urgent, "someday" → backlog)
+    kind?: TaskKind; // explicit kind detected from text (e.g. "!!!" → urgent, "someday" → backlog)
+    waitingOn?: string;
+    startDate?: string;
+    notes?: string;
 }
 
 // Keyword → preset task type NAME. Hits matched against the name on the user's
 // task_types row, so renaming the preset still works as long as the name stays.
 const TYPE_KEYWORDS: Record<string, string[]> = {
-    Email:   ['email', 'reply', 'inbox', 'mail', 'send', 'forward', 'respond', 'mailen'],
-    Home:    ['clean', 'laundry', 'dishes', 'room', 'vacuum', 'tidy', 'wash', 'kitchen', 'bathroom', 'trash', 'fold', 'repair', 'opruimen', 'stofzuigen', 'afwas'],
-    Study:   ['read', 'study', 'chapter', 'homework', 'assignment', 'essay', 'paper', 'review', 'flashcard', 'notes', 'exam', 'lecture', 'tentamen', 'toets', 'huiswerk', 'leren', 'samenvatting', 'college'],
-    Errands: ['buy', 'pickup', 'pick up', 'shop', 'pharmacy', 'groceries', 'grocery', 'store', 'return', 'boodschappen', 'kopen', 'ophalen', 'supermarkt', 'apotheek'],
-    Admin:   ['call', 'appt', 'appointment', 'form', 'pay', 'bill', 'schedule', 'book', 'submit', 'sign', 'renew', 'cancel', 'bellen', 'afspraak', 'betalen', 'rekening', 'formulier', 'verzekering', 'opzeggen'],
-    Health:  ['gym', 'workout', 'walk', 'run', 'stretch', 'meditate', 'yoga', 'sleep', 'water', 'sporten', 'hardlopen', 'wandelen', 'dokter', 'tandarts', 'huisarts', 'medicijn'],
-    Work:    ['meeting', 'deck', 'report', 'presentation', 'standup', 'sync', 'review pr', 'deploy', 'shift', 'dienst', 'rooster', 'stage', 'sollicitatie'],
+    Email: ['email', 'reply', 'inbox', 'mail', 'send', 'forward', 'respond', 'mailen'],
+    Home: [
+        'clean',
+        'laundry',
+        'dishes',
+        'room',
+        'vacuum',
+        'tidy',
+        'wash',
+        'kitchen',
+        'bathroom',
+        'trash',
+        'fold',
+        'repair',
+        'opruimen',
+        'stofzuigen',
+        'afwas',
+    ],
+    Study: [
+        'read',
+        'study',
+        'chapter',
+        'homework',
+        'assignment',
+        'essay',
+        'paper',
+        'review',
+        'flashcard',
+        'notes',
+        'exam',
+        'lecture',
+        'tentamen',
+        'toets',
+        'huiswerk',
+        'leren',
+        'samenvatting',
+        'college',
+    ],
+    Errands: [
+        'buy',
+        'pickup',
+        'pick up',
+        'shop',
+        'pharmacy',
+        'groceries',
+        'grocery',
+        'store',
+        'return',
+        'boodschappen',
+        'kopen',
+        'ophalen',
+        'supermarkt',
+        'apotheek',
+    ],
+    Admin: [
+        'call',
+        'appt',
+        'appointment',
+        'form',
+        'pay',
+        'bill',
+        'schedule',
+        'book',
+        'submit',
+        'sign',
+        'renew',
+        'cancel',
+        'bellen',
+        'afspraak',
+        'betalen',
+        'rekening',
+        'formulier',
+        'verzekering',
+        'opzeggen',
+    ],
+    Health: [
+        'gym',
+        'workout',
+        'walk',
+        'run',
+        'stretch',
+        'meditate',
+        'yoga',
+        'sleep',
+        'water',
+        'sporten',
+        'hardlopen',
+        'wandelen',
+        'dokter',
+        'tandarts',
+        'huisarts',
+        'medicijn',
+    ],
+    Work: [
+        'meeting',
+        'deck',
+        'report',
+        'presentation',
+        'standup',
+        'sync',
+        'review pr',
+        'deploy',
+        'shift',
+        'dienst',
+        'rooster',
+        'stage',
+        'sollicitatie',
+    ],
 };
 
 const WEEKDAY_INDEX: Record<string, number> = {
-    sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
-    sun: 0, mon: 1, tue: 2, tues: 2, wed: 3, thu: 4, thur: 4, thurs: 4, fri: 5, sat: 6,
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+    sun: 0,
+    mon: 1,
+    tue: 2,
+    tues: 2,
+    wed: 3,
+    thu: 4,
+    thur: 4,
+    thurs: 4,
+    fri: 5,
+    sat: 6,
 };
 
 function toIsoDate(d: Date): string {
@@ -44,7 +163,7 @@ function toIsoDate(d: Date): string {
 
 function nextWeekday(from: Date, targetDow: number): Date {
     const d = new Date(from);
-    const diff = ((targetDow - d.getDay()) + 7) % 7 || 7;
+    const diff = (targetDow - d.getDay() + 7) % 7 || 7;
     d.setDate(d.getDate() + diff);
     return d;
 }
@@ -64,12 +183,17 @@ function parseTime(raw: string): string | undefined {
     if (m24) {
         const h = parseInt(m24[1], 10);
         const min = parseInt(m24[2], 10);
-        if (h < 24 && min < 60) return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+        if (h < 24 && min < 60)
+            return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
     }
     return undefined;
 }
 
-export function parseQuickCapture(input: string, types: TaskType[], now: Date = new Date()): ParsedDraft {
+export function parseQuickCapture(
+    input: string,
+    types: TaskType[],
+    now: Date = new Date(),
+): ParsedDraft {
     let text = input.trim();
     if (!text) return { title: '' };
 
@@ -83,8 +207,10 @@ export function parseQuickCapture(input: string, types: TaskType[], now: Date = 
     // Priority: leading !!! (urgent kind), !! (urgent), or ! (high)
     const prMatch = text.match(/^(!!!|!!|!)\s+/);
     if (prMatch) {
-        if (prMatch[1] === '!!!') { priority = 'urgent'; kind = 'urgent'; }
-        else if (prMatch[1] === '!!') priority = 'urgent';
+        if (prMatch[1] === '!!!') {
+            priority = 'urgent';
+            kind = 'urgent';
+        } else if (prMatch[1] === '!!') priority = 'urgent';
         else priority = 'high';
         text = text.slice(prMatch[0].length);
     }
@@ -157,8 +283,8 @@ export function parseQuickCapture(input: string, types: TaskType[], now: Date = 
     // type names so renamed presets still resolve.
     const titleLower = text.toLowerCase();
     for (const [presetName, words] of Object.entries(TYPE_KEYWORDS)) {
-        if (words.some(w => new RegExp(`\\b${w}\\b`, 'i').test(titleLower))) {
-            const match = types.find(t => t.name.toLowerCase() === presetName.toLowerCase());
+        if (words.some((w) => new RegExp(`\\b${w}\\b`, 'i').test(titleLower))) {
+            const match = types.find((t) => t.name.toLowerCase() === presetName.toLowerCase());
             if (match) {
                 taskTypeId = match.id;
                 break;

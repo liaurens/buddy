@@ -19,14 +19,18 @@ const storageKey = (phase: RoutinePhase, dateKey: string) => `routine_done_${pha
 function emitChange(): void {
     try {
         window.dispatchEvent(new CustomEvent(ROUTINE_PROGRESS_EVENT));
-    } catch { /* ignore — non-browser env */ }
+    } catch {
+        /* ignore — non-browser env */
+    }
 }
 
 /** Mark a routine phase as finished for the given day (yyyy-MM-dd). */
 export function markRoutineDone(phase: RoutinePhase, dateKey: string): void {
     try {
         localStorage.setItem(storageKey(phase, dateKey), '1');
-    } catch { /* ignore — storage unavailable */ }
+    } catch {
+        /* ignore — storage unavailable */
+    }
     emitChange();
 }
 
@@ -34,7 +38,9 @@ export function markRoutineDone(phase: RoutinePhase, dateKey: string): void {
 export function clearRoutineDone(phase: RoutinePhase, dateKey: string): void {
     try {
         localStorage.removeItem(storageKey(phase, dateKey));
-    } catch { /* ignore — storage unavailable */ }
+    } catch {
+        /* ignore — storage unavailable */
+    }
     emitChange();
 }
 

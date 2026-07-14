@@ -7,8 +7,10 @@
 import React from 'react';
 import { Calendar, Check, Loader2, AlertTriangle } from 'lucide-react';
 import {
-    useGoogleCalendarConnection, useConnectGoogleCalendar,
-    useDisconnectGoogleCalendar, isGoogleCalendarConfigured,
+    useGoogleCalendarConnection,
+    useConnectGoogleCalendar,
+    useDisconnectGoogleCalendar,
+    isGoogleCalendarConfigured,
 } from '../../hooks/useGoogleCalendar';
 
 const GoogleCalendarConnect: React.FC = () => {
@@ -35,12 +37,15 @@ const GoogleCalendarConnect: React.FC = () => {
                         <Calendar size={18} className="text-indigo-600" />
                     </div>
                     <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-900">Write to Google Calendar</p>
+                        <p className="text-sm font-medium text-slate-900">
+                            Write to Google Calendar
+                        </p>
                         {isLoading ? (
                             <p className="text-xs text-slate-400">Checking connection…</p>
                         ) : connected ? (
                             <p className="text-xs text-emerald-700 flex items-center gap-1">
-                                <Check size={12} /> Connected{data?.googleEmail ? ` · ${data.googleEmail}` : ''}
+                                <Check size={12} /> Connected
+                                {data?.googleEmail ? ` · ${data.googleEmail}` : ''}
                             </p>
                         ) : (
                             <p className="text-xs text-slate-500">

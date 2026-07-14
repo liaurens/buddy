@@ -16,6 +16,7 @@ import type { Task } from '../../tasks/types';
 import { scoreTask } from '../../tasks/utils/taskRecommender';
 import { isLocked } from '../../tasks/utils/triageRouting';
 import { parseDueDate } from '../../tasks/utils/dueDates';
+import { isTaskParked } from '../../tasks/utils/taskContracts';
 
 export interface MorningPickOptions {
     /** Today's date, yyyy-MM-dd (injected — no internal clock). */
@@ -64,7 +65,8 @@ export function rankMorningCandidates(tasks: Task[], opts: MorningPickOptions): 
                 !t.completed &&
                 t.dueDate !== opts.today &&
                 !isRoutine(t) &&
-                !isLocked(t),
+                !isLocked(t) &&
+                !isTaskParked(t, now),
         )
         .map((task) => {
             const base = scoreTask(task, now);
@@ -96,10 +98,7 @@ export function rankMorningCandidates(tasks: Task[], opts: MorningPickOptions): 
  * SCHOOL_SLOT_CAP so a deadline-heavy week doesn't fill every slot. If the cap
  * leaves slots empty, backfill with the remaining best regardless of source.
  */
-export function suggestMorningPicks(
-    ranked: MorningCandidate[],
-    slots: number,
-): MorningCandidate[] {
+export function suggestMorningPicks(ranked: MorningCandidate[], slots: number): MorningCandidate[] {
     const picks: MorningCandidate[] = [];
     let schoolCount = 0;
 

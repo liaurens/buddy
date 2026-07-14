@@ -5,7 +5,11 @@ import type { Checklist, ChecklistItem } from '../types';
 export const useChecklists = () => {
     const queryClient = useQueryClient();
 
-    const { data: checklists = [], isLoading, error } = useQuery({
+    const {
+        data: checklists = [],
+        isLoading,
+        error,
+    } = useQuery({
         queryKey: ['checklists'],
         queryFn: checklistsService.getAll,
     });
@@ -47,10 +51,10 @@ export const useChecklists = () => {
     };
 
     const resetChecklist = async (checklist: Checklist) => {
-        const newItems = checklist.items.map(i => ({ ...i, isChecked: false }));
+        const newItems = checklist.items.map((i) => ({ ...i, isChecked: false }));
         return updateMutation.mutateAsync({
             id: checklist.id,
-            updates: { items: newItems }
+            updates: { items: newItems },
         });
     };
 
@@ -58,30 +62,30 @@ export const useChecklists = () => {
         const newItem: ChecklistItem = {
             id: crypto.randomUUID(),
             text,
-            isChecked: false
+            isChecked: false,
         };
         const newItems = [...checklist.items, newItem];
         return updateMutation.mutateAsync({
             id: checklist.id,
-            updates: { items: newItems }
+            updates: { items: newItems },
         });
     };
 
     const toggleItem = async (checklist: Checklist, itemId: string) => {
-        const newItems = checklist.items.map(i =>
-            i.id === itemId ? { ...i, isChecked: !i.isChecked } : i
+        const newItems = checklist.items.map((i) =>
+            i.id === itemId ? { ...i, isChecked: !i.isChecked } : i,
         );
         return updateMutation.mutateAsync({
             id: checklist.id,
-            updates: { items: newItems }
+            updates: { items: newItems },
         });
     };
 
     const deleteItem = async (checklist: Checklist, itemId: string) => {
-        const newItems = checklist.items.filter(i => i.id !== itemId);
+        const newItems = checklist.items.filter((i) => i.id !== itemId);
         return updateMutation.mutateAsync({
             id: checklist.id,
-            updates: { items: newItems }
+            updates: { items: newItems },
         });
     };
 
@@ -95,6 +99,6 @@ export const useChecklists = () => {
         resetChecklist,
         addItem,
         toggleItem,
-        deleteItem
+        deleteItem,
     };
 };

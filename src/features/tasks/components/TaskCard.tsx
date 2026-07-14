@@ -1,9 +1,24 @@
 import React, { useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
-    CheckCircle, Circle, Calendar as CalendarIcon, MapPin, Tag, Sparkles,
-    ChevronDown, ChevronRight, Repeat, Bell, Trash2, Plus, MoreHorizontal,
-    Clock, Layers,
+    CheckCircle,
+    Circle,
+    Calendar as CalendarIcon,
+    MapPin,
+    Tag,
+    Sparkles,
+    ChevronDown,
+    ChevronRight,
+    Repeat,
+    Bell,
+    Trash2,
+    Plus,
+    MoreHorizontal,
+    Clock,
+    Layers,
+    AlertTriangle,
+    UserRound,
+    Pause,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Task, Subtask, TaskType, TaskEnergy } from '../types';
@@ -11,6 +26,11 @@ import { calculateNextDueDate } from '../utils/recurrence';
 import { getTypeColors } from '../utils/typeColors';
 import { isStale } from '../utils/staleness';
 import { parseDueDate, daysUntilDue } from '../utils/dueDates';
+import {
+    isDeadlineStartSlipped,
+    missedRoutineOccurrences,
+    needsRoutineDecision,
+} from '../utils/taskContracts';
 import AITaskSplitter from './AITaskSplitter';
 import SnoozeMenu from './SnoozeMenu';
 import PortalMenu from './PortalMenu';
@@ -51,9 +71,12 @@ function deadlineInfo(dueDate: string): { label: string; className: string } {
     if (diff < 0) {
         return { label: `${-diff}d overdue`, className: 'text-rose-600 bg-rose-50 font-bold' };
     }
-    if (diff === 0) return { label: 'Due today', className: 'text-amber-700 bg-amber-50 font-bold' };
-    if (diff === 1) return { label: 'Tomorrow', className: 'text-amber-600 bg-amber-50 font-semibold' };
-    if (diff <= 7) return { label: `${format(d, 'EEE')} (${diff}d)`, className: 'text-slate-500 bg-slate-50' };
+    if (diff === 0)
+        return { label: 'Due today', className: 'text-amber-700 bg-amber-50 font-bold' };
+    if (diff === 1)
+        return { label: 'Tomorrow', className: 'text-amber-600 bg-amber-50 font-semibold' };
+    if (diff <= 7)
+        return { label: `${format(d, 'EEE')} (${diff}d)`, className: 'text-slate-500 bg-slate-50' };
     return { label: format(d, 'MMM d'), className: 'text-slate-400' };
 }
 
@@ -90,28 +113,52 @@ const TaskCard: React.FC<TaskCardProps> = ({
     const [newSubtaskText, setNewSubtaskText] = useState('');
     const [snoozeOpen, setSnoozeOpen] = useState(false);
     const [typeMenuOpen, setTypeMenuOpen] = useState(false);
+    const [routineDecisionOpen, setRoutineDecisionOpen] = useState(false);
     const typeBtnRef = useRef<HTMLButtonElement>(null);
     const snoozeBtnRef = useRef<HTMLButtonElement>(null);
 
     const colors = getTypeColors(taskType?.color);
     const recLabel = recurrenceLabel(task);
     const subtaskCount = task.subtasks?.length ?? 0;
-    const subtaskDone = task.subtasks?.filter(st => st.completed).length ?? 0;
+    const subtaskDone = task.subtasks?.filter((st) => st.completed).length ?? 0;
     const hasSubtasks = subtaskCount > 0;
     const progress = hasSubtasks ? Math.round((subtaskDone / subtaskCount) * 100) : 0;
     // Stuck signal: repeatedly snoozed or due/overdue and untouched — offer a split.
     const stale = isStale(task, new Date());
+    const routineMisses = missedRoutineOccurrences(task.dueDate, task.recurrence, new Date());
+    const routineNeedsDecision = !task.completed && needsRoutineDecision(task, new Date());
+    const deadlineSlipped = isDeadlineStartSlipped(task, new Date());
+
+    const easeRoutine = () => {
+        const recurrence =
+            task.recurrence === 'daily' || task.recurrence === 'weekdays' ? 'weekly' : 'monthly';
+        const recurrenceConfig =
+            task.recurrence === 'monthly'
+                ? {
+                      ...task.recurrenceConfig,
+                      interval: (task.recurrenceConfig?.interval ?? 1) + 1,
+                  }
+                : task.recurrenceConfig;
+        onUpdate({
+            ...task,
+            recurrence,
+            recurrenceConfig,
+            dueDate: format(new Date(), 'yyyy-MM-dd'),
+        });
+        setRoutineDecisionOpen(false);
+    };
 
     const handleSubtaskToggle = (subtaskId: string) => {
-        const updatedSubtasks = task.subtasks?.map(st =>
-            st.id === subtaskId ? { ...st, completed: !st.completed } : st
-        ) || [];
-        const allDone = updatedSubtasks.length > 0 && updatedSubtasks.every(st => st.completed);
-        const anyUndone = updatedSubtasks.some(st => !st.completed);
+        const updatedSubtasks =
+            task.subtasks?.map((st) =>
+                st.id === subtaskId ? { ...st, completed: !st.completed } : st,
+            ) || [];
+        const allDone = updatedSubtasks.length > 0 && updatedSubtasks.every((st) => st.completed);
+        const anyUndone = updatedSubtasks.some((st) => !st.completed);
         onUpdate({
             ...task,
             subtasks: updatedSubtasks,
-            completed: allDone ? true : (anyUndone ? false : task.completed),
+            completed: allDone ? true : anyUndone ? false : task.completed,
         });
     };
 
@@ -138,9 +185,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <div>
             <div
                 className={`group border-b border-slate-100 bg-white p-3 transition-all last:border-b-0 hover:bg-slate-50 ${
-                    isSelected ? 'ring-1 ring-inset ring-indigo-200'
-                    : isTopPick ? 'ring-1 ring-inset ring-indigo-100'
-                    : ''
+                    isSelected
+                        ? 'ring-1 ring-inset ring-indigo-200'
+                        : isTopPick
+                          ? 'ring-1 ring-inset ring-indigo-100'
+                          : ''
                 }`}
             >
                 <div className="flex items-start gap-2.5">
@@ -148,7 +197,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => onToggleSelect(task.id)}
-                        onClick={e => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                         aria-label={`Select ${task.title}`}
                         className="mt-1.5 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer flex-shrink-0"
                     />
@@ -161,7 +210,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     </button>
 
                     {showTypeBadge && taskType?.emoji && (
-                        <span className="mt-0.5 text-lg flex-shrink-0" aria-label={taskType.name} title={taskType.name}>
+                        <span
+                            className="mt-0.5 text-lg flex-shrink-0"
+                            aria-label={taskType.name}
+                            title={taskType.name}
+                        >
                             {taskType.emoji}
                         </span>
                     )}
@@ -170,11 +223,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium text-slate-800 leading-tight">{task.title}</p>
                             {isTopPick && (
-                                <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">Top pick</span>
+                                <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-700">
+                                    Top pick
+                                </span>
                             )}
                             {stale && !hasSubtasks && (
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setSplitting(s => !s); }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSplitting((s) => !s);
+                                    }}
                                     className="flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 transition-colors hover:bg-amber-100"
                                     title="This task looks stuck — break it into smaller steps"
                                 >
@@ -187,45 +245,92 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         )}
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs">
                             {task.energy && (
-                                <span className="flex items-center gap-1 text-slate-500" title={ENERGY_LABEL[task.energy]}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${ENERGY_DOT[task.energy]}`} />
+                                <span
+                                    className="flex items-center gap-1 text-slate-500"
+                                    title={ENERGY_LABEL[task.energy]}
+                                >
+                                    <span
+                                        className={`w-1.5 h-1.5 rounded-full ${ENERGY_DOT[task.energy]}`}
+                                    />
                                     {task.energy}
                                 </span>
                             )}
                             {task.priority && task.priority !== 'medium' && (
-                                <span className={`px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${priorityClasses(task.priority)}`}>
+                                <span
+                                    className={`px-1.5 py-0.5 rounded font-bold uppercase tracking-wider ${priorityClasses(task.priority)}`}
+                                >
                                     {task.priority}
                                 </span>
                             )}
-                            {task.dueDate && (() => {
-                                const { label, className } = deadlineInfo(task.dueDate);
-                                return (
-                                    <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${className}`}>
-                                        <CalendarIcon size={11} />
-                                        {label}
-                                        {task.dueTime && <span className="flex items-center gap-0.5"><Clock size={9} />{task.dueTime}</span>}
-                                    </span>
-                                );
-                            })()}
+                            {task.dueDate &&
+                                (() => {
+                                    const { label, className } = deadlineInfo(task.dueDate);
+                                    return (
+                                        <span
+                                            className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${className}`}
+                                        >
+                                            <CalendarIcon size={11} />
+                                            {label}
+                                            {task.dueTime && (
+                                                <span className="flex items-center gap-0.5">
+                                                    <Clock size={9} />
+                                                    {task.dueTime}
+                                                </span>
+                                            )}
+                                        </span>
+                                    );
+                                })()}
+                            {task.waitingOn && (
+                                <span className="flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-600">
+                                    <UserRound size={10} /> {task.waitingOn}
+                                </span>
+                            )}
+                            {task.kind === 'deadline' && task.startDate && (
+                                <span className="flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 font-medium text-blue-700">
+                                    <CalendarIcon size={10} /> Starts{' '}
+                                    {format(parseDueDate(task.startDate), 'MMM d')}
+                                </span>
+                            )}
+                            {deadlineSlipped && (
+                                <span className="flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 font-medium text-amber-700">
+                                    <AlertTriangle size={10} /> Start date passed
+                                </span>
+                            )}
                             {task.location && (
                                 <span className="flex items-center gap-1 font-medium text-slate-500">
                                     <MapPin size={11} /> {task.location}
                                 </span>
                             )}
-                            {task.labels && task.labels.length > 0 && task.labels.map(label => (
-                                <span key={label} className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-medium">
-                                    <Tag size={9} /> {label}
-                                </span>
-                            ))}
+                            {task.labels &&
+                                task.labels.length > 0 &&
+                                task.labels.map((label) => (
+                                    <span
+                                        key={label}
+                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-medium"
+                                    >
+                                        <Tag size={9} /> {label}
+                                    </span>
+                                ))}
                             {hasSubtasks && (
                                 <span className="flex items-center gap-1 font-medium text-slate-500">
                                     <Layers size={9} /> {subtaskDone}/{subtaskCount}
                                 </span>
                             )}
                             {recLabel && (
-                                <span className={`flex items-center gap-1 font-medium px-1.5 py-0.5 rounded ${colors.bg} ${colors.text}`}>
+                                <span
+                                    className={`flex items-center gap-1 font-medium px-1.5 py-0.5 rounded ${colors.bg} ${colors.text}`}
+                                >
                                     <Repeat size={9} /> {recLabel}
                                 </span>
+                            )}
+                            {routineNeedsDecision && (
+                                <button
+                                    type="button"
+                                    onClick={() => setRoutineDecisionOpen((open) => !open)}
+                                    className="flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 font-semibold text-amber-700 hover:bg-amber-100"
+                                >
+                                    <AlertTriangle size={10} /> Missed {routineMisses}
+                                </button>
                             )}
                             {task.reminderEnabled && (
                                 <span className="flex items-center gap-1 font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
@@ -233,6 +338,35 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 </span>
                             )}
                         </div>
+                        {routineDecisionOpen && (
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 p-2 text-xs">
+                                <span className="mr-1 text-amber-800">Adjust this routine:</span>
+                                <button
+                                    type="button"
+                                    onClick={easeRoutine}
+                                    className="rounded bg-white px-2 py-1 font-medium text-amber-800 hover:bg-amber-100"
+                                >
+                                    Ease cadence
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onUpdate({ ...task, recurrence: 'none', kind: 'standard' });
+                                        setRoutineDecisionOpen(false);
+                                    }}
+                                    className="flex items-center gap-1 rounded bg-white px-2 py-1 font-medium text-slate-700 hover:bg-slate-100"
+                                >
+                                    <Pause size={11} /> Pause
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onDelete(task.id)}
+                                    className="rounded bg-white px-2 py-1 font-medium text-rose-700 hover:bg-rose-50"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        )}
                         {hasSubtasks && (
                             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
                                 <div
@@ -248,7 +382,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             <>
                                 <button
                                     ref={typeBtnRef}
-                                    onClick={() => { setTypeMenuOpen(o => !o); setSnoozeOpen(false); }}
+                                    onClick={() => {
+                                        setTypeMenuOpen((o) => !o);
+                                        setSnoozeOpen(false);
+                                    }}
                                     className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-indigo-500 transition-all"
                                     title="Assign type"
                                     aria-label="Assign type"
@@ -262,15 +399,21 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                     width={192}
                                 >
                                     <button
-                                        onClick={() => { onUpdate({ ...task, taskTypeId: undefined }); setTypeMenuOpen(false); }}
+                                        onClick={() => {
+                                            onUpdate({ ...task, taskTypeId: undefined });
+                                            setTypeMenuOpen(false);
+                                        }}
                                         className={`w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-500 italic ${!task.taskTypeId ? 'bg-indigo-50 text-indigo-600 font-medium not-italic' : ''}`}
                                     >
                                         Uncategorized
                                     </button>
-                                    {allTaskTypes.map(t => (
+                                    {allTaskTypes.map((t) => (
                                         <button
                                             key={t.id}
-                                            onClick={() => { onUpdate({ ...task, taskTypeId: t.id }); setTypeMenuOpen(false); }}
+                                            onClick={() => {
+                                                onUpdate({ ...task, taskTypeId: t.id });
+                                                setTypeMenuOpen(false);
+                                            }}
                                             className={`w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center gap-2 ${task.taskTypeId === t.id ? 'bg-indigo-50 text-indigo-600 font-medium' : 'text-slate-700'}`}
                                         >
                                             {t.emoji && <span>{t.emoji}</span>}
@@ -282,7 +425,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         )}
                         <button
                             ref={snoozeBtnRef}
-                            onClick={() => { setSnoozeOpen(s => !s); setTypeMenuOpen(false); }}
+                            onClick={() => {
+                                setSnoozeOpen((s) => !s);
+                                setTypeMenuOpen(false);
+                            }}
                             className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-indigo-500 transition-all"
                             title="Reschedule"
                             aria-label="Reschedule"
@@ -298,7 +444,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         )}
                         {(!task.subtasks || task.subtasks.length === 0) && (
                             <button
-                                onClick={() => setSplitting(s => !s)}
+                                onClick={() => setSplitting((s) => !s)}
                                 className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-300 hover:text-indigo-500 transition-all"
                                 title="Split with AI"
                             >
@@ -306,11 +452,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             </button>
                         )}
                         <button
-                            onClick={() => setExpanded(e => !e)}
+                            onClick={() => setExpanded((e) => !e)}
                             className={`p-1.5 text-slate-300 hover:text-indigo-500 transition-colors ${
-                                task.subtasks && task.subtasks.length > 0 ? '' : 'opacity-0 group-hover:opacity-100'
+                                task.subtasks && task.subtasks.length > 0
+                                    ? ''
+                                    : 'opacity-0 group-hover:opacity-100'
                             }`}
-                            title={task.subtasks && task.subtasks.length > 0 ? 'Show subtasks' : 'Expand'}
+                            title={
+                                task.subtasks && task.subtasks.length > 0
+                                    ? 'Show subtasks'
+                                    : 'Expand'
+                            }
                         >
                             {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                         </button>
@@ -326,18 +478,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
                 {expanded && (
                     <div className="ml-9 mt-3 space-y-1.5 border-l-2 border-slate-100 pl-3">
-                        {task.subtasks?.map(st => (
+                        {task.subtasks?.map((st) => (
                             <button
                                 key={st.id}
                                 onClick={() => handleSubtaskToggle(st.id)}
                                 className="flex items-center gap-2 w-full text-left py-1 group/st"
                             >
                                 {st.completed ? (
-                                    <CheckCircle size={16} className="text-emerald-500 flex-shrink-0" />
+                                    <CheckCircle
+                                        size={16}
+                                        className="text-emerald-500 flex-shrink-0"
+                                    />
                                 ) : (
-                                    <Circle size={16} className="text-slate-300 group-hover/st:text-indigo-400 flex-shrink-0" />
+                                    <Circle
+                                        size={16}
+                                        className="text-slate-300 group-hover/st:text-indigo-400 flex-shrink-0"
+                                    />
                                 )}
-                                <span className={`text-sm ${st.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                <span
+                                    className={`text-sm ${st.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}
+                                >
                                     {st.title}
                                 </span>
                             </button>
@@ -347,8 +507,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             <input
                                 type="text"
                                 value={newSubtaskText}
-                                onChange={e => setNewSubtaskText(e.target.value)}
-                                onKeyDown={e => {
+                                onChange={(e) => setNewSubtaskText(e.target.value)}
+                                onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         e.preventDefault();
                                         handleAddSubtask();

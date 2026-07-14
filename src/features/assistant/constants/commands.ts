@@ -13,10 +13,30 @@ export interface AssistantCommand {
 }
 
 export const COMMANDS: AssistantCommand[] = [
-    { command: '/task', description: 'Create a task', example: '/task Fix bike tire by friday', primary: true },
-    { command: '/note', description: 'Create a note', example: '/note Meeting notes from today', primary: true },
-    { command: '/checkin', description: 'Log health', example: '/checkin mood 4 energy 3', primary: true },
-    { command: '/remind', description: 'Set reminder', example: '/remind 14:00 call dentist', primary: true },
+    {
+        command: '/task',
+        description: 'Create a task',
+        example: '/task Fix bike tire by friday',
+        primary: true,
+    },
+    {
+        command: '/note',
+        description: 'Create a note',
+        example: '/note Meeting notes from today',
+        primary: true,
+    },
+    {
+        command: '/checkin',
+        description: 'Log health',
+        example: '/checkin mood 4 energy 3',
+        primary: true,
+    },
+    {
+        command: '/remind',
+        description: 'Set reminder',
+        example: '/remind 14:00 call dentist',
+        primary: true,
+    },
     { command: '/done', description: 'Complete a task', example: '/done fix bike' },
     { command: '/today', description: "Today's tasks", example: '/today' },
     { command: '/task.list', description: 'List all tasks', example: '/task.list' },

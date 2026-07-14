@@ -57,7 +57,7 @@ export async function uploadCourseDocument(
     classId: string,
     file: File,
     kind: ClassDocumentKind,
-    metadata?: { folder?: string; tags?: string[]; notes?: string | null }
+    metadata?: { folder?: string; tags?: string[]; notes?: string | null },
 ): Promise<ClassDocument> {
     if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
         throw new Error('Only PDF files are supported.');
@@ -106,7 +106,7 @@ export async function uploadCourseDocument(
 
 export async function updateCourseDocument(
     document: Pick<ClassDocument, 'id'>,
-    patch: Partial<Pick<ClassDocument, 'name' | 'kind' | 'folder' | 'tags' | 'notes'>>
+    patch: Partial<Pick<ClassDocument, 'name' | 'kind' | 'folder' | 'tags' | 'notes'>>,
 ): Promise<void> {
     const dbPatch: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (patch.name !== undefined) dbPatch.name = patch.name.trim();
@@ -115,18 +115,12 @@ export async function updateCourseDocument(
     if (patch.tags !== undefined) dbPatch.tags = patch.tags;
     if (patch.notes !== undefined) dbPatch.notes = patch.notes?.trim() || null;
 
-    const { error } = await supabase
-        .from('class_documents')
-        .update(dbPatch)
-        .eq('id', document.id);
+    const { error } = await supabase.from('class_documents').update(dbPatch).eq('id', document.id);
     if (error) throw error;
 }
 
 export async function deleteCourseDocument(document: ClassDocument): Promise<void> {
-    const { error } = await supabase
-        .from('class_documents')
-        .delete()
-        .eq('id', document.id);
+    const { error } = await supabase.from('class_documents').delete().eq('id', document.id);
     if (error) throw error;
 
     await supabase.storage.from('class-documents').remove([document.storagePath]);
@@ -143,7 +137,7 @@ export async function getDocumentDownloadUrl(storagePath: string): Promise<strin
 export async function extractFromDocuments(
     classId: string,
     documentIds: string[],
-    extraInstructions?: string
+    extraInstructions?: string,
 ): Promise<CourseImportPayload> {
     const { data, error } = await supabase.functions.invoke('school-import', {
         body: {
@@ -161,7 +155,7 @@ export async function extractFromDocuments(
 
 export async function commitImport(
     classId: string,
-    payload: CourseImportPayload
+    payload: CourseImportPayload,
 ): Promise<CourseImportCounts> {
     const { data, error } = await supabase.functions.invoke('school-import', {
         body: {

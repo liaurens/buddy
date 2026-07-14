@@ -100,7 +100,11 @@ describe('dbToTodo', () => {
     });
 
     it('defaults a missing recurrence to "none" and subtasks to []', () => {
-        const db = { ...fullDbTodo(), recurrence: undefined as unknown as DbTodo['recurrence'], subtasks: null };
+        const db = {
+            ...fullDbTodo(),
+            recurrence: undefined as unknown as DbTodo['recurrence'],
+            subtasks: null,
+        };
         const task = dbToTodo(db);
         expect(task.recurrence).toBe('none');
         expect(task.subtasks).toEqual([]);

@@ -47,13 +47,19 @@ const StrategySpotlightCard: React.FC = () => {
                 Strategies you wrote down — did one of these apply today?
             </p>
             <ul className="space-y-2">
-                {spotlight.map(s => (
-                    <li key={s.id} className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
+                {spotlight.map((s) => (
+                    <li
+                        key={s.id}
+                        className="rounded-lg border border-slate-100 bg-slate-50/60 p-3"
+                    >
                         <p className="text-sm font-medium text-slate-800">
-                            {s.isFavorite ? '⭐ ' : ''}{s.title}
+                            {s.isFavorite ? '⭐ ' : ''}
+                            {s.title}
                         </p>
                         {s.description && (
-                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{s.description}</p>
+                            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                                {s.description}
+                            </p>
                         )}
                     </li>
                 ))}

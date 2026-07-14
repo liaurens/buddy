@@ -18,9 +18,8 @@ const LoginScreen: React.FC = () => {
         setError('');
 
         try {
-            const { error } = mode === 'login'
-                ? await signIn(email, password)
-                : await signUp(email, password);
+            const { error } =
+                mode === 'login' ? await signIn(email, password) : await signUp(email, password);
 
             if (error) {
                 if (error.message.includes('Invalid login credentials')) {
@@ -63,7 +62,10 @@ const LoginScreen: React.FC = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
+                        <label
+                            htmlFor="email"
+                            className="block text-sm font-medium text-slate-700 mb-1"
+                        >
                             Email Address
                         </label>
                         <div className="relative">
@@ -82,7 +84,10 @@ const LoginScreen: React.FC = () => {
                     </div>
 
                     <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
+                        <label
+                            htmlFor="password"
+                            className="block text-sm font-medium text-slate-700 mb-1"
+                        >
                             Password
                         </label>
                         <div className="relative">
@@ -92,7 +97,11 @@ const LoginScreen: React.FC = () => {
                                 id="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder={mode === 'signup' ? 'At least 6 characters' : 'Enter your password'}
+                                placeholder={
+                                    mode === 'signup'
+                                        ? 'At least 6 characters'
+                                        : 'Enter your password'
+                                }
                                 className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                 required
                                 minLength={6}

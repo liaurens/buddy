@@ -13,13 +13,13 @@ const EntryForm: React.FC<EntryFormProps> = ({ onManageTrackers }) => {
 
     // Filter existing entries for the selected date
     const existingEntries = useMemo(() => {
-        return entries.filter(e => isSameDay(new Date(e.timestamp), selectedDate));
+        return entries.filter((e) => isSameDay(new Date(e.timestamp), selectedDate));
     }, [entries, selectedDate]);
 
     return (
         <div className="bg-slate-50/50 -mx-4 -mt-2 p-4 min-h-[60vh] sm:rounded-xl sm:mx-0 sm:mt-0 sm:border border-slate-100">
             <div className="max-w-lg mx-auto">
-                <CheckinForm 
+                <CheckinForm
                     date={selectedDate}
                     onDateChange={setSelectedDate}
                     showProtocols={false}

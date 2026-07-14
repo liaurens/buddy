@@ -28,7 +28,9 @@ export async function logAppEvent(
     payload: Record<string, unknown> = {},
 ): Promise<void> {
     try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
         const userId = session?.user?.id;
         if (!userId) return;
 

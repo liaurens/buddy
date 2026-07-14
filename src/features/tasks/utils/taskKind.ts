@@ -22,10 +22,20 @@ export const DEADLINE_HORIZON_DAYS = 3;
  *
  * @param today Injectable clock for deterministic tests; defaults to now.
  */
-export function deriveTaskKind(task: Pick<Task,
-    'kind' | 'recurrence' | 'priority' | 'dueDate' | 'reminderEnabled' | 'reminderAt'
-    | 'assignmentId' | 'triageDestination'
->, today: Date = new Date()): TaskKind {
+export function deriveTaskKind(
+    task: Pick<
+        Task,
+        | 'kind'
+        | 'recurrence'
+        | 'priority'
+        | 'dueDate'
+        | 'reminderEnabled'
+        | 'reminderAt'
+        | 'assignmentId'
+        | 'triageDestination'
+    >,
+    today: Date = new Date(),
+): TaskKind {
     if (task.kind) return task.kind;
 
     // School linkage wins over date signals — a school task belongs under
@@ -53,19 +63,70 @@ export interface TaskKindMeta {
 }
 
 export const TASK_KIND_META: Record<TaskKind, TaskKindMeta> = {
-    urgent: { label: 'Urgent', emoji: '🔥', color: 'rose', description: 'Big deal — schedule it now' },
-    standard: { label: 'Standard', emoji: '✅', color: 'indigo', description: 'Everyday task with a day' },
-    deadline: { label: 'Deadline', emoji: '🎯', color: 'amber', description: 'Due later — remind me as it nears' },
-    school: { label: 'School', emoji: '🎓', color: 'emerald', description: 'Linked to your classes' },
-    routine: { label: 'Routine', emoji: '🔁', color: 'violet', description: 'Repeats on a schedule' },
-    backlog: { label: 'Someday', emoji: '🗂️', color: 'slate', description: 'No pressure — stays until you pick it' },
+    urgent: {
+        label: 'Urgent',
+        emoji: '🔥',
+        color: 'rose',
+        description: 'Big deal — schedule it now',
+    },
+    standard: {
+        label: 'Standard',
+        emoji: '✅',
+        color: 'indigo',
+        description: 'Everyday task with a day',
+    },
+    deadline: {
+        label: 'Deadline',
+        emoji: '🎯',
+        color: 'amber',
+        description: 'Due later — remind me as it nears',
+    },
+    school: {
+        label: 'School',
+        emoji: '🎓',
+        color: 'emerald',
+        description: 'Linked to your classes',
+    },
+    routine: {
+        label: 'Routine',
+        emoji: '🔁',
+        color: 'violet',
+        description: 'Repeats on a schedule',
+    },
+    backlog: {
+        label: 'Someday',
+        emoji: '🗂️',
+        color: 'slate',
+        description: 'No pressure — stays until you pick it',
+    },
+    waiting: {
+        label: 'Waiting',
+        emoji: '⏳',
+        color: 'slate',
+        description: 'Parked until it is time to follow up',
+    },
 };
 
 /** Display order for grouping kinds in the task list (most pressing first). */
-export const TASK_KIND_ORDER: TaskKind[] = ['urgent', 'deadline', 'school', 'standard', 'routine', 'backlog'];
+export const TASK_KIND_ORDER: TaskKind[] = [
+    'urgent',
+    'waiting',
+    'deadline',
+    'school',
+    'standard',
+    'routine',
+    'backlog',
+];
 
 /** Kinds a user may pick explicitly ('school' is derived from linkage only). */
-export const PICKABLE_TASK_KINDS: TaskKind[] = ['urgent', 'deadline', 'standard', 'routine', 'backlog'];
+export const PICKABLE_TASK_KINDS: TaskKind[] = [
+    'urgent',
+    'waiting',
+    'deadline',
+    'standard',
+    'routine',
+    'backlog',
+];
 
 /**
  * Canonical signal write-through: when a kind is chosen explicitly, seed the signal

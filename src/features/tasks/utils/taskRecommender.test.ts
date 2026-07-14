@@ -25,6 +25,27 @@ describe('getRecommendedTask', () => {
         expect(getRecommendedTask(tasks, today)).toBeNull();
     });
 
+    it('does not recommend tasks parked behind a follow-up or start date', () => {
+        const future = format(addDays(today, 3), 'yyyy-MM-dd');
+        const tasks = [
+            makeTask({ id: 'waiting', kind: 'waiting', dueDate: future, waitingOn: 'Alex' }),
+            makeTask({ id: 'deadline', kind: 'deadline', dueDate: future, startDate: future }),
+        ];
+
+        expect(getRecommendedTask(tasks, today)).toBeNull();
+        expect(getRankedTasks(tasks, today)).toEqual([]);
+    });
+
+    it('uses task-type home days as a ranking boost', () => {
+        const tasks = [
+            makeTask({ id: 'generic', title: 'Generic', priority: 'medium' }),
+            makeTask({ id: 'home', title: 'Home day', priority: 'medium', taskTypeId: 'home' }),
+        ];
+        const homeDays = new Map([['home', [today.getDay()]]]);
+
+        expect(getRecommendedTask(tasks, today, homeDays)?.task.id).toBe('home');
+    });
+
     it('returns the only active task', () => {
         const tasks = [makeTask({ id: '1', title: 'Only task' })];
         const result = getRecommendedTask(tasks, today);
@@ -34,8 +55,18 @@ describe('getRecommendedTask', () => {
 
     it('recommends overdue task over due-today task', () => {
         const tasks = [
-            makeTask({ id: '1', title: 'Due today', dueDate: format(today, 'yyyy-MM-dd'), priority: 'medium' }),
-            makeTask({ id: '2', title: 'Overdue', dueDate: format(subDays(today, 2), 'yyyy-MM-dd'), priority: 'medium' }),
+            makeTask({
+                id: '1',
+                title: 'Due today',
+                dueDate: format(today, 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
+            makeTask({
+                id: '2',
+                title: 'Overdue',
+                dueDate: format(subDays(today, 2), 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
         ];
         const result = getRecommendedTask(tasks, today);
         expect(result!.task.title).toBe('Overdue');
@@ -43,8 +74,18 @@ describe('getRecommendedTask', () => {
 
     it('recommends due-today task over future task', () => {
         const tasks = [
-            makeTask({ id: '1', title: 'Due next week', dueDate: format(addDays(today, 7), 'yyyy-MM-dd'), priority: 'medium' }),
-            makeTask({ id: '2', title: 'Due today', dueDate: format(today, 'yyyy-MM-dd'), priority: 'medium' }),
+            makeTask({
+                id: '1',
+                title: 'Due next week',
+                dueDate: format(addDays(today, 7), 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
+            makeTask({
+                id: '2',
+                title: 'Due today',
+                dueDate: format(today, 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
         ];
         const result = getRecommendedTask(tasks, today);
         expect(result!.task.title).toBe('Due today');
@@ -62,8 +103,18 @@ describe('getRecommendedTask', () => {
 
     it('recommends due-tomorrow task over far-future task', () => {
         const tasks = [
-            makeTask({ id: '1', title: 'Far future', dueDate: format(addDays(today, 30), 'yyyy-MM-dd'), priority: 'medium' }),
-            makeTask({ id: '2', title: 'Due tomorrow', dueDate: format(addDays(today, 1), 'yyyy-MM-dd'), priority: 'medium' }),
+            makeTask({
+                id: '1',
+                title: 'Far future',
+                dueDate: format(addDays(today, 30), 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
+            makeTask({
+                id: '2',
+                title: 'Due tomorrow',
+                dueDate: format(addDays(today, 1), 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
         ];
         const result = getRecommendedTask(tasks, today);
         expect(result!.task.title).toBe('Due tomorrow');
@@ -135,7 +186,12 @@ describe('getRankedTasks', () => {
     it('ranks tasks in descending score order', () => {
         const tasks = [
             makeTask({ id: '1', title: 'Low prio', priority: 'low' }),
-            makeTask({ id: '2', title: 'Overdue', dueDate: format(subDays(today, 3), 'yyyy-MM-dd'), priority: 'medium' }),
+            makeTask({
+                id: '2',
+                title: 'Overdue',
+                dueDate: format(subDays(today, 3), 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
             makeTask({ id: '3', title: 'High prio', priority: 'high' }),
         ];
         const result = getRankedTasks(tasks, today);
@@ -146,8 +202,18 @@ describe('getRankedTasks', () => {
 
     it('more overdue items score higher (capped)', () => {
         const tasks = [
-            makeTask({ id: '1', title: '1 day overdue', dueDate: format(subDays(today, 1), 'yyyy-MM-dd'), priority: 'medium' }),
-            makeTask({ id: '2', title: '5 days overdue', dueDate: format(subDays(today, 5), 'yyyy-MM-dd'), priority: 'medium' }),
+            makeTask({
+                id: '1',
+                title: '1 day overdue',
+                dueDate: format(subDays(today, 1), 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
+            makeTask({
+                id: '2',
+                title: '5 days overdue',
+                dueDate: format(subDays(today, 5), 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
         ];
         const result = getRankedTasks(tasks, today);
         expect(result[0].task.title).toBe('5 days overdue');
@@ -156,8 +222,18 @@ describe('getRankedTasks', () => {
 
     it('tasks due this week score higher than tasks due later', () => {
         const tasks = [
-            makeTask({ id: '1', title: 'Due in 3 days', dueDate: format(addDays(today, 3), 'yyyy-MM-dd'), priority: 'medium' }),
-            makeTask({ id: '2', title: 'Due in 14 days', dueDate: format(addDays(today, 14), 'yyyy-MM-dd'), priority: 'medium' }),
+            makeTask({
+                id: '1',
+                title: 'Due in 3 days',
+                dueDate: format(addDays(today, 3), 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
+            makeTask({
+                id: '2',
+                title: 'Due in 14 days',
+                dueDate: format(addDays(today, 14), 'yyyy-MM-dd'),
+                priority: 'medium',
+            }),
         ];
         const result = getRankedTasks(tasks, today);
         expect(result[0].task.title).toBe('Due in 3 days');

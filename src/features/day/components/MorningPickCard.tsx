@@ -68,10 +68,18 @@ const MorningPickCard: React.FC<Props> = ({
     const [busyId, setBusyId] = useState<string | null>(null);
 
     useEffect(() => {
-        try { sessionStorage.setItem(acceptedKey, JSON.stringify(acceptedIds)); } catch { /* ignore */ }
+        try {
+            sessionStorage.setItem(acceptedKey, JSON.stringify(acceptedIds));
+        } catch {
+            /* ignore */
+        }
     }, [acceptedIds, acceptedKey]);
     useEffect(() => {
-        try { sessionStorage.setItem(swappedKey, JSON.stringify(swappedIds)); } catch { /* ignore */ }
+        try {
+            sessionStorage.setItem(swappedKey, JSON.stringify(swappedIds));
+        } catch {
+            /* ignore */
+        }
     }, [swappedIds, swappedKey]);
 
     const ranked = useMemo(
@@ -162,10 +170,14 @@ const MorningPickCard: React.FC<Props> = ({
                                 <p className="text-sm font-medium text-slate-800 truncate">
                                     {candidate.task.title}
                                 </p>
-                                <p className="text-xs text-slate-400 truncate">{candidate.reason}</p>
+                                <p className="text-xs text-slate-400 truncate">
+                                    {candidate.reason}
+                                </p>
                             </div>
                             {candidate.task.estimatedTime && (
-                                <span className={`text-xs px-1.5 py-0.5 rounded-md flex-shrink-0 ${colors.chip}`}>
+                                <span
+                                    className={`text-xs px-1.5 py-0.5 rounded-md flex-shrink-0 ${colors.chip}`}
+                                >
                                     {candidate.task.estimatedTime}m
                                 </span>
                             )}
@@ -195,9 +207,13 @@ const MorningPickCard: React.FC<Props> = ({
                     className="w-full flex items-center justify-center gap-1 pt-2 border-t border-slate-100 text-xs text-slate-500 hover:text-slate-700 transition-colors"
                 >
                     {fullPickerOpen ? (
-                        <>Hide full list <ChevronUp size={13} /></>
+                        <>
+                            Hide full list <ChevronUp size={13} />
+                        </>
                     ) : (
-                        <>Add more from your full list <ChevronDown size={13} /></>
+                        <>
+                            Add more from your full list <ChevronDown size={13} />
+                        </>
                     )}
                 </button>
             )}

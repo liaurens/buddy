@@ -30,7 +30,7 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ taskTypes, activeTasks, filte
                 active={filter.typeId === 'all' && filter.energy === 'all'}
                 onClick={() => onChange({ typeId: 'all', energy: 'all' })}
             />
-            {taskTypes.map(type => {
+            {taskTypes.map((type) => {
                 const n = countByType.get(type.id) || 0;
                 if (n === 0) return null;
                 const colors = getTypeColors(type.color);
@@ -49,17 +49,25 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({ taskTypes, activeTasks, filte
                 <Chip
                     label={`Uncategorized ${untyped}`}
                     active={filter.typeId === ''}
-                    onClick={() => onChange({ ...filter, typeId: filter.typeId === '' ? 'all' : '' })}
+                    onClick={() =>
+                        onChange({ ...filter, typeId: filter.typeId === '' ? 'all' : '' })
+                    }
                 />
             )}
             <span className="border-l border-slate-200 mx-1" />
-            {(['low', 'medium', 'high'] as TaskEnergy[]).map(e => (
+            {(['low', 'medium', 'high'] as TaskEnergy[]).map((e) => (
                 <Chip
                     key={e}
                     label={e}
                     active={filter.energy === e}
                     onClick={() => onChange({ ...filter, energy: filter.energy === e ? 'all' : e })}
-                    dotColor={e === 'low' ? 'bg-emerald-400' : e === 'medium' ? 'bg-amber-400' : 'bg-rose-500'}
+                    dotColor={
+                        e === 'low'
+                            ? 'bg-emerald-400'
+                            : e === 'medium'
+                              ? 'bg-amber-400'
+                              : 'bg-rose-500'
+                    }
                 />
             ))}
         </div>

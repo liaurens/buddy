@@ -3,7 +3,11 @@
  * Convert between DB types (snake_case) and App types (camelCase)
  */
 
-import type { TrackerDefinition, TrackerCadence, Entry } from '../../../features/health-tracking/types';
+import type {
+    TrackerDefinition,
+    TrackerCadence,
+    Entry,
+} from '../../../features/health-tracking/types';
 import type { DbTracker, DbEntry } from '../types';
 
 export function dbToTracker(db: DbTracker): TrackerDefinition {
@@ -21,7 +25,10 @@ export function dbToTracker(db: DbTracker): TrackerDefinition {
     };
 }
 
-export function trackerToDb(tracker: TrackerDefinition, userId: string): Omit<DbTracker, 'created_at'> {
+export function trackerToDb(
+    tracker: TrackerDefinition,
+    userId: string,
+): Omit<DbTracker, 'created_at'> {
     return {
         id: tracker.id,
         user_id: userId,
@@ -49,7 +56,10 @@ export function dbToEntry(db: DbEntry): Entry {
     };
 }
 
-export function entryToDb(entry: Omit<Entry, 'id'> & { id?: string }, userId: string): Omit<DbEntry, 'id'> & { id?: string } {
+export function entryToDb(
+    entry: Omit<Entry, 'id'> & { id?: string },
+    userId: string,
+): Omit<DbEntry, 'id'> & { id?: string } {
     return {
         id: entry.id,
         user_id: userId,

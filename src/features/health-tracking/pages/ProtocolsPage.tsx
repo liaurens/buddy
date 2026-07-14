@@ -25,7 +25,9 @@ const ProtocolsPage = () => {
             <div className="flex items-center justify-end lg:justify-between">
                 <div className="hidden lg:block">
                     <h1 className="app-title">Protocols</h1>
-                    <p className="app-subtitle">Manage your supplements, medications, and routines.</p>
+                    <p className="app-subtitle">
+                        Manage your supplements, medications, and routines.
+                    </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -35,10 +37,7 @@ const ProtocolsPage = () => {
                     >
                         <Settings size={20} />
                     </button>
-                    <button
-                        onClick={() => setIsFormOpen(true)}
-                        className="app-primary-button"
-                    >
+                    <button onClick={() => setIsFormOpen(true)} className="app-primary-button">
                         <Plus size={20} />
                         Add Protocol
                     </button>
@@ -47,18 +46,10 @@ const ProtocolsPage = () => {
 
             <ProtocolList onEdit={handleEdit} />
 
-            {isFormOpen && (
-                <ProtocolForm
-                    onClose={handleClose}
-                    editingProtocol={editingProtocol}
-                />
-            )}
+            {isFormOpen && <ProtocolForm onClose={handleClose} editingProtocol={editingProtocol} />}
 
             {/* Settings Modal */}
-            <ProtocolSettingsModal
-                isOpen={showSettings}
-                onClose={() => setShowSettings(false)}
-            />
+            <ProtocolSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
         </div>
     );
 };

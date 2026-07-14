@@ -4,6 +4,47 @@ import { useTaskTypes } from '../hooks/useTaskTypes';
 import { AVAILABLE_TYPE_COLORS, getTypeColors } from '../utils/typeColors';
 import type { TaskType } from '../types';
 
+const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+const HomeDaysPicker: React.FC<{
+    value: number[];
+    onChange: (days: number[]) => void;
+}> = ({ value, onChange }) => (
+    <div className="flex gap-1" aria-label="Home days">
+        {WEEKDAYS.map((label, day) => {
+            const selected = value.includes(day);
+            return (
+                <button
+                    key={day}
+                    type="button"
+                    onClick={() =>
+                        onChange(selected ? value.filter((d) => d !== day) : [...value, day].sort())
+                    }
+                    className={`h-7 w-7 rounded-md text-xs font-semibold ${
+                        selected
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-white text-slate-500 hover:bg-slate-100'
+                    }`}
+                    title={
+                        [
+                            'Sunday',
+                            'Monday',
+                            'Tuesday',
+                            'Wednesday',
+                            'Thursday',
+                            'Friday',
+                            'Saturday',
+                        ][day]
+                    }
+                    aria-pressed={selected}
+                >
+                    {label}
+                </button>
+            );
+        })}
+    </div>
+);
+
 const TaskTypeManager: React.FC = () => {
     const { taskTypes, addTaskType, updateTaskType, deleteTaskType } = useTaskTypes();
     const [newName, setNewName] = useState('');
@@ -35,50 +76,94 @@ const TaskTypeManager: React.FC = () => {
     return (
         <div className="space-y-3">
             <p className="text-sm text-slate-500">
-                Categories help organize your tasks. Presets are seeded for you; add your own or rename anything.
+                Categories help organize your tasks. Presets are seeded for you; add your own or
+                rename anything.
             </p>
 
             {/* Existing types */}
             <div className="space-y-1.5">
-                {taskTypes.map(type => {
+                {taskTypes.map((type) => {
                     const colors = getTypeColors(type.color);
                     const isEditing = editing === type.id && editDraft;
                     return (
-                        <div key={type.id} className={`rounded-lg border p-2.5 flex items-center gap-2 ${colors.bg}`}>
+                        <div
+                            key={type.id}
+                            className={`rounded-lg border p-2.5 flex items-center gap-2 ${colors.bg}`}
+                        >
                             {isEditing && editDraft ? (
                                 <>
                                     <input
                                         type="text"
                                         value={editDraft.emoji || ''}
-                                        onChange={e => setEditDraft({ ...editDraft, emoji: e.target.value })}
+                                        onChange={(e) =>
+                                            setEditDraft({ ...editDraft, emoji: e.target.value })
+                                        }
                                         placeholder="😀"
                                         className="w-12 text-center rounded border border-slate-200 px-1 py-1"
                                     />
                                     <input
                                         type="text"
                                         value={editDraft.name}
-                                        onChange={e => setEditDraft({ ...editDraft, name: e.target.value })}
+                                        onChange={(e) =>
+                                            setEditDraft({ ...editDraft, name: e.target.value })
+                                        }
                                         className="flex-1 rounded border border-slate-200 px-2 py-1"
                                     />
                                     <select
                                         value={editDraft.color || ''}
-                                        onChange={e => setEditDraft({ ...editDraft, color: e.target.value })}
+                                        onChange={(e) =>
+                                            setEditDraft({ ...editDraft, color: e.target.value })
+                                        }
                                         className="rounded border border-slate-200 px-2 py-1 text-sm"
                                     >
-                                        {AVAILABLE_TYPE_COLORS.map(c => (
-                                            <option key={c} value={c}>{c}</option>
+                                        {AVAILABLE_TYPE_COLORS.map((c) => (
+                                            <option key={c} value={c}>
+                                                {c}
+                                            </option>
                                         ))}
                                     </select>
-                                    <button onClick={handleSaveEdit} className="text-sm font-medium text-indigo-600 px-2 py-1">Save</button>
-                                    <button onClick={() => { setEditing(null); setEditDraft(null); }} className="text-sm text-slate-400 px-2 py-1">Cancel</button>
+                                    <HomeDaysPicker
+                                        value={editDraft.homeDays ?? []}
+                                        onChange={(homeDays) =>
+                                            setEditDraft({ ...editDraft, homeDays })
+                                        }
+                                    />
+                                    <button
+                                        onClick={handleSaveEdit}
+                                        className="text-sm font-medium text-indigo-600 px-2 py-1"
+                                    >
+                                        Save
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setEditing(null);
+                                            setEditDraft(null);
+                                        }}
+                                        className="text-sm text-slate-400 px-2 py-1"
+                                    >
+                                        Cancel
+                                    </button>
                                 </>
                             ) : (
                                 <>
                                     <span className="text-xl">{type.emoji || '•'}</span>
-                                    <span className={`flex-1 font-medium ${colors.text}`}>{type.name}</span>
-                                    <span className={`w-3 h-3 rounded-full ${colors.dot}`} title={type.color || ''} />
+                                    <span className={`flex-1 font-medium ${colors.text}`}>
+                                        {type.name}
+                                    </span>
+                                    <span
+                                        className={`w-3 h-3 rounded-full ${colors.dot}`}
+                                        title={type.color || ''}
+                                    />
+                                    {type.homeDays && type.homeDays.length > 0 && (
+                                        <span className="text-xs text-slate-500">
+                                            {type.homeDays.map((day) => WEEKDAYS[day]).join('')}
+                                        </span>
+                                    )}
                                     <button
-                                        onClick={() => { setEditing(type.id); setEditDraft(type); }}
+                                        onClick={() => {
+                                            setEditing(type.id);
+                                            setEditDraft(type);
+                                        }}
                                         className="text-xs text-slate-600 hover:text-indigo-600 px-2 py-1"
                                     >
                                         Edit
@@ -99,30 +184,34 @@ const TaskTypeManager: React.FC = () => {
 
             {/* Add new */}
             <div className="border-t border-slate-200 pt-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Add new</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    Add new
+                </p>
                 <div className="flex gap-2">
                     <input
                         type="text"
                         value={newEmoji}
-                        onChange={e => setNewEmoji(e.target.value)}
+                        onChange={(e) => setNewEmoji(e.target.value)}
                         placeholder="😀"
                         className="w-12 text-center rounded-md border border-slate-300 px-1 py-2"
                     />
                     <input
                         type="text"
                         value={newName}
-                        onChange={e => setNewName(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAdd())}
+                        onChange={(e) => setNewName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAdd())}
                         placeholder="Name (e.g. Errands, Side project)"
                         className="flex-1 rounded-md border border-slate-300 px-3 py-2"
                     />
                     <select
                         value={newColor}
-                        onChange={e => setNewColor(e.target.value)}
+                        onChange={(e) => setNewColor(e.target.value)}
                         className="rounded-md border border-slate-300 px-2 py-2 text-sm"
                     >
-                        {AVAILABLE_TYPE_COLORS.map(c => (
-                            <option key={c} value={c}>{c}</option>
+                        {AVAILABLE_TYPE_COLORS.map((c) => (
+                            <option key={c} value={c}>
+                                {c}
+                            </option>
                         ))}
                     </select>
                     <button

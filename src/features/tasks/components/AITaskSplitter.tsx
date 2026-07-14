@@ -5,12 +5,10 @@
  * Stores learning preferences in localStorage for adaptation over time.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Sparkles, Loader2, Check, X, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { getAIService, isAIConfigured, initializeAIService } from '../../planning/services/ai.service';
-import { useAuth } from '../../../hooks/useAuth';
-import { supabase } from '../../../services/supabase';
+import { splitTask } from '../../assistant/services/ai-actions.service';
 import type { Task, Subtask } from '../types';
 
 interface AITaskSplitterProps {
@@ -45,7 +43,9 @@ function getLearningData(): LearningData {
     try {
         const raw = localStorage.getItem(LEARNING_KEY);
         if (raw) return JSON.parse(raw);
-    } catch { /* ignore */ }
+    } catch {
+        /* ignore */
+    }
     return {
         preferredCategories: [],
         preferredSubtaskSize: 'medium',
@@ -60,15 +60,14 @@ function saveLearningData(data: LearningData): void {
 }
 
 function buildSplitPrompt(task: Task, learning: LearningData): { system: string; user: string } {
-    const historyContext = learning.history.length > 0
-        ? `\n\nPrevious task splits the user has done (learn from these):\n${
-            learning.history
-                .filter(h => h.accepted)
-                .slice(-5)
-                .map(h => `- "${h.originalTask}" → ${h.subtasks.join(', ')}`)
-                .join('\n')
-        }`
-        : '';
+    const historyContext =
+        learning.history.length > 0
+            ? `\n\nPrevious task splits the user has done (learn from these):\n${learning.history
+                  .filter((h) => h.accepted)
+                  .slice(-5)
+                  .map((h) => `- "${h.originalTask}" → ${h.subtasks.join(', ')}`)
+                  .join('\n')}`
+            : '';
 
     const sizeGuide = {
         small: '5-15 minutes each, very granular steps',
@@ -105,42 +104,11 @@ ${task.labels?.length ? `Labels: ${task.labels.join(', ')}` : ''}`;
 }
 
 const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel }) => {
-    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [suggestions, setSuggestions] = useState<SplitSuggestion[] | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [ready, setReady] = useState(isAIConfigured());
-
-    useEffect(() => {
-        if (!user?.id || ready) return;
-        void (async () => {
-            const { data } = await supabase
-                .from('settings')
-                .select('key, value')
-                .eq('user_id', user.id)
-                .in('key', ['ai_aiProvider', 'ai_aiApiKey', 'ai_aiModel']);
-            if (!data) return;
-            const m = data.reduce((acc, s) => {
-                acc[s.key] = s.value;
-                return acc;
-            }, {} as Record<string, string>);
-            const provider = m['ai_aiProvider'] as 'openai' | 'anthropic' | 'gemini' | undefined;
-            const apiKey = m['ai_aiApiKey'];
-            const model = m['ai_aiModel'];
-            if (provider && apiKey) {
-                initializeAIService({ provider, apiKey, model: model || undefined });
-                setReady(true);
-            }
-        })();
-    }, [user?.id, ready]);
 
     const handleGenerate = async () => {
-        const aiService = getAIService();
-        if (!aiService) {
-            setError('AI not configured. Set up an AI provider in Settings to use this feature.');
-            return;
-        }
-
         setLoading(true);
         setError(null);
 
@@ -148,18 +116,13 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
             const learning = getLearningData();
             const prompt = buildSplitPrompt(task, learning);
 
-            const result = await aiService.breakdownTask(
-                task.title,
-                '',
-                task.estimatedTime || 60,
-                prompt,
-            );
-
-            if (result.success && result.data?.subtasks) {
-                setSuggestions(result.data.subtasks);
-            } else {
-                setError(result.error || 'Failed to generate subtasks');
-            }
+            const result = await splitTask({
+                title: task.title,
+                estimatedMinutes: task.estimatedTime || 60,
+                systemPrompt: prompt.system,
+                userPrompt: prompt.user,
+            });
+            setSuggestions(result.subtasks);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
@@ -170,7 +133,7 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
     const handleAccept = () => {
         if (!suggestions) return;
 
-        const subtasks: Subtask[] = suggestions.map(s => ({
+        const subtasks: Subtask[] = suggestions.map((s) => ({
             id: uuidv4(),
             title: s.title,
             completed: false,
@@ -180,7 +143,7 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
         const learning = getLearningData();
         learning.history.push({
             originalTask: task.title,
-            subtasks: suggestions.map(s => s.title),
+            subtasks: suggestions.map((s) => s.title),
             accepted: true,
             timestamp: new Date().toISOString(),
         });
@@ -195,7 +158,7 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
             const learning = getLearningData();
             learning.history.push({
                 originalTask: task.title,
-                subtasks: suggestions.map(s => s.title),
+                subtasks: suggestions.map((s) => s.title),
                 accepted: false,
                 timestamp: new Date().toISOString(),
             });
@@ -218,7 +181,6 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
                 <div className="flex gap-2">
                     <button
                         onClick={handleGenerate}
-                        disabled={!ready}
                         className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         <Sparkles size={14} />
@@ -231,12 +193,6 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
                         Cancel
                     </button>
                 </div>
-                {!ready && (
-                    <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                        <AlertCircle size={12} />
-                        Configure an AI provider in Account settings first.
-                    </p>
-                )}
             </div>
         );
     }
@@ -285,7 +241,9 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
                 <div className="px-4 py-3 bg-indigo-50 border-b border-indigo-100">
                     <div className="flex items-center gap-2">
                         <Sparkles size={16} className="text-indigo-500" />
-                        <span className="text-sm font-semibold text-indigo-700">Suggested Subtasks</span>
+                        <span className="text-sm font-semibold text-indigo-700">
+                            Suggested Subtasks
+                        </span>
                     </div>
                 </div>
                 <div className="p-3 space-y-2">
@@ -297,7 +255,9 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-slate-700">{s.title}</p>
                                 {s.estimatedMinutes > 0 && (
-                                    <p className="text-xs text-slate-400 mt-0.5">~{s.estimatedMinutes} min</p>
+                                    <p className="text-xs text-slate-400 mt-0.5">
+                                        ~{s.estimatedMinutes} min
+                                    </p>
                                 )}
                             </div>
                         </div>

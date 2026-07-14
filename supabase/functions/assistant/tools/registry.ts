@@ -14,54 +14,44 @@
  * projects, task-routines, task-types, context) live in git history.
  */
 
-import type { ToolDefinition } from '../types.ts'
+import type { ToolDefinition } from '../types.ts';
 
 // Planning domain
-import { tasksTool } from './tasks.tool.ts'
-import { calendarTool } from './calendar.tool.ts'
-import { notificationsTool } from './notifications.tool.ts'
-import { checklistsTool } from './checklists.tool.ts'
+import { tasksTool } from './tasks.tool.ts';
+import { taskAITool } from './task-ai.tool.ts';
+import { calendarTool } from './calendar.tool.ts';
+import { notificationsTool } from './notifications.tool.ts';
 
 // Health domain
-import { trackerTool } from './tracker.tool.ts'
-import { experimentAgentTool } from './experiment-agent.tool.ts'
+import { trackerTool } from './tracker.tool.ts';
 
 // Content domain
-import { notesTool } from './notes.tool.ts'
+import { notesTool } from './notes.tool.ts';
 
 // Extra / System domain
-import { systemTool } from './system.tool.ts'
+import { systemTool } from './system.tool.ts';
 
 // Improvement domain
-import { goalsTool } from './goals.tool.ts'
-import { skillsTool } from './skills.tool.ts'
-import { strategiesTool } from './strategies.tool.ts'
 
 // School domain
-import { schoolTool } from './school.tool.ts'
+import { schoolTool } from './school.tool.ts';
 
 export const ALL_TOOLS: ToolDefinition[] = [
-  // Planning
-  tasksTool,
-  checklistsTool,
-  calendarTool,
-  notificationsTool,
+    // Planning
+    tasksTool,
+    taskAITool,
+    calendarTool,
+    notificationsTool,
 
-  // Health
-  trackerTool,
-  experimentAgentTool,
+    // Health
+    trackerTool,
 
-  // Content
-  notesTool,
+    // Content
+    notesTool,
 
-  // Improvement
-  goalsTool,
-  skillsTool,
-  strategiesTool,
+    // School
+    schoolTool,
 
-  // School
-  schoolTool,
-
-  // Extra / System
-  systemTool,
-]
+    // Extra / System
+    systemTool,
+];

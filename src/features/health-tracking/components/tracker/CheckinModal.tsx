@@ -14,13 +14,13 @@ interface CheckinModalProps {
 
 const EMPTY_ARRAY: never[] = [];
 
-const CheckinModal: React.FC<CheckinModalProps> = ({ 
-    isOpen, 
-    onClose, 
-    onComplete, 
-    date, 
-    existingEntries = EMPTY_ARRAY, 
-    existingDoses = EMPTY_ARRAY 
+const CheckinModal: React.FC<CheckinModalProps> = ({
+    isOpen,
+    onClose,
+    onComplete,
+    date,
+    existingEntries = EMPTY_ARRAY,
+    existingDoses = EMPTY_ARRAY,
 }) => {
     if (!isOpen) return null;
 
@@ -31,13 +31,16 @@ const CheckinModal: React.FC<CheckinModalProps> = ({
             <div className="min-h-screen p-3 flex flex-col max-w-xl mx-auto">
                 <div className="flex justify-between items-center text-white mb-4 mt-1">
                     <h2 className="text-xl font-bold">Daily Check-in</h2>
-                    <button onClick={onClose} className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+                    <button
+                        onClick={onClose}
+                        className="p-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+                    >
                         <X size={20} />
                     </button>
                 </div>
 
                 <div className="flex-1 pb-4">
-                    <CheckinForm 
+                    <CheckinForm
                         date={targetDate}
                         showProtocols={true}
                         showDatePicker={false}

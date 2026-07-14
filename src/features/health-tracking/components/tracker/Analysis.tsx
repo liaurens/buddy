@@ -1,7 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { useTrackers } from '../../hooks/useTrackers';
 import { useProtocols } from '../../hooks/useProtocols';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, LineChart, Line } from 'recharts';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    ScatterChart,
+    Scatter,
+    LineChart,
+    Line,
+} from 'recharts';
 import { format, startOfDay, parseISO } from 'date-fns';
 import {
     calculateCorrelation,
@@ -12,7 +25,7 @@ import {
     calculateCorrelationCI as calculateConfidenceInterval,
     getDataQualityWarnings,
     interpretPValue,
-    getCorrelationColor
+    getCorrelationColor,
 } from '../../utils/stats';
 import { TrendingUp, AlertTriangle, Zap, Clock } from 'lucide-react';
 
@@ -32,9 +45,9 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
     const [showOptimalLag, setShowOptimalLag] = useState<boolean>(true);
 
     const getVariable = (id: string) => {
-        const t = trackers.find(x => x.id === id);
+        const t = trackers.find((x) => x.id === id);
         if (t) return { ...t, kind: 'tracker' as const };
-        const p = protocols.find(x => x.id === id);
+        const p = protocols.find((x) => x.id === id);
         if (p) return { ...p, kind: 'protocol' as const, unit: p.doseUnit };
         return null; // Should handle unknown
     };
@@ -47,7 +60,7 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
         const days = new Map<string, Record<string, number>>();
 
         // 1. Process Tracker Entries
-        entries.forEach(entry => {
+        entries.forEach((entry) => {
             const dayKey = format(startOfDay(parseISO(entry.timestamp)), 'yyyy-MM-dd');
             if (!days.has(dayKey)) days.set(dayKey, { date: new Date(dayKey).getTime() }); // store numeric date for charts? or stick to string key
 
@@ -58,7 +71,7 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
 
         // 2. Process Protocol Doses (if x or y is a protocol)
         if (doses) {
-            doses.forEach(dose => {
+            doses.forEach((dose) => {
                 if (!dose.takenAt) return; // Skip if no taken time
                 const dayKey = format(startOfDay(parseISO(dose.takenAt)), 'yyyy-MM-dd');
                 if (!days.has(dayKey)) days.set(dayKey, { date: new Date(dayKey).getTime() });
@@ -69,7 +82,7 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
 
                 // Use actualAmount if available, or default to 1 (presence)
                 // Ideally should look up protocol default dose if actual is missing, but for now 1 is decent fallback for "took it"
-                day[dose.protocolId] += (dose.actualAmount || 1);
+                day[dose.protocolId] += dose.actualAmount || 1;
             });
         }
 
@@ -81,7 +94,7 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
         const xVals: number[] = [];
         const yVals: number[] = [];
 
-        sortedData.forEach(day => {
+        sortedData.forEach((day) => {
             // Need to verify if xTrackerId / yTrackerId exists in this day object
             // Use 0 if missing? Or skip?
             // For correlation, usually we need PAIRS.
@@ -92,7 +105,7 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
             // Correlation usually ignores missing data pairs, but "not taking a pill" IS data (0).
             // "Not logging mood" is MISSING data.
 
-            const d = day as any;
+            const d = day as Record<string, number | string | undefined>;
             let xVal = d[xTrackerId];
             let yVal = d[yTrackerId];
 
@@ -102,7 +115,7 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
             if (xIsProto && xVal === undefined) xVal = 0;
             if (yIsProto && yVal === undefined) yVal = 0;
 
-            if (xVal !== undefined && yVal !== undefined) {
+            if (typeof xVal === 'number' && typeof yVal === 'number') {
                 xVals.push(xVal);
                 yVals.push(yVal);
             }
@@ -139,13 +152,21 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
 
     // Statistical measures
     const sampleSize = xValues.length;
-    const pValue = currentCorrelation !== null ? calculatePValue(currentCorrelation, sampleSize) : null;
-    const confidenceInterval = currentCorrelation !== null ? calculateConfidenceInterval(currentCorrelation, sampleSize) : null;
+    const pValue =
+        currentCorrelation !== null ? calculatePValue(currentCorrelation, sampleSize) : null;
+    const confidenceInterval =
+        currentCorrelation !== null
+            ? calculateConfidenceInterval(currentCorrelation, sampleSize)
+            : null;
     const pValueInterpretation = interpretPValue(pValue);
     const dataWarnings = getDataQualityWarnings(sampleSize);
 
     if (trackers.length < 2) {
-        return <div className="p-6 text-center text-slate-500">Need at least 2 trackers for analysis.</div>;
+        return (
+            <div className="p-6 text-center text-slate-500">
+                Need at least 2 trackers for analysis.
+            </div>
+        );
     }
 
     const effectiveLag = showOptimalLag && optimalLag ? optimalLag.lag : manualLag;
@@ -182,10 +203,18 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                             className="w-full p-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500"
                         >
                             <optgroup label="Trackers">
-                                {trackers.map(t => <option key={t.id} value={t.id}>{t.emoji} {t.name}</option>)}
+                                {trackers.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.emoji} {t.name}
+                                    </option>
+                                ))}
                             </optgroup>
                             <optgroup label="Protocols">
-                                {protocols.map(p => <option key={p.id} value={p.id}>💊 {p.name}</option>)}
+                                {protocols.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                        💊 {p.name}
+                                    </option>
+                                ))}
                             </optgroup>
                         </select>
                     </div>
@@ -199,10 +228,18 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                             className="w-full p-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500"
                         >
                             <optgroup label="Trackers">
-                                {trackers.map(t => <option key={t.id} value={t.id}>{t.emoji} {t.name}</option>)}
+                                {trackers.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.emoji} {t.name}
+                                    </option>
+                                ))}
                             </optgroup>
                             <optgroup label="Protocols">
-                                {protocols.map(p => <option key={p.id} value={p.id}>💊 {p.name}</option>)}
+                                {protocols.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                        💊 {p.name}
+                                    </option>
+                                ))}
                             </optgroup>
                         </select>
                     </div>
@@ -218,10 +255,11 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                         {optimalLag && (
                             <button
                                 onClick={() => setShowOptimalLag(!showOptimalLag)}
-                                className={`text-xs px-3 py-1 rounded-full transition-colors ${showOptimalLag
-                                    ? 'bg-indigo-100 text-indigo-700'
-                                    : 'bg-slate-200 text-slate-600'
-                                    }`}
+                                className={`text-xs px-3 py-1 rounded-full transition-colors ${
+                                    showOptimalLag
+                                        ? 'bg-indigo-100 text-indigo-700'
+                                        : 'bg-slate-200 text-slate-600'
+                                }`}
                             >
                                 <Zap size={12} className="inline mr-1" />
                                 {showOptimalLag ? 'Auto (Optimal)' : 'Use Optimal'}
@@ -247,8 +285,11 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
 
                     {showOptimalLag && optimalLag && (
                         <p className="text-sm text-indigo-600 mt-2">
-                            Optimal lag detected: <strong>{optimalLag.lag} day{optimalLag.lag !== 1 ? 's' : ''}</strong>
-                            {' '}(r = {optimalLag.correlation.toFixed(3)})
+                            Optimal lag detected:{' '}
+                            <strong>
+                                {optimalLag.lag} day{optimalLag.lag !== 1 ? 's' : ''}
+                            </strong>{' '}
+                            (r = {optimalLag.correlation.toFixed(3)})
                         </p>
                     )}
                 </div>
@@ -280,10 +321,14 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
 
                             {/* Statistical Significance */}
                             <div className="text-center">
-                                <p className={`text-lg font-semibold ${pValueInterpretation.significant ? 'text-emerald-600' : 'text-slate-500'}`}>
+                                <p
+                                    className={`text-lg font-semibold ${pValueInterpretation.significant ? 'text-emerald-600' : 'text-slate-500'}`}
+                                >
                                     {pValue !== null ? `p = ${pValue.toFixed(4)}` : 'N/A'}
                                 </p>
-                                <p className="text-sm text-slate-600">{pValueInterpretation.text}</p>
+                                <p className="text-sm text-slate-600">
+                                    {pValueInterpretation.text}
+                                </p>
                                 <p className="text-xs text-slate-400 mt-1">n = {sampleSize} days</p>
                             </div>
 
@@ -292,17 +337,24 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                                 {confidenceInterval ? (
                                     <>
                                         <p className="text-lg font-semibold text-slate-700">
-                                            [{confidenceInterval.low.toFixed(2)}, {confidenceInterval.high.toFixed(2)}]
+                                            [{confidenceInterval.low.toFixed(2)},{' '}
+                                            {confidenceInterval.high.toFixed(2)}]
                                         </p>
-                                        <p className="text-sm text-slate-600">95% Confidence Interval</p>
+                                        <p className="text-sm text-slate-600">
+                                            95% Confidence Interval
+                                        </p>
                                     </>
                                 ) : (
-                                    <p className="text-sm text-slate-500">Insufficient data for CI</p>
+                                    <p className="text-sm text-slate-500">
+                                        Insufficient data for CI
+                                    </p>
                                 )}
                             </div>
                         </div>
                     ) : (
-                        <p className="text-slate-500 text-center">Not enough data to calculate correlation.</p>
+                        <p className="text-slate-500 text-center">
+                            Not enough data to calculate correlation.
+                        </p>
                     )}
                 </div>
             )}
@@ -314,7 +366,8 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                         Time-Lagged Correlation
                     </h2>
                     <p className="text-sm text-slate-500 mb-4">
-                        How does the correlation change if {yVar?.name.toLowerCase()} is measured 1-7 days after {xVar?.name.toLowerCase()}?
+                        How does the correlation change if {yVar?.name.toLowerCase()} is measured
+                        1-7 days after {xVar?.name.toLowerCase()}?
                     </p>
                     <div className="h-[200px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -326,11 +379,22 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                                 />
                                 <YAxis
                                     domain={[-1, 1]}
-                                    label={{ value: 'Correlation', angle: -90, position: 'insideLeft' }}
+                                    label={{
+                                        value: 'Correlation',
+                                        angle: -90,
+                                        position: 'insideLeft',
+                                    }}
                                 />
                                 <Tooltip
-                                    formatter={(value) => [typeof value === 'number' ? value.toFixed(3) : String(value ?? ''), 'Correlation']}
-                                    labelFormatter={(label) => `${label} day${label !== 1 ? 's' : ''} later`}
+                                    formatter={(value) => [
+                                        typeof value === 'number'
+                                            ? value.toFixed(3)
+                                            : String(value ?? ''),
+                                        'Correlation',
+                                    ]}
+                                    labelFormatter={(label) =>
+                                        `${label} day${label !== 1 ? 's' : ''} later`
+                                    }
                                 />
                                 <Line
                                     type="monotone"
@@ -359,8 +423,18 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                                 <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" />
                                 <Tooltip />
                                 <Legend />
-                                <Bar yAxisId="left" dataKey={xTrackerId} name={xVar.name} fill="#6366f1" />
-                                <Bar yAxisId="right" dataKey={yTrackerId} name={yVar.name} fill="#f59e0b" />
+                                <Bar
+                                    yAxisId="left"
+                                    dataKey={xTrackerId}
+                                    name={xVar.name}
+                                    fill="#6366f1"
+                                />
+                                <Bar
+                                    yAxisId="right"
+                                    dataKey={yTrackerId}
+                                    name={yVar.name}
+                                    fill="#f59e0b"
+                                />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -370,13 +444,25 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
             {/* Scatter Plot */}
             {xVar && yVar && data.length > 0 && (
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h2 className="text-xl font-semibold mb-4 text-slate-800">Correlation Scatter</h2>
+                    <h2 className="text-xl font-semibold mb-4 text-slate-800">
+                        Correlation Scatter
+                    </h2>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <ScatterChart>
                                 <CartesianGrid />
-                                <XAxis type="number" dataKey={xTrackerId} name={xVar.name} unit={xVar.unit} />
-                                <YAxis type="number" dataKey={yTrackerId} name={yVar.name} unit={yVar.unit} />
+                                <XAxis
+                                    type="number"
+                                    dataKey={xTrackerId}
+                                    name={xVar.name}
+                                    unit={xVar.unit}
+                                />
+                                <YAxis
+                                    type="number"
+                                    dataKey={yTrackerId}
+                                    name={yVar.name}
+                                    unit={yVar.unit}
+                                />
                                 <Tooltip cursor={{ strokeDasharray: '3 3' }} />
                                 <Scatter name="Days" data={data} fill="#8884d8" />
                             </ScatterChart>

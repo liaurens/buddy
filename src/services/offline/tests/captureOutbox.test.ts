@@ -15,7 +15,7 @@ describe('CaptureOutbox', () => {
         await outbox.enqueue('second');
 
         const sent: string[] = [];
-        const result = await outbox.flush(async text => {
+        const result = await outbox.flush(async (text) => {
             sent.push(text);
             return 'delivered';
         });
@@ -32,7 +32,7 @@ describe('CaptureOutbox', () => {
 
         const responses: DeliveryResult[] = ['delivered', 'retry'];
         const sent: string[] = [];
-        const result = await outbox.flush(async text => {
+        const result = await outbox.flush(async (text) => {
             sent.push(text);
             return responses.shift() ?? 'retry';
         });
@@ -42,7 +42,7 @@ describe('CaptureOutbox', () => {
         expect(result).toEqual({ delivered: 1, remaining: 2 });
 
         const remaining = await outbox.list();
-        expect(remaining.map(i => i.text)).toEqual(['second', 'third']);
+        expect(remaining.map((i) => i.text)).toEqual(['second', 'third']);
         expect(remaining[0].attempts).toBe(1);
     });
 
@@ -57,7 +57,7 @@ describe('CaptureOutbox', () => {
     it('notifies subscribers when the count changes', async () => {
         const outbox = new CaptureOutbox(createMemoryStore());
         const counts: number[] = [];
-        const unsubscribe = outbox.subscribe(c => counts.push(c));
+        const unsubscribe = outbox.subscribe((c) => counts.push(c));
         // Initial subscription fires asynchronously with current count.
         await Promise.resolve();
 

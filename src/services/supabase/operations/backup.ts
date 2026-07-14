@@ -2,16 +2,48 @@
  * Data Export & Import Operations
  */
 
-import type { TrackerDefinition, Entry, Protocol, Cycle, Dose, Experiment, ExperimentLog } from '../../../features/health-tracking/types';
+import type {
+    TrackerDefinition,
+    Entry,
+    Protocol,
+    Cycle,
+    Dose,
+    Experiment,
+    ExperimentLog,
+} from '../../../features/health-tracking/types';
 import type { Strategy } from '../../../features/toolbox/types';
 import type { Task } from '../../../features/tasks/types';
 import { supabase } from '../client';
 import { dbToTracker, trackerToDb, dbToEntry, entryToDb } from '../converters/tracker';
-import { dbToProtocol, protocolToDb, dbToCycle, cycleToDb, dbToDose, doseToDb } from '../converters/protocol';
-import { dbToExperiment, experimentToDb, dbToExperimentLog, experimentLogToDb, dbToCorrelation } from '../converters/experiment';
+import {
+    dbToProtocol,
+    protocolToDb,
+    dbToCycle,
+    cycleToDb,
+    dbToDose,
+    doseToDb,
+} from '../converters/protocol';
+import {
+    dbToExperiment,
+    experimentToDb,
+    dbToExperimentLog,
+    experimentLogToDb,
+    dbToCorrelation,
+} from '../converters/experiment';
 import { dbToStrategy, strategyToDb } from '../converters/strategy';
 import { dbToTodo, todoToDb } from '../converters/todo';
-import type { DbTracker, DbEntry, DbProtocol, DbCycle, DbDose, DbExperiment, DbExperimentLog, DbCorrelation, DbStrategy, DbTodo } from '../types';
+import type {
+    DbTracker,
+    DbEntry,
+    DbProtocol,
+    DbCycle,
+    DbDose,
+    DbExperiment,
+    DbExperimentLog,
+    DbCorrelation,
+    DbStrategy,
+    DbTodo,
+} from '../types';
 
 export async function exportAllData(userId: string): Promise<string> {
     const [
@@ -38,20 +70,24 @@ export async function exportAllData(userId: string): Promise<string> {
         supabase.from('experiment_logs').select('*').eq('user_id', userId),
     ]);
 
-    return JSON.stringify({
-        version: 3,
-        exportedAt: new Date().toISOString(),
-        trackers: (trackers as DbTracker[])?.map(dbToTracker) || [],
-        entries: (entries as DbEntry[])?.map(dbToEntry) || [],
-        protocols: (protocols as DbProtocol[])?.map(dbToProtocol) || [],
-        cycles: (cycles as DbCycle[])?.map(dbToCycle) || [],
-        doses: (doses as DbDose[])?.map(dbToDose) || [],
-        experiments: (experiments as DbExperiment[])?.map(dbToExperiment) || [],
-        logs: (logs as DbExperimentLog[])?.map(dbToExperimentLog) || [],
-        correlations: (correlations as DbCorrelation[])?.map(dbToCorrelation) || [],
-        strategies: (strategies as DbStrategy[])?.map(dbToStrategy) || [],
-        todos: (todos as DbTodo[])?.map(dbToTodo) || [],
-    }, null, 2);
+    return JSON.stringify(
+        {
+            version: 3,
+            exportedAt: new Date().toISOString(),
+            trackers: (trackers as DbTracker[])?.map(dbToTracker) || [],
+            entries: (entries as DbEntry[])?.map(dbToEntry) || [],
+            protocols: (protocols as DbProtocol[])?.map(dbToProtocol) || [],
+            cycles: (cycles as DbCycle[])?.map(dbToCycle) || [],
+            doses: (doses as DbDose[])?.map(dbToDose) || [],
+            experiments: (experiments as DbExperiment[])?.map(dbToExperiment) || [],
+            logs: (logs as DbExperimentLog[])?.map(dbToExperimentLog) || [],
+            correlations: (correlations as DbCorrelation[])?.map(dbToCorrelation) || [],
+            strategies: (strategies as DbStrategy[])?.map(dbToStrategy) || [],
+            todos: (todos as DbTodo[])?.map(dbToTodo) || [],
+        },
+        null,
+        2,
+    );
 }
 
 export async function importAllData(jsonData: string, userId: string): Promise<boolean> {
@@ -76,49 +112,45 @@ export async function importAllData(jsonData: string, userId: string): Promise<b
 
         // Import new data
         if (data.trackers?.length > 0) {
-            await supabase.from('trackers').insert(
-                data.trackers.map((t: TrackerDefinition) => trackerToDb(t, userId))
-            );
+            await supabase
+                .from('trackers')
+                .insert(data.trackers.map((t: TrackerDefinition) => trackerToDb(t, userId)));
         }
         if (data.entries?.length > 0) {
-            await supabase.from('entries').insert(
-                data.entries.map((e: Entry) => entryToDb(e, userId))
-            );
+            await supabase
+                .from('entries')
+                .insert(data.entries.map((e: Entry) => entryToDb(e, userId)));
         }
         if (data.protocols?.length > 0) {
-            await supabase.from('protocols').insert(
-                data.protocols.map((p: Protocol) => protocolToDb(p, userId))
-            );
+            await supabase
+                .from('protocols')
+                .insert(data.protocols.map((p: Protocol) => protocolToDb(p, userId)));
         }
         if (data.cycles?.length > 0) {
-            await supabase.from('cycles').insert(
-                data.cycles.map((c: Cycle) => cycleToDb(c, userId))
-            );
+            await supabase
+                .from('cycles')
+                .insert(data.cycles.map((c: Cycle) => cycleToDb(c, userId)));
         }
         if (data.doses?.length > 0) {
-            await supabase.from('doses').insert(
-                data.doses.map((d: Dose) => doseToDb(d, userId))
-            );
+            await supabase.from('doses').insert(data.doses.map((d: Dose) => doseToDb(d, userId)));
         }
         if (data.experiments?.length > 0) {
-            await supabase.from('experiments').insert(
-                data.experiments.map((e: Experiment) => experimentToDb(e, userId))
-            );
+            await supabase
+                .from('experiments')
+                .insert(data.experiments.map((e: Experiment) => experimentToDb(e, userId)));
         }
         if (data.logs?.length > 0) {
-            await supabase.from('experiment_logs').insert(
-                data.logs.map((l: ExperimentLog) => experimentLogToDb(l, userId))
-            );
+            await supabase
+                .from('experiment_logs')
+                .insert(data.logs.map((l: ExperimentLog) => experimentLogToDb(l, userId)));
         }
         if (data.strategies?.length > 0) {
-            await supabase.from('strategies').insert(
-                data.strategies.map((s: Strategy) => strategyToDb(s, userId))
-            );
+            await supabase
+                .from('strategies')
+                .insert(data.strategies.map((s: Strategy) => strategyToDb(s, userId)));
         }
         if (data.todos?.length > 0) {
-            await supabase.from('todos').insert(
-                data.todos.map((t: Task) => todoToDb(t, userId))
-            );
+            await supabase.from('todos').insert(data.todos.map((t: Task) => todoToDb(t, userId)));
         }
 
         return true;

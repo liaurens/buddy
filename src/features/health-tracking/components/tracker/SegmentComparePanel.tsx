@@ -12,17 +12,17 @@ const SegmentComparePanel: React.FC = () => {
     const { protocols, doses } = useProtocols();
 
     const numericTrackers = useMemo(
-        () => trackers.filter(t => t.type === 'number' || t.type === 'rating'),
-        [trackers]
+        () => trackers.filter((t) => t.type === 'number' || t.type === 'rating'),
+        [trackers],
     );
     const predicateOptions = useMemo(() => {
-        const fromTrackers = trackers.map(t => ({
+        const fromTrackers = trackers.map((t) => ({
             id: `tracker:${t.id}`,
             label: `${t.emoji} ${t.name}`,
             kind: 'tracker' as const,
             refId: t.id,
         }));
-        const fromProtocols = protocols.map(p => ({
+        const fromProtocols = protocols.map((p) => ({
             id: `protocol:${p.id}`,
             label: `💊 ${p.name}`,
             kind: 'protocol' as const,
@@ -40,8 +40,8 @@ const SegmentComparePanel: React.FC = () => {
         // Aggregate outcome by day
         const outcomeByDay = new Map<string, number>();
         entries
-            .filter(e => e.trackerId === outcomeId)
-            .forEach(e => {
+            .filter((e) => e.trackerId === outcomeId)
+            .forEach((e) => {
                 const day = format(startOfDay(parseISO(e.timestamp)), 'yyyy-MM-dd');
                 outcomeByDay.set(day, (outcomeByDay.get(day) ?? 0) + e.value);
             });
@@ -51,12 +51,16 @@ const SegmentComparePanel: React.FC = () => {
         const [kind, refId] = predicateId.split(':');
         if (kind === 'tracker') {
             entries
-                .filter(e => e.trackerId === refId && e.value > 0)
-                .forEach(e => matchingDays.add(format(startOfDay(parseISO(e.timestamp)), 'yyyy-MM-dd')));
+                .filter((e) => e.trackerId === refId && e.value > 0)
+                .forEach((e) =>
+                    matchingDays.add(format(startOfDay(parseISO(e.timestamp)), 'yyyy-MM-dd')),
+                );
         } else if (kind === 'protocol' && doses) {
             doses
-                .filter(d => d.protocolId === refId && d.takenAt)
-                .forEach(d => matchingDays.add(format(startOfDay(parseISO(d.takenAt!)), 'yyyy-MM-dd')));
+                .filter((d) => d.protocolId === refId && d.takenAt)
+                .forEach((d) =>
+                    matchingDays.add(format(startOfDay(parseISO(d.takenAt!)), 'yyyy-MM-dd')),
+                );
         }
 
         const matched: number[] = [];
@@ -72,7 +76,8 @@ const SegmentComparePanel: React.FC = () => {
     if (numericTrackers.length === 0 || predicateOptions.length === 0) {
         return (
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 text-sm text-slate-500">
-                Need at least one numeric tracker and one predicate (tracker or protocol) to compare segments.
+                Need at least one numeric tracker and one predicate (tracker or protocol) to compare
+                segments.
             </div>
         );
     }
@@ -86,8 +91,8 @@ const SegmentComparePanel: React.FC = () => {
     const d = !sparse ? cohensD(u, m) : null;
     const ci = !sparse ? meanDiffCI(u, m) : null;
 
-    const predicateLabel = predicateOptions.find(p => p.id === predicateId)?.label ?? '';
-    const outcomeLabel = numericTrackers.find(t => t.id === outcomeId);
+    const predicateLabel = predicateOptions.find((p) => p.id === predicateId)?.label ?? '';
+    const outcomeLabel = numericTrackers.find((t) => t.id === outcomeId);
 
     return (
         <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 space-y-4">
@@ -101,11 +106,13 @@ const SegmentComparePanel: React.FC = () => {
                     <label className="block text-xs font-medium text-slate-500 mb-1">Outcome</label>
                     <select
                         value={outcomeId}
-                        onChange={e => setOutcomeId(e.target.value)}
+                        onChange={(e) => setOutcomeId(e.target.value)}
                         className="w-full p-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500"
                     >
-                        {numericTrackers.map(t => (
-                            <option key={t.id} value={t.id}>{t.emoji} {t.name}</option>
+                        {numericTrackers.map((t) => (
+                            <option key={t.id} value={t.id}>
+                                {t.emoji} {t.name}
+                            </option>
                         ))}
                     </select>
                 </div>
@@ -115,11 +122,13 @@ const SegmentComparePanel: React.FC = () => {
                     </label>
                     <select
                         value={predicateId}
-                        onChange={e => setPredicateId(e.target.value)}
+                        onChange={(e) => setPredicateId(e.target.value)}
                         className="w-full p-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500"
                     >
-                        {predicateOptions.map(o => (
-                            <option key={o.id} value={o.id}>{o.label} &gt; 0 / taken</option>
+                        {predicateOptions.map((o) => (
+                            <option key={o.id} value={o.id}>
+                                {o.label} &gt; 0 / taken
+                            </option>
                         ))}
                     </select>
                 </div>
@@ -150,21 +159,29 @@ const SegmentComparePanel: React.FC = () => {
                 <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
                     <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
                     <span>
-                        Need at least {MIN_N} days per segment for reliable stats
-                        (matching={mStats.n}, not matching={uStats.n}).
+                        Need at least {MIN_N} days per segment for reliable stats (matching=
+                        {mStats.n}, not matching={uStats.n}).
                     </span>
                 </div>
             ) : welch && d && ci ? (
                 <div className="text-sm text-slate-700 leading-relaxed bg-indigo-50/60 rounded-lg px-3 py-2">
-                    Δ = {ci.diff >= 0 ? '+' : ''}{ci.diff.toFixed(2)}
+                    Δ = {ci.diff >= 0 ? '+' : ''}
+                    {ci.diff.toFixed(2)}
                     {outcomeLabel?.unit && ` ${outcomeLabel.unit}`},{' '}
                     <span className="text-slate-500">
                         95% CI [{ci.low.toFixed(2)}, {ci.high.toFixed(2)}]
-                    </span>,{' '}
-                    <span className={welch.pTwoSided < 0.05 ? 'text-emerald-700 font-medium' : 'text-slate-600'}>
+                    </span>
+                    ,{' '}
+                    <span
+                        className={
+                            welch.pTwoSided < 0.05
+                                ? 'text-emerald-700 font-medium'
+                                : 'text-slate-600'
+                        }
+                    >
                         p = {welch.pTwoSided < 0.0001 ? '<0.0001' : welch.pTwoSided.toFixed(4)}
-                    </span>,{' '}
-                    Cohen's d = {d.d.toFixed(2)}{' '}
+                    </span>
+                    , Cohen's d = {d.d.toFixed(2)}{' '}
                     <span className="text-slate-500">({d.interpretation})</span>
                 </div>
             ) : (

@@ -1,38 +1,38 @@
 import { useEffect, useState } from 'react';
 
 interface InspectorOverlayProps {
-  onSelect: (html: string, selector: string) => void;
+    onSelect: (html: string, selector: string) => void;
 }
 
 const generateSelector = (el: HTMLElement | null): string => {
-  if (!el || el.tagName.toLowerCase() === 'html') return '';
-  if (el.id) return `#${el.id}`;
-  
-  let str = el.tagName.toLowerCase();
-  
-  if (el.parentElement) {
-    const siblings = Array.from(el.parentElement.children);
-    const index = siblings.indexOf(el);
-    if (siblings.length > 1) {
-      str += `:nth-child(${index + 1})`;
+    if (!el || el.tagName.toLowerCase() === 'html') return '';
+    if (el.id) return `#${el.id}`;
+
+    let str = el.tagName.toLowerCase();
+
+    if (el.parentElement) {
+        const siblings = Array.from(el.parentElement.children);
+        const index = siblings.indexOf(el);
+        if (siblings.length > 1) {
+            str += `:nth-child(${index + 1})`;
+        }
     }
-  }
-  
-  const parent = generateSelector(el.parentElement);
-  return parent ? parent + ' > ' + str : str;
+
+    const parent = generateSelector(el.parentElement);
+    return parent ? parent + ' > ' + str : str;
 };
 
 export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
-  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
-  const [selectedElements, setSelectedElements] = useState<HTMLElement[]>([]);
+    const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
+    const [selectedElements, setSelectedElements] = useState<HTMLElement[]>([]);
 
-  useEffect(() => {
-    // Inject styles for selected elements
-    const styleId = 'dev-inspector-styles';
-    if (!document.getElementById(styleId)) {
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.innerHTML = `
+    useEffect(() => {
+        // Inject styles for selected elements
+        const styleId = 'dev-inspector-styles';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.innerHTML = `
         .dev-selected-element {
           outline: 3px solid #16a34a !important;
           outline-offset: -3px;
@@ -40,107 +40,122 @@ export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
           transition: all 0.15s ease;
         }
       `;
-      document.head.appendChild(style);
-    }
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target) {
-        // Ignore the DevPortal UI itself
-        if (target.closest('.dev-portal-ui') || target.closest('.fixed.bottom-4.right-4') || target.closest('.dev-submit-btn') || target.id === 'dev-inspector-overlay') {
-          setHoverRect(null);
-          return;
+            document.head.appendChild(style);
         }
-        setHoverRect(target.getBoundingClientRect());
-      }
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (target) {
+                // Ignore the DevPortal UI itself
+                if (
+                    target.closest('.dev-portal-ui') ||
+                    target.closest('.fixed.bottom-4.right-4') ||
+                    target.closest('.dev-submit-btn') ||
+                    target.id === 'dev-inspector-overlay'
+                ) {
+                    setHoverRect(null);
+                    return;
+                }
+                setHoverRect(target.getBoundingClientRect());
+            }
+        };
+
+        const handleClick = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (target) {
+                // Ignore our UI elements
+                if (
+                    target.closest('.dev-portal-ui') ||
+                    target.closest('.fixed.bottom-4.right-4') ||
+                    target.closest('.dev-submit-btn') ||
+                    target.id === 'dev-inspector-overlay' ||
+                    target.closest('.dev-sticky-note')
+                ) {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+
+                setSelectedElements((prev) => {
+                    const isSelected = prev.includes(target);
+                    if (isSelected) {
+                        target.classList.remove('dev-selected-element');
+                        return prev.filter((el) => el !== target);
+                    } else {
+                        target.classList.add('dev-selected-element');
+                        return [...prev, target];
+                    }
+                });
+            }
+        };
+
+        document.addEventListener('mousemove', handleMouseMove, true);
+        document.addEventListener('click', handleClick, true);
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove, true);
+            document.removeEventListener('click', handleClick, true);
+            // Clean up styles
+            Array.from(document.querySelectorAll('.dev-selected-element')).forEach((el) => {
+                el.classList.remove('dev-selected-element');
+            });
+            const styleEl = document.getElementById(styleId);
+            if (styleEl) styleEl.remove();
+        };
+    }, []);
+
+    const handleReportSelected = () => {
+        if (selectedElements.length === 0) return;
+
+        // We will bind the Sticky Note to the FIRST selected element
+        const anchorSelector = generateSelector(selectedElements[0]);
+
+        const fullHtml = selectedElements
+            .map((el, index) => {
+                // Clone element to clean it up before saving
+                const clone = el.cloneNode(true) as HTMLElement;
+                // Remove our highlight class from the submitted code layer
+                clone.classList.remove('dev-selected-element');
+                const html = clone.outerHTML || '';
+                const trimmed =
+                    html.length > 1500 ? html.substring(0, 1500) + '... (truncated)' : html;
+                return `<!-- Item ${index + 1} -->\n${trimmed}`;
+            })
+            .join('\n\n');
+
+        // Clear the selections locally before unmounting
+        selectedElements.forEach((el) => el.classList.remove('dev-selected-element'));
+        setSelectedElements([]);
+        onSelect(fullHtml, anchorSelector);
     };
 
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target) {
-        // Ignore our UI elements
-        if (target.closest('.dev-portal-ui') || target.closest('.fixed.bottom-4.right-4') || target.closest('.dev-submit-btn') || target.id === 'dev-inspector-overlay' || target.closest('.dev-sticky-note')) {
-          return;
-        }
-        e.preventDefault();
-        e.stopPropagation();
-        
-        setSelectedElements(prev => {
-          const isSelected = prev.includes(target);
-          if (isSelected) {
-            target.classList.remove('dev-selected-element');
-            return prev.filter(el => el !== target);
-          } else {
-            target.classList.add('dev-selected-element');
-            return [...prev, target];
-          }
-        });
-      }
-    };
+    return (
+        <>
+            {hoverRect && (
+                <div
+                    id="dev-inspector-overlay"
+                    className="fixed z-[9998] pointer-events-none bg-blue-500/20 border-2 border-blue-500 transition-all duration-75 ease-out"
+                    style={{
+                        left: hoverRect.left,
+                        top: hoverRect.top,
+                        width: hoverRect.width,
+                        height: hoverRect.height,
+                    }}
+                />
+            )}
 
-    document.addEventListener('mousemove', handleMouseMove, true);
-    document.addEventListener('click', handleClick, true);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove, true);
-      document.removeEventListener('click', handleClick, true);
-      // Clean up styles
-      Array.from(document.querySelectorAll('.dev-selected-element')).forEach(el => {
-        el.classList.remove('dev-selected-element');
-      });
-      const styleEl = document.getElementById(styleId);
-      if (styleEl) styleEl.remove();
-    };
-  }, []);
-
-  const handleReportSelected = () => {
-    if (selectedElements.length === 0) return;
-    
-    // We will bind the Sticky Note to the FIRST selected element
-    const anchorSelector = generateSelector(selectedElements[0]);
-
-    const fullHtml = selectedElements.map((el, index) => {
-      // Clone element to clean it up before saving
-      const clone = el.cloneNode(true) as HTMLElement;
-      // Remove our highlight class from the submitted code layer
-      clone.classList.remove('dev-selected-element');
-      const html = clone.outerHTML || '';
-      const trimmed = html.length > 1500 ? html.substring(0, 1500) + '... (truncated)' : html;
-      return `<!-- Item ${index + 1} -->\n${trimmed}`;
-    }).join('\n\n');
-    
-    // Clear the selections locally before unmounting
-    selectedElements.forEach(el => el.classList.remove('dev-selected-element'));
-    setSelectedElements([]);
-    onSelect(fullHtml, anchorSelector);
-  };
-
-  return (
-    <>
-      {hoverRect && (
-        <div
-          id="dev-inspector-overlay"
-          className="fixed z-[9998] pointer-events-none bg-blue-500/20 border-2 border-blue-500 transition-all duration-75 ease-out"
-          style={{
-            left: hoverRect.left,
-            top: hoverRect.top,
-            width: hoverRect.width,
-            height: hoverRect.height,
-          }}
-        />
-      )}
-      
-      {selectedElements.length > 0 && (
-        <div className="dev-submit-btn fixed bottom-20 right-4 z-[9999] pointer-events-auto">
-          <button 
-            type="button"
-            onClick={handleReportSelected}
-            className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-full font-medium shadow-xl flex items-center gap-2 transform transition-all animate-in slide-in-from-bottom-2"
-          >
-            Review {selectedElements.length} {selectedElements.length === 1 ? 'Item' : 'Items'}
-          </button>
-        </div>
-      )}
-    </>
-  );
+            {selectedElements.length > 0 && (
+                <div className="dev-submit-btn fixed bottom-20 right-4 z-[9999] pointer-events-auto">
+                    <button
+                        type="button"
+                        onClick={handleReportSelected}
+                        className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-full font-medium shadow-xl flex items-center gap-2 transform transition-all animate-in slide-in-from-bottom-2"
+                    >
+                        Review {selectedElements.length}{' '}
+                        {selectedElements.length === 1 ? 'Item' : 'Items'}
+                    </button>
+                </div>
+            )}
+        </>
+    );
 }

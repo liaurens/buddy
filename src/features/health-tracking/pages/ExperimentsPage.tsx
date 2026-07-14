@@ -19,14 +19,15 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
     const handleRunAnalysis = (experiment: Experiment) => {
         if (onNavigate) {
             // Use independentIds (newer) or fall back to tracker1Id (legacy)
-            const firstIndependentId = (experiment.independentIds && experiment.independentIds.length > 0)
-                ? experiment.independentIds[0]
-                : experiment.tracker1Id;
+            const firstIndependentId =
+                experiment.independentIds && experiment.independentIds.length > 0
+                    ? experiment.independentIds[0]
+                    : experiment.tracker1Id;
 
             onNavigate('health', {
                 subTab: 'analysis',
                 xId: firstIndependentId,
-                yId: experiment.tracker2Id
+                yId: experiment.tracker2Id,
             });
         }
     };
@@ -49,7 +50,9 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
                         <FlaskConical className="text-indigo-600" />
                         Experiments
                     </h1>
-                    <p className="app-subtitle">Test your hypotheses and find what works for you.</p>
+                    <p className="app-subtitle">
+                        Test your hypotheses and find what works for you.
+                    </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -59,10 +62,7 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
                     >
                         <Settings size={20} />
                     </button>
-                    <button
-                        onClick={() => setIsWizardOpen(true)}
-                        className="app-primary-button"
-                    >
+                    <button onClick={() => setIsWizardOpen(true)} className="app-primary-button">
                         <Plus size={20} />
                         New Experiment
                     </button>
@@ -75,15 +75,10 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
                 onCreateNew={() => setIsWizardOpen(true)}
             />
 
-            {isWizardOpen && (
-                <ExperimentWizard onClose={() => setIsWizardOpen(false)} />
-            )}
+            {isWizardOpen && <ExperimentWizard onClose={() => setIsWizardOpen(false)} />}
 
             {/* Settings Modal */}
-            <ExperimentSettingsModal
-                isOpen={showSettings}
-                onClose={() => setShowSettings(false)}
-            />
+            <ExperimentSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
         </div>
     );
 };

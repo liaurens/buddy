@@ -11,7 +11,7 @@ export const DB_VERSION = 2;
 
 /** All object stores in the offline DB. Add new stores here and bump DB_VERSION. */
 export const STORE_NAMES = ['capture_outbox', 'google_calendar_outbox'] as const;
-export type StoreName = typeof STORE_NAMES[number];
+export type StoreName = (typeof STORE_NAMES)[number];
 
 /** Base shape every outbox record shares. */
 export interface OutboxRecord {
@@ -55,23 +55,31 @@ function withStore<T>(
     mode: IDBTransactionMode,
     run: (store: IDBObjectStore) => IDBRequest<T>,
 ): Promise<T> {
-    return openDb().then(db => new Promise<T>((resolve, reject) => {
-        const tx = db.transaction(storeName, mode);
-        const request = run(tx.objectStore(storeName));
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed'));
-        tx.oncomplete = () => db.close();
-        tx.onabort = () => db.close();
-    }));
+    return openDb().then(
+        (db) =>
+            new Promise<T>((resolve, reject) => {
+                const tx = db.transaction(storeName, mode);
+                const request = run(tx.objectStore(storeName));
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () =>
+                    reject(request.error ?? new Error('IndexedDB request failed'));
+                tx.oncomplete = () => db.close();
+                tx.onabort = () => db.close();
+            }),
+    );
 }
 
 export function createIdbStore<T extends OutboxRecord>(storeName: StoreName): OutboxStore<T> {
     return {
-        add: item => withStore(storeName, 'readwrite', s => s.add(item)).then(() => undefined),
-        list: () => withStore<T[]>(storeName, 'readonly', s => s.getAll() as IDBRequest<T[]>)
-            .then(items => [...items].sort((a, b) => a.createdAt.localeCompare(b.createdAt))),
-        update: item => withStore(storeName, 'readwrite', s => s.put(item)).then(() => undefined),
-        remove: id => withStore(storeName, 'readwrite', s => s.delete(id)).then(() => undefined),
+        add: (item) => withStore(storeName, 'readwrite', (s) => s.add(item)).then(() => undefined),
+        list: () =>
+            withStore<T[]>(storeName, 'readonly', (s) => s.getAll() as IDBRequest<T[]>).then(
+                (items) => [...items].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+            ),
+        update: (item) =>
+            withStore(storeName, 'readwrite', (s) => s.put(item)).then(() => undefined),
+        remove: (id) =>
+            withStore(storeName, 'readwrite', (s) => s.delete(id)).then(() => undefined),
     };
 }
 
@@ -82,10 +90,16 @@ export function createIdbStore<T extends OutboxRecord>(storeName: StoreName): Ou
 export function createMemoryStore<T extends OutboxRecord>(): OutboxStore<T> {
     let items: T[] = [];
     return {
-        add: async item => { items = [...items, item]; },
+        add: async (item) => {
+            items = [...items, item];
+        },
         list: async () => [...items].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-        update: async item => { items = items.map(i => (i.id === item.id ? item : i)); },
-        remove: async id => { items = items.filter(i => i.id !== id); },
+        update: async (item) => {
+            items = items.map((i) => (i.id === item.id ? item : i));
+        },
+        remove: async (id) => {
+            items = items.filter((i) => i.id !== id);
+        },
     };
 }
 

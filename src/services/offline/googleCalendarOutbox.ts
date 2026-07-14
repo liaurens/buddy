@@ -7,7 +7,10 @@
  */
 
 import {
-    type OutboxRecord, type OutboxStore, type DeliveryResult, defaultStore,
+    type OutboxRecord,
+    type OutboxStore,
+    type DeliveryResult,
+    defaultStore,
     createMemoryStore as createMemoryStoreGeneric,
 } from './outboxDb';
 
@@ -17,7 +20,7 @@ export interface GoogleEventPayload {
     summary: string;
     description?: string;
     location?: string;
-    start: string;   // ISO datetime, or YYYY-MM-DD for all-day
+    start: string; // ISO datetime, or YYYY-MM-DD for all-day
     end: string;
     isAllDay: boolean;
     timeZone?: string;
@@ -41,15 +44,21 @@ export class GoogleCalendarOutbox {
     private readonly listeners = new Set<CountListener>();
     private flushing = false;
 
-    constructor(store: OutboxStore<GoogleCalendarOutboxItem> = defaultStore<GoogleCalendarOutboxItem>('google_calendar_outbox')) {
+    constructor(
+        store: OutboxStore<GoogleCalendarOutboxItem> = defaultStore<GoogleCalendarOutboxItem>(
+            'google_calendar_outbox',
+        ),
+    ) {
         this.store = store;
     }
 
-    async enqueue(entry: Omit<GoogleCalendarOutboxItem, 'id' | 'createdAt' | 'attempts'>): Promise<GoogleCalendarOutboxItem> {
+    async enqueue(
+        entry: Omit<GoogleCalendarOutboxItem, 'id' | 'createdAt' | 'attempts'>,
+    ): Promise<GoogleCalendarOutboxItem> {
         // Coalesce: if there is already a queued op for this todo, the newest wins
         // (e.g. reschedule then complete while offline → only the latest matters for create/update;
         // a delete always supersedes a pending create/update for the same todo).
-        const existing = (await this.store.list()).filter(i => i.todoId === entry.todoId);
+        const existing = (await this.store.list()).filter((i) => i.todoId === entry.todoId);
         for (const old of existing) {
             if (entry.op === 'delete' || old.op !== 'delete') {
                 await this.store.remove(old.id);
@@ -75,7 +84,9 @@ export class GoogleCalendarOutbox {
     }
 
     /** Replay queued writes FIFO; stop at the first network failure to preserve order. */
-    async flush(deliver: (item: GoogleCalendarOutboxItem) => Promise<DeliveryResult>): Promise<{ delivered: number; remaining: number }> {
+    async flush(
+        deliver: (item: GoogleCalendarOutboxItem) => Promise<DeliveryResult>,
+    ): Promise<{ delivered: number; remaining: number }> {
         if (this.flushing) return { delivered: 0, remaining: await this.count() };
         this.flushing = true;
         let delivered = 0;
@@ -100,14 +111,22 @@ export class GoogleCalendarOutbox {
 
     subscribe(listener: CountListener): () => void {
         this.listeners.add(listener);
-        this.count().then(listener).catch(() => listener(0));
-        return () => { this.listeners.delete(listener); };
+        this.count()
+            .then(listener)
+            .catch(() => listener(0));
+        return () => {
+            this.listeners.delete(listener);
+        };
     }
 
     private async notify(): Promise<void> {
         if (this.listeners.size === 0) return;
         let count = 0;
-        try { count = await this.count(); } catch { /* report 0 */ }
+        try {
+            count = await this.count();
+        } catch {
+            /* report 0 */
+        }
         for (const listener of this.listeners) listener(count);
     }
 }

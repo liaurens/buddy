@@ -25,10 +25,10 @@ const TriggeredChecklistsCard: React.FC = () => {
     const [busy, setBusy] = useState(false);
 
     const triggered = useMemo<TriggeredChecklist[]>(() => {
-        return checklists.flatMap(checklist => {
+        return checklists.flatMap((checklist) => {
             const keyword = checklist.triggerKeyword?.trim().toLowerCase();
             if (!keyword) return [];
-            const match = events.find(ev => ev.title.toLowerCase().includes(keyword));
+            const match = events.find((ev) => ev.title.toLowerCase().includes(keyword));
             return match ? [{ checklist, triggeredBy: match }] : [];
         });
     }, [checklists, events]);
@@ -64,9 +64,12 @@ const TriggeredChecklistsCard: React.FC = () => {
     return (
         <div className="space-y-3">
             {triggered.map(({ checklist, triggeredBy }) => {
-                const done = checklist.items.filter(i => i.isChecked).length;
+                const done = checklist.items.filter((i) => i.isChecked).length;
                 return (
-                    <div key={checklist.id} className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-5 space-y-3">
+                    <div
+                        key={checklist.id}
+                        className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-5 space-y-3"
+                    >
                         <div className="flex items-start justify-between gap-2">
                             <div>
                                 <h2 className="font-semibold text-slate-900 flex items-center gap-2">
@@ -74,7 +77,8 @@ const TriggeredChecklistsCard: React.FC = () => {
                                     {checklist.emoji} {checklist.name}
                                 </h2>
                                 <p className="text-xs text-slate-500 mt-0.5">
-                                    On today's calendar: “{triggeredBy.title}” · {done}/{checklist.items.length} done
+                                    On today's calendar: “{triggeredBy.title}” · {done}/
+                                    {checklist.items.length} done
                                 </p>
                             </div>
                             <button
@@ -88,7 +92,7 @@ const TriggeredChecklistsCard: React.FC = () => {
                             </button>
                         </div>
                         <ul className="space-y-1.5">
-                            {checklist.items.map(item => (
+                            {checklist.items.map((item) => (
                                 <li key={item.id}>
                                     <label className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
                                         <input
@@ -98,7 +102,9 @@ const TriggeredChecklistsCard: React.FC = () => {
                                             disabled={busy}
                                             className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400"
                                         />
-                                        <span className={`text-sm ${item.isChecked ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                        <span
+                                            className={`text-sm ${item.isChecked ? 'text-slate-400 line-through' : 'text-slate-700'}`}
+                                        >
                                             {item.text}
                                         </span>
                                     </label>

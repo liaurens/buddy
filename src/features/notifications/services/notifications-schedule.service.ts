@@ -36,11 +36,14 @@ export async function ensureAnchorSchedule(userId: string): Promise<void> {
  * Cancel all pending routine reminders and reschedule from current settings.
  * Call after the user saves Notifications settings.
  */
-export async function reapplyNotificationSchedule(userId: string, settings?: NotificationsSettings): Promise<void> {
+export async function reapplyNotificationSchedule(
+    userId: string,
+    settings?: NotificationsSettings,
+): Promise<void> {
     const s = settings ?? (await getCategorySettings(userId, 'notifications'));
 
     // Cancel existing pending routine reminders
-    await Promise.all(ROUTINE_CATEGORIES.map(cat => cancelToolNotifications(userId, cat)));
+    await Promise.all(ROUTINE_CATEGORIES.map((cat) => cancelToolNotifications(userId, cat)));
 
     // Re-schedule each enabled routine for its next occurrence on an allowed
     // weekday. daysOfWeek rides along in `data` so the server-side re-enqueue
@@ -80,7 +83,7 @@ export async function reapplyNotificationSchedule(userId: string, settings?: Not
             'routine_reminder',
             s.nightTime,
             'Close the day',
-            "90 seconds: what got done, one line for tomorrow.",
+            '90 seconds: what got done, one line for tomorrow.',
             { route: 'reflection', step: 'night', daysOfWeek: s.nightDays },
             s.nightDays,
         );

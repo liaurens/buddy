@@ -7,3 +7,8 @@ supabase/.temp
 package-lock.json
 playwright-report
 test-results
+.claude
+docs
+*.md
+.eslint-report.json
+.mcp.json.example

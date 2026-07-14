@@ -7,7 +7,10 @@ interface QuickNoteInputProps {
     onNoteAdded?: () => void;
 }
 
-export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({ autoFocus = false, onNoteAdded }) => {
+export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({
+    autoFocus = false,
+    onNoteAdded,
+}) => {
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -40,9 +43,10 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({ autoFocus = fals
     const flagMatch = content.match(/-(\w+)/);
     const detectedFlag = flagMatch ? flagMatch[1].toLowerCase() : null;
     const isTaskFlag = detectedFlag !== null && TASK_FLAGS.includes(detectedFlag);
-    const matchingCategory = detectedFlag && !isTaskFlag
-        ? categories.find(c => c.flag.toLowerCase() === detectedFlag)
-        : null;
+    const matchingCategory =
+        detectedFlag && !isTaskFlag
+            ? categories.find((c) => c.flag.toLowerCase() === detectedFlag)
+            : null;
 
     return (
         <form onSubmit={handleSubmit} className="relative">
@@ -70,7 +74,9 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({ autoFocus = fals
             {isTaskFlag && (
                 <div className="absolute -bottom-6 left-0 text-xs text-blue-600 flex items-center gap-1">
                     <span>Will instantly create a</span>
-                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">Task</span>
+                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                        Task
+                    </span>
                 </div>
             )}
 

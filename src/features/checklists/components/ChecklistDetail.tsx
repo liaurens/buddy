@@ -9,7 +9,8 @@ interface ChecklistDetailProps {
 }
 
 export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onBack }) => {
-    const { toggleItem, addItem, deleteItem, resetChecklist, deleteChecklist, updateChecklist } = useChecklists();
+    const { toggleItem, addItem, deleteItem, resetChecklist, deleteChecklist, updateChecklist } =
+        useChecklists();
     const [newItemText, setNewItemText] = useState('');
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editName, setEditName] = useState(checklist.name);
@@ -46,8 +47,17 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                 onClick={onBack}
                 className="flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-1"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                >
+                    <path
+                        fillRule="evenodd"
+                        d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                        clipRule="evenodd"
+                    />
                 </svg>
                 Back to Checklists
             </button>
@@ -85,22 +95,44 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                             onClick={() => resetChecklist(checklist)}
                             className="app-secondary-button"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                                    clipRule="evenodd"
+                                />
                             </svg>
                             Reset
                         </button>
                         <button
                             onClick={() => {
-                                if (window.confirm('Are you sure you want to delete this checklist?')) {
+                                if (
+                                    window.confirm(
+                                        'Are you sure you want to delete this checklist?',
+                                    )
+                                ) {
                                     deleteChecklist(checklist.id);
                                     onBack();
                                 }
                             }}
                             className="rounded-lg p-2 text-rose-500 transition-colors hover:bg-rose-50"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                    clipRule="evenodd"
+                                />
                             </svg>
                         </button>
                     </div>
@@ -108,9 +140,12 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
 
                 {/* Trigger keyword — surfaces this checklist in the day view on matching calendar days */}
                 <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <label className="text-sm font-medium text-slate-700">Show on calendar match</label>
+                    <label className="text-sm font-medium text-slate-700">
+                        Show on calendar match
+                    </label>
                     <p className="text-xs text-slate-500 mt-0.5">
-                        When a calendar event today contains this word (e.g. “work”), this checklist pops up in your day view. Leave empty to disable.
+                        When a calendar event today contains this word (e.g. “work”), this checklist
+                        pops up in your day view. Leave empty to disable.
                     </p>
                     <input
                         type="text"
@@ -124,7 +159,7 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                 </div>
 
                 <div className="space-y-3 mb-6">
-                    {sortedItems.map(item => (
+                    {sortedItems.map((item) => (
                         <ChecklistItem
                             key={item.id}
                             item={item}
@@ -153,8 +188,17 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                         disabled={!newItemText.trim()}
                         className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-indigo-700 p-1.5 text-white transition-colors hover:bg-indigo-800 disabled:opacity-50"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fillRule="evenodd"
+                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                clipRule="evenodd"
+                            />
                         </svg>
                     </button>
                 </form>

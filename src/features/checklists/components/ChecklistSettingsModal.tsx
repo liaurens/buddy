@@ -6,10 +6,7 @@ interface ChecklistSettingsModalProps {
     onClose: () => void;
 }
 
-const ChecklistSettingsModal: React.FC<ChecklistSettingsModalProps> = ({
-    isOpen,
-    onClose,
-}) => {
+const ChecklistSettingsModal: React.FC<ChecklistSettingsModalProps> = ({ isOpen, onClose }) => {
     const [saving, setSaving] = useState(false);
 
     // MOCK Settings for now, would be hooked up to a settings service later
@@ -48,12 +45,7 @@ const ChecklistSettingsModal: React.FC<ChecklistSettingsModalProps> = ({
     );
 
     return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title="Checklist Settings"
-            footer={footer}
-        >
+        <Modal isOpen={isOpen} onClose={onClose} title="Checklist Settings" footer={footer}>
             <div className="space-y-6">
                 <div>
                     <h3 className="text-lg font-medium text-slate-900 mb-4">General</h3>
@@ -70,7 +62,9 @@ const ChecklistSettingsModal: React.FC<ChecklistSettingsModalProps> = ({
                             <input
                                 type="checkbox"
                                 checked={settings.confirmReset}
-                                onChange={(e) => setSettings({ ...settings, confirmReset: e.target.checked })}
+                                onChange={(e) =>
+                                    setSettings({ ...settings, confirmReset: e.target.checked })
+                                }
                                 className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                             />
                         </div>
@@ -87,7 +81,9 @@ const ChecklistSettingsModal: React.FC<ChecklistSettingsModalProps> = ({
                             <input
                                 type="checkbox"
                                 checked={settings.hideCompleted}
-                                onChange={(e) => setSettings({ ...settings, hideCompleted: e.target.checked })}
+                                onChange={(e) =>
+                                    setSettings({ ...settings, hideCompleted: e.target.checked })
+                                }
                                 className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                             />
                         </div>
@@ -98,12 +94,8 @@ const ChecklistSettingsModal: React.FC<ChecklistSettingsModalProps> = ({
                     <h3 className="text-lg font-medium text-slate-900 mb-4">Data</h3>
                     <div className="p-4 bg-red-50 rounded-lg border border-red-100">
                         <h4 className="text-sm font-medium text-red-800 mb-1">Danger Zone</h4>
-                        <p className="text-xs text-red-600 mb-3">
-                            These actions cannot be undone.
-                        </p>
-                        <button
-                            className="text-xs bg-white border border-red-200 text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 font-medium transition-colors"
-                        >
+                        <p className="text-xs text-red-600 mb-3">These actions cannot be undone.</p>
+                        <button className="text-xs bg-white border border-red-200 text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 font-medium transition-colors">
                             Delete All Checklists
                         </button>
                     </div>

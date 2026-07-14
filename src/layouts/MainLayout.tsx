@@ -1,5 +1,15 @@
 import React from 'react';
-import { Bell, CheckSquare, Grid2X2, Home, LayoutGrid, MessageSquare, PlusCircle, Sparkles, User } from 'lucide-react';
+import {
+    Bell,
+    CheckSquare,
+    Grid2X2,
+    Home,
+    LayoutGrid,
+    MessageSquare,
+    PlusCircle,
+    Sparkles,
+    User,
+} from 'lucide-react';
 import type { AppRoute } from '../constants/routes';
 import CaptureFAB from '../components/CaptureFAB';
 
@@ -18,7 +28,8 @@ const TABS: Array<{ key: AppRoute; label: string; Icon: typeof Home }> = [
 ];
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveTab }) => {
-    const isActiveTab = (key: AppRoute) => activeTab === key || (key === 'me' && activeTab === 'account');
+    const isActiveTab = (key: AppRoute) =>
+        activeTab === key || (key === 'me' && activeTab === 'account');
     const mobileTitle: Partial<Record<AppRoute, string>> = {
         home: 'Buddy',
         tasks: 'Tasks',
@@ -49,7 +60,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                         <MessageSquare size={19} />
                     </div>
                     <div>
-                        <h1 className="text-lg font-semibold leading-tight text-slate-950">Buddy</h1>
+                        <h1 className="text-lg font-semibold leading-tight text-slate-950">
+                            Buddy
+                        </h1>
                         <p className="text-xs text-slate-500">Capture, plan, reflect</p>
                     </div>
                 </div>
@@ -76,7 +89,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
 
                 <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
                     <p className="text-xs font-medium leading-5 text-slate-500">
-                        Use Capture for brain dumps, tasks, notes, reminders, school, and health logs.
+                        Use Capture for brain dumps, tasks, notes, reminders, school, and health
+                        logs.
                     </p>
                 </div>
             </aside>
@@ -103,9 +117,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                 </div>
             </header>
 
-            <main className="px-4 py-5 sm:px-6 lg:ml-64 lg:px-8 lg:py-8 xl:px-10">
-                {children}
-            </main>
+            <main className="px-4 py-5 sm:px-6 lg:ml-64 lg:px-8 lg:py-8 xl:px-10">{children}</main>
 
             <CaptureFAB activeTab={activeTab} onNavigate={setActiveTab} />
 
@@ -119,10 +131,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, activeTab, setActiveT
                                 onClick={() => setActiveTab(key)}
                                 aria-current={isActive ? 'page' : undefined}
                                 className={`flex h-full w-full flex-col items-center justify-center gap-1 rounded-xl text-xs font-medium transition-colors ${
-                                    isActive ? 'bg-indigo-50 text-indigo-800' : 'text-slate-500 hover:text-slate-800'
+                                    isActive
+                                        ? 'bg-indigo-50 text-indigo-800'
+                                        : 'text-slate-500 hover:text-slate-800'
                                 }`}
                             >
-                                {key === 'assistant' ? <PlusCircle size={23} /> : key === 'browse' ? <Grid2X2 size={22} /> : <Icon size={22} />}
+                                {key === 'assistant' ? (
+                                    <PlusCircle size={23} />
+                                ) : key === 'browse' ? (
+                                    <Grid2X2 size={22} />
+                                ) : (
+                                    <Icon size={22} />
+                                )}
                                 <span>{label}</span>
                             </button>
                         );

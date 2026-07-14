@@ -1,13 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTrackers } from '../../health-tracking/hooks/useTrackers';
-import { User, LogOut, Download, Upload, Trash2, Zap, Copy, RefreshCw, Check, Brain } from 'lucide-react';
+import {
+    User,
+    LogOut,
+    Download,
+    Upload,
+    Trash2,
+    Zap,
+    Copy,
+    RefreshCw,
+    Check,
+    Brain,
+} from 'lucide-react';
 import AssistantDevPanel from '../../assistant/components/AssistantDevPanel';
-import { getSetting, setSetting, supabase } from '../../../services/supabase';
-import { getCategorySettings, updateCategorySettings, type AISettings } from '../../../services/settings';
+import { supabase } from '../../../services/supabase';
+import type { AISettings } from '../../../services/settings';
+import {
+    getAIConfigStatus,
+    saveAIConfig,
+    testAIConfig,
+} from '../../assistant/services/ai-actions.service';
+import {
+    clearPrivateAccountData,
+    getCaptureTokenStatus,
+    rotateCaptureToken,
+} from '../../assistant/services/capture-token.service';
 import { useToast } from '../../../components/ui/Toast';
-import { dataImportSchema, aiConfigSchema, apiKeySchema } from '../../../lib/validation/schemas';
-import { v4 as uuidv4 } from 'uuid';
+import { dataImportSchema, aiConfigSchema } from '../../../lib/validation/schemas';
 import { NotificationPermissionPrompt } from '../../../components/notifications';
 import { showLocalNotification, scheduleNotificationIn } from '../../../services/notifications';
 
@@ -26,22 +46,38 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
 
     // API Key State
     const [apiKey, setApiKey] = useState<string | null>(null);
+    const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
+    const [apiKeyPrefix, setApiKeyPrefix] = useState<string | null>(null);
     const [apiKeyCopied, setApiKeyCopied] = useState(false);
     const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
     // AI Settings State
     const [aiSettings, setAiSettings] = useState<AISettings | null>(null);
     const [aiSaving, setAiSaving] = useState(false);
+    const [aiTesting, setAiTesting] = useState(false);
+    const [aiConfigured, setAiConfigured] = useState(false);
 
     // Load API key and AI settings
     useEffect(() => {
         if (user?.id) {
-            getSetting(user.id, 'quick_note_api_key').then(key => {
-                if (key) setApiKey(key);
-            });
-            getCategorySettings(user.id, 'ai').then(settings => {
-                setAiSettings(settings);
-            });
+            getCaptureTokenStatus()
+                .then((status) => {
+                    setApiKeyConfigured(status.configured);
+                    setApiKeyPrefix(status.prefix);
+                })
+                .catch((error) => console.error('Failed to load capture token status:', error));
+            getAIConfigStatus()
+                .then((status) => {
+                    setAiConfigured(status.configured);
+                    setAiSettings({
+                        aiProvider: status.provider,
+                        aiApiKey: null,
+                        aiModel: status.model,
+                    });
+                })
+                .catch(() => {
+                    setAiSettings({ aiProvider: 'openai', aiApiKey: null, aiModel: null });
+                });
         }
     }, [user?.id]);
 
@@ -61,13 +97,37 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
         }
         setAiSaving(true);
         try {
-            await updateCategorySettings(user.id, 'ai', aiSettings);
+            const status = await saveAIConfig({
+                provider: aiSettings.aiProvider,
+                apiKey: aiSettings.aiApiKey || undefined,
+                model: aiSettings.aiModel,
+            });
+            setAiConfigured(status.configured);
+            setAiSettings({ ...aiSettings, aiApiKey: null });
             toast.success('AI settings saved');
         } catch (error) {
             console.error('Failed to save AI settings:', error);
             toast.error('Failed to save AI settings');
         } finally {
             setAiSaving(false);
+        }
+    };
+
+    const handleTestAiSettings = async () => {
+        if (!aiSettings) return;
+        setAiTesting(true);
+        try {
+            await testAIConfig({
+                provider: aiSettings.aiProvider,
+                apiKey: aiSettings.aiApiKey || undefined,
+                model: aiSettings.aiModel,
+            });
+            toast.success('AI connection works');
+        } catch (error) {
+            console.error('AI connection test failed:', error);
+            toast.error(error instanceof Error ? error.message : 'AI connection failed');
+        } finally {
+            setAiTesting(false);
         }
     };
 
@@ -119,7 +179,11 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
     };
 
     const handleResetDatabase = async () => {
-        if (confirm('ARE YOU SURE? This will delete ALL your data (trackers, entries, protocols). This cannot be undone.')) {
+        if (
+            confirm(
+                'ARE YOU SURE? This will delete ALL your data (trackers, entries, protocols). This cannot be undone.',
+            )
+        ) {
             if (!user?.id) return;
             try {
                 await Promise.all([
@@ -134,6 +198,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                 await supabase.from('strategies').delete().eq('user_id', user.id);
                 await supabase.from('todos').delete().eq('user_id', user.id);
                 await supabase.from('settings').delete().eq('user_id', user.id);
+                await clearPrivateAccountData();
 
                 toast.success('All data deleted');
                 setTimeout(() => window.location.reload(), 1000);
@@ -149,9 +214,10 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
         if (!user?.id) return;
         setIsGeneratingKey(true);
         try {
-            const newKey = apiKeySchema.parse(`qn_${uuidv4().replace(/-/g, '')}`);
-            await setSetting(user.id, 'quick_note_api_key', newKey);
-            setApiKey(newKey);
+            const result = await rotateCaptureToken();
+            setApiKey(result.token);
+            setApiKeyConfigured(true);
+            setApiKeyPrefix(result.prefix);
             toast.success('API key generated');
         } catch (error) {
             console.error('Failed to generate API key:', error);
@@ -173,11 +239,9 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
     // Test Notification Functions
     const handleTestNotificationNow = async () => {
         try {
-            await showLocalNotification(
-                'Test Notification',
-                'This is a test from Buddy App! 🎉',
-                { testData: 'immediate' }
-            );
+            await showLocalNotification('Test Notification', 'This is a test from Buddy App! 🎉', {
+                testData: 'immediate',
+            });
             toast.success('Notification sent!');
         } catch (error) {
             console.error('Test notification failed:', error);
@@ -195,7 +259,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                 1, // 1 minute from now
                 'Scheduled Test',
                 'This notification was scheduled 1 minute ago! ⏰',
-                { testData: 'scheduled' }
+                { testData: 'scheduled' },
             );
             toast.success('Notification scheduled for 1 minute from now');
         } catch (error) {
@@ -208,14 +272,14 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
         <div className={embedded ? 'space-y-5' : 'app-page-readable'}>
             {/* Page Header */}
             {!embedded && (
-            <header className="hidden lg:block">
-                <h1 className="app-title flex items-center gap-3">
-                    <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
-                        <User size={24} />
-                    </div>
-                    Account
-                </h1>
-            </header>
+                <header className="hidden lg:block">
+                    <h1 className="app-title flex items-center gap-3">
+                        <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
+                            <User size={24} />
+                        </div>
+                        Account
+                    </h1>
+                </header>
             )}
 
             {/* Account Info */}
@@ -229,9 +293,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                     <div className="bg-white/20 rounded-lg p-4">
                         <p className="text-sm opacity-90">Logged in as:</p>
                         <p className="font-semibold text-lg">{user?.email}</p>
-                        <p className="text-xs opacity-75 mt-1">
-                            Data synced across all devices
-                        </p>
+                        <p className="text-xs opacity-75 mt-1">Data synced across all devices</p>
                     </div>
                     <button
                         onClick={handleLogout}
@@ -248,17 +310,26 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                     <Brain className="text-indigo-700" size={24} />
                     <div>
                         <h2 className="text-xl font-semibold text-slate-800">AI Provider</h2>
-                        <p className="text-xs text-slate-500">Powers the Buddy Assistant and AI planning</p>
+                        <p className="text-xs text-slate-500">
+                            Powers the Buddy Assistant and AI planning
+                        </p>
                     </div>
                 </div>
 
                 {aiSettings ? (
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Provider</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Provider
+                            </label>
                             <select
                                 value={aiSettings.aiProvider}
-                                onChange={(e) => setAiSettings({ ...aiSettings, aiProvider: e.target.value as AISettings['aiProvider'] })}
+                                onChange={(e) =>
+                                    setAiSettings({
+                                        ...aiSettings,
+                                        aiProvider: e.target.value as AISettings['aiProvider'],
+                                    })
+                                }
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                             >
                                 <option value="openai">OpenAI</option>
@@ -268,37 +339,65 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">API Key</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                API Key
+                            </label>
                             <input
                                 type="password"
-                                placeholder="Enter your API key"
+                                placeholder={
+                                    aiConfigured
+                                        ? 'Saved securely - enter to replace'
+                                        : 'Enter your API key'
+                                }
                                 value={aiSettings.aiApiKey || ''}
-                                onChange={(e) => setAiSettings({ ...aiSettings, aiApiKey: e.target.value || null })}
+                                onChange={(e) =>
+                                    setAiSettings({
+                                        ...aiSettings,
+                                        aiApiKey: e.target.value || null,
+                                    })
+                                }
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                             />
                             <p className="text-xs text-slate-400 mt-1">
-                                Get a key from your provider's dashboard. Stored in your account settings.
+                                The saved key is only available to the server and is never returned
+                                to this browser.
                             </p>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Model (optional)</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Model (optional)
+                            </label>
                             <input
                                 type="text"
                                 placeholder="Leave blank for default"
                                 value={aiSettings.aiModel || ''}
-                                onChange={(e) => setAiSettings({ ...aiSettings, aiModel: e.target.value || null })}
+                                onChange={(e) =>
+                                    setAiSettings({
+                                        ...aiSettings,
+                                        aiModel: e.target.value || null,
+                                    })
+                                }
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                             />
                         </div>
 
-                        <button
-                            onClick={handleSaveAiSettings}
-                            disabled={aiSaving}
-                            className="app-primary-button w-full py-2"
-                        >
-                            {aiSaving ? 'Saving...' : 'Save AI Settings'}
-                        </button>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={handleTestAiSettings}
+                                disabled={aiSaving || aiTesting}
+                                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                            >
+                                {aiTesting ? 'Testing...' : 'Test connection'}
+                            </button>
+                            <button
+                                onClick={handleSaveAiSettings}
+                                disabled={aiSaving || aiTesting}
+                                className="app-primary-button py-2"
+                            >
+                                {aiSaving ? 'Saving...' : 'Save settings'}
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <p className="text-sm text-slate-400">Loading...</p>
@@ -308,14 +407,13 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
             {/* Notifications Section */}
             {user?.id && (
                 <div className="space-y-3">
-                    <NotificationPermissionPrompt
-                        userId={user.id}
-                        showCloseButton={false}
-                    />
+                    <NotificationPermissionPrompt userId={user.id} showCloseButton={false} />
 
                     {/* Test Notification Buttons */}
                     <div className="app-surface p-4">
-                        <h3 className="text-sm font-semibold text-slate-700 mb-3">Test Notifications</h3>
+                        <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                            Test Notifications
+                        </h3>
                         <div className="flex gap-2">
                             <button
                                 onClick={handleTestNotificationNow}
@@ -341,62 +439,114 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
             <div className="app-surface p-5">
                 <div className="flex items-center gap-3 mb-4">
                     <Zap className="text-cyan-600" size={24} />
-                    <h2 className="text-xl font-semibold text-slate-800">Quick Capture API (iPhone Shortcut)</h2>
+                    <h2 className="text-xl font-semibold text-slate-800">
+                        Quick Capture API (iPhone Shortcut)
+                    </h2>
                 </div>
                 <p className="text-sm text-slate-500 mb-4">
-                    Use this API key with an iPhone Shortcut to capture anything via Siri / back-tap.
-                    Free text → AI figures it out. Prefix with a flag (e.g. <code>-remind 14:00 …</code>) to skip AI.
+                    Use this API key with an iPhone Shortcut to capture anything via Siri /
+                    back-tap. Free text → AI figures it out. Prefix with a flag (e.g.{' '}
+                    <code>-remind 14:00 …</code>) to skip AI.
                 </p>
 
-                {apiKey ? (
+                {apiKeyConfigured ? (
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
                             <code className="flex-1 p-3 bg-slate-100 rounded-lg text-sm font-mono text-slate-700 truncate">
-                                {apiKey}
+                                {apiKey ?? `${apiKeyPrefix ?? 'qn_'}••••••••••••••••••••`}
                             </code>
-                            <button
-                                onClick={copyApiKey}
-                                className="p-3 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-                                title="Copy"
-                            >
-                                {apiKeyCopied ? <Check size={18} className="text-green-600" /> : <Copy size={18} className="text-slate-600" />}
-                            </button>
+                            {apiKey && (
+                                <button
+                                    onClick={copyApiKey}
+                                    className="p-3 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                                    title="Copy"
+                                >
+                                    {apiKeyCopied ? (
+                                        <Check size={18} className="text-green-600" />
+                                    ) : (
+                                        <Copy size={18} className="text-slate-600" />
+                                    )}
+                                </button>
+                            )}
                         </div>
+                        {!apiKey && (
+                            <p className="text-xs text-slate-500">
+                                The token is stored as a one-way hash. Rotate it to reveal a new
+                                token once.
+                            </p>
+                        )}
                         <button
                             onClick={generateApiKey}
                             disabled={isGeneratingKey}
                             className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800"
                         >
-                            <RefreshCw size={14} className={isGeneratingKey ? 'animate-spin' : ''} />
-                            Regenerate Key
+                            <RefreshCw
+                                size={14}
+                                className={isGeneratingKey ? 'animate-spin' : ''}
+                            />
+                            Rotate Key
                         </button>
                         <div className="mt-4 p-3 bg-cyan-50 rounded-lg border border-cyan-100 space-y-2">
                             <p className="text-xs text-cyan-900">
-                                <strong>Endpoint:</strong> <code>{`<supabase-url>/functions/v1/assistant`}</code> (POST)
+                                <strong>Endpoint:</strong>{' '}
+                                <code>{`<supabase-url>/functions/v1/assistant`}</code> (POST)
                             </p>
                             <p className="text-xs text-cyan-900">
-                                <strong>Body:</strong> <code>{`{ "input": "<text>", "api_key": "<key above>", "source": "iphone" }`}</code>
+                                <strong>Body:</strong>{' '}
+                                <code>{`{ "input": "<text>", "api_key": "<key above>", "source": "iphone" }`}</code>
                             </p>
                             <p className="text-xs text-cyan-900">
-                                <strong>Response:</strong> JSON with <code>success</code>, <code>action_taken</code>, <code>data</code>. Show <code>action_taken</code> in a Notification action to confirm.
+                                <strong>Response:</strong> JSON with <code>success</code>,{' '}
+                                <code>action_taken</code>, <code>data</code>. Show{' '}
+                                <code>action_taken</code> in a Notification action to confirm.
                             </p>
                         </div>
                         <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <p className="text-xs font-semibold text-slate-700 mb-2">Flag cheat sheet (skip AI):</p>
+                            <p className="text-xs font-semibold text-slate-700 mb-2">
+                                Flag cheat sheet (skip AI):
+                            </p>
                             <ul className="text-xs text-slate-600 space-y-1 font-mono">
-                                <li><code>-task</code> / <code>-todo</code> &nbsp; fix bike by friday</li>
-                                <li><code>-done</code> &nbsp; fix bike</li>
-                                <li><code>-note</code> &nbsp; idea for the chapter intro</li>
-                                <li><code>-find</code> &nbsp; machine learning</li>
-                                <li><code>-shop</code> / <code>-boodschap</code> &nbsp; milk, eggs</li>
-                                <li><code>-remind</code> &nbsp; 14:00 call dentist &nbsp;<em>(needs a time)</em></li>
-                                <li><code>-mood</code> &nbsp; 4 feeling good</li>
-                                <li><code>-checkin</code> &nbsp; sleep 7 energy 3</li>
-                                <li><code>-journal</code> &nbsp; today I learned…</li>
-                                <li><code>-goal</code> &nbsp; read 20 books this year</li>
-                                <li><code>-study</code> &nbsp; linear algebra 2h</li>
-                                <li><code>-agenda</code> &nbsp; <em>(today's calendar)</em></li>
-                                <li><code>-habits</code> &nbsp; <em>(streaks &amp; open tasks)</em></li>
+                                <li>
+                                    <code>-task</code> / <code>-todo</code> &nbsp; fix bike by
+                                    friday
+                                </li>
+                                <li>
+                                    <code>-done</code> &nbsp; fix bike
+                                </li>
+                                <li>
+                                    <code>-note</code> &nbsp; idea for the chapter intro
+                                </li>
+                                <li>
+                                    <code>-find</code> &nbsp; machine learning
+                                </li>
+                                <li>
+                                    <code>-shop</code> / <code>-boodschap</code> &nbsp; milk, eggs
+                                </li>
+                                <li>
+                                    <code>-remind</code> &nbsp; 14:00 call dentist &nbsp;
+                                    <em>(needs a time)</em>
+                                </li>
+                                <li>
+                                    <code>-mood</code> &nbsp; 4 feeling good
+                                </li>
+                                <li>
+                                    <code>-checkin</code> &nbsp; sleep 7 energy 3
+                                </li>
+                                <li>
+                                    <code>-journal</code> &nbsp; today I learned…
+                                </li>
+                                <li>
+                                    <code>-goal</code> &nbsp; read 20 books this year
+                                </li>
+                                <li>
+                                    <code>-study</code> &nbsp; linear algebra 2h
+                                </li>
+                                <li>
+                                    <code>-agenda</code> &nbsp; <em>(today's calendar)</em>
+                                </li>
+                                <li>
+                                    <code>-habits</code> &nbsp; <em>(streaks &amp; open tasks)</em>
+                                </li>
                             </ul>
                             <p className="text-[11px] text-slate-500 mt-2">
                                 No flag → AI routes it. Slash form (<code>/task …</code>) works too.
@@ -445,7 +595,9 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
 
                     {showImport && (
                         <div className="space-y-3 p-4 bg-slate-50 rounded-xl">
-                            <label className="block text-sm font-medium text-slate-700">Paste JSON Data</label>
+                            <label className="block text-sm font-medium text-slate-700">
+                                Paste JSON Data
+                            </label>
                             <textarea
                                 value={importText}
                                 onChange={(e) => setImportText(e.target.value)}
@@ -462,7 +614,9 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                     )}
 
                     <div className="pt-4 border-t border-slate-100">
-                        <h3 className="font-bold text-rose-600 mb-2 text-sm uppercase tracking-wider">Danger Zone</h3>
+                        <h3 className="font-bold text-rose-600 mb-2 text-sm uppercase tracking-wider">
+                            Danger Zone
+                        </h3>
                         <button
                             onClick={handleResetDatabase}
                             className="w-full py-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl font-bold hover:bg-rose-100 transition-colors flex items-center justify-center gap-2"

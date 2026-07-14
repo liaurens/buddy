@@ -9,11 +9,7 @@
  */
 
 import type { Task } from '../types';
-import {
-    routeTaskPatch,
-    type TriageDestination,
-    type TriageDetail,
-} from '../utils/triageRouting';
+import { routeTaskPatch, type TriageDestination, type TriageDetail } from '../utils/triageRouting';
 import { kindSignalPatch } from '../utils/taskKind';
 import { persistTaskUpdate } from './taskWrites';
 

@@ -28,7 +28,12 @@ interface UrgentScheduleModalProps {
     onScheduled?: () => void;
 }
 
-const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({ task, isOpen, onClose, onScheduled }) => {
+const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
+    task,
+    isOpen,
+    onClose,
+    onScheduled,
+}) => {
     const { updateTask, addTaskFull } = useTasks();
     const toast = useToast();
 
@@ -40,13 +45,17 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({ task, isOpen,
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const addPrep = () => setPreps(prev => [...prev, { id: crypto.randomUUID(), title: '', daysBefore: 1 }]);
+    const addPrep = () =>
+        setPreps((prev) => [...prev, { id: crypto.randomUUID(), title: '', daysBefore: 1 }]);
     const updatePrep = (id: string, patch: Partial<PrepDraft>) =>
-        setPreps(prev => prev.map(p => (p.id === id ? { ...p, ...patch } : p)));
-    const removePrep = (id: string) => setPreps(prev => prev.filter(p => p.id !== id));
+        setPreps((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    const removePrep = (id: string) => setPreps((prev) => prev.filter((p) => p.id !== id));
 
     const handleSave = async () => {
-        if (!date) { setError('Pick a day to do this.'); return; }
+        if (!date) {
+            setError('Pick a day to do this.');
+            return;
+        }
         setSaving(true);
         setError(null);
         try {
@@ -61,17 +70,22 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({ task, isOpen,
             });
 
             // Spawn prep tasks on their earlier days, linked to this task.
-            const validPreps = preps.filter(p => p.title.trim());
-            await Promise.all(validPreps.map(p => {
-                const prepDate = format(subDays(new Date(`${date}T00:00:00`), Math.max(0, p.daysBefore)), 'yyyy-MM-dd');
-                return addTaskFull({
-                    title: p.title.trim(),
-                    dueDate: prepDate,
-                    priority: 'high',
-                    parentTodoId: task.id,
-                    triagedAt: new Date().toISOString(),
-                });
-            }));
+            const validPreps = preps.filter((p) => p.title.trim());
+            await Promise.all(
+                validPreps.map((p) => {
+                    const prepDate = format(
+                        subDays(new Date(`${date}T00:00:00`), Math.max(0, p.daysBefore)),
+                        'yyyy-MM-dd',
+                    );
+                    return addTaskFull({
+                        title: p.title.trim(),
+                        dueDate: prepDate,
+                        priority: 'high',
+                        parentTodoId: task.id,
+                        triagedAt: new Date().toISOString(),
+                    });
+                }),
+            );
 
             toast.success('Scheduled — added to your calendar.');
             onScheduled?.();
@@ -104,7 +118,13 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({ task, isOpen,
     );
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Schedule urgent task" footer={footer} size="lg">
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title="Schedule urgent task"
+            footer={footer}
+            size="lg"
+        >
             <div className="space-y-5">
                 <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
                     <p className="text-sm font-semibold text-rose-900">🔥 {task.title}</p>
@@ -112,18 +132,20 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({ task, isOpen,
 
                 {/* When */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">When will you do it?</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                        When will you do it?
+                    </label>
                     <div className="flex flex-wrap gap-2">
                         <input
                             type="date"
                             value={date}
-                            onChange={e => setDate(e.target.value)}
+                            onChange={(e) => setDate(e.target.value)}
                             className="px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
                         />
                         <input
                             type="time"
                             value={time}
-                            onChange={e => setTime(e.target.value)}
+                            onChange={(e) => setTime(e.target.value)}
                             className="px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
                         />
                         <div className="flex items-center gap-1">
@@ -131,26 +153,30 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({ task, isOpen,
                                 type="number"
                                 min={1}
                                 value={estimate}
-                                onChange={e => setEstimate(e.target.value)}
+                                onChange={(e) => setEstimate(e.target.value)}
                                 placeholder="min"
                                 className="w-20 px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
                             />
                             <span className="text-xs text-slate-500">min</span>
                         </div>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">It'll appear in your day on this date and sync to Google Calendar.</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                        It'll appear in your day on this date and sync to Google Calendar.
+                    </p>
                 </div>
 
                 {/* Prep */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Prep to do on earlier days (optional)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Prep to do on earlier days (optional)
+                    </label>
                     <ul className="space-y-2">
-                        {preps.map(p => (
+                        {preps.map((p) => (
                             <li key={p.id} className="flex items-center gap-2">
                                 <input
                                     type="text"
                                     value={p.title}
-                                    onChange={e => updatePrep(p.id, { title: e.target.value })}
+                                    onChange={(e) => updatePrep(p.id, { title: e.target.value })}
                                     placeholder="e.g. Draft outline"
                                     className="flex-1 min-w-0 px-3 py-1.5 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
                                 />
@@ -158,11 +184,19 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({ task, isOpen,
                                     type="number"
                                     min={0}
                                     value={p.daysBefore}
-                                    onChange={e => updatePrep(p.id, { daysBefore: Number(e.target.value) })}
+                                    onChange={(e) =>
+                                        updatePrep(p.id, { daysBefore: Number(e.target.value) })
+                                    }
                                     className="w-16 px-2 py-1.5 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
                                 />
-                                <span className="text-xs text-slate-500 whitespace-nowrap">days before</span>
-                                <button onClick={() => removePrep(p.id)} className="p-1 text-slate-400 hover:text-rose-600" aria-label="Remove prep">
+                                <span className="text-xs text-slate-500 whitespace-nowrap">
+                                    days before
+                                </span>
+                                <button
+                                    onClick={() => removePrep(p.id)}
+                                    className="p-1 text-slate-400 hover:text-rose-600"
+                                    aria-label="Remove prep"
+                                >
                                     <Trash2 size={14} />
                                 </button>
                             </li>
@@ -178,10 +212,12 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({ task, isOpen,
 
                 {/* Notes */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Important info (optional)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Important info (optional)
+                    </label>
                     <textarea
                         value={notes}
-                        onChange={e => setNotes(e.target.value)}
+                        onChange={(e) => setNotes(e.target.value)}
                         rows={3}
                         placeholder="Anything you need to remember about this…"
                         className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"

@@ -8,13 +8,16 @@ interface UpcomingDeadlinesBannerProps {
     limit?: number;
 }
 
-export const UpcomingDeadlinesBanner: React.FC<UpcomingDeadlinesBannerProps> = ({ onOpenSchool, limit = 3 }) => {
+export const UpcomingDeadlinesBanner: React.FC<UpcomingDeadlinesBannerProps> = ({
+    onOpenSchool,
+    limit = 3,
+}) => {
     const { assignments } = useAssignments({ activeOnly: true });
     const { classes } = useClasses();
 
     if (assignments.length === 0) return null;
 
-    const classMap = new Map(classes.map(c => [c.id, c]));
+    const classMap = new Map(classes.map((c) => [c.id, c]));
     const next = assignments.slice(0, limit);
 
     return (
@@ -31,15 +34,24 @@ export const UpcomingDeadlinesBanner: React.FC<UpcomingDeadlinesBannerProps> = (
                 {onOpenSchool && <ChevronRight size={16} className="text-slate-400" />}
             </div>
             <ul className="space-y-1.5">
-                {next.map(a => {
+                {next.map((a) => {
                     const cls = classMap.get(a.classId);
                     const d = new Date(a.deadline);
                     return (
                         <li key={a.id} className="flex items-center gap-2 text-xs text-slate-600">
-                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cls?.color ?? '#94a3b8' }} />
-                            <span className="font-medium text-slate-800 truncate flex-1">{a.title}</span>
+                            <span
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{ backgroundColor: cls?.color ?? '#94a3b8' }}
+                            />
+                            <span className="font-medium text-slate-800 truncate flex-1">
+                                {a.title}
+                            </span>
                             <span className="text-slate-500 shrink-0">
-                                {d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+                                {d.toLocaleDateString([], {
+                                    weekday: 'short',
+                                    month: 'short',
+                                    day: 'numeric',
+                                })}
                             </span>
                         </li>
                     );

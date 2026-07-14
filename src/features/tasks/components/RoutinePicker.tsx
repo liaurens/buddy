@@ -32,7 +32,7 @@ const RoutinePicker: React.FC<RoutinePickerProps> = ({ isOpen, onClose, onRan })
                         No routines yet. Open settings to define one.
                     </div>
                 ) : (
-                    routines.map(r => (
+                    routines.map((r) => (
                         <button
                             key={r.id}
                             onClick={() => handleRun(r.id)}
@@ -44,7 +44,9 @@ const RoutinePicker: React.FC<RoutinePickerProps> = ({ isOpen, onClose, onRan })
                                 <div className="flex-1">
                                     <div className="font-medium text-slate-800">{r.name}</div>
                                     {r.description && (
-                                        <div className="text-xs text-slate-500">{r.description}</div>
+                                        <div className="text-xs text-slate-500">
+                                            {r.description}
+                                        </div>
                                     )}
                                     <div className="text-xs text-slate-400 mt-1">
                                         {r.items.length} {r.items.length === 1 ? 'step' : 'steps'}

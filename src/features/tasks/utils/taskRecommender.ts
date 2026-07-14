@@ -14,6 +14,7 @@
 import type { Task, Subtask } from '../types';
 import { daysUntilDue as daysUntilDueHelper } from './dueDates';
 import { isStale } from './staleness';
+import { isTaskParked, taskFitsHomeDay } from './taskContracts';
 
 export interface TaskRecommendation {
     /** The recommended task */
@@ -43,7 +44,16 @@ const BACKLOG_AGE_CAP = 8;
  * Score a single task based on due date and priority.
  * Exported so other pick policies (e.g. the morning pick) can compose it.
  */
-export function scoreTask(task: Task, today: Date): { score: number; reason: string } {
+export function scoreTask(
+    task: Task,
+    today: Date,
+    homeDaysByType: ReadonlyMap<string, number[]> = new Map(),
+): { score: number; reason: string } {
+    if (isTaskParked(task, today))
+        return {
+            score: 0,
+            reason: task.kind === 'waiting' ? 'waiting to follow up' : `starts ${task.startDate}`,
+        };
     let score = 0;
     const reasons: string[] = [];
 
@@ -94,6 +104,11 @@ export function scoreTask(task: Task, today: Date): { score: number; reason: str
         reasons.push('keeps slipping');
     }
 
+    if (taskFitsHomeDay(task, homeDaysByType, today)) {
+        score += 12;
+        reasons.push('fits today');
+    }
+
     return { score, reason: reasons.join(', ') };
 }
 
@@ -102,14 +117,18 @@ export function scoreTask(task: Task, today: Date): { score: number; reason: str
  */
 function getNextSubtask(task: Task): Subtask | null {
     if (!task.subtasks || task.subtasks.length === 0) return null;
-    return task.subtasks.find(st => !st.completed) || null;
+    return task.subtasks.find((st) => !st.completed) || null;
 }
 
 /**
  * Get the top recommended task for today
  */
-export function getRecommendedTask(tasks: Task[], today: Date = new Date()): TaskRecommendation | null {
-    return getRankedTasks(tasks, today)[0] ?? null;
+export function getRecommendedTask(
+    tasks: Task[],
+    today: Date = new Date(),
+    homeDaysByType: ReadonlyMap<string, number[]> = new Map(),
+): TaskRecommendation | null {
+    return getRankedTasks(tasks, today, homeDaysByType)[0] ?? null;
 }
 
 /**
@@ -117,12 +136,16 @@ export function getRecommendedTask(tasks: Task[], today: Date = new Date()): Tas
  * canonical comparator (taskOrdering.ts): score desc → dueDate asc (undated
  * last) → createdAt asc → id asc.
  */
-export function getRankedTasks(tasks: Task[], today: Date = new Date()): TaskRecommendation[] {
-    const activeTasks = tasks.filter(t => !t.completed);
+export function getRankedTasks(
+    tasks: Task[],
+    today: Date = new Date(),
+    homeDaysByType: ReadonlyMap<string, number[]> = new Map(),
+): TaskRecommendation[] {
+    const activeTasks = tasks.filter((task) => !task.completed && !isTaskParked(task, today));
 
     return activeTasks
-        .map(task => {
-            const { score, reason } = scoreTask(task, today);
+        .map((task) => {
+            const { score, reason } = scoreTask(task, today, homeDaysByType);
             const subtask = getNextSubtask(task);
             return { task, subtask, score, reason };
         })

@@ -16,8 +16,9 @@ export function dbToActivityTemplate(db: DbActivityTemplate): ActivityTemplate {
         defaultMinutes: db.default_minutes,
         historicalMinutes: db.historical_minutes || undefined,
         averageMinutes: db.average_minutes || undefined,
-        frequency: db.frequency as ActivityTemplate['frequency'] || undefined,
-        preferredTimeSlot: db.preferred_time_slot as ActivityTemplate['preferredTimeSlot'] || undefined,
+        frequency: (db.frequency as ActivityTemplate['frequency']) || undefined,
+        preferredTimeSlot:
+            (db.preferred_time_slot as ActivityTemplate['preferredTimeSlot']) || undefined,
         preferredStartTime: db.preferred_start_time || undefined,
         isActive: db.is_active,
         createdAt: db.created_at,
@@ -25,7 +26,10 @@ export function dbToActivityTemplate(db: DbActivityTemplate): ActivityTemplate {
     };
 }
 
-export function activityTemplateToDb(template: Omit<ActivityTemplate, 'id' | 'createdAt'> & { id?: string }, userId: string): Omit<DbActivityTemplate, 'id' | 'created_at'> & { id?: string } {
+export function activityTemplateToDb(
+    template: Omit<ActivityTemplate, 'id' | 'createdAt'> & { id?: string },
+    userId: string,
+): Omit<DbActivityTemplate, 'id' | 'created_at'> & { id?: string } {
     return {
         id: template.id,
         user_id: userId,
@@ -64,7 +68,10 @@ export function dbToCalendarEvent(db: DbCalendarEvent): CalendarEvent {
     };
 }
 
-export function calendarEventToDb(event: Omit<CalendarEvent, 'id' | 'createdAt'> & { id?: string }, userId: string): Omit<DbCalendarEvent, 'id' | 'created_at'> & { id?: string } {
+export function calendarEventToDb(
+    event: Omit<CalendarEvent, 'id' | 'createdAt'> & { id?: string },
+    userId: string,
+): Omit<DbCalendarEvent, 'id' | 'created_at'> & { id?: string } {
     return {
         id: event.id,
         user_id: userId,

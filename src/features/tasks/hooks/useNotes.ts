@@ -58,7 +58,7 @@ export const useNotes = (): SmartNotesState => {
 
             // Seed default categories if none exist
             if (data.length === 0) {
-                const categoriesToInsert = DEFAULT_CATEGORIES.map(c => ({
+                const categoriesToInsert = DEFAULT_CATEGORIES.map((c) => ({
                     id: uuidv4(),
                     user_id: userId,
                     name: c.name,
@@ -89,7 +89,7 @@ export const useNotes = (): SmartNotesState => {
         queryKey: ['smart_notes', userId],
         queryFn: async () => {
             if (!userId) return [];
-            const { data, error} = await supabase
+            const { data, error } = await supabase
                 .from('smart_notes')
                 .select('*')
                 .eq('user_id', userId)
@@ -102,206 +102,236 @@ export const useNotes = (): SmartNotesState => {
     });
 
     // Inserts a task directly into the todos table (used when a note flag is a task flag)
-    const addTaskFromNote = useCallback(async (title: string) => {
-        if (!userId) throw new Error('Not authenticated');
-        const { error } = await supabase.from('todos').insert({
-            id: uuidv4(),
-            user_id: userId,
-            title,
-            completed: false,
-            created_at: new Date().toISOString(),
-            priority: 'medium',
-            due_date: null,
-            due_time: null,
-            location: null,
-            labels: null,
-            estimated_time: null,
-            subtasks: null,
-            actual_minutes: null,
-            started_at: null,
-            completed_at: null,
-            historical_minutes: null,
-            recurrence: 'none',
-            recurrence_config: null,
-        });
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-    }, [userId, queryClient]);
+    const addTaskFromNote = useCallback(
+        async (title: string) => {
+            if (!userId) throw new Error('Not authenticated');
+            const { error } = await supabase.from('todos').insert({
+                id: uuidv4(),
+                user_id: userId,
+                title,
+                completed: false,
+                created_at: new Date().toISOString(),
+                priority: 'medium',
+                due_date: null,
+                due_time: null,
+                location: null,
+                labels: null,
+                estimated_time: null,
+                subtasks: null,
+                actual_minutes: null,
+                started_at: null,
+                completed_at: null,
+                historical_minutes: null,
+                recurrence: 'none',
+                recurrence_config: null,
+            });
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
+        },
+        [userId, queryClient],
+    );
 
     // Converts an existing note to a task: creates the task then deletes the note
-    const convertNoteToTask = useCallback(async (note: import('../types').SmartNote) => {
-        if (!userId) throw new Error('Not authenticated');
-        await addTaskFromNote(note.content);
-        const { error } = await supabase
-            .from('smart_notes')
-            .delete()
-            .eq('id', note.id)
-            .eq('user_id', userId);
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
-    }, [userId, addTaskFromNote, queryClient]);
+    const convertNoteToTask = useCallback(
+        async (note: import('../types').SmartNote) => {
+            if (!userId) throw new Error('Not authenticated');
+            await addTaskFromNote(note.content);
+            const { error } = await supabase
+                .from('smart_notes')
+                .delete()
+                .eq('id', note.id)
+                .eq('user_id', userId);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
+        },
+        [userId, addTaskFromNote, queryClient],
+    );
 
     // Add a note with automatic flag detection and sorting
-    const addNote = useCallback(async (content: string) => {
-        if (!userId) throw new Error('Not authenticated');
+    const addNote = useCallback(
+        async (content: string) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const { cleanContent, flag } = parseNoteContent(content);
+            const { cleanContent, flag } = parseNoteContent(content);
 
-        // Task flags bypass note storage and create a task directly
-        if (flag && TASK_FLAGS.includes(flag)) {
-            await addTaskFromNote(cleanContent);
-            return;
-        }
-
-        // Find matching category by flag
-        let categoryId: string | undefined;
-        if (flag) {
-            const matchingCategory = categories.find(c => c.flag.toLowerCase() === flag);
-            if (matchingCategory) {
-                categoryId = matchingCategory.id;
+            // Task flags bypass note storage and create a task directly
+            if (flag && TASK_FLAGS.includes(flag)) {
+                await addTaskFromNote(cleanContent);
+                return;
             }
-        }
 
-        const newNote: SmartNote = {
-            id: uuidv4(),
-            content: cleanContent,
-            categoryId,
-            flag: flag || undefined,
-            processed: false,
-            createdAt: new Date().toISOString(),
-        };
+            // Find matching category by flag
+            let categoryId: string | undefined;
+            if (flag) {
+                const matchingCategory = categories.find((c) => c.flag.toLowerCase() === flag);
+                if (matchingCategory) {
+                    categoryId = matchingCategory.id;
+                }
+            }
 
-        const dbNote = smartNoteToDb(newNote, userId);
-        const { error } = await supabase.from('smart_notes').insert({
-            ...dbNote,
-            created_at: newNote.createdAt,
-        });
+            const newNote: SmartNote = {
+                id: uuidv4(),
+                content: cleanContent,
+                categoryId,
+                flag: flag || undefined,
+                processed: false,
+                createdAt: new Date().toISOString(),
+            };
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
-    }, [userId, categories, queryClient]);
+            const dbNote = smartNoteToDb(newNote, userId);
+            const { error } = await supabase.from('smart_notes').insert({
+                ...dbNote,
+                created_at: newNote.createdAt,
+            });
 
-    const updateNote = useCallback(async (note: SmartNote) => {
-        if (!userId) throw new Error('Not authenticated');
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
+        },
+        [userId, categories, queryClient],
+    );
 
-        const { error } = await supabase
-            .from('smart_notes')
-            .update({
-                content: note.content,
-                category_id: note.categoryId || null,
-                flag: note.flag || null,
-                processed: note.processed,
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', note.id)
-            .eq('user_id', userId);
+    const updateNote = useCallback(
+        async (note: SmartNote) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
-    }, [userId, queryClient]);
+            const { error } = await supabase
+                .from('smart_notes')
+                .update({
+                    content: note.content,
+                    category_id: note.categoryId || null,
+                    flag: note.flag || null,
+                    processed: note.processed,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', note.id)
+                .eq('user_id', userId);
 
-    const deleteNote = useCallback(async (id: string) => {
-        if (!userId) throw new Error('Not authenticated');
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
+        },
+        [userId, queryClient],
+    );
 
-        const { error } = await supabase
-            .from('smart_notes')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', userId);
+    const deleteNote = useCallback(
+        async (id: string) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
-    }, [userId, queryClient]);
+            const { error } = await supabase
+                .from('smart_notes')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', userId);
 
-    const moveToCategory = useCallback(async (noteId: string, categoryId: string | null) => {
-        if (!userId) throw new Error('Not authenticated');
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
+        },
+        [userId, queryClient],
+    );
 
-        const { error } = await supabase
-            .from('smart_notes')
-            .update({
-                category_id: categoryId,
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', noteId)
-            .eq('user_id', userId);
+    const moveToCategory = useCallback(
+        async (noteId: string, categoryId: string | null) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
-    }, [userId, queryClient]);
+            const { error } = await supabase
+                .from('smart_notes')
+                .update({
+                    category_id: categoryId,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', noteId)
+                .eq('user_id', userId);
 
-    const markProcessed = useCallback(async (noteId: string) => {
-        if (!userId) throw new Error('Not authenticated');
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
+        },
+        [userId, queryClient],
+    );
 
-        const { error } = await supabase
-            .from('smart_notes')
-            .update({
-                processed: true,
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', noteId)
-            .eq('user_id', userId);
+    const markProcessed = useCallback(
+        async (noteId: string) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
-    }, [userId, queryClient]);
+            const { error } = await supabase
+                .from('smart_notes')
+                .update({
+                    processed: true,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', noteId)
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
+        },
+        [userId, queryClient],
+    );
 
     // Category management
-    const addCategory = useCallback(async (category: Omit<NoteCategory, 'id' | 'createdAt'>) => {
-        if (!userId) throw new Error('Not authenticated');
+    const addCategory = useCallback(
+        async (category: Omit<NoteCategory, 'id' | 'createdAt'>) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const newCategory = {
-            id: uuidv4(),
-            user_id: userId,
-            name: category.name,
-            flag: category.flag.toLowerCase(),
-            emoji: category.emoji || null,
-            color: category.color || null,
-        };
-
-        const { error } = await supabase.from('note_categories').insert(newCategory);
-
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['note_categories', userId] });
-    }, [userId, queryClient]);
-
-    const updateCategory = useCallback(async (category: NoteCategory) => {
-        if (!userId) throw new Error('Not authenticated');
-
-        const { error } = await supabase
-            .from('note_categories')
-            .update({
+            const newCategory = {
+                id: uuidv4(),
+                user_id: userId,
                 name: category.name,
                 flag: category.flag.toLowerCase(),
                 emoji: category.emoji || null,
                 color: category.color || null,
-            })
-            .eq('id', category.id)
-            .eq('user_id', userId);
+            };
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['note_categories', userId] });
-    }, [userId, queryClient]);
+            const { error } = await supabase.from('note_categories').insert(newCategory);
 
-    const deleteCategory = useCallback(async (id: string) => {
-        if (!userId) throw new Error('Not authenticated');
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['note_categories', userId] });
+        },
+        [userId, queryClient],
+    );
 
-        // Move notes in this category to inbox (null category)
-        await supabase
-            .from('smart_notes')
-            .update({ category_id: null })
-            .eq('category_id', id)
-            .eq('user_id', userId);
+    const updateCategory = useCallback(
+        async (category: NoteCategory) => {
+            if (!userId) throw new Error('Not authenticated');
 
-        const { error } = await supabase
-            .from('note_categories')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', userId);
+            const { error } = await supabase
+                .from('note_categories')
+                .update({
+                    name: category.name,
+                    flag: category.flag.toLowerCase(),
+                    emoji: category.emoji || null,
+                    color: category.color || null,
+                })
+                .eq('id', category.id)
+                .eq('user_id', userId);
 
-        if (error) throw error;
-        queryClient.invalidateQueries({ queryKey: ['note_categories', userId] });
-        queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
-    }, [userId, queryClient]);
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['note_categories', userId] });
+        },
+        [userId, queryClient],
+    );
+
+    const deleteCategory = useCallback(
+        async (id: string) => {
+            if (!userId) throw new Error('Not authenticated');
+
+            // Move notes in this category to inbox (null category)
+            await supabase
+                .from('smart_notes')
+                .update({ category_id: null })
+                .eq('category_id', id)
+                .eq('user_id', userId);
+
+            const { error } = await supabase
+                .from('note_categories')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            queryClient.invalidateQueries({ queryKey: ['note_categories', userId] });
+            queryClient.invalidateQueries({ queryKey: ['smart_notes', userId] });
+        },
+        [userId, queryClient],
+    );
 
     return {
         notes,

@@ -3,7 +3,7 @@
  * hook so the confidence/auto-apply logic is unit-testable.
  */
 
-import type { TaskTriageSuggestion } from '../../planning/services/ai.service';
+import type { TaskTriageSuggestion } from '../../assistant/services/ai-actions.service';
 import type { TriageDetail } from './triageRouting';
 
 /** High-confidence suggestions are safe to apply silently; the rest need a human. */

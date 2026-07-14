@@ -9,7 +9,7 @@ import { dbToExperimentCheckinEntry } from '../converters/experiment';
 
 export async function getExperimentCheckins(
     experimentId: string,
-    dateRange?: { from: string; to: string }
+    dateRange?: { from: string; to: string },
 ): Promise<ExperimentCheckinEntry[]> {
     let query = supabase
         .from('experiment_checkin_entries')
@@ -29,12 +29,14 @@ export async function getExperimentCheckins(
 export async function saveExperimentCheckin(
     experimentId: string,
     date: string,
-    entries: { metricId: string; value?: number; textValue?: string; phaseId?: string }[]
+    entries: { metricId: string; value?: number; textValue?: string; phaseId?: string }[],
 ): Promise<ExperimentCheckinEntry[]> {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const rows = entries.map(e => ({
+    const rows = entries.map((e) => ({
         user_id: user.id,
         experiment_id: experimentId,
         phase_id: e.phaseId || null,
@@ -54,15 +56,15 @@ export async function saveExperimentCheckin(
 }
 
 export async function deleteExperimentCheckin(id: string): Promise<void> {
-    const { error } = await supabase
-        .from('experiment_checkin_entries')
-        .delete()
-        .eq('id', id);
+    const { error } = await supabase.from('experiment_checkin_entries').delete().eq('id', id);
 
     if (error) throw error;
 }
 
-export async function deleteExperimentCheckinByDate(experimentId: string, date: string): Promise<void> {
+export async function deleteExperimentCheckinByDate(
+    experimentId: string,
+    date: string,
+): Promise<void> {
     const { error } = await supabase
         .from('experiment_checkin_entries')
         .delete()
@@ -71,4 +73,3 @@ export async function deleteExperimentCheckinByDate(experimentId: string, date: 
 
     if (error) throw error;
 }
-

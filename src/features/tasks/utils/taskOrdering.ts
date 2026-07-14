@@ -32,7 +32,5 @@ export function sortTasksCanonical(tasks: Task[], scoreById: Map<string, number>
 export const QUICK_WIN_MINUTES = 15;
 
 export function isQuickWin(task: Task): boolean {
-    return (
-        !task.completed && !!task.estimatedTime && task.estimatedTime <= QUICK_WIN_MINUTES
-    );
+    return !task.completed && !!task.estimatedTime && task.estimatedTime <= QUICK_WIN_MINUTES;
 }

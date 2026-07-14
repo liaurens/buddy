@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Settings, Repeat, LayoutGrid, CalendarDays, BookOpen, Flame, Sparkles, X } from 'lucide-react';
+import {
+    Settings,
+    Repeat,
+    LayoutGrid,
+    CalendarDays,
+    BookOpen,
+    Flame,
+    Sparkles,
+    X,
+} from 'lucide-react';
 import { daysUntilDue } from '../utils/dueDates';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTasks } from '../hooks/useTasks';
@@ -10,7 +19,8 @@ import { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from '../utils/taskKi
 import { kindToDestination } from '../utils/triageRouting';
 import { countInbox } from '../utils/inbox';
 import { sortTasksCanonical, isQuickWin } from '../utils/taskOrdering';
-import { UpcomingDeadlinesBanner } from '../../school';
+import { pickSomedayReview } from '../utils/taskContracts';
+import { UpcomingDeadlinesBanner } from '../../school/components/UpcomingDeadlinesBanner';
 import type { AppRoute } from '../../../constants/routes';
 
 import QuickCapture from '../components/QuickCapture';
@@ -24,6 +34,7 @@ import TasksOrganizationModal from '../components/TasksOrganizationModal';
 import AIOrganizeModal from '../components/AIOrganizeModal';
 import TriageInbox from '../components/TriageInbox';
 import RoutinePicker from '../components/RoutinePicker';
+import SomedayReviewCard from '../components/SomedayReviewCard';
 
 interface TodoPageProps {
     initialParams?: Record<string, unknown> | null;
@@ -36,17 +47,24 @@ type ViewMode = 'type' | 'schedule' | 'kind';
 type BucketId = 'overdue' | 'today' | 'week' | 'later';
 
 const BUCKET_META: Record<BucketId, { label: string; tone: string; dot: string }> = {
-    overdue: { label: 'Overdue',         tone: 'text-rose-600',   dot: 'bg-rose-500' },
-    today:   { label: 'Today',           tone: 'text-amber-600',  dot: 'bg-amber-500' },
-    week:    { label: 'This week',       tone: 'text-slate-600',  dot: 'bg-slate-400' },
-    later:   { label: 'Later / no due',  tone: 'text-slate-500',  dot: 'bg-slate-300' },
+    overdue: { label: 'Overdue', tone: 'text-rose-600', dot: 'bg-rose-500' },
+    today: { label: 'Today', tone: 'text-amber-600', dot: 'bg-amber-500' },
+    week: { label: 'This week', tone: 'text-slate-600', dot: 'bg-slate-400' },
+    later: { label: 'Later / no due', tone: 'text-slate-500', dot: 'bg-slate-300' },
 };
 
 const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot }) => {
     const { user } = useAuth();
     const {
-        tasks: allTodos, isLoading, addTaskFull, toggleTask, deleteTask, updateTask,
-        rescheduleMany, completeMany, deleteMany,
+        tasks: allTodos,
+        isLoading,
+        addTaskFull,
+        toggleTask,
+        deleteTask,
+        updateTask,
+        rescheduleMany,
+        completeMany,
+        deleteMany,
     } = useTasks();
     const { taskTypes } = useTaskTypes();
     const { ranked } = useTaskRecommendation();
@@ -78,7 +96,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
         if (intentHandledRef.current === key) return;
         intentHandledRef.current = key;
 
-        const task = allTodos.find(t => t.id === taskId);
+        const task = allTodos.find((t) => t.id === taskId);
         if (!task) return;
 
         if (intent === 'complete' && !task.completed) {
@@ -98,12 +116,12 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
         return () => clearTimeout(t);
     }, [flashMessage]);
 
-    const activeTasks = useMemo(() => allTodos.filter(t => !t.completed), [allTodos]);
+    const activeTasks = useMemo(() => allTodos.filter((t) => !t.completed), [allTodos]);
     // Most recently completed first — completion time, not capture time.
     const completedTasks = useMemo(
         () =>
             allTodos
-                .filter(t => t.completed)
+                .filter((t) => t.completed)
                 .sort((a, b) =>
                     (b.completedAt ?? b.createdAt).localeCompare(a.completedAt ?? a.createdAt),
                 )
@@ -115,17 +133,35 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
     const inboxCount = useMemo(() => countInbox(allTodos), [allTodos]);
 
     // "Unorganized" inbox = active tasks without a type; the AI organizer targets these.
-    const organizeCandidates = useMemo(() => activeTasks.filter(t => !t.taskTypeId), [activeTasks]);
+    const organizeCandidates = useMemo(
+        () => activeTasks.filter((t) => !t.taskTypeId),
+        [activeTasks],
+    );
 
-    const filteredActive = useMemo(() => activeTasks.filter(t => {
-        if (quickWinsOnly && !isQuickWin(t)) return false;
-        if (filter.typeId === 'all') { /* allow all */ }
-        else if (filter.typeId === '') { if (t.taskTypeId) return false; }
-        else if (t.taskTypeId !== filter.typeId) return false;
-        if (filter.energy !== 'all' && t.energy !== filter.energy) return false;
-        return true;
-    }), [activeTasks, filter, quickWinsOnly]);
-    const scoreById = useMemo(() => new Map(ranked.map(r => [r.task.id, r.score])), [ranked]);
+    const filteredActive = useMemo(
+        () =>
+            activeTasks.filter((t) => {
+                if (quickWinsOnly && !isQuickWin(t)) return false;
+                if (filter.typeId === 'all') {
+                    /* allow all */
+                } else if (filter.typeId === '') {
+                    if (t.taskTypeId) return false;
+                } else if (t.taskTypeId !== filter.typeId) return false;
+                if (filter.energy !== 'all' && t.energy !== filter.energy) return false;
+                return true;
+            }),
+        [activeTasks, filter, quickWinsOnly],
+    );
+    const waitingTasks = useMemo(
+        () => filteredActive.filter((task) => deriveTaskKind(task) === 'waiting'),
+        [filteredActive],
+    );
+    const workingTasks = useMemo(
+        () => filteredActive.filter((task) => deriveTaskKind(task) !== 'waiting'),
+        [filteredActive],
+    );
+    const somedayReview = useMemo(() => pickSomedayReview(activeTasks, new Date()), [activeTasks]);
+    const scoreById = useMemo(() => new Map(ranked.map((r) => [r.task.id, r.score])), [ranked]);
     const topPickId = ranked[0]?.task.id;
     const topPickReason = ranked[0]?.reason;
 
@@ -134,8 +170,11 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
     const byType = useMemo(() => {
         const groups = new Map<string, Task[]>();
         const untyped: Task[] = [];
-        for (const t of filteredActive) {
-            if (!t.taskTypeId) { untyped.push(t); continue; }
+        for (const t of workingTasks) {
+            if (!t.taskTypeId) {
+                untyped.push(t);
+                continue;
+            }
             const arr = groups.get(t.taskTypeId) || [];
             arr.push(t);
             groups.set(t.taskTypeId, arr);
@@ -143,30 +182,33 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
         const sorted = new Map<string, Task[]>();
         groups.forEach((arr, key) => sorted.set(key, sortTasksCanonical(arr, scoreById)));
         return { groups: sorted, untyped: sortTasksCanonical(untyped, scoreById) };
-    }, [filteredActive, scoreById]);
+    }, [workingTasks, scoreById]);
 
     // Bucket by due date for the Schedule view.
     const scheduled = useMemo(() => {
         const today = new Date();
         const buckets: Record<BucketId, Task[]> = { overdue: [], today: [], week: [], later: [] };
-        for (const t of filteredActive) {
-            if (!t.dueDate) { buckets.later.push(t); continue; }
+        for (const t of workingTasks) {
+            if (!t.dueDate) {
+                buckets.later.push(t);
+                continue;
+            }
             const diff = daysUntilDue(t.dueDate, today);
             if (diff === 0) buckets.today.push(t);
             else if (diff < 0) buckets.overdue.push(t);
             else if (diff <= 7) buckets.week.push(t);
             else buckets.later.push(t);
         }
-        (Object.keys(buckets) as BucketId[]).forEach(k => {
+        (Object.keys(buckets) as BucketId[]).forEach((k) => {
             buckets[k] = sortTasksCanonical(buckets[k], scoreById);
         });
         return buckets;
-    }, [filteredActive, scoreById]);
+    }, [workingTasks, scoreById]);
 
     // Group by behavioral kind for the Kind view.
     const byKind = useMemo(() => {
         const groups = new Map<TaskKind, Task[]>();
-        for (const t of filteredActive) {
+        for (const t of workingTasks) {
             const k = deriveTaskKind(t);
             const arr = groups.get(k) || [];
             arr.push(t);
@@ -175,19 +217,20 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
         const sorted = new Map<TaskKind, Task[]>();
         groups.forEach((arr, key) => sorted.set(key, sortTasksCanonical(arr, scoreById)));
         return sorted;
-    }, [filteredActive, scoreById]);
+    }, [workingTasks, scoreById]);
 
     const toggleSelected = (id: string) => {
-        setSelectedIds(prev => {
+        setSelectedIds((prev) => {
             const next = new Set(prev);
-            if (next.has(id)) next.delete(id); else next.add(id);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
             return next;
         });
     };
     const clearSelection = () => setSelectedIds(new Set());
     const idsArray = useMemo(() => Array.from(selectedIds), [selectedIds]);
 
-    const typesById = useMemo(() => new Map(taskTypes.map(t => [t.id, t])), [taskTypes]);
+    const typesById = useMemo(() => new Map(taskTypes.map((t) => [t.id, t])), [taskTypes]);
 
     return (
         <div className="app-page">
@@ -195,19 +238,33 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
             <header className="hidden flex-col gap-3 sm:flex-row sm:items-end sm:justify-between lg:flex">
                 <div>
                     <h1 className="app-title">Tasks</h1>
-                    <p className="app-subtitle">{activeTasks.length} active · grouped for easier scanning</p>
+                    <p className="app-subtitle">
+                        {activeTasks.length} active · grouped for easier scanning
+                    </p>
                 </div>
                 <div className="flex items-center gap-1 self-start sm:self-auto">
-                    <ViewToggle view={view} onChange={(v) => { setView(v); setOnlyKind(null); }} />
+                    <ViewToggle
+                        view={view}
+                        onChange={(v) => {
+                            setView(v);
+                            setOnlyKind(null);
+                        }}
+                    />
                     {organizeCandidates.length > 0 && (
-                        <IconButton title="Organize with AI" onClick={() => setShowOrganizeAI(true)}>
+                        <IconButton
+                            title="Organize with AI"
+                            onClick={() => setShowOrganizeAI(true)}
+                        >
                             <Sparkles size={18} />
                         </IconButton>
                     )}
                     <IconButton title="Run a routine" onClick={() => setShowRoutines(true)}>
                         <Repeat size={18} />
                     </IconButton>
-                    <IconButton title="Organize types & routines" onClick={() => setShowOrganize(true)}>
+                    <IconButton
+                        title="Organize types & routines"
+                        onClick={() => setShowOrganize(true)}
+                    >
                         <BookOpen size={18} />
                     </IconButton>
                     <IconButton title="Settings" onClick={() => setShowSettings(true)}>
@@ -224,7 +281,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
 
             {topSlot}
 
-            <UpcomingDeadlinesBanner onOpenSchool={onNavigate ? () => onNavigate('school') : undefined} />
+            <UpcomingDeadlinesBanner
+                onOpenSchool={onNavigate ? () => onNavigate('school') : undefined}
+            />
 
             {/* Capture inbox — sort newly captured tasks into their destinations */}
             {inboxCount > 0 && (
@@ -240,6 +299,15 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                     </span>
                     <span className="text-xs font-semibold text-indigo-700">Sort now →</span>
                 </button>
+            )}
+
+            {somedayReview && user && (
+                <SomedayReviewCard
+                    task={somedayReview}
+                    userId={user.id}
+                    onUpdate={updateTask}
+                    onDelete={deleteTask}
+                />
             )}
 
             {/* Quick capture */}
@@ -260,7 +328,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             // triage inbox and record where it went, like routed tasks do.
                             // A bare capture stays untriaged for the morning router.
                             triagedAt: draft.kind ? new Date().toISOString() : undefined,
-                            triageDestination: draft.kind ? kindToDestination(draft.kind) : undefined,
+                            triageDestination: draft.kind
+                                ? kindToDestination(draft.kind)
+                                : undefined,
                         });
                     }}
                 />
@@ -269,45 +339,131 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
             {/* Filters */}
             {activeTasks.length > 0 && (
                 <>
-                <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-4 lg:hidden">
-                    {[
-                        { label: 'All', active: view === 'type' && filter.typeId === 'all' && filter.energy === 'all' && !showDone && !quickWinsOnly, onClick: () => { setFilter({ typeId: 'all', energy: 'all' }); setOnlyKind(null); setShowDone(false); setQuickWinsOnly(false); setView('type'); } },
-                        { label: 'Urgent', active: view === 'kind' && onlyKind === 'urgent', onClick: () => { setOnlyKind('urgent'); setShowDone(false); setView('kind'); } },
-                        { label: 'Today', active: view === 'schedule', onClick: () => { setOnlyKind(null); setShowDone(false); setView('schedule'); } },
-                        { label: 'Someday', active: view === 'kind' && onlyKind === 'backlog', onClick: () => { setOnlyKind('backlog'); setShowDone(false); setView('kind'); } },
-                        { label: '⚡ Quick wins', active: quickWinsOnly, onClick: () => { setQuickWinsOnly(v => !v); setShowDone(false); } },
-                        { label: 'Done', active: showDone, onClick: () => { setOnlyKind(null); setView('type'); setShowDone(true); } },
-                    ].map(chip => (
-                        <button
-                            key={chip.label}
-                            onClick={chip.onClick}
-                            className={`whitespace-nowrap rounded-full border px-5 py-2 text-sm font-medium transition-colors ${
-                                chip.active
-                                    ? 'border-indigo-800 bg-indigo-800 text-white'
-                                    : 'border-slate-200 bg-white text-slate-600'
-                            }`}
-                        >
-                            {chip.label}
-                        </button>
-                    ))}
-                </div>
-                <div className="hidden lg:block">
-                    <TaskFilters
-                        taskTypes={taskTypes}
-                        activeTasks={activeTasks}
-                        filter={filter}
-                        onChange={setFilter}
-                    />
-                </div>
+                    <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-4 lg:hidden">
+                        {[
+                            {
+                                label: 'All',
+                                active:
+                                    view === 'type' &&
+                                    filter.typeId === 'all' &&
+                                    filter.energy === 'all' &&
+                                    !showDone &&
+                                    !quickWinsOnly,
+                                onClick: () => {
+                                    setFilter({ typeId: 'all', energy: 'all' });
+                                    setOnlyKind(null);
+                                    setShowDone(false);
+                                    setQuickWinsOnly(false);
+                                    setView('type');
+                                },
+                            },
+                            {
+                                label: 'Urgent',
+                                active: view === 'kind' && onlyKind === 'urgent',
+                                onClick: () => {
+                                    setOnlyKind('urgent');
+                                    setShowDone(false);
+                                    setView('kind');
+                                },
+                            },
+                            {
+                                label: 'Today',
+                                active: view === 'schedule',
+                                onClick: () => {
+                                    setOnlyKind(null);
+                                    setShowDone(false);
+                                    setView('schedule');
+                                },
+                            },
+                            {
+                                label: 'Someday',
+                                active: view === 'kind' && onlyKind === 'backlog',
+                                onClick: () => {
+                                    setOnlyKind('backlog');
+                                    setShowDone(false);
+                                    setView('kind');
+                                },
+                            },
+                            {
+                                label: '⚡ Quick wins',
+                                active: quickWinsOnly,
+                                onClick: () => {
+                                    setQuickWinsOnly((v) => !v);
+                                    setShowDone(false);
+                                },
+                            },
+                            {
+                                label: 'Done',
+                                active: showDone,
+                                onClick: () => {
+                                    setOnlyKind(null);
+                                    setView('type');
+                                    setShowDone(true);
+                                },
+                            },
+                        ].map((chip) => (
+                            <button
+                                key={chip.label}
+                                onClick={chip.onClick}
+                                className={`whitespace-nowrap rounded-full border px-5 py-2 text-sm font-medium transition-colors ${
+                                    chip.active
+                                        ? 'border-indigo-800 bg-indigo-800 text-white'
+                                        : 'border-slate-200 bg-white text-slate-600'
+                                }`}
+                            >
+                                {chip.label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="hidden lg:block">
+                        <TaskFilters
+                            taskTypes={taskTypes}
+                            activeTasks={activeTasks}
+                            filter={filter}
+                            onChange={setFilter}
+                        />
+                    </div>
                 </>
+            )}
+
+            {waitingTasks.length > 0 && (
+                <details className="border-y border-slate-200 bg-slate-50/70 lg:max-w-4xl">
+                    <summary className="cursor-pointer px-3 py-2.5 text-sm font-medium text-slate-700">
+                        {TASK_KIND_META.waiting.emoji} Waiting ({waitingTasks.length})
+                    </summary>
+                    <div className="border-t border-slate-200">
+                        {sortTasksCanonical(waitingTasks, scoreById).map((task) => (
+                            <TaskCard
+                                key={task.id}
+                                task={task}
+                                taskType={
+                                    task.taskTypeId ? typesById.get(task.taskTypeId) : undefined
+                                }
+                                allTaskTypes={taskTypes}
+                                isSelected={selectedIds.has(task.id)}
+                                onToggleSelect={toggleSelected}
+                                onToggleComplete={toggleTask}
+                                onDelete={deleteTask}
+                                onUpdate={updateTask}
+                                showTypeBadge
+                            />
+                        ))}
+                    </div>
+                </details>
             )}
 
             {/* Body */}
             {isLoading ? (
                 <div className="text-center py-12 text-slate-400">Loading…</div>
-            ) : filteredActive.length === 0 ? (
+            ) : workingTasks.length === 0 ? (
                 <EmptyState
-                    title={activeTasks.length === 0 ? 'All clear' : 'No tasks match this filter'}
+                    title={
+                        activeTasks.length === 0
+                            ? 'All clear'
+                            : waitingTasks.length > 0
+                              ? 'Everything active is waiting'
+                              : 'No tasks match this filter'
+                    }
                     hint={
                         activeTasks.length === 0
                             ? "Use the quick-capture above. Try 'email mom tomorrow 2pm'."
@@ -316,7 +472,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                 />
             ) : view === 'type' ? (
                 <div className="space-y-3 lg:max-w-4xl">
-                    {taskTypes.map(type => (
+                    {taskTypes.map((type) => (
                         <TypeSection
                             key={type.id}
                             taskType={type}
@@ -348,7 +504,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                 </div>
             ) : view === 'kind' ? (
                 <div className="space-y-4 lg:max-w-4xl">
-                    {TASK_KIND_ORDER.filter(k => !onlyKind || k === onlyKind).map(kind => {
+                    {TASK_KIND_ORDER.filter((k) => !onlyKind || k === onlyKind).map((kind) => {
                         const tasks = byKind.get(kind) || [];
                         if (tasks.length === 0) return null;
                         const meta = TASK_KIND_META[kind];
@@ -356,16 +512,24 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             <section key={kind} className="space-y-1.5">
                                 <div className="flex items-center gap-2 pl-1">
                                     <span>{meta.emoji}</span>
-                                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600">{meta.label}</h2>
+                                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                                        {meta.label}
+                                    </h2>
                                     <span className="text-xs text-slate-400">({tasks.length})</span>
-                                    <span className="hidden text-xs text-slate-400 sm:inline">· {meta.description}</span>
+                                    <span className="hidden text-xs text-slate-400 sm:inline">
+                                        · {meta.description}
+                                    </span>
                                 </div>
                                 <div className="space-y-1.5">
-                                    {tasks.map(t => (
+                                    {tasks.map((t) => (
                                         <TaskCard
                                             key={t.id}
                                             task={t}
-                                            taskType={t.taskTypeId ? typesById.get(t.taskTypeId) : undefined}
+                                            taskType={
+                                                t.taskTypeId
+                                                    ? typesById.get(t.taskTypeId)
+                                                    : undefined
+                                            }
                                             allTaskTypes={taskTypes}
                                             isSelected={selectedIds.has(t.id)}
                                             isTopPick={t.id === topPickId && selectedIds.size === 0}
@@ -382,14 +546,17 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                         );
                     })}
                     {onlyKind && (
-                        <button onClick={() => setOnlyKind(null)} className="pl-1 text-xs font-medium text-indigo-600 hover:underline">
+                        <button
+                            onClick={() => setOnlyKind(null)}
+                            className="pl-1 text-xs font-medium text-indigo-600 hover:underline"
+                        >
                             Show all kinds
                         </button>
                     )}
                 </div>
             ) : (
                 <div className="space-y-4 lg:max-w-4xl">
-                    {(Object.keys(BUCKET_META) as BucketId[]).map(bucket => {
+                    {(Object.keys(BUCKET_META) as BucketId[]).map((bucket) => {
                         const tasks = scheduled[bucket];
                         if (tasks.length === 0) return null;
                         const meta = BUCKET_META[bucket];
@@ -397,17 +564,23 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             <section key={bucket} className="space-y-1.5">
                                 <div className="flex items-center gap-2 pl-1">
                                     <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
-                                    <h2 className={`text-xs font-bold uppercase tracking-wider ${meta.tone}`}>
+                                    <h2
+                                        className={`text-xs font-bold uppercase tracking-wider ${meta.tone}`}
+                                    >
                                         {meta.label}
                                     </h2>
                                     <span className="text-xs text-slate-400">({tasks.length})</span>
                                 </div>
                                 <div className="space-y-1.5">
-                                    {tasks.map(t => (
+                                    {tasks.map((t) => (
                                         <TaskCard
                                             key={t.id}
                                             task={t}
-                                            taskType={t.taskTypeId ? typesById.get(t.taskTypeId) : undefined}
+                                            taskType={
+                                                t.taskTypeId
+                                                    ? typesById.get(t.taskTypeId)
+                                                    : undefined
+                                            }
                                             allTaskTypes={taskTypes}
                                             isSelected={selectedIds.has(t.id)}
                                             isTopPick={t.id === topPickId && selectedIds.size === 0}
@@ -436,7 +609,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                         Completed ({completedTasks.length})
                     </summary>
                     <div className="space-y-1.5 mt-2">
-                        {completedTasks.map(t => (
+                        {completedTasks.map((t) => (
                             <TaskCard
                                 key={t.id}
                                 task={t}
@@ -470,7 +643,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                     taskTypes={taskTypes}
                     onApply={(updated) => {
                         updated.forEach(updateTask);
-                        setFlashMessage(`Organized ${updated.length} ${updated.length === 1 ? 'task' : 'tasks'}`);
+                        setFlashMessage(
+                            `Organized ${updated.length} ${updated.length === 1 ? 'task' : 'tasks'}`,
+                        );
                     }}
                     onClose={() => setShowOrganizeAI(false)}
                 />
@@ -478,7 +653,9 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
             <RoutinePicker
                 isOpen={showRoutines}
                 onClose={() => setShowRoutines(false)}
-                onRan={(count) => setFlashMessage(`Added ${count} ${count === 1 ? 'task' : 'tasks'} for today`)}
+                onRan={(count) =>
+                    setFlashMessage(`Added ${count} ${count === 1 ? 'task' : 'tasks'} for today`)
+                }
             />
 
             {showTriage && (
@@ -488,14 +665,20 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                 >
                     <div
                         className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl"
-                        onClick={e => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                     >
                         <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                             <div className="flex items-center gap-2">
                                 <Sparkles size={18} className="text-indigo-500" />
-                                <h2 className="text-base font-semibold text-slate-900">Sort your inbox</h2>
+                                <h2 className="text-base font-semibold text-slate-900">
+                                    Sort your inbox
+                                </h2>
                             </div>
-                            <button onClick={() => setShowTriage(false)} className="app-icon-button" aria-label="Close">
+                            <button
+                                onClick={() => setShowTriage(false)}
+                                className="app-icon-button"
+                                aria-label="Close"
+                            >
                                 <X size={18} />
                             </button>
                         </header>
@@ -503,7 +686,10 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             <TriageInbox
                                 onDone={(n) => {
                                     setShowTriage(false);
-                                    if (n > 0) setFlashMessage(`Sorted ${n} ${n === 1 ? 'task' : 'tasks'}`);
+                                    if (n > 0)
+                                        setFlashMessage(
+                                            `Sorted ${n} ${n === 1 ? 'task' : 'tasks'}`,
+                                        );
                                 }}
                             />
                         </div>
@@ -514,7 +700,10 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
     );
 };
 
-const ViewToggle: React.FC<{ view: ViewMode; onChange: (v: ViewMode) => void }> = ({ view, onChange }) => (
+const ViewToggle: React.FC<{ view: ViewMode; onChange: (v: ViewMode) => void }> = ({
+    view,
+    onChange,
+}) => (
     <div className="mr-1 flex rounded-lg border border-slate-200 bg-slate-100/80 p-0.5">
         <button
             onClick={() => onChange('kind')}
@@ -540,13 +729,12 @@ const ViewToggle: React.FC<{ view: ViewMode; onChange: (v: ViewMode) => void }> 
     </div>
 );
 
-const IconButton: React.FC<{ title: string; onClick: () => void; children: React.ReactNode }> = ({ title, onClick, children }) => (
-    <button
-        onClick={onClick}
-        title={title}
-        aria-label={title}
-        className="app-icon-button"
-    >
+const IconButton: React.FC<{ title: string; onClick: () => void; children: React.ReactNode }> = ({
+    title,
+    onClick,
+    children,
+}) => (
+    <button onClick={onClick} title={title} aria-label={title} className="app-icon-button">
         {children}
     </button>
 );

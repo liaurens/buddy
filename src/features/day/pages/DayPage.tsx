@@ -53,11 +53,17 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate, initialParams }) => {
         try {
             const saved = localStorage.getItem('routine_mode');
             return saved === 'full' ? 'full' : 'light';
-        } catch { return 'light'; }
+        } catch {
+            return 'light';
+        }
     });
 
     useEffect(() => {
-        try { localStorage.setItem('routine_mode', routineMode); } catch { /* ignore */ }
+        try {
+            localStorage.setItem('routine_mode', routineMode);
+        } catch {
+            /* ignore */
+        }
     }, [routineMode]);
 
     const isLight = isSurvival || routineMode === 'light';
@@ -65,7 +71,9 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate, initialParams }) => {
     return (
         <div className="app-page-readable">
             <header className="hidden lg:block">
-                <p className="text-sm font-medium text-slate-500">{format(today, 'EEEE, MMMM do')}</p>
+                <p className="text-sm font-medium text-slate-500">
+                    {format(today, 'EEEE, MMMM do')}
+                </p>
                 <h1 className="app-title mt-1">Today</h1>
             </header>
 
@@ -87,7 +95,8 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate, initialParams }) => {
 
             {isSurvival && (
                 <div className="rounded-2xl border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-800">
-                    Survival mode: one task is enough, and only the anchor reminders will reach you today.
+                    Survival mode: one task is enough, and only the anchor reminders will reach you
+                    today.
                 </div>
             )}
 
@@ -96,9 +105,7 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate, initialParams }) => {
                     <button
                         key={key}
                         onClick={() => setMode(key)}
-                        className={`app-segment ${
-                            mode === key ? 'app-segment-active' : ''
-                        }`}
+                        className={`app-segment ${mode === key ? 'app-segment-active' : ''}`}
                     >
                         <Icon size={16} />
                         {label}
@@ -115,16 +122,28 @@ const DayPage: React.FC<DayPageProps> = ({ onNavigate, initialParams }) => {
                     className="flex items-center gap-1 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600"
                 >
                     <Zap size={12} />
-                    {routineMode === 'full' ? 'Switch to the light routine' : 'Switch to the full routine'}
+                    {routineMode === 'full'
+                        ? 'Switch to the light routine'
+                        : 'Switch to the full routine'}
                 </button>
             )}
 
-            {mode === 'morning' && (isLight
-                ? <LightMorning onNavigate={onNavigate} startAtPlan={startAtPlan} pickSlots={isSurvival ? 1 : 3} />
-                : <FullMorning onNavigate={onNavigate} startAtPlan={startAtPlan} />)}
-            {mode === 'midday' && (isLight
-                ? <LightMidday onGoToMorning={() => setMode('morning')} />
-                : <FullMidday onGoToMorning={() => setMode('morning')} />)}
+            {mode === 'morning' &&
+                (isLight ? (
+                    <LightMorning
+                        onNavigate={onNavigate}
+                        startAtPlan={startAtPlan}
+                        pickSlots={isSurvival ? 1 : 3}
+                    />
+                ) : (
+                    <FullMorning onNavigate={onNavigate} startAtPlan={startAtPlan} />
+                ))}
+            {mode === 'midday' &&
+                (isLight ? (
+                    <LightMidday onGoToMorning={() => setMode('morning')} />
+                ) : (
+                    <FullMidday onGoToMorning={() => setMode('morning')} />
+                ))}
             {mode === 'night' && <ReflectionPage />}
         </div>
     );

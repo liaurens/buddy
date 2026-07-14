@@ -24,7 +24,7 @@ type HealthStatus =
     | 'unsupported'
     | 'permission_denied'
     | 'not_subscribed'
-    | 'dead'        // browser has a subscription, but the server doesn't know it
+    | 'dead' // browser has a subscription, but the server doesn't know it
     | 'healthy';
 
 interface HealthState {
@@ -35,7 +35,11 @@ interface HealthState {
 
 const PushHealthCard: React.FC = () => {
     const { user } = useAuth();
-    const [health, setHealth] = useState<HealthState>({ status: 'checking', deviceCount: 0, lastUsedAt: null });
+    const [health, setHealth] = useState<HealthState>({
+        status: 'checking',
+        deviceCount: 0,
+        lastUsedAt: null,
+    });
     const [repairing, setRepairing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -59,11 +63,15 @@ const PushHealthCard: React.FC = () => {
             ]);
 
             if (!localSub) {
-                setHealth({ status: 'not_subscribed', deviceCount: dbSubs.length, lastUsedAt: null });
+                setHealth({
+                    status: 'not_subscribed',
+                    deviceCount: dbSubs.length,
+                    lastUsedAt: null,
+                });
                 return;
             }
 
-            const match = dbSubs.find(s => s.endpoint === localSub.endpoint);
+            const match = dbSubs.find((s) => s.endpoint === localSub.endpoint);
             setHealth({
                 status: match ? 'healthy' : 'dead',
                 deviceCount: dbSubs.length,
@@ -74,7 +82,9 @@ const PushHealthCard: React.FC = () => {
         }
     }, [user?.id]);
 
-    useEffect(() => { check(); }, [check]);
+    useEffect(() => {
+        check();
+    }, [check]);
 
     const handleRepair = async () => {
         if (!user?.id || repairing) return;
@@ -106,27 +116,28 @@ const PushHealthCard: React.FC = () => {
                 </button>
             </div>
 
-            {health.status === 'checking' && (
-                <p className="text-sm text-slate-500">Checking…</p>
-            )}
+            {health.status === 'checking' && <p className="text-sm text-slate-500">Checking…</p>}
 
             {health.status === 'unsupported' && (
                 <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                    Push is not supported here. On iPhone, install the app to your home screen first.
+                    Push is not supported here. On iPhone, install the app to your home screen
+                    first.
                 </p>
             )}
 
             {health.status === 'permission_denied' && (
                 <p className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 flex items-start gap-2">
                     <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
-                    Notification permission is blocked for this app. Re-enable it in your device settings, then re-run this check.
+                    Notification permission is blocked for this app. Re-enable it in your device
+                    settings, then re-run this check.
                 </p>
             )}
 
             {health.status === 'not_subscribed' && (
                 <p className="text-sm text-slate-600">
                     This device is not subscribed to push.
-                    {health.deviceCount > 0 && ` ${health.deviceCount} other device${health.deviceCount === 1 ? ' is' : 's are'} subscribed.`}
+                    {health.deviceCount > 0 &&
+                        ` ${health.deviceCount} other device${health.deviceCount === 1 ? ' is' : 's are'} subscribed.`}
                 </p>
             )}
 
@@ -151,7 +162,8 @@ const PushHealthCard: React.FC = () => {
                 <p className="text-sm text-emerald-700 flex items-center gap-2">
                     <Check size={16} />
                     Push is healthy on this device
-                    {health.lastUsedAt && ` — last delivery attempt ${formatDistanceToNow(new Date(health.lastUsedAt), { addSuffix: true })}`}
+                    {health.lastUsedAt &&
+                        ` — last delivery attempt ${formatDistanceToNow(new Date(health.lastUsedAt), { addSuffix: true })}`}
                     {health.deviceCount > 1 && ` (${health.deviceCount} devices total)`}.
                 </p>
             )}

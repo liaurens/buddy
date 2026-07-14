@@ -19,7 +19,12 @@ interface CheckinFormProps {
 const EMPTY_ARRAY: never[] = [];
 
 const DEFAULT_SCALE: TrackerScale = {
-    min: 1, max: 10, step: 1, lowLabel: 'Low', highLabel: 'High', direction: 'higher_better',
+    min: 1,
+    max: 10,
+    step: 1,
+    lowLabel: 'Low',
+    highLabel: 'High',
+    direction: 'higher_better',
 };
 
 // Color a rating button based on its position in the scale and direction.
@@ -27,14 +32,11 @@ const DEFAULT_SCALE: TrackerScale = {
 function ratingTone(value: number, scale: TrackerScale): string {
     const { min, max, direction } = scale;
     const t = (value - min) / Math.max(1, max - min); // 0..1
-    const goodness =
-        direction === 'higher_better' ? t :
-        direction === 'lower_better' ? 1 - t :
-        0.5;
+    const goodness = direction === 'higher_better' ? t : direction === 'lower_better' ? 1 - t : 0.5;
 
     if (direction === 'neutral') return 'bg-indigo-600 text-white border-indigo-700';
     if (goodness >= 0.75) return 'bg-emerald-500 text-white border-emerald-600';
-    if (goodness >= 0.5)  return 'bg-lime-500 text-white border-lime-600';
+    if (goodness >= 0.5) return 'bg-lime-500 text-white border-lime-600';
     if (goodness >= 0.25) return 'bg-amber-500 text-white border-amber-600';
     return 'bg-rose-500 text-white border-rose-600';
 }
@@ -77,7 +79,7 @@ const RatingScale: React.FC<RatingScaleProps> = ({ scale, value, onChange }) => 
                 <span className="font-medium text-slate-500 text-right">{scale.highLabel}</span>
             </div>
             <div className="flex gap-1">
-                {buttons.map(n => {
+                {buttons.map((n) => {
                     const selected = value === n;
                     return (
                         <button
@@ -96,7 +98,9 @@ const RatingScale: React.FC<RatingScaleProps> = ({ scale, value, onChange }) => 
                 })}
             </div>
             {value !== undefined && (
-                <p className="text-xs text-slate-500 pt-1">{captionForDirection(Number(value), scale)}</p>
+                <p className="text-xs text-slate-500 pt-1">
+                    {captionForDirection(Number(value), scale)}
+                </p>
             )}
         </div>
     );
@@ -127,30 +131,33 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
 
     const existingEntryMap = useMemo(() => {
         const map: Record<string, Entry> = {};
-        existingEntries.forEach(entry => { map[entry.trackerId] = entry; });
+        existingEntries.forEach((entry) => {
+            map[entry.trackerId] = entry;
+        });
         return map;
     }, [existingEntries]);
 
     useEffect(() => {
         const initialValues: Record<string, number | string> = {};
-        existingEntries.forEach(entry => {
-            const tracker = trackers.find(t => t.id === entry.trackerId);
+        existingEntries.forEach((entry) => {
+            const tracker = trackers.find((t) => t.id === entry.trackerId);
             if (tracker) {
-                initialValues[entry.trackerId] = tracker.type === 'text' ? (entry.textValue || '') : entry.value;
+                initialValues[entry.trackerId] =
+                    tracker.type === 'text' ? entry.textValue || '' : entry.value;
             }
         });
         setTrackerValues(initialValues);
 
         const initialProtocols: Record<string, { taken: boolean }> = {};
-        existingDoses.forEach(dose => {
+        existingDoses.forEach((dose) => {
             if (!dose.skipped && dose.takenAt) initialProtocols[dose.protocolId] = { taken: true };
         });
         setProtocolLogs(initialProtocols);
 
         // Pre-mark episodic trackers that already have an entry for this date as logged
         const alreadyLogged = new Set<string>();
-        existingEntries.forEach(entry => {
-            const tracker = trackers.find(t => t.id === entry.trackerId);
+        existingEntries.forEach((entry) => {
+            const tracker = trackers.find((t) => t.id === entry.trackerId);
             if (tracker?.cadence === 'episodic') alreadyLogged.add(entry.trackerId);
         });
         setEpisodicLogged(alreadyLogged);
@@ -160,9 +167,13 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
         setSubmitStatus('idle');
     }, [existingEntries, existingDoses, trackers, date]);
 
-    const dailyTrackers = trackers.filter(t => (t.cadence ?? 'daily') === 'daily' && t.checkinConfig?.inCheckin);
-    const episodicTrackers = trackers.filter(t => t.cadence === 'episodic' && t.checkinConfig?.inCheckin);
-    const activeProtocols = protocols.filter(p => p.active);
+    const dailyTrackers = trackers.filter(
+        (t) => (t.cadence ?? 'daily') === 'daily' && t.checkinConfig?.inCheckin,
+    );
+    const episodicTrackers = trackers.filter(
+        (t) => t.cadence === 'episodic' && t.checkinConfig?.inCheckin,
+    );
+    const activeProtocols = protocols.filter((p) => p.active);
 
     const isFormComplete = () => {
         for (const tracker of dailyTrackers) {
@@ -175,7 +186,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
     };
 
     const handleTrackerChange = (trackerId: string, value: number | string) => {
-        setTrackerValues(prev => ({ ...prev, [trackerId]: value }));
+        setTrackerValues((prev) => ({ ...prev, [trackerId]: value }));
     };
 
     const handleSubmit = async () => {
@@ -188,7 +199,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
 
             if (showProtocols) {
                 const existingDoseProtocolIds = new Set(
-                    existingDoses.filter(d => !d.skipped && d.takenAt).map(d => d.protocolId)
+                    existingDoses.filter((d) => !d.skipped && d.takenAt).map((d) => d.protocolId),
                 );
                 for (const [id, log] of Object.entries(protocolLogs)) {
                     if (log.taken && !existingDoseProtocolIds.has(id)) promises.push(logDose(id));
@@ -196,25 +207,29 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
             }
 
             Object.entries(trackerValues).forEach(([trackerId, value]) => {
-                const tracker = trackers.find(t => t.id === trackerId);
+                const tracker = trackers.find((t) => t.id === trackerId);
                 if (!tracker) return;
                 const isText = tracker.type === 'text';
                 const existingEntry = existingEntryMap[trackerId];
 
                 if (existingEntry) {
-                    promises.push(updateEntry({
-                        ...existingEntry,
-                        value: isText ? 0 : Number(value),
-                        textValue: isText ? String(value) : undefined,
-                    }));
+                    promises.push(
+                        updateEntry({
+                            ...existingEntry,
+                            value: isText ? 0 : Number(value),
+                            textValue: isText ? String(value) : undefined,
+                        }),
+                    );
                 } else {
-                    promises.push(addEntry({
-                        trackerId,
-                        value: isText ? 0 : Number(value),
-                        textValue: isText ? String(value) : undefined,
-                        notes: 'Daily Check-in',
-                        timestamp,
-                    }));
+                    promises.push(
+                        addEntry({
+                            trackerId,
+                            value: isText ? 0 : Number(value),
+                            textValue: isText ? String(value) : undefined,
+                            notes: 'Daily Check-in',
+                            timestamp,
+                        }),
+                    );
                 }
             });
 
@@ -245,9 +260,9 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                 notes: 'Episodic log',
                 timestamp: targetDate.toISOString(),
             });
-            setEpisodicLogged(prev => new Set(prev).add(tracker.id));
+            setEpisodicLogged((prev) => new Set(prev).add(tracker.id));
             setOpenEpisodic(null);
-            setEpisodicDraft(prev => {
+            setEpisodicDraft((prev) => {
                 const next = { ...prev };
                 delete next[tracker.id];
                 return next;
@@ -321,8 +336,15 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                                 min={tracker.scale?.min}
                                 max={tracker.scale?.max}
                                 value={value ?? ''}
-                                onChange={(e) => handleTrackerChange(tracker.id, e.target.value === '' ? '' : parseFloat(e.target.value))}
-                                placeholder={tracker.unit ? `e.g. 5 ${tracker.unit}` : 'Enter value...'}
+                                onChange={(e) =>
+                                    handleTrackerChange(
+                                        tracker.id,
+                                        e.target.value === '' ? '' : parseFloat(e.target.value),
+                                    )
+                                }
+                                placeholder={
+                                    tracker.unit ? `e.g. 5 ${tracker.unit}` : 'Enter value...'
+                                }
                                 className="w-full px-4 py-3 text-base border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-slate-50"
                             />
                             {tracker.unit && (
@@ -333,8 +355,11 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                         </div>
                         {tracker.scale && tracker.scale.direction !== 'neutral' && (
                             <p className="text-xs text-slate-400 mt-2">
-                                {tracker.scale.lowLabel} ({tracker.scale.min}) — {tracker.scale.highLabel} ({tracker.scale.max}) ·{' '}
-                                {tracker.scale.direction === 'higher_better' ? 'higher is better' : 'lower is better'}
+                                {tracker.scale.lowLabel} ({tracker.scale.min}) —{' '}
+                                {tracker.scale.highLabel} ({tracker.scale.max}) ·{' '}
+                                {tracker.scale.direction === 'higher_better'
+                                    ? 'higher is better'
+                                    : 'lower is better'}
                             </p>
                         )}
                     </div>
@@ -366,7 +391,10 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                     </h3>
                     <button
                         type="button"
-                        onClick={() => { setOpenEpisodic(null); setEpisodicError(null); }}
+                        onClick={() => {
+                            setOpenEpisodic(null);
+                            setEpisodicError(null);
+                        }}
                         className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md"
                         aria-label="Close"
                     >
@@ -378,7 +406,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                     <RatingScale
                         scale={scale}
                         value={typeof draft === 'number' ? draft : undefined}
-                        onChange={(n) => setEpisodicDraft(prev => ({ ...prev, [tracker.id]: n }))}
+                        onChange={(n) => setEpisodicDraft((prev) => ({ ...prev, [tracker.id]: n }))}
                     />
                 )}
 
@@ -390,10 +418,13 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                             min={scale.min}
                             max={scale.max}
                             value={draft ?? ''}
-                            onChange={(e) => setEpisodicDraft(prev => ({
-                                ...prev,
-                                [tracker.id]: e.target.value === '' ? '' : parseFloat(e.target.value),
-                            }))}
+                            onChange={(e) =>
+                                setEpisodicDraft((prev) => ({
+                                    ...prev,
+                                    [tracker.id]:
+                                        e.target.value === '' ? '' : parseFloat(e.target.value),
+                                }))
+                            }
                             placeholder={tracker.unit ? `e.g. 2 ${tracker.unit}` : 'Enter value...'}
                             autoFocus
                             className="w-full px-4 py-3 text-base border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50"
@@ -408,14 +439,18 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
 
                 {tracker.type === 'boolean' && (
                     <div className="flex gap-3">
-                        {[1, 0].map(v => (
+                        {[1, 0].map((v) => (
                             <button
                                 key={v}
                                 type="button"
-                                onClick={() => setEpisodicDraft(prev => ({ ...prev, [tracker.id]: v }))}
+                                onClick={() =>
+                                    setEpisodicDraft((prev) => ({ ...prev, [tracker.id]: v }))
+                                }
                                 className={`flex-1 py-2.5 rounded-xl text-sm font-bold border ${
                                     draft === v
-                                        ? (v === 1 ? 'bg-emerald-500 text-white border-emerald-600' : 'bg-slate-500 text-white border-slate-600')
+                                        ? v === 1
+                                            ? 'bg-emerald-500 text-white border-emerald-600'
+                                            : 'bg-slate-500 text-white border-slate-600'
                                         : 'bg-slate-50 text-slate-600 border-slate-200'
                                 }`}
                             >
@@ -428,7 +463,9 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                 {tracker.type === 'text' && (
                     <textarea
                         value={draft ?? ''}
-                        onChange={(e) => setEpisodicDraft(prev => ({ ...prev, [tracker.id]: e.target.value }))}
+                        onChange={(e) =>
+                            setEpisodicDraft((prev) => ({ ...prev, [tracker.id]: e.target.value }))
+                        }
                         placeholder="Describe..."
                         rows={2}
                         autoFocus
@@ -441,7 +478,9 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                 <button
                     type="button"
                     onClick={() => saveEpisodic(tracker)}
-                    disabled={episodicDraft[tracker.id] === undefined || episodicDraft[tracker.id] === ''}
+                    disabled={
+                        episodicDraft[tracker.id] === undefined || episodicDraft[tracker.id] === ''
+                    }
                     className="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-40 transition-colors"
                 >
                     Log it
@@ -475,7 +514,10 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                         <p className="text-xs text-slate-500">Log entries for a specific day</p>
                     </div>
                     <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <Calendar
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            size={16}
+                        />
                         <input
                             type="date"
                             value={format(date, 'yyyy-MM-dd')}
@@ -493,24 +535,31 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                         <Pill className="text-indigo-500" size={18} /> Protocols
                     </h2>
                     <div className="space-y-2">
-                        {activeProtocols.map(p => (
+                        {activeProtocols.map((p) => (
                             <label
                                 key={p.id}
                                 className="flex items-center justify-between gap-2 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-indigo-50 transition-colors border border-slate-200"
                             >
                                 <div className="min-w-0 flex-1">
-                                    <div className="font-medium text-slate-800 truncate" title={p.name}>{p.name}</div>
-                                    <div className="text-xs text-slate-500">{p.doseAmount} {p.doseUnit}</div>
+                                    <div
+                                        className="font-medium text-slate-800 truncate"
+                                        title={p.name}
+                                    >
+                                        {p.name}
+                                    </div>
+                                    <div className="text-xs text-slate-500">
+                                        {p.doseAmount} {p.doseUnit}
+                                    </div>
                                 </div>
                                 <input
                                     type="checkbox"
                                     className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                                     checked={!!protocolLogs[p.id]?.taken}
                                     onChange={(e) =>
-                                        setProtocolLogs(prev =>
+                                        setProtocolLogs((prev) =>
                                             e.target.checked
                                                 ? { ...prev, [p.id]: { taken: true } }
-                                                : { ...prev, [p.id]: { taken: false } }
+                                                : { ...prev, [p.id]: { taken: false } },
                                         )
                                     }
                                 />
@@ -520,16 +569,18 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                 </div>
             )}
 
-            <div className="space-y-4">
-                {dailyTrackers.map(tracker => renderInput(tracker))}
-            </div>
+            <div className="space-y-4">{dailyTrackers.map((tracker) => renderInput(tracker))}</div>
 
             {episodicTrackers.length > 0 && (
                 <div className="bg-white rounded-2xl p-5 border border-slate-100">
-                    <h2 className="text-base font-semibold text-slate-800 mb-1">Anything occasional?</h2>
-                    <p className="text-xs text-slate-500 mb-3">Only log these when they actually happened.</p>
+                    <h2 className="text-base font-semibold text-slate-800 mb-1">
+                        Anything occasional?
+                    </h2>
+                    <p className="text-xs text-slate-500 mb-3">
+                        Only log these when they actually happened.
+                    </p>
                     <div className="flex flex-wrap gap-2">
-                        {episodicTrackers.map(tracker => {
+                        {episodicTrackers.map((tracker) => {
                             const logged = episodicLogged.has(tracker.id);
                             const isOpen = openEpisodic === tracker.id;
                             return (
@@ -541,8 +592,8 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                                         logged
                                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                             : isOpen
-                                                ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
-                                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300'
+                                              ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
+                                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300'
                                     }`}
                                 >
                                     <span>{tracker.emoji}</span>
@@ -552,10 +603,11 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                             );
                         })}
                     </div>
-                    {openEpisodic && (() => {
-                        const tracker = episodicTrackers.find(t => t.id === openEpisodic);
-                        return tracker ? renderEpisodicEditor(tracker) : null;
-                    })()}
+                    {openEpisodic &&
+                        (() => {
+                            const tracker = episodicTrackers.find((t) => t.id === openEpisodic);
+                            return tracker ? renderEpisodicEditor(tracker) : null;
+                        })()}
                 </div>
             )}
 

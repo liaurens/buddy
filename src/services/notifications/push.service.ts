@@ -3,284 +3,282 @@
  * Browser-side push notification handling using Web Push API
  */
 
-import { saveNotificationSubscription, removeNotificationSubscription } from './notification.service';
+import {
+    saveNotificationSubscription,
+    removeNotificationSubscription,
+} from './notification.service';
 import type { PushSubscriptionJSON, DeviceType } from './notification.types';
 import { PermissionDeniedError, SubscriptionFailedError } from './notification.types';
 
-// VAPID public key - must match the private key in Edge Functions
-// TODO: Replace with your actual VAPID public key
+// Public VAPID key supplied by the hosting environment. It must match the
+// private key configured on the send-notification Edge Function.
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
 
 /**
  * Check if push notifications are supported in this browser
  */
 export function isPushSupported(): boolean {
-  return (
-    'serviceWorker' in navigator &&
-    'PushManager' in window &&
-    'Notification' in window
-  );
+    return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
 
 /**
  * Get current notification permission status
  */
 export function getNotificationPermission(): NotificationPermission {
-  if (!('Notification' in window)) {
-    return 'denied';
-  }
-  return Notification.permission;
+    if (!('Notification' in window)) {
+        return 'denied';
+    }
+    return Notification.permission;
 }
 
 /**
  * Request notification permission from user
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
-  if (!isPushSupported()) {
-    throw new PermissionDeniedError();
-  }
+    if (!isPushSupported()) {
+        throw new PermissionDeniedError();
+    }
 
-  const permission = await Notification.requestPermission();
+    const permission = await Notification.requestPermission();
 
-  if (permission !== 'granted') {
-    throw new PermissionDeniedError();
-  }
+    if (permission !== 'granted') {
+        throw new PermissionDeniedError();
+    }
 
-  return permission;
+    return permission;
 }
 
 /**
  * Detect device type from user agent
  */
 export function detectDeviceType(): DeviceType {
-  const ua = navigator.userAgent.toLowerCase();
+    const ua = navigator.userAgent.toLowerCase();
 
-  if (/iphone|ipad|ipod/.test(ua)) {
-    return 'ios';
-  }
-  if (/android/.test(ua)) {
-    return 'android';
-  }
-  if (/windows/.test(ua)) {
-    return 'windows';
-  }
-  if (/macintosh|mac os x/.test(ua)) {
-    return 'mac';
-  }
+    if (/iphone|ipad|ipod/.test(ua)) {
+        return 'ios';
+    }
+    if (/android/.test(ua)) {
+        return 'android';
+    }
+    if (/windows/.test(ua)) {
+        return 'windows';
+    }
+    if (/macintosh|mac os x/.test(ua)) {
+        return 'mac';
+    }
 
-  return 'other';
+    return 'other';
 }
 
 /**
  * Convert base64 VAPID key to Uint8Array
  */
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
 
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
 
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
 }
 
 /**
  * Convert browser PushSubscription to JSON format
  */
 function subscriptionToJSON(subscription: PushSubscription): PushSubscriptionJSON {
-  const key = subscription.getKey('p256dh');
-  const auth = subscription.getKey('auth');
+    const key = subscription.getKey('p256dh');
+    const auth = subscription.getKey('auth');
 
-  if (!key || !auth) {
-    throw new SubscriptionFailedError('Missing encryption keys');
-  }
+    if (!key || !auth) {
+        throw new SubscriptionFailedError('Missing encryption keys');
+    }
 
-  return {
-    endpoint: subscription.endpoint,
-    keys: {
-      p256dh: btoa(String.fromCharCode(...new Uint8Array(key))),
-      auth: btoa(String.fromCharCode(...new Uint8Array(auth))),
-    },
-  };
+    return {
+        endpoint: subscription.endpoint,
+        keys: {
+            p256dh: btoa(String.fromCharCode(...new Uint8Array(key))),
+            auth: btoa(String.fromCharCode(...new Uint8Array(auth))),
+        },
+    };
 }
 
 /**
  * Subscribe user to push notifications
  */
 export async function subscribeToPush(userId: string): Promise<PushSubscriptionJSON> {
-  // Check support
-  if (!isPushSupported()) {
-    throw new SubscriptionFailedError('Push notifications not supported');
-  }
+    // Check support
+    if (!isPushSupported()) {
+        throw new SubscriptionFailedError('Push notifications not supported');
+    }
 
-  // Check VAPID key
-  if (!VAPID_PUBLIC_KEY) {
-    console.error('VAPID_PUBLIC_KEY is missing. Check your .env file.');
-    throw new SubscriptionFailedError('VAPID public key not configured. Please contact support.');
-  }
-
-  // Request permission
-  const permission = await requestNotificationPermission();
-  if (permission !== 'granted') {
-    throw new PermissionDeniedError();
-  }
-
-  try {
-    // Register service worker if not already registered. Dev never registers:
-    // the SW source is an ESM module that only exists bundled in prod builds,
-    // and a (stale) prod SW controlling the dev origin breaks dev sessions.
-    let registration = await navigator.serviceWorker.getRegistration();
-
-    if (!registration) {
-      if (!import.meta.env.PROD) {
+    // Check VAPID key
+    if (!VAPID_PUBLIC_KEY) {
+        console.error('VAPID_PUBLIC_KEY is missing. Check your .env file.');
         throw new SubscriptionFailedError(
-          'Push requires the production service worker — test on a deployed build.',
+            'VAPID public key not configured. Please contact support.',
         );
-      }
-      registration = await navigator.serviceWorker.register('/sw.js');
-      await navigator.serviceWorker.ready;
     }
 
-    // Create push subscription
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
-    });
-
-    // Convert to JSON format
-    const subscriptionJSON = subscriptionToJSON(subscription);
-
-    // Save to database
-    const deviceType = detectDeviceType();
-    const userAgent = navigator.userAgent;
-
-    const saved = await saveNotificationSubscription(
-      userId,
-      subscriptionJSON,
-      deviceType,
-      userAgent
-    );
-
-    if (!saved) {
-      throw new SubscriptionFailedError('Failed to save subscription');
-    }
-
-    return subscriptionJSON;
-  } catch (error) {
-    console.error('Push subscription failed:', error);
-
-    // Provide specific error messages
-    if (error instanceof DOMException) {
-      if (error.name === 'NotAllowedError') {
+    // Request permission
+    const permission = await requestNotificationPermission();
+    if (permission !== 'granted') {
         throw new PermissionDeniedError();
-      }
-      if (error.name === 'NotSupportedError') {
-        throw new SubscriptionFailedError('Push notifications not supported on this device');
-      }
     }
 
-    // Re-throw with original message if available
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    throw new SubscriptionFailedError(`Failed to create push subscription: ${errorMessage}`);
-  }
+    try {
+        // Register service worker if not already registered. Dev never registers:
+        // the SW source is an ESM module that only exists bundled in prod builds,
+        // and a (stale) prod SW controlling the dev origin breaks dev sessions.
+        let registration = await navigator.serviceWorker.getRegistration();
+
+        if (!registration) {
+            if (!import.meta.env.PROD) {
+                throw new SubscriptionFailedError(
+                    'Push requires the production service worker — test on a deployed build.',
+                );
+            }
+            registration = await navigator.serviceWorker.register('/sw.js');
+            await navigator.serviceWorker.ready;
+        }
+
+        // Create push subscription
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
+        });
+
+        // Convert to JSON format
+        const subscriptionJSON = subscriptionToJSON(subscription);
+
+        // Save to database
+        const deviceType = detectDeviceType();
+        const userAgent = navigator.userAgent;
+
+        const saved = await saveNotificationSubscription(
+            userId,
+            subscriptionJSON,
+            deviceType,
+            userAgent,
+        );
+
+        if (!saved) {
+            throw new SubscriptionFailedError('Failed to save subscription');
+        }
+
+        return subscriptionJSON;
+    } catch (error) {
+        console.error('Push subscription failed:', error);
+
+        // Provide specific error messages
+        if (error instanceof DOMException) {
+            if (error.name === 'NotAllowedError') {
+                throw new PermissionDeniedError();
+            }
+            if (error.name === 'NotSupportedError') {
+                throw new SubscriptionFailedError(
+                    'Push notifications not supported on this device',
+                );
+            }
+        }
+
+        // Re-throw with original message if available
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        throw new SubscriptionFailedError(`Failed to create push subscription: ${errorMessage}`);
+    }
 }
 
 /**
  * Unsubscribe from push notifications
  */
-export async function unsubscribeFromPush(
-  userId: string,
-  endpoint?: string
-): Promise<boolean> {
-  try {
-    // Get service worker registration
-    const registration = await navigator.serviceWorker.getRegistration();
+export async function unsubscribeFromPush(userId: string, endpoint?: string): Promise<boolean> {
+    try {
+        // Get service worker registration
+        const registration = await navigator.serviceWorker.getRegistration();
 
-    if (registration) {
-      const subscription = await registration.pushManager.getSubscription();
+        if (registration) {
+            const subscription = await registration.pushManager.getSubscription();
 
-      if (subscription) {
-        const subscriptionJSON = subscriptionToJSON(subscription);
-        const targetEndpoint = endpoint || subscriptionJSON.endpoint;
+            if (subscription) {
+                const subscriptionJSON = subscriptionToJSON(subscription);
+                const targetEndpoint = endpoint || subscriptionJSON.endpoint;
 
-        // Unsubscribe from browser
-        await subscription.unsubscribe();
+                // Unsubscribe from browser
+                await subscription.unsubscribe();
 
-        // Remove from database
-        await removeNotificationSubscription(userId, targetEndpoint);
-      }
+                // Remove from database
+                await removeNotificationSubscription(userId, targetEndpoint);
+            }
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Unsubscribe failed:', error);
+        return false;
     }
-
-    return true;
-  } catch (error) {
-    console.error('Unsubscribe failed:', error);
-    return false;
-  }
 }
 
 /**
  * Get current push subscription status
  */
 export async function getPushSubscription(): Promise<PushSubscription | null> {
-  if (!isPushSupported()) {
-    return null;
-  }
-
-  try {
-    const registration = await navigator.serviceWorker.getRegistration();
-
-    if (!registration) {
-      return null;
+    if (!isPushSupported()) {
+        return null;
     }
 
-    return await registration.pushManager.getSubscription();
-  } catch (error) {
-    console.error('Failed to get subscription:', error);
-    return null;
-  }
+    try {
+        const registration = await navigator.serviceWorker.getRegistration();
+
+        if (!registration) {
+            return null;
+        }
+
+        return await registration.pushManager.getSubscription();
+    } catch (error) {
+        console.error('Failed to get subscription:', error);
+        return null;
+    }
 }
 
 /**
  * Check if user is currently subscribed to push
  */
 export async function isSubscribed(): Promise<boolean> {
-  const subscription = await getPushSubscription();
-  return subscription !== null;
+    const subscription = await getPushSubscription();
+    return subscription !== null;
 }
 
 /**
  * Show a local notification (for testing)
  */
 export async function showLocalNotification(
-  title: string,
-  body: string,
-  data?: Record<string, unknown>
+    title: string,
+    body: string,
+    data?: Record<string, unknown>,
 ): Promise<void> {
-  if (!isPushSupported()) {
-    throw new Error('Notifications not supported');
-  }
+    if (!isPushSupported()) {
+        throw new Error('Notifications not supported');
+    }
 
-  const permission = getNotificationPermission();
-  if (permission !== 'granted') {
-    throw new PermissionDeniedError();
-  }
+    const permission = getNotificationPermission();
+    if (permission !== 'granted') {
+        throw new PermissionDeniedError();
+    }
 
-  const registration = await navigator.serviceWorker.getRegistration();
+    const registration = await navigator.serviceWorker.getRegistration();
 
-  if (!registration) {
-    throw new Error('Service worker not registered');
-  }
+    if (!registration) {
+        throw new Error('Service worker not registered');
+    }
 
-  await registration.showNotification(title, {
-    body,
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
-    data,
-    tag: 'buddy-notification',
-  });
+    await registration.showNotification(title, {
+        body,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        data,
+        tag: 'buddy-notification',
+    });
 }

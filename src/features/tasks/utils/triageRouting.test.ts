@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { routeTaskPatch, isDestinationReady, isLocked, kindToDestination, type TriageDetail } from './triageRouting';
+import {
+    routeTaskPatch,
+    isDestinationReady,
+    isLocked,
+    kindToDestination,
+    type TriageDetail,
+} from './triageRouting';
 
 const opts = { nowIso: '2026-06-21T08:00:00.000Z', todayIso: '2026-06-21' };
 

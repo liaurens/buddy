@@ -35,7 +35,7 @@ export interface DbTodo {
     context?: TaskContext | null;
     routine_id?: string | null;
     routine_order?: number | null;
-    kind?: 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard' | null;
+    kind?: 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard' | 'waiting' | null;
     parent_todo_id?: string | null;
     notes?: string | null;
     triaged_at?: string | null;
@@ -47,6 +47,8 @@ export interface DbTodo {
     google_synced_at?: string | null;
     snooze_count?: number | null;
     last_touched_at?: string | null;
+    waiting_on?: string | null;
+    start_date?: string | null;
 }
 
 export interface DbTaskType {
@@ -58,6 +60,7 @@ export interface DbTaskType {
     sort_order: number;
     is_preset: boolean;
     created_at: string;
+    home_days?: number[] | null;
 }
 
 export interface DbTaskRoutine {

@@ -9,27 +9,36 @@ interface ExperimentCheckinFormProps {
     phases: ExperimentPhase[];
     date: string;
     existingEntries?: ExperimentCheckinEntry[];
-    onSave: (date: string, entries: { metricId: string; value?: number; textValue?: string; phaseId?: string }[]) => Promise<void>;
+    onSave: (
+        date: string,
+        entries: { metricId: string; value?: number; textValue?: string; phaseId?: string }[],
+    ) => Promise<void>;
     onDelete?: (date: string) => Promise<void>;
 }
 
 const NOTES_METRIC_ID = '__notes';
 
 const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
-    metrics, phases, date, existingEntries = [], onSave, onDelete,
+    metrics,
+    phases,
+    date,
+    existingEntries = [],
+    onSave,
+    onDelete,
 }) => {
     const [values, setValues] = useState<Record<string, number | string>>({});
     const [notes, setNotes] = useState('');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
 
-    const currentPhase = phases.length > 0 ? getCurrentPhaseForDate(phases, new Date(date)) : undefined;
+    const currentPhase =
+        phases.length > 0 ? getCurrentPhaseForDate(phases, new Date(date)) : undefined;
 
     // Pre-populate from existing entries
     useEffect(() => {
         const initial: Record<string, number | string> = {};
         let loadedNotes = '';
-        existingEntries.forEach(entry => {
+        existingEntries.forEach((entry) => {
             if (entry.metricId === NOTES_METRIC_ID) {
                 loadedNotes = entry.textValue ?? '';
                 return;
@@ -46,7 +55,7 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
     }, [existingEntries, date]);
 
     const setValue = (metricId: string, val: number | string) => {
-        setValues(prev => ({ ...prev, [metricId]: val }));
+        setValues((prev) => ({ ...prev, [metricId]: val }));
         setSaved(false);
     };
 
@@ -54,12 +63,18 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
         setSaving(true);
         try {
             const phase = getCurrentPhaseForDate(phases, new Date(date));
-            const entries: { metricId: string; value?: number; textValue?: string; phaseId?: string }[] = metrics
-                .filter(m => values[m.id] !== undefined && values[m.id] !== '')
-                .map(m => ({
+            const entries: {
+                metricId: string;
+                value?: number;
+                textValue?: string;
+                phaseId?: string;
+            }[] = metrics
+                .filter((m) => values[m.id] !== undefined && values[m.id] !== '')
+                .map((m) => ({
                     metricId: m.id,
-                    value: typeof values[m.id] === 'number' ? values[m.id] as number : undefined,
-                    textValue: typeof values[m.id] === 'string' ? values[m.id] as string : undefined,
+                    value: typeof values[m.id] === 'number' ? (values[m.id] as number) : undefined,
+                    textValue:
+                        typeof values[m.id] === 'string' ? (values[m.id] as string) : undefined,
                     phaseId: phase?.id,
                 }));
 
@@ -73,8 +88,8 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
     };
 
     const requiredFilled = metrics
-        .filter(m => m.required)
-        .every(m => values[m.id] !== undefined && values[m.id] !== '');
+        .filter((m) => m.required)
+        .every((m) => values[m.id] !== undefined && values[m.id] !== '');
 
     if (metrics.length === 0) {
         return (
@@ -101,12 +116,14 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
             </div>
 
             <div className="space-y-4">
-                {metrics.map(metric => (
+                {metrics.map((metric) => (
                     <div key={metric.id} className="space-y-1.5">
                         <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
                             <span>{metric.emoji}</span>
                             <span>{metric.name}</span>
-                            {metric.required && <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />}
+                            {metric.required && (
+                                <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />
+                            )}
                         </label>
                         {metric.description && (
                             <p className="text-xs text-slate-400">{metric.description}</p>
@@ -124,7 +141,10 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
                 </label>
                 <textarea
                     value={notes}
-                    onChange={e => { setNotes(e.target.value); setSaved(false); }}
+                    onChange={(e) => {
+                        setNotes(e.target.value);
+                        setSaved(false);
+                    }}
                     placeholder="How did it go? Any observations or context..."
                     rows={2}
                     className="w-full p-2.5 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
@@ -163,7 +183,9 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
                     }`}
                 >
                     {saved ? (
-                        <><CheckCircle size={18} /> Saved</>
+                        <>
+                            <CheckCircle size={18} /> Saved
+                        </>
                     ) : saving ? (
                         'Saving...'
                     ) : (
@@ -178,7 +200,7 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
 function renderInput(
     metric: ExperimentMetric,
     value: number | string | undefined,
-    onChange: (val: number | string) => void
+    onChange: (val: number | string) => void,
 ) {
     switch (metric.type) {
         case 'rating': {
@@ -186,7 +208,10 @@ function renderInput(
             const min = metric.min || 1;
             const count = max - min + 1;
             return (
-                <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${Math.min(count, 10)}, 1fr)` }}>
+                <div
+                    className="grid gap-1"
+                    style={{ gridTemplateColumns: `repeat(${Math.min(count, 10)}, 1fr)` }}
+                >
                     {Array.from({ length: count }, (_, i) => {
                         const val = min + i;
                         const isSelected = value === val;
@@ -239,23 +264,21 @@ function renderInput(
                         type="number"
                         step="0.5"
                         value={value ?? ''}
-                        onChange={e => {
+                        onChange={(e) => {
                             const v = parseFloat(e.target.value);
                             onChange(isNaN(v) ? '' : v);
                         }}
                         className="flex-1 p-2.5 border border-slate-200 rounded-lg text-sm"
                         placeholder="Enter value"
                     />
-                    {metric.unit && (
-                        <span className="text-sm text-slate-500">{metric.unit}</span>
-                    )}
+                    {metric.unit && <span className="text-sm text-slate-500">{metric.unit}</span>}
                 </div>
             );
         case 'text':
             return (
                 <textarea
                     value={value ?? ''}
-                    onChange={e => onChange(e.target.value)}
+                    onChange={(e) => onChange(e.target.value)}
                     className="w-full p-2.5 border border-slate-200 rounded-lg text-sm resize-none"
                     rows={2}
                     placeholder="Enter notes..."

@@ -9,28 +9,21 @@
  * The manager is built automatically from registered tools.
  */
 
-import type { Domain } from '../types.ts'
-import { createDomainManager, type DomainManager } from './base.manager.ts'
+import type { Domain } from '../types.ts';
+import { createDomainManager, type DomainManager } from './base.manager.ts';
 
-const DOMAINS: Domain[] = [
-  'planning',
-  'health',
-  'content',
-  'improvement',
-  'school',
-  'extra',
-]
+const DOMAINS: Domain[] = ['planning', 'health', 'content', 'improvement', 'school', 'extra'];
 
 // Build all managers
-const managerMap = new Map<Domain, DomainManager>()
+const managerMap = new Map<Domain, DomainManager>();
 for (const domain of DOMAINS) {
-  managerMap.set(domain, createDomainManager(domain))
+    managerMap.set(domain, createDomainManager(domain));
 }
 
 export function getManager(domain: Domain): DomainManager {
-  return managerMap.get(domain)!
+    return managerMap.get(domain)!;
 }
 
 export function getAllManagers(): DomainManager[] {
-  return Array.from(managerMap.values())
+    return Array.from(managerMap.values());
 }

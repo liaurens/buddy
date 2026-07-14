@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Search, BookOpen, Lightbulb, Star, ChevronRight, X, Settings } from 'lucide-react';
+import {
+    Plus,
+    Trash2,
+    Search,
+    BookOpen,
+    Lightbulb,
+    Star,
+    ChevronRight,
+    X,
+    Settings,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import type { Strategy } from '../types';
 import { useAuth } from '../../../hooks/useAuth';
@@ -64,7 +74,7 @@ const ToolboxPage: React.FC = () => {
             description: newDesc,
             category: 'General',
             tags: newTags,
-            findings: []
+            findings: [],
         };
 
         const dbStrategy = strategyToDb(newStrategy, userId);
@@ -88,7 +98,7 @@ const ToolboxPage: React.FC = () => {
 
     const toggleTag = (tag: string) => {
         if (newTags.includes(tag)) {
-            setNewTags(newTags.filter(t => t !== tag));
+            setNewTags(newTags.filter((t) => t !== tag));
         } else {
             setNewTags([...newTags, tag]);
         }
@@ -100,7 +110,7 @@ const ToolboxPage: React.FC = () => {
             id: window.crypto.randomUUID(),
             date: new Date().toISOString(),
             note: newFindingNote,
-            rating: newFindingRating
+            rating: newFindingRating,
         };
 
         const updatedFindings = [finding, ...(selectedStrategy.findings || [])];
@@ -119,8 +129,9 @@ const ToolboxPage: React.FC = () => {
         setNewFindingRating(3);
     };
 
-    const filteredStrategies = strategies.filter(s => {
-        const matchesSearch = s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const filteredStrategies = strategies.filter((s) => {
+        const matchesSearch =
+            s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             s.description.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesTag = activeFilterTag ? (s.tags || []).includes(activeFilterTag) : true;
         return matchesSearch && matchesTag;
@@ -128,9 +139,10 @@ const ToolboxPage: React.FC = () => {
 
     return (
         <div className="app-page flex h-[calc(100dvh-7rem)] gap-6 lg:h-[calc(100dvh-4rem)]">
-
             {/* Left Panel: List */}
-            <div className={`flex-1 flex flex-col space-y-4 ${selectedStrategy ? 'hidden md:flex' : 'flex'}`}>
+            <div
+                className={`flex-1 flex flex-col space-y-4 ${selectedStrategy ? 'hidden md:flex' : 'flex'}`}
+            >
                 <header className="flex items-center justify-end lg:justify-between">
                     <h1 className="app-title hidden items-center gap-3 lg:flex">
                         <div className="rounded-xl bg-amber-50 p-2 text-amber-600">
@@ -148,14 +160,19 @@ const ToolboxPage: React.FC = () => {
                 </header>
                 <header>
                     <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
-                        {PRESET_TAGS.map(tag => (
+                        {PRESET_TAGS.map((tag) => (
                             <button
                                 key={tag.label}
-                                onClick={() => setActiveFilterTag(activeFilterTag === tag.label ? null : tag.label)}
-                                className={`whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${activeFilterTag === tag.label
-                                    ? 'border-indigo-700 bg-indigo-700 text-white'
-                                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                                    }`}
+                                onClick={() =>
+                                    setActiveFilterTag(
+                                        activeFilterTag === tag.label ? null : tag.label,
+                                    )
+                                }
+                                className={`whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                                    activeFilterTag === tag.label
+                                        ? 'border-indigo-700 bg-indigo-700 text-white'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                                }`}
                             >
                                 {tag.label}
                             </button>
@@ -164,7 +181,10 @@ const ToolboxPage: React.FC = () => {
                 </header>
 
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <Search
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={20}
+                    />
                     <input
                         type="text"
                         placeholder="Search strategies..."
@@ -177,32 +197,40 @@ const ToolboxPage: React.FC = () => {
                 <div className="flex-1 overflow-y-auto space-y-3 pb-20">
                     <button
                         onClick={() => setIsAdding(true)}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 p-4 font-medium text-slate-400 transition-all hover:border-indigo-300 hover:text-indigo-600"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 p-4 font-medium text-slate-400 transition-all hover:border-indigo-300 hover:text-indigo-600"
                     >
                         <Plus size={20} /> Add New Strategy
                     </button>
 
-                    {filteredStrategies.map(strategy => (
+                    {filteredStrategies.map((strategy) => (
                         <div
                             key={strategy.id}
                             onClick={() => setSelectedStrategy(strategy)}
-                            className={`cursor-pointer rounded-xl border bg-white p-4 text-left transition-all ${selectedStrategy?.id === strategy.id
-                                ? 'border-indigo-300 shadow-md ring-1 ring-indigo-200'
-                                : 'border-slate-100 shadow-sm hover:border-slate-300'
-                                }`}
+                            className={`cursor-pointer rounded-xl border bg-white p-4 text-left transition-all ${
+                                selectedStrategy?.id === strategy.id
+                                    ? 'border-indigo-300 shadow-md ring-1 ring-indigo-200'
+                                    : 'border-slate-100 shadow-sm hover:border-slate-300'
+                            }`}
                         >
                             <div className="flex flex-wrap gap-2 mb-2">
-                                {strategy.tags?.map(tag => {
-                                    const preset = PRESET_TAGS.find(p => p.label === tag);
+                                {strategy.tags?.map((tag) => {
+                                    const preset = PRESET_TAGS.find((p) => p.label === tag);
                                     return (
-                                        <span key={tag} className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider ${preset?.color || 'bg-slate-100 text-slate-600'}`}>
+                                        <span
+                                            key={tag}
+                                            className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider ${preset?.color || 'bg-slate-100 text-slate-600'}`}
+                                        >
                                             {tag}
                                         </span>
-                                    )
+                                    );
                                 })}
                             </div>
-                            <h3 className="font-bold text-slate-800 text-lg mb-1">{strategy.title}</h3>
-                            <p className="text-sm text-slate-500 line-clamp-2">{strategy.description}</p>
+                            <h3 className="font-bold text-slate-800 text-lg mb-1">
+                                {strategy.title}
+                            </h3>
+                            <p className="text-sm text-slate-500 line-clamp-2">
+                                {strategy.description}
+                            </p>
                         </div>
                     ))}
                 </div>
@@ -213,7 +241,10 @@ const ToolboxPage: React.FC = () => {
                 <div className="fixed inset-0 z-50 md:static md:z-0 md:flex-[1.5] bg-slate-50 md:bg-transparent flex flex-col md:h-full">
                     {/* Mobile Back Button */}
                     <div className="md:hidden p-4 bg-white border-b border-slate-200 flex items-center gap-2">
-                        <button onClick={() => setSelectedStrategy(null)} className="p-2 hover:bg-slate-100 rounded-lg">
+                        <button
+                            onClick={() => setSelectedStrategy(null)}
+                            className="p-2 hover:bg-slate-100 rounded-lg"
+                        >
                             <ChevronRight size={24} className="rotate-180" />
                         </button>
                         <h2 className="font-bold text-lg">Details</h2>
@@ -221,34 +252,44 @@ const ToolboxPage: React.FC = () => {
 
                     <div className="flex-1 overflow-y-auto p-4 md:p-0">
                         <div className="app-surface flex flex-col p-6 md:h-full">
-
                             <div className="flex items-start justify-between mb-6">
                                 <div>
                                     <div className="flex flex-wrap gap-2 mb-3">
-                                        {selectedStrategy.tags?.map(tag => {
-                                            const preset = PRESET_TAGS.find(p => p.label === tag);
+                                        {selectedStrategy.tags?.map((tag) => {
+                                            const preset = PRESET_TAGS.find((p) => p.label === tag);
                                             return (
-                                                <span key={tag} className={`px-3 py-1 rounded-lg text-xs font-bold ${preset?.color || 'bg-slate-100 text-slate-600'}`}>
+                                                <span
+                                                    key={tag}
+                                                    className={`px-3 py-1 rounded-lg text-xs font-bold ${preset?.color || 'bg-slate-100 text-slate-600'}`}
+                                                >
                                                     {tag}
                                                 </span>
-                                            )
+                                            );
                                         })}
                                     </div>
-                                    <h2 className="text-3xl font-bold text-slate-900 mb-2">{selectedStrategy.title}</h2>
+                                    <h2 className="text-3xl font-bold text-slate-900 mb-2">
+                                        {selectedStrategy.title}
+                                    </h2>
                                 </div>
-                                <button onClick={() => handleDelete(selectedStrategy.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-2">
+                                <button
+                                    onClick={() => handleDelete(selectedStrategy.id)}
+                                    className="text-slate-300 hover:text-rose-500 transition-colors p-2"
+                                >
                                     <Trash2 size={20} />
                                 </button>
                             </div>
 
                             <div className="prose prose-slate max-w-none mb-8">
-                                <p className="text-lg text-slate-600 leading-relaxed whitespace-pre-wrap">{selectedStrategy.description}</p>
+                                <p className="text-lg text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                    {selectedStrategy.description}
+                                </p>
                             </div>
 
                             {/* Findings / Logs Section */}
                             <div className="mt-auto border-t border-slate-100 pt-6">
                                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                    <BookOpen size={20} className="text-indigo-500" /> Findings & Application
+                                    <BookOpen size={20} className="text-indigo-500" /> Findings &
+                                    Application
                                 </h3>
 
                                 <div className="bg-slate-50 rounded-xl p-4 mb-4">
@@ -256,14 +297,14 @@ const ToolboxPage: React.FC = () => {
                                         className="w-full bg-transparent border-none outline-none font-medium text-slate-700 placeholder:text-slate-400 mb-2"
                                         placeholder="Add a new finding or observation..."
                                         value={newFindingNote}
-                                        onChange={e => setNewFindingNote(e.target.value)}
-                                        onKeyDown={e => {
+                                        onChange={(e) => setNewFindingNote(e.target.value)}
+                                        onKeyDown={(e) => {
                                             if (e.key === 'Enter') addFinding();
                                         }}
                                     />
                                     <div className="flex justify-between items-center">
                                         <div className="flex gap-1">
-                                            {[1, 2, 3, 4, 5].map(star => (
+                                            {[1, 2, 3, 4, 5].map((star) => (
                                                 <button
                                                     key={star}
                                                     onClick={() => setNewFindingRating(star)}
@@ -285,15 +326,34 @@ const ToolboxPage: React.FC = () => {
 
                                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
                                     {selectedStrategy.findings?.length === 0 && (
-                                        <p className="text-slate-400 text-sm text-center italic">No findings recorded yet. Try this tool and log how it went!</p>
+                                        <p className="text-slate-400 text-sm text-center italic">
+                                            No findings recorded yet. Try this tool and log how it
+                                            went!
+                                        </p>
                                     )}
-                                    {selectedStrategy.findings?.map(finding => (
-                                        <div key={finding.id} className="bg-white border border-slate-100 p-3 rounded-lg text-sm">
+                                    {selectedStrategy.findings?.map((finding) => (
+                                        <div
+                                            key={finding.id}
+                                            className="bg-white border border-slate-100 p-3 rounded-lg text-sm"
+                                        >
                                             <div className="flex justify-between mb-1">
-                                                <span className="text-slate-400 text-xs font-medium">{format(new Date(finding.date), 'MMM d, h:mm a')}</span>
+                                                <span className="text-slate-400 text-xs font-medium">
+                                                    {format(
+                                                        new Date(finding.date),
+                                                        'MMM d, h:mm a',
+                                                    )}
+                                                </span>
                                                 <div className="flex gap-0.5">
                                                     {[...Array(5)].map((_, i) => (
-                                                        <Star key={i} size={10} className={i < finding.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'} />
+                                                        <Star
+                                                            key={i}
+                                                            size={10}
+                                                            className={
+                                                                i < finding.rating
+                                                                    ? 'text-amber-400 fill-amber-400'
+                                                                    : 'text-slate-200'
+                                                            }
+                                                        />
                                                     ))}
                                                 </div>
                                             </div>
@@ -313,32 +373,42 @@ const ToolboxPage: React.FC = () => {
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in zoom-in-95">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-xl font-bold text-slate-800">New Strategy</h3>
-                            <button onClick={() => setIsAdding(false)} className="p-2 hover:bg-slate-100 rounded-full"><X size={20} /></button>
+                            <button
+                                onClick={() => setIsAdding(false)}
+                                className="p-2 hover:bg-slate-100 rounded-full"
+                            >
+                                <X size={20} />
+                            </button>
                         </div>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Title</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                                    Title
+                                </label>
                                 <input
                                     className="w-full text-lg font-bold border-b-2 border-slate-200 outline-none py-1 focus:border-indigo-500 transition-colors"
                                     placeholder="e.g. Pomodoro Technique"
                                     value={newTitle}
-                                    onChange={e => setNewTitle(e.target.value)}
+                                    onChange={(e) => setNewTitle(e.target.value)}
                                     autoFocus
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tags</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                                    Tags
+                                </label>
                                 <div className="flex flex-wrap gap-2">
-                                    {PRESET_TAGS.map(tag => (
+                                    {PRESET_TAGS.map((tag) => (
                                         <button
                                             key={tag.label}
                                             onClick={() => toggleTag(tag.label)}
-                                            className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${newTags.includes(tag.label)
-                                                ? 'bg-slate-800 text-white border-slate-800'
-                                                : `${tag.color.split(' ')[0]} ${tag.color.split(' ')[1]} border-transparent opacity-60 hover:opacity-100`
-                                                }`}
+                                            className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+                                                newTags.includes(tag.label)
+                                                    ? 'bg-slate-800 text-white border-slate-800'
+                                                    : `${tag.color.split(' ')[0]} ${tag.color.split(' ')[1]} border-transparent opacity-60 hover:opacity-100`
+                                            }`}
                                         >
                                             {tag.label}
                                         </button>
@@ -347,12 +417,14 @@ const ToolboxPage: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                                    Description
+                                </label>
                                 <textarea
                                     className="w-full p-3 bg-slate-50 rounded-xl outline-none resize-none h-32 focus:ring-2 focus:ring-indigo-100 transition-all font-medium text-slate-700"
                                     placeholder="How does this strategy work?"
                                     value={newDesc}
-                                    onChange={e => setNewDesc(e.target.value)}
+                                    onChange={(e) => setNewDesc(e.target.value)}
                                 />
                             </div>
 
@@ -369,10 +441,7 @@ const ToolboxPage: React.FC = () => {
             )}
 
             {/* Settings Modal */}
-            <ToolboxSettingsModal
-                isOpen={showSettings}
-                onClose={() => setShowSettings(false)}
-            />
+            <ToolboxSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
         </div>
     );
 };

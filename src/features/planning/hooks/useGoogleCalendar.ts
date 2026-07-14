@@ -4,8 +4,11 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-    getConnectionStatus, disconnectGoogle, startGoogleAuth,
-    isGoogleCalendarConfigured, type ConnectionStatus,
+    getConnectionStatus,
+    disconnectGoogle,
+    startGoogleAuth,
+    isGoogleCalendarConfigured,
+    type ConnectionStatus,
 } from '../services/google-calendar.service';
 
 const STATUS_KEY = ['google-calendar', 'status'] as const;
@@ -23,7 +26,9 @@ export function useDisconnectGoogleCalendar() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: disconnectGoogle,
-        onSuccess: () => { void qc.invalidateQueries({ queryKey: STATUS_KEY }); },
+        onSuccess: () => {
+            void qc.invalidateQueries({ queryKey: STATUS_KEY });
+        },
     });
 }
 

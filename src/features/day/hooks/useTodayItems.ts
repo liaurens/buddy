@@ -71,10 +71,7 @@ export function useTodayItems(dateKey?: string): UseTodayItems {
         if (eventsQuery.data) setEvents(eventsQuery.data);
     }, [eventsQuery.data]);
 
-    const picks = useMemo(
-        () => tasks.filter(t => t.dueDate === today),
-        [tasks, today]
-    );
+    const picks = useMemo(() => tasks.filter((t) => t.dueDate === today), [tasks, today]);
 
     const timedItems = useMemo<TimelineItem[]>(() => {
         const items: TimelineItem[] = [];
@@ -97,20 +94,14 @@ export function useTodayItems(dateKey?: string): UseTodayItems {
         return items;
     }, [events, picks]);
 
-    const untimedPicks = useMemo(
-        () => picks.filter(t => !t.dueTime),
-        [picks]
-    );
+    const untimedPicks = useMemo(() => picks.filter((t) => !t.dueTime), [picks]);
 
     const estimatedTotalMinutes = useMemo(
         () => picks.reduce((sum, t) => sum + (t.estimatedTime ?? 0), 0),
-        [picks]
+        [picks],
     );
 
-    const completedCount = useMemo(
-        () => picks.filter(t => t.completed).length,
-        [picks]
-    );
+    const completedCount = useMemo(() => picks.filter((t) => t.completed).length, [picks]);
 
     const refetchEvents = useCallback(() => {
         void eventsQuery.refetch();

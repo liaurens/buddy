@@ -49,7 +49,9 @@ describe('routine-progress', () => {
 
     it('emits a change event on mark and clear', () => {
         let fired = 0;
-        const listener = () => { fired += 1; };
+        const listener = () => {
+            fired += 1;
+        };
         window.addEventListener(ROUTINE_PROGRESS_EVENT, listener);
         markRoutineDone('morning', DATE);
         clearRoutineDone('morning', DATE);

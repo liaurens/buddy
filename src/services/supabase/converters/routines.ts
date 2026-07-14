@@ -17,7 +17,9 @@ export function dbToRoutineItem(db: DbTaskRoutineItem): RoutineItem {
     };
 }
 
-export function routineItemToDb(item: Omit<RoutineItem, 'id'> & { id?: string }): Omit<DbTaskRoutineItem, 'id'> & { id?: string } {
+export function routineItemToDb(
+    item: Omit<RoutineItem, 'id'> & { id?: string },
+): Omit<DbTaskRoutineItem, 'id'> & { id?: string } {
     return {
         id: item.id,
         routine_id: item.routineId,
@@ -40,7 +42,10 @@ export function dbToRoutine(db: DbTaskRoutine, items: DbTaskRoutineItem[] = []):
     };
 }
 
-export function routineToDb(r: Omit<Routine, 'id' | 'createdAt' | 'items'> & { id?: string }, userId: string): Omit<DbTaskRoutine, 'id' | 'created_at'> & { id?: string } {
+export function routineToDb(
+    r: Omit<Routine, 'id' | 'createdAt' | 'items'> & { id?: string },
+    userId: string,
+): Omit<DbTaskRoutine, 'id' | 'created_at'> & { id?: string } {
     return {
         id: r.id,
         user_id: userId,

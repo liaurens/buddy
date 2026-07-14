@@ -10,7 +10,7 @@
 import type {
     TaskTriageSuggestion,
     TriageDestinationValue,
-} from '../../planning/services/ai.service';
+} from '../../assistant/services/ai-actions.service';
 import type { RecurrencePattern, Hardness, TaskEnergy, TaskContext } from '../types';
 
 const VALID_DESTINATIONS: TriageDestinationValue[] = [
@@ -135,8 +135,7 @@ export function sanitizeTriageSuggestions(
             energy: asEnum<TaskEnergy>(entry?.energy, VALID_ENERGY),
             estimatedMinutes: asMinutes(entry?.estimatedMinutes),
             taskTypeId:
-                typeIdByName.get(asString(entry?.taskTypeName)?.trim().toLowerCase() ?? '') ??
-                null,
+                typeIdByName.get(asString(entry?.taskTypeName)?.trim().toLowerCase() ?? '') ?? null,
             reason: asString(entry?.reason) ?? '',
         });
     }

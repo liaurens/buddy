@@ -10,27 +10,132 @@ interface ExperimentMetricBuilderProps {
 
 const METRIC_TEMPLATES: Record<string, ExperimentMetric[]> = {
     'ADHD Medication': [
-        { id: '', name: 'Focus Level', emoji: '🎯', type: 'rating', min: 1, max: 10, required: true, description: 'How focused were you today?' },
-        { id: '', name: 'Concentration Hours', emoji: '⏱️', type: 'number', unit: 'hours', required: false, description: 'Hours of sustained concentration' },
-        { id: '', name: 'Appetite', emoji: '🍽️', type: 'rating', min: 1, max: 10, required: false, description: 'Appetite level throughout the day' },
-        { id: '', name: 'Irritability', emoji: '😤', type: 'rating', min: 1, max: 10, required: false, description: 'Level of irritability or restlessness' },
-        { id: '', name: 'Side Effects', emoji: '⚠️', type: 'text', required: false, description: 'Any side effects noticed' },
-        { id: '', name: 'Task Completion', emoji: '✅', type: 'boolean', required: false, description: 'Were you able to complete planned tasks?' },
+        {
+            id: '',
+            name: 'Focus Level',
+            emoji: '🎯',
+            type: 'rating',
+            min: 1,
+            max: 10,
+            required: true,
+            description: 'How focused were you today?',
+        },
+        {
+            id: '',
+            name: 'Concentration Hours',
+            emoji: '⏱️',
+            type: 'number',
+            unit: 'hours',
+            required: false,
+            description: 'Hours of sustained concentration',
+        },
+        {
+            id: '',
+            name: 'Appetite',
+            emoji: '🍽️',
+            type: 'rating',
+            min: 1,
+            max: 10,
+            required: false,
+            description: 'Appetite level throughout the day',
+        },
+        {
+            id: '',
+            name: 'Irritability',
+            emoji: '😤',
+            type: 'rating',
+            min: 1,
+            max: 10,
+            required: false,
+            description: 'Level of irritability or restlessness',
+        },
+        {
+            id: '',
+            name: 'Side Effects',
+            emoji: '⚠️',
+            type: 'text',
+            required: false,
+            description: 'Any side effects noticed',
+        },
+        {
+            id: '',
+            name: 'Task Completion',
+            emoji: '✅',
+            type: 'boolean',
+            required: false,
+            description: 'Were you able to complete planned tasks?',
+        },
     ],
     'Sleep Study': [
-        { id: '', name: 'Sleep Quality', emoji: '😴', type: 'rating', min: 1, max: 10, required: true },
-        { id: '', name: 'Time to Fall Asleep', emoji: '⏰', type: 'number', unit: 'minutes', required: false },
-        { id: '', name: 'Morning Grogginess', emoji: '🥱', type: 'rating', min: 1, max: 10, required: false },
+        {
+            id: '',
+            name: 'Sleep Quality',
+            emoji: '😴',
+            type: 'rating',
+            min: 1,
+            max: 10,
+            required: true,
+        },
+        {
+            id: '',
+            name: 'Time to Fall Asleep',
+            emoji: '⏰',
+            type: 'number',
+            unit: 'minutes',
+            required: false,
+        },
+        {
+            id: '',
+            name: 'Morning Grogginess',
+            emoji: '🥱',
+            type: 'rating',
+            min: 1,
+            max: 10,
+            required: false,
+        },
         { id: '', name: 'Night Wakeups', emoji: '🌙', type: 'number', required: false },
     ],
-    'Supplement': [
-        { id: '', name: 'Effectiveness', emoji: '📈', type: 'rating', min: 1, max: 10, required: true },
-        { id: '', name: 'Energy Level', emoji: '⚡', type: 'rating', min: 1, max: 10, required: false },
+    Supplement: [
+        {
+            id: '',
+            name: 'Effectiveness',
+            emoji: '📈',
+            type: 'rating',
+            min: 1,
+            max: 10,
+            required: true,
+        },
+        {
+            id: '',
+            name: 'Energy Level',
+            emoji: '⚡',
+            type: 'rating',
+            min: 1,
+            max: 10,
+            required: false,
+        },
         { id: '', name: 'Side Effects', emoji: '⚠️', type: 'text', required: false },
     ],
 };
 
-const EMOJIS = ['📊', '🎯', '⚡', '😴', '🧠', '💪', '❤️', '🍽️', '😤', '⚠️', '✅', '📈', '🌙', '⏰', '💊', '🏃'];
+const EMOJIS = [
+    '📊',
+    '🎯',
+    '⚡',
+    '😴',
+    '🧠',
+    '💪',
+    '❤️',
+    '🍽️',
+    '😤',
+    '⚠️',
+    '✅',
+    '📈',
+    '🌙',
+    '⏰',
+    '💊',
+    '🏃',
+];
 
 const TYPE_OPTIONS: { value: TrackerType; label: string }[] = [
     { value: 'rating', label: 'Rating (1-10)' },
@@ -50,13 +155,13 @@ const ExperimentMetricBuilder: React.FC<ExperimentMetricBuilderProps> = ({ metri
     };
 
     const removeMetric = (id: string) => {
-        onChange(metrics.filter(m => m.id !== id));
+        onChange(metrics.filter((m) => m.id !== id));
     };
 
     const applyTemplate = (templateName: string) => {
         const template = METRIC_TEMPLATES[templateName];
         if (template) {
-            const newMetrics = template.map(m => ({ ...m, id: uuidv4() }));
+            const newMetrics = template.map((m) => ({ ...m, id: uuidv4() }));
             onChange([...metrics, ...newMetrics]);
         }
     };
@@ -66,9 +171,11 @@ const ExperimentMetricBuilder: React.FC<ExperimentMetricBuilderProps> = ({ metri
             {/* Templates */}
             {metrics.length === 0 && (
                 <div className="space-y-2">
-                    <p className="text-sm text-slate-500">Start with a template or build your own:</p>
+                    <p className="text-sm text-slate-500">
+                        Start with a template or build your own:
+                    </p>
                     <div className="flex flex-wrap gap-2">
-                        {Object.keys(METRIC_TEMPLATES).map(name => (
+                        {Object.keys(METRIC_TEMPLATES).map((name) => (
                             <button
                                 key={name}
                                 onClick={() => applyTemplate(name)}
@@ -92,9 +199,11 @@ const ExperimentMetricBuilder: React.FC<ExperimentMetricBuilderProps> = ({ metri
                             <GripVertical size={16} className="text-slate-300 flex-shrink-0" />
                             <span className="text-lg">{metric.emoji}</span>
                             <div className="flex-1 min-w-0">
-                                <div className="font-medium text-slate-800 text-sm">{metric.name}</div>
+                                <div className="font-medium text-slate-800 text-sm">
+                                    {metric.name}
+                                </div>
                                 <div className="text-xs text-slate-500">
-                                    {TYPE_OPTIONS.find(t => t.value === metric.type)?.label}
+                                    {TYPE_OPTIONS.find((t) => t.value === metric.type)?.label}
                                     {metric.unit && ` (${metric.unit})`}
                                     {metric.required && ' · Required'}
                                 </div>
@@ -115,7 +224,10 @@ const ExperimentMetricBuilder: React.FC<ExperimentMetricBuilderProps> = ({ metri
                 <MetricForm
                     initial={editingMetric || undefined}
                     onSave={addMetric}
-                    onCancel={() => { setShowAdd(false); setEditingMetric(null); }}
+                    onCancel={() => {
+                        setShowAdd(false);
+                        setEditingMetric(null);
+                    }}
                 />
             ) : (
                 <button
@@ -129,7 +241,11 @@ const ExperimentMetricBuilder: React.FC<ExperimentMetricBuilderProps> = ({ metri
     );
 };
 
-function MetricForm({ initial, onSave, onCancel }: {
+function MetricForm({
+    initial,
+    onSave,
+    onCancel,
+}: {
     initial?: ExperimentMetric;
     onSave: (m: Omit<ExperimentMetric, 'id'>) => void;
     onCancel: () => void;
@@ -144,7 +260,14 @@ function MetricForm({ initial, onSave, onCancel }: {
 
     const handleSave = () => {
         if (!name.trim()) return;
-        onSave({ name: name.trim(), emoji, type, unit: unit || undefined, required, description: description || undefined });
+        onSave({
+            name: name.trim(),
+            emoji,
+            type,
+            unit: unit || undefined,
+            required,
+            description: description || undefined,
+        });
     };
 
     return (
@@ -159,10 +282,13 @@ function MetricForm({ initial, onSave, onCancel }: {
                     </button>
                     {showEmojiPicker && (
                         <div className="absolute top-14 left-0 z-10 bg-white border border-slate-200 rounded-xl p-2 shadow-lg grid grid-cols-4 gap-1">
-                            {EMOJIS.map(e => (
+                            {EMOJIS.map((e) => (
                                 <button
                                     key={e}
-                                    onClick={() => { setEmoji(e); setShowEmojiPicker(false); }}
+                                    onClick={() => {
+                                        setEmoji(e);
+                                        setShowEmojiPicker(false);
+                                    }}
                                     className="w-8 h-8 text-lg hover:bg-slate-100 rounded"
                                 >
                                     {e}
@@ -174,7 +300,7 @@ function MetricForm({ initial, onSave, onCancel }: {
                 <input
                     type="text"
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={(e) => setName(e.target.value)}
                     placeholder="Metric name"
                     className="flex-1 p-2 border border-slate-200 rounded-lg text-sm"
                     autoFocus
@@ -186,21 +312,25 @@ function MetricForm({ initial, onSave, onCancel }: {
                     <label className="text-xs font-medium text-slate-600 mb-1 block">Type</label>
                     <select
                         value={type}
-                        onChange={e => setType(e.target.value as TrackerType)}
+                        onChange={(e) => setType(e.target.value as TrackerType)}
                         className="w-full p-2 border border-slate-200 rounded-lg text-sm"
                     >
-                        {TYPE_OPTIONS.map(o => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
+                        {TYPE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>
+                                {o.label}
+                            </option>
                         ))}
                     </select>
                 </div>
                 {type === 'number' && (
                     <div>
-                        <label className="text-xs font-medium text-slate-600 mb-1 block">Unit</label>
+                        <label className="text-xs font-medium text-slate-600 mb-1 block">
+                            Unit
+                        </label>
                         <input
                             type="text"
                             value={unit}
-                            onChange={e => setUnit(e.target.value)}
+                            onChange={(e) => setUnit(e.target.value)}
                             placeholder="e.g. hours, mg"
                             className="w-full p-2 border border-slate-200 rounded-lg text-sm"
                         />
@@ -211,7 +341,7 @@ function MetricForm({ initial, onSave, onCancel }: {
             <input
                 type="text"
                 value={description}
-                onChange={e => setDescription(e.target.value)}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Description (optional)"
                 className="w-full p-2 border border-slate-200 rounded-lg text-sm"
             />
@@ -221,13 +351,18 @@ function MetricForm({ initial, onSave, onCancel }: {
                     <input
                         type="checkbox"
                         checked={required}
-                        onChange={e => setRequired(e.target.checked)}
+                        onChange={(e) => setRequired(e.target.checked)}
                         className="w-4 h-4 text-indigo-600 rounded border-slate-300"
                     />
                     Required
                 </label>
                 <div className="flex gap-2">
-                    <button onClick={onCancel} className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                    <button
+                        onClick={onCancel}
+                        className="px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+                    >
+                        Cancel
+                    </button>
                     <button
                         onClick={handleSave}
                         disabled={!name.trim()}

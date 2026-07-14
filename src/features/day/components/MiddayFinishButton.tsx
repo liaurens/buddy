@@ -23,9 +23,10 @@ const MiddayFinishButton: React.FC<Props> = ({ dateKey, accent }) => {
         );
     }
 
-    const accentClasses = accent === 'amber'
-        ? 'bg-amber-500 hover:bg-amber-600'
-        : 'bg-indigo-600 hover:bg-indigo-700';
+    const accentClasses =
+        accent === 'amber'
+            ? 'bg-amber-500 hover:bg-amber-600'
+            : 'bg-indigo-600 hover:bg-indigo-700';
 
     return (
         <button

@@ -26,7 +26,11 @@ function normalizeSeverity(raw: unknown): Finding['severity'] {
  * Latest unseen, user-visible finding from `assistant_findings`.
  * Falls back gracefully before the Phase 4 migration adds `user_visible` / `seen_at` columns.
  */
-export function useLatestInsight(): { finding: Finding | null; dismiss: () => Promise<void>; refresh: () => void } {
+export function useLatestInsight(): {
+    finding: Finding | null;
+    dismiss: () => Promise<void>;
+    refresh: () => void;
+} {
     const { user } = useAuth();
     const [finding, setFinding] = useState<Finding | null>(null);
     const [tick, setTick] = useState(0);
@@ -57,7 +61,13 @@ export function useLatestInsight(): { finding: Finding | null; dismiss: () => Pr
                 return;
             }
 
-            const row = res.data as { id: string; type: string; severity: string; data: { summary?: string }; created_at: string };
+            const row = res.data as {
+                id: string;
+                type: string;
+                severity: string;
+                data: { summary?: string };
+                created_at: string;
+            };
             const summary = row.data?.summary;
             if (!summary) {
                 setFinding(null);
@@ -73,7 +83,9 @@ export function useLatestInsight(): { finding: Finding | null; dismiss: () => Pr
         };
 
         load();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [user?.id, tick]);
 
     const dismiss = useCallback(async () => {
@@ -85,7 +97,7 @@ export function useLatestInsight(): { finding: Finding | null; dismiss: () => Pr
         setFinding(null);
     }, [finding, user?.id]);
 
-    const refresh = useCallback(() => setTick(t => t + 1), []);
+    const refresh = useCallback(() => setTick((t) => t + 1), []);
 
     return { finding, dismiss, refresh };
 }

@@ -18,7 +18,10 @@ export function dbToStrategy(db: DbStrategy): Strategy {
     };
 }
 
-export function strategyToDb(strategy: Omit<Strategy, 'id'> & { id?: string }, userId: string): Omit<DbStrategy, 'id'> & { id?: string } {
+export function strategyToDb(
+    strategy: Omit<Strategy, 'id'> & { id?: string },
+    userId: string,
+): Omit<DbStrategy, 'id'> & { id?: string } {
     return {
         id: strategy.id,
         user_id: userId,

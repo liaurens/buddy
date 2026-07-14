@@ -119,7 +119,7 @@ describe('calculateTLCC', () => {
         expect(results.length).toBeGreaterThan(0);
 
         // Each result should have lag and correlation
-        results.forEach(r => {
+        results.forEach((r) => {
             expect(r).toHaveProperty('lag');
             expect(r).toHaveProperty('correlation');
             expect(typeof r.lag).toBe('number');
@@ -132,7 +132,7 @@ describe('calculateTLCC', () => {
         const y = Array.from({ length: 20 }, (_, i) => i * 2);
 
         const results = calculateTLCC(x, y, 5);
-        const lags = results.map(r => r.lag);
+        const lags = results.map((r) => r.lag);
 
         expect(lags).toContain(0);
         expect(lags).toContain(5);
@@ -212,17 +212,17 @@ describe('calculateConfidenceInterval', () => {
 describe('getDataQualityWarnings', () => {
     it('returns error for less than 3 samples', () => {
         const warnings = getDataQualityWarnings(2);
-        expect(warnings.some(w => w.includes('Not enough'))).toBe(true);
+        expect(warnings.some((w) => w.includes('Not enough'))).toBe(true);
     });
 
     it('returns warning for less than 7 samples', () => {
         const warnings = getDataQualityWarnings(5);
-        expect(warnings.some(w => w.includes('Minimum 7 days'))).toBe(true);
+        expect(warnings.some((w) => w.includes('Minimum 7 days'))).toBe(true);
     });
 
     it('suggests more data for 7-13 samples', () => {
         const warnings = getDataQualityWarnings(10);
-        expect(warnings.some(w => w.includes('14+ days'))).toBe(true);
+        expect(warnings.some((w) => w.includes('14+ days'))).toBe(true);
     });
 
     it('returns empty for sufficient data', () => {

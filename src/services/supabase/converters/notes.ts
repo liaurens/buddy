@@ -28,7 +28,10 @@ export function dbToSmartNote(db: DbSmartNote): SmartNote {
     };
 }
 
-export function smartNoteToDb(note: Omit<SmartNote, 'id' | 'createdAt'> & { id?: string }, userId: string): Omit<DbSmartNote, 'id' | 'created_at'> & { id?: string } {
+export function smartNoteToDb(
+    note: Omit<SmartNote, 'id' | 'createdAt'> & { id?: string },
+    userId: string,
+): Omit<DbSmartNote, 'id' | 'created_at'> & { id?: string } {
     return {
         id: note.id,
         user_id: userId,

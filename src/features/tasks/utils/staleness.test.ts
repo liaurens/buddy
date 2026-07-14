@@ -69,12 +69,25 @@ describe('isStale', () => {
 
     it('falls back to createdAt when never touched', () => {
         expect(
-            isStale(task({ id: 'a', dueDate: '2026-07-01', createdAt: '2026-06-25T00:00:00.000Z' }), NOW),
+            isStale(
+                task({ id: 'a', dueDate: '2026-07-01', createdAt: '2026-06-25T00:00:00.000Z' }),
+                NOW,
+            ),
         ).toBe(true);
     });
 
     it('ignores future-dated, completed, and progressing tasks', () => {
-        expect(isStale(task({ id: 'a', dueDate: '2026-07-10', snoozeCount: 0, createdAt: '2026-06-01T00:00:00.000Z' }), NOW)).toBe(false);
+        expect(
+            isStale(
+                task({
+                    id: 'a',
+                    dueDate: '2026-07-10',
+                    snoozeCount: 0,
+                    createdAt: '2026-06-01T00:00:00.000Z',
+                }),
+                NOW,
+            ),
+        ).toBe(false);
         expect(isStale(task({ id: 'b', completed: true, snoozeCount: 5 }), NOW)).toBe(false);
         expect(
             isStale(

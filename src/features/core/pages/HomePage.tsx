@@ -97,9 +97,13 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                     className="flex w-full items-center justify-center gap-1 py-1 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600"
                 >
                     {showMore ? (
-                        <>Less <ChevronUp size={14} /></>
+                        <>
+                            Less <ChevronUp size={14} />
+                        </>
                     ) : (
-                        <>More — routine & stats <ChevronDown size={14} /></>
+                        <>
+                            More — routine & stats <ChevronDown size={14} />
+                        </>
                     )}
                 </button>
 

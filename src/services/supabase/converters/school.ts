@@ -80,7 +80,10 @@ export function dbToClass(db: DbClass): SchoolClass {
     };
 }
 
-export function classToDb(c: Omit<SchoolClass, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Omit<DbClass, 'id' | 'created_at' | 'updated_at'> {
+export function classToDb(
+    c: Omit<SchoolClass, 'id' | 'createdAt' | 'updatedAt'>,
+    userId: string,
+): Omit<DbClass, 'id' | 'created_at' | 'updated_at'> {
     return {
         user_id: userId,
         name: c.name,
@@ -108,7 +111,10 @@ export function dbToAssignment(db: DbAssignment): Assignment {
     };
 }
 
-export function assignmentToDb(a: Omit<Assignment, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Omit<DbAssignment, 'id' | 'created_at' | 'updated_at'> {
+export function assignmentToDb(
+    a: Omit<Assignment, 'id' | 'createdAt' | 'updatedAt'>,
+    userId: string,
+): Omit<DbAssignment, 'id' | 'created_at' | 'updated_at'> {
     return {
         user_id: userId,
         class_id: a.classId,
@@ -155,7 +161,10 @@ export function dbToClassSession(db: DbClassSession): ClassSession {
     };
 }
 
-export function classSessionToDb(s: Omit<ClassSession, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Omit<DbClassSession, 'id' | 'created_at' | 'updated_at'> {
+export function classSessionToDb(
+    s: Omit<ClassSession, 'id' | 'createdAt' | 'updatedAt'>,
+    userId: string,
+): Omit<DbClassSession, 'id' | 'created_at' | 'updated_at'> {
     return {
         user_id: userId,
         class_id: s.classId,

@@ -29,7 +29,13 @@ describe('applyTriagePatch', () => {
     });
 
     it('stamps triagedAt AND triageDestination for every destination', () => {
-        const destinations: TriageDestination[] = ['urgent', 'today', 'someday', 'school', 'routine'];
+        const destinations: TriageDestination[] = [
+            'urgent',
+            'today',
+            'someday',
+            'school',
+            'routine',
+        ];
         for (const destination of destinations) {
             const out = applyTriagePatch(task(), destination, {}, OPTS);
             expect(out.triagedAt).toBe(NOW_ISO);
@@ -45,9 +51,9 @@ describe('applyTriagePatch', () => {
 
     it('routine sets recurrence (defaults daily)', () => {
         expect(applyTriagePatch(task(), 'routine', {}, OPTS).recurrence).toBe('daily');
-        expect(
-            applyTriagePatch(task(), 'routine', { recurrence: 'weekly' }, OPTS).recurrence,
-        ).toBe('weekly');
+        expect(applyTriagePatch(task(), 'routine', { recurrence: 'weekly' }, OPTS).recurrence).toBe(
+            'weekly',
+        );
     });
 
     it('school links the assignment', () => {

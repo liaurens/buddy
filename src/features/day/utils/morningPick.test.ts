@@ -52,7 +52,11 @@ describe('rankMorningCandidates', () => {
     it('penalizes tasks with no estimate and no subtasks (vague)', () => {
         const ranked = rank([
             task({ id: 'vague', priority: 'medium' }),
-            task({ id: 'shaped', priority: 'medium', subtasks: [{ id: 's1', title: 'step', completed: false }] }),
+            task({
+                id: 'shaped',
+                priority: 'medium',
+                subtasks: [{ id: 's1', title: 'step', completed: false }],
+            }),
         ]);
         expect(ranked[0].task.id).toBe('shaped');
     });
@@ -88,7 +92,12 @@ describe('rankMorningCandidates', () => {
 
 describe('suggestMorningPicks', () => {
     it('returns at most `slots` picks', () => {
-        const ranked = rank([task({ id: 'a' }), task({ id: 'b' }), task({ id: 'c' }), task({ id: 'd' })]);
+        const ranked = rank([
+            task({ id: 'a' }),
+            task({ id: 'b' }),
+            task({ id: 'c' }),
+            task({ id: 'd' }),
+        ]);
         expect(suggestMorningPicks(ranked, 3)).toHaveLength(3);
         expect(suggestMorningPicks(ranked, 1)).toHaveLength(1);
     });

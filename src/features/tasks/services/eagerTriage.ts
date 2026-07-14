@@ -11,11 +11,10 @@
 
 import { supabase } from '../../../services/supabase';
 import {
-    getAIService,
-    isAIConfigured,
+    triageTasks,
     type TriageAssignmentOption,
     type TriageTaskTypeOption,
-} from '../../planning/services/ai.service';
+} from '../../assistant/services/ai-actions.service';
 import { sanitizeTriageSuggestions } from '../utils/sanitizeTriageSuggestions';
 import { suggestionToDetail } from '../utils/triageConfidence';
 import { loadTriageLearnings } from './triageLearnings';
@@ -50,10 +49,7 @@ async function loadTaskTypeOptions(userId: string): Promise<TriageTaskTypeOption
 }
 
 export async function eagerTriageTask(userId: string, task: Task): Promise<void> {
-    if (!isAIConfigured()) return;
     try {
-        const ai = getAIService();
-        if (!ai) return;
         const nowIso = new Date().toISOString();
         const todayIso = nowIso.slice(0, 10);
         const [learnings, assignmentOptions, typeOptions] = await Promise.all([
@@ -61,16 +57,17 @@ export async function eagerTriageTask(userId: string, task: Task): Promise<void>
             loadAssignmentOptions(userId),
             loadTaskTypeOptions(userId),
         ]);
-        const result = await ai.triageTasks(
-            [{ id: task.id, title: task.title, dueDate: task.dueDate, priority: task.priority }],
-            assignmentOptions,
-            learnings,
+        const result = await triageTasks({
+            tasks: [
+                { id: task.id, title: task.title, dueDate: task.dueDate, priority: task.priority },
+            ],
+            assignments: assignmentOptions,
+            learningsDoc: learnings,
             todayIso,
-            typeOptions,
-        );
-        if (!result.success || !result.data) return;
+            taskTypes: typeOptions,
+        });
         const [s] = sanitizeTriageSuggestions(
-            result.data,
+            result,
             [task.id],
             assignmentOptions.map((a) => a.id),
             typeOptions,

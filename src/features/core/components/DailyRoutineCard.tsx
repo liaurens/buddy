@@ -38,20 +38,26 @@ const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
 
     return (
         <section className="app-surface">
-            <button
-                onClick={() => onNavigate('today')}
-                className="group w-full p-5 text-left"
-            >
+            <button onClick={() => onNavigate('today')} className="group w-full p-5 text-left">
                 <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
                         <div className="flex items-center gap-2">
-                            {allDone
-                                ? <PartyPopper size={18} className="text-emerald-600" />
-                                : React.createElement(PHASE_CONFIG[active].Icon, { size: 18, className: 'text-emerald-600' })}
-                            <h2 className="text-base font-semibold text-slate-950">Daily routine</h2>
+                            {allDone ? (
+                                <PartyPopper size={18} className="text-emerald-600" />
+                            ) : (
+                                React.createElement(PHASE_CONFIG[active].Icon, {
+                                    size: 18,
+                                    className: 'text-emerald-600',
+                                })
+                            )}
+                            <h2 className="text-base font-semibold text-slate-950">
+                                Daily routine
+                            </h2>
                         </div>
                         <p className="mt-1 text-xs text-slate-500">
-                            {allDone ? 'Everything finished — nice work.' : 'Counts only what you actually finished.'}
+                            {allDone
+                                ? 'Everything finished — nice work.'
+                                : 'Counts only what you actually finished.'}
                         </p>
                     </div>
                     <span className="shrink-0 text-xs font-medium text-slate-500">
@@ -67,7 +73,7 @@ const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
                 </div>
 
                 <div className="mt-4 space-y-3">
-                    {ROUTINE_PHASES.map(phase => {
+                    {ROUTINE_PHASES.map((phase) => {
                         const { Icon, label, hint } = PHASE_CONFIG[phase];
                         const done = progress[phase];
                         const isNow = phase === active && !done;
@@ -78,18 +84,22 @@ const DailyRoutineCard: React.FC<Props> = ({ onNavigate }) => {
                                         done
                                             ? 'border-emerald-100 bg-emerald-500 text-white'
                                             : isNow
-                                                ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                                                : 'border-slate-200 bg-white text-slate-400'
+                                              ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                              : 'border-slate-200 bg-white text-slate-400'
                                     }`}
                                 >
                                     {done ? <Check size={14} /> : <Icon size={15} />}
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                    <span className={`block truncate text-sm ${done || isNow ? 'font-medium text-slate-800' : 'text-slate-500'}`}>
+                                    <span
+                                        className={`block truncate text-sm ${done || isNow ? 'font-medium text-slate-800' : 'text-slate-500'}`}
+                                    >
                                         {label}
                                     </span>
                                     {isNow && (
-                                        <span className="block truncate text-xs text-slate-400">{hint}</span>
+                                        <span className="block truncate text-xs text-slate-400">
+                                            {hint}
+                                        </span>
                                     )}
                                 </span>
                                 {isNow && (

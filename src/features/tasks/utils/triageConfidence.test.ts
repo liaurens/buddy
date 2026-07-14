@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { splitByConfidence, suggestionToDetail } from './triageConfidence';
-import type { TaskTriageSuggestion } from '../../planning/services/ai.service';
+import type { TaskTriageSuggestion } from '../../assistant/services/ai-actions.service';
 
 function sug(p: Partial<TaskTriageSuggestion>): TaskTriageSuggestion {
     return {

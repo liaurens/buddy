@@ -3,11 +3,51 @@ import { parseQuickCapture } from './quickCaptureParser';
 import type { TaskType } from '../types';
 
 const TYPES: TaskType[] = [
-    { id: 'email-id',   name: 'Email',   emoji: '📧', color: 'indigo',  sortOrder: 0, isPreset: true, createdAt: '' },
-    { id: 'home-id',    name: 'Home',    emoji: '🧹', color: 'emerald', sortOrder: 1, isPreset: true, createdAt: '' },
-    { id: 'study-id',   name: 'Study',   emoji: '📚', color: 'violet',  sortOrder: 2, isPreset: true, createdAt: '' },
-    { id: 'errands-id', name: 'Errands', emoji: '🛒', color: 'amber',   sortOrder: 3, isPreset: true, createdAt: '' },
-    { id: 'health-id',  name: 'Health',  emoji: '💪', color: 'rose',    sortOrder: 5, isPreset: true, createdAt: '' },
+    {
+        id: 'email-id',
+        name: 'Email',
+        emoji: '📧',
+        color: 'indigo',
+        sortOrder: 0,
+        isPreset: true,
+        createdAt: '',
+    },
+    {
+        id: 'home-id',
+        name: 'Home',
+        emoji: '🧹',
+        color: 'emerald',
+        sortOrder: 1,
+        isPreset: true,
+        createdAt: '',
+    },
+    {
+        id: 'study-id',
+        name: 'Study',
+        emoji: '📚',
+        color: 'violet',
+        sortOrder: 2,
+        isPreset: true,
+        createdAt: '',
+    },
+    {
+        id: 'errands-id',
+        name: 'Errands',
+        emoji: '🛒',
+        color: 'amber',
+        sortOrder: 3,
+        isPreset: true,
+        createdAt: '',
+    },
+    {
+        id: 'health-id',
+        name: 'Health',
+        emoji: '💪',
+        color: 'rose',
+        sortOrder: 5,
+        isPreset: true,
+        createdAt: '',
+    },
 ];
 
 // 2026-05-12 = Tuesday

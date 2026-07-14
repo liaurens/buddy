@@ -3,13 +3,22 @@
  */
 
 import type {
-    Experiment, ExperimentLog, CorrelationResult,
-    ExperimentCheckinEntry, ExperimentPhase, ExperimentMetric,
-    ExperimentStatus, DailyJournalEntry, JournalPromptResponse,
+    Experiment,
+    ExperimentLog,
+    CorrelationResult,
+    ExperimentCheckinEntry,
+    ExperimentPhase,
+    ExperimentMetric,
+    ExperimentStatus,
+    DailyJournalEntry,
+    JournalPromptResponse,
 } from '../../../features/health-tracking/types';
 import type {
-    DbExperiment, DbExperimentLog, DbCorrelation,
-    DbExperimentCheckinEntry, DbDailyJournalEntry,
+    DbExperiment,
+    DbExperimentLog,
+    DbCorrelation,
+    DbExperimentCheckinEntry,
+    DbDailyJournalEntry,
 } from '../types';
 
 export function dbToExperiment(db: DbExperiment): Experiment {
@@ -36,7 +45,7 @@ export function dbToExperiment(db: DbExperiment): Experiment {
 
 export function experimentToDb(
     exp: Omit<Experiment, 'id' | 'active'> & { id?: string; active?: boolean },
-    userId: string
+    userId: string,
 ): Omit<DbExperiment, 'id'> & { id?: string } {
     return {
         id: exp.id,
@@ -70,7 +79,10 @@ export function dbToExperimentLog(db: DbExperimentLog): ExperimentLog {
     };
 }
 
-export function experimentLogToDb(log: Omit<ExperimentLog, 'id'> & { id?: string }, userId: string): Omit<DbExperimentLog, 'id'> & { id?: string } {
+export function experimentLogToDb(
+    log: Omit<ExperimentLog, 'id'> & { id?: string },
+    userId: string,
+): Omit<DbExperimentLog, 'id'> & { id?: string } {
     return {
         id: log.id,
         user_id: userId,

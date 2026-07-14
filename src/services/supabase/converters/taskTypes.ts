@@ -14,10 +14,14 @@ export function dbToTaskType(db: DbTaskType): TaskType {
         sortOrder: db.sort_order,
         isPreset: db.is_preset,
         createdAt: db.created_at,
+        homeDays: db.home_days || undefined,
     };
 }
 
-export function taskTypeToDb(t: Omit<TaskType, 'id' | 'createdAt'> & { id?: string }, userId: string): Omit<DbTaskType, 'id' | 'created_at'> & { id?: string } {
+export function taskTypeToDb(
+    t: Omit<TaskType, 'id' | 'createdAt'> & { id?: string },
+    userId: string,
+): Omit<DbTaskType, 'id' | 'created_at'> & { id?: string } {
     return {
         id: t.id,
         user_id: userId,
@@ -26,5 +30,6 @@ export function taskTypeToDb(t: Omit<TaskType, 'id' | 'createdAt'> & { id?: stri
         color: t.color || null,
         sort_order: t.sortOrder,
         is_preset: t.isPreset,
+        home_days: t.homeDays || null,
     };
 }

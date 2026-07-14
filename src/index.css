@@ -3,110 +3,110 @@
 @tailwind utilities;
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  color-scheme: light;
-  --buddy-bg: #f7f8fb;
-  --buddy-surface: #ffffff;
-  --buddy-surface-soft: #f9fafc;
-  --buddy-border: #e2e8f0;
-  --buddy-border-soft: #edf1f6;
-  --buddy-text: #101828;
-  --buddy-muted: #667085;
-  --buddy-primary: #25329b;
-  --buddy-primary-soft: #eef1ff;
-  --buddy-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    color-scheme: light;
+    --buddy-bg: #f7f8fb;
+    --buddy-surface: #ffffff;
+    --buddy-surface-soft: #f9fafc;
+    --buddy-border: #e2e8f0;
+    --buddy-border-soft: #edf1f6;
+    --buddy-text: #101828;
+    --buddy-muted: #667085;
+    --buddy-primary: #25329b;
+    --buddy-primary-soft: #eef1ff;
+    --buddy-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
 html {
-  background: var(--buddy-bg);
+    background: var(--buddy-bg);
 }
 
 body {
-  @apply text-slate-900 antialiased;
-  background: var(--buddy-bg);
+    @apply text-slate-900 antialiased;
+    background: var(--buddy-bg);
 }
 
 button,
 input,
 textarea,
 select {
-  font: inherit;
+    font: inherit;
 }
 
 button {
-  -webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: transparent;
 }
 
 ::selection {
-  background: rgba(37, 50, 155, 0.14);
+    background: rgba(37, 50, 155, 0.14);
 }
 
 @layer components {
-  .app-page {
-    @apply mx-auto w-full max-w-6xl space-y-5 pb-28 lg:pb-10;
-  }
+    .app-page {
+        @apply mx-auto w-full max-w-6xl space-y-5 pb-28 lg:pb-10;
+    }
 
-  .app-page-readable {
-    @apply mx-auto w-full max-w-3xl space-y-5 pb-28 lg:pb-10;
-  }
+    .app-page-readable {
+        @apply mx-auto w-full max-w-3xl space-y-5 pb-28 lg:pb-10;
+    }
 
-  .app-title {
-    @apply text-[1.65rem] font-semibold leading-tight tracking-normal text-slate-950;
-  }
+    .app-title {
+        @apply text-[1.65rem] font-semibold leading-tight tracking-normal text-slate-950;
+    }
 
-  .app-subtitle {
-    @apply mt-1 text-sm leading-6 text-slate-500;
-  }
+    .app-subtitle {
+        @apply mt-1 text-sm leading-6 text-slate-500;
+    }
 
-  .app-label {
-    @apply text-xs font-semibold uppercase tracking-wide text-slate-500;
-  }
+    .app-label {
+        @apply text-xs font-semibold uppercase tracking-wide text-slate-500;
+    }
 
-  .app-surface {
-    @apply rounded-xl border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)];
-  }
+    .app-surface {
+        @apply rounded-xl border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)];
+    }
 
-  .app-surface-soft {
-    @apply rounded-xl border border-slate-200/70 bg-slate-50/70;
-  }
+    .app-surface-soft {
+        @apply rounded-xl border border-slate-200/70 bg-slate-50/70;
+    }
 
-  .app-row {
-    @apply flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-slate-50;
-  }
+    .app-row {
+        @apply flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-slate-50;
+    }
 
-  .app-icon-button {
-    @apply inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
-  }
+    .app-icon-button {
+        @apply inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
+    }
 
-  .app-primary-button {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-45;
-  }
+    .app-primary-button {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-45;
+    }
 
-  .app-secondary-button {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50;
-  }
+    .app-secondary-button {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50;
+    }
 
-  .app-segmented {
-    @apply flex gap-1 rounded-xl border border-slate-200/70 bg-slate-100/80 p-1;
-  }
+    .app-segmented {
+        @apply flex gap-1 rounded-xl border border-slate-200/70 bg-slate-100/80 p-1;
+    }
 
-  .app-segment {
-    @apply flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800;
-  }
+    .app-segment {
+        @apply flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800;
+    }
 
-  .app-segment-active {
-    @apply bg-white text-slate-950 shadow-sm;
-  }
+    .app-segment-active {
+        @apply bg-white text-slate-950 shadow-sm;
+    }
 
-  .app-chip {
-    @apply inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600;
-  }
+    .app-chip {
+        @apply inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600;
+    }
 }
 
 @media (min-width: 1024px) {
-  body {
-    background:
-      linear-gradient(90deg, rgba(255, 255, 255, 0.72) 0 17.5rem, transparent 17.5rem),
-      var(--buddy-bg);
-  }
+    body {
+        background:
+            linear-gradient(90deg, rgba(255, 255, 255, 0.72) 0 17.5rem, transparent 17.5rem),
+            var(--buddy-bg);
+    }
 }

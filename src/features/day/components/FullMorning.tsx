@@ -1,8 +1,18 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, subDays } from 'date-fns';
 import {
-    ChevronLeft, ChevronRight, Mail, Activity, Check, Settings, Plus,
-    Clock, RefreshCw, Dumbbell, Calendar as CalendarIcon, Inbox,
+    ChevronLeft,
+    ChevronRight,
+    Mail,
+    Activity,
+    Check,
+    Settings,
+    Plus,
+    Clock,
+    RefreshCw,
+    Dumbbell,
+    Calendar as CalendarIcon,
+    Inbox,
 } from 'lucide-react';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { useAuth } from '../../../hooks/useAuth';
@@ -27,7 +37,7 @@ import type { Task } from '../../tasks/types';
 import { parseDueDate } from '../../tasks/utils/dueDates';
 import { deriveTaskKind } from '../../tasks/utils/taskKind';
 import { pickSomeday } from '../../tasks/utils/somedayPick';
-import { TriageInbox } from '../../tasks';
+import TriageInbox from '../../tasks/components/TriageInbox';
 import { v4 as uuidv4 } from 'uuid';
 
 type Step = 0 | 1 | 2 | 3 | 4;
@@ -49,11 +59,17 @@ function readRoutineMap(dateKey: string): Record<string, string> {
     try {
         const raw = sessionStorage.getItem(routineMapKey(dateKey));
         return raw ? (JSON.parse(raw) as Record<string, string>) : {};
-    } catch { return {}; }
+    } catch {
+        return {};
+    }
 }
 
 function writeRoutineMap(dateKey: string, map: Record<string, string>) {
-    try { sessionStorage.setItem(routineMapKey(dateKey), JSON.stringify(map)); } catch { /* ignore */ }
+    try {
+        sessionStorage.setItem(routineMapKey(dateKey), JSON.stringify(map));
+    } catch {
+        /* ignore */
+    }
 }
 
 const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
@@ -71,12 +87,18 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
         if (startAtPlan) return 4;
         try {
             const saved = sessionStorage.getItem(`full_morning_step_${dateKey}`);
-            return (saved !== null ? (Number(saved) as Step) : 0);
-        } catch { return 0; }
+            return saved !== null ? (Number(saved) as Step) : 0;
+        } catch {
+            return 0;
+        }
     });
 
     useEffect(() => {
-        try { sessionStorage.setItem(`full_morning_step_${dateKey}`, String(step)); } catch { /* ignore */ }
+        try {
+            sessionStorage.setItem(`full_morning_step_${dateKey}`, String(step));
+        } catch {
+            /* ignore */
+        }
     }, [step, dateKey]);
 
     // Comms
@@ -85,40 +107,49 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
         try {
             const saved = sessionStorage.getItem(`morning_comms_${dateKey}`);
             return saved ? (JSON.parse(saved) as Record<string, boolean>) : {};
-        } catch { return {}; }
+        } catch {
+            return {};
+        }
     });
     const [showCommsSettings, setShowCommsSettings] = useState(false);
     const [commsError, setCommsError] = useState<string | null>(null);
 
     useEffect(() => {
-        try { sessionStorage.setItem(`morning_comms_${dateKey}`, JSON.stringify(commsChecked)); } catch { /* ignore */ }
+        try {
+            sessionStorage.setItem(`morning_comms_${dateKey}`, JSON.stringify(commsChecked));
+        } catch {
+            /* ignore */
+        }
     }, [commsChecked, dateKey]);
 
     const loadComms = () => {
         if (!user?.id) return;
         setCommsError(null);
         getCategorySettings(user.id, 'comms')
-            .then(s => {
+            .then((s) => {
                 const dayOfWeek = new Date().getDay();
                 const filtered = s.items.filter(
-                    item => item.daysOfWeek === null || item.daysOfWeek.includes(dayOfWeek)
+                    (item) => item.daysOfWeek === null || item.daysOfWeek.includes(dayOfWeek),
                 );
                 setCommsItems(filtered);
             })
-            .catch(err => {
+            .catch((err) => {
                 console.error('Failed to load comms items:', err);
                 setCommsError('Could not load comms items. Check your connection.');
             });
     };
-    useEffect(() => { loadComms(); }, [user?.id]);
+    useEffect(() => {
+        loadComms();
+    }, [user?.id]);
 
-    const toggleComms = (id: string) =>
-        setCommsChecked(prev => ({ ...prev, [id]: !prev[id] }));
+    const toggleComms = (id: string) => setCommsChecked((prev) => ({ ...prev, [id]: !prev[id] }));
 
     // Routines (activity_templates)
     const [routines, setRoutines] = useState<ActivityTemplate[]>([]);
     const [routinesLoading, setRoutinesLoading] = useState(false);
-    const [routineMap, setRoutineMap] = useState<Record<string, string>>(() => readRoutineMap(dateKey));
+    const [routineMap, setRoutineMap] = useState<Record<string, string>>(() =>
+        readRoutineMap(dateKey),
+    );
 
     const loadRoutines = useCallback(async () => {
         if (!user?.id) return;
@@ -139,7 +170,9 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
         }
     }, [user?.id]);
 
-    useEffect(() => { void loadRoutines(); }, [loadRoutines]);
+    useEffect(() => {
+        void loadRoutines();
+    }, [loadRoutines]);
 
     const toggleRoutine = async (routine: ActivityTemplate) => {
         const existingTodoId = routineMap[routine.id];
@@ -218,10 +251,18 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
 
     // Plan step
     const [intention, setIntention] = useState<string>(() => {
-        try { return sessionStorage.getItem(`light_intention_${dateKey}`) ?? ''; } catch { return ''; }
+        try {
+            return sessionStorage.getItem(`light_intention_${dateKey}`) ?? '';
+        } catch {
+            return '';
+        }
     });
     useEffect(() => {
-        try { sessionStorage.setItem(`light_intention_${dateKey}`, intention); } catch { /* ignore */ }
+        try {
+            sessionStorage.setItem(`light_intention_${dateKey}`, intention);
+        } catch {
+            /* ignore */
+        }
     }, [intention, dateKey]);
 
     const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -233,30 +274,53 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
     const [planSource, setPlanSource] = useState<'tasks' | 'school'>('tasks');
     const [showFullPicker, setShowFullPicker] = useState(false);
 
-    const pickedIds = useMemo(() => new Set(items.picks.map(p => p.id)), [items.picks]);
+    const pickedIds = useMemo(() => new Set(items.picks.map((p) => p.id)), [items.picks]);
 
     // Backlog ("someday") forcing: nudge the user to pull at least one no-pressure
     // task into today unless they explicitly opt out.
     const backlog = useMemo(
-        () => tasks.filter(t => !t.completed && !pickedIds.has(t.id) && deriveTaskKind(t) === 'backlog'),
+        () =>
+            tasks.filter(
+                (t) => !t.completed && !pickedIds.has(t.id) && deriveTaskKind(t) === 'backlog',
+            ),
         [tasks, pickedIds],
     );
     const [backlogChoice, setBacklogChoice] = useState<'pending' | 'picked' | 'skip'>(() => {
-        try { return (sessionStorage.getItem(`backlog_choice_${dateKey}`) as 'pending' | 'picked' | 'skip') || 'pending'; }
-        catch { return 'pending'; }
+        try {
+            return (
+                (sessionStorage.getItem(`backlog_choice_${dateKey}`) as
+                    | 'pending'
+                    | 'picked'
+                    | 'skip') || 'pending'
+            );
+        } catch {
+            return 'pending';
+        }
     });
     useEffect(() => {
-        try { sessionStorage.setItem(`backlog_choice_${dateKey}`, backlogChoice); } catch { /* ignore */ }
+        try {
+            sessionStorage.setItem(`backlog_choice_${dateKey}`, backlogChoice);
+        } catch {
+            /* ignore */
+        }
     }, [backlogChoice, dateKey]);
     // One-a-day someday: surface exactly one no-pressure task. "Show another" skips
     // the current one for the rest of the session so a different one comes up.
     const [somedaySkipped, setSomedaySkipped] = useState<string[]>(() => {
-        try { return JSON.parse(sessionStorage.getItem(`someday_skipped_${dateKey}`) || '[]') as string[]; }
-        catch { return []; }
+        try {
+            return JSON.parse(
+                sessionStorage.getItem(`someday_skipped_${dateKey}`) || '[]',
+            ) as string[];
+        } catch {
+            return [];
+        }
     });
     useEffect(() => {
-        try { sessionStorage.setItem(`someday_skipped_${dateKey}`, JSON.stringify(somedaySkipped)); }
-        catch { /* ignore */ }
+        try {
+            sessionStorage.setItem(`someday_skipped_${dateKey}`, JSON.stringify(somedaySkipped));
+        } catch {
+            /* ignore */
+        }
     }, [somedaySkipped, dateKey]);
     const somedayPick = useMemo(
         () => pickSomeday(backlog, { skip: somedaySkipped }),
@@ -276,7 +340,7 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
 
     const suggestions = useMemo(() => {
         return tasks
-            .filter(t => !t.completed && !pickedIds.has(t.id))
+            .filter((t) => !t.completed && !pickedIds.has(t.id))
             .sort((a, b) => {
                 const aUrgent = a.dueDate && a.dueDate <= todayStr ? 0 : 1;
                 const bUrgent = b.dueDate && b.dueDate <= todayStr ? 0 : 1;
@@ -380,16 +444,20 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                             <button
                                 onClick={() => setStep(i as Step)}
                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                                    active ? 'bg-indigo-600 text-white' :
-                                    done ? 'bg-indigo-100 text-indigo-700' :
-                                    'bg-slate-100 text-slate-400'
+                                    active
+                                        ? 'bg-indigo-600 text-white'
+                                        : done
+                                          ? 'bg-indigo-100 text-indigo-700'
+                                          : 'bg-slate-100 text-slate-400'
                                 }`}
                             >
                                 {done ? <Check size={12} /> : <Icon size={12} />}
                                 <span className="hidden sm:inline">{label}</span>
                                 <span className="sm:hidden">{i + 1}</span>
                             </button>
-                            {i < STEP_LABELS.length - 1 && <div className="flex-1 h-px bg-slate-200 min-w-[8px]" />}
+                            {i < STEP_LABELS.length - 1 && (
+                                <div className="flex-1 h-px bg-slate-200 min-w-[8px]" />
+                            )}
                         </React.Fragment>
                     );
                 })}
@@ -399,7 +467,9 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
             {step === 0 && (
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="font-semibold text-slate-900 text-lg">Start with your comms</h2>
+                        <h2 className="font-semibold text-slate-900 text-lg">
+                            Start with your comms
+                        </h2>
                         <button
                             onClick={() => setShowCommsSettings(true)}
                             className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
@@ -408,34 +478,50 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                             <Settings size={16} />
                         </button>
                     </div>
-                    <p className="text-sm text-slate-500">Check these before diving into your day.</p>
+                    <p className="text-sm text-slate-500">
+                        Check these before diving into your day.
+                    </p>
                     {commsError && (
-                        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{commsError}</p>
+                        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                            {commsError}
+                        </p>
                     )}
                     {!commsError && commsItems.length === 0 ? (
-                        <p className="text-sm text-slate-400">No items for today. Add some in settings.</p>
-                    ) : !commsError && (
-                        <ul className="space-y-2">
-                            {commsItems.map(item => (
-                                <li key={item.id}>
-                                    <button
-                                        onClick={() => toggleComms(item.id)}
-                                        className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left ${
-                                            commsChecked[item.id]
-                                                ? 'bg-green-50 border-green-200 text-green-800'
-                                                : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-200'
-                                        }`}
-                                    >
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                                            commsChecked[item.id] ? 'border-green-500 bg-green-500' : 'border-slate-300'
-                                        }`}>
-                                            {commsChecked[item.id] && <Check size={12} className="text-white" />}
-                                        </div>
-                                        <span className="text-sm font-medium">{item.label}</span>
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                        <p className="text-sm text-slate-400">
+                            No items for today. Add some in settings.
+                        </p>
+                    ) : (
+                        !commsError && (
+                            <ul className="space-y-2">
+                                {commsItems.map((item) => (
+                                    <li key={item.id}>
+                                        <button
+                                            onClick={() => toggleComms(item.id)}
+                                            className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left ${
+                                                commsChecked[item.id]
+                                                    ? 'bg-green-50 border-green-200 text-green-800'
+                                                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-indigo-200'
+                                            }`}
+                                        >
+                                            <div
+                                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                                                    commsChecked[item.id]
+                                                        ? 'border-green-500 bg-green-500'
+                                                        : 'border-slate-300'
+                                                }`}
+                                            >
+                                                {commsChecked[item.id] && (
+                                                    <Check size={12} className="text-white" />
+                                                )}
+                                            </div>
+                                            <span className="text-sm font-medium">
+                                                {item.label}
+                                            </span>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )
                     )}
                 </div>
             )}
@@ -466,23 +552,33 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                         {routinesLoading ? (
                             <p className="text-sm text-slate-400">Loading…</p>
                         ) : routines.length === 0 && !addRoutineOpen ? (
-                            <p className="text-sm text-slate-400">No routines yet. Add one below.</p>
+                            <p className="text-sm text-slate-400">
+                                No routines yet. Add one below.
+                            </p>
                         ) : (
                             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {routines.map(r => {
+                                {routines.map((r) => {
                                     const picked = !!routineMap[r.id];
                                     return (
                                         <li key={r.id}>
                                             <button
                                                 onClick={() => void toggleRoutine(r)}
                                                 className={`w-full flex items-center gap-2 p-3 rounded-xl border transition-colors text-left ${
-                                                    picked ? 'bg-indigo-50 border-indigo-300' : 'border-slate-200 hover:border-indigo-200'
+                                                    picked
+                                                        ? 'bg-indigo-50 border-indigo-300'
+                                                        : 'border-slate-200 hover:border-indigo-200'
                                                 }`}
                                             >
-                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                                                    picked ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'
-                                                }`}>
-                                                    {picked && <Check size={11} className="text-white" />}
+                                                <div
+                                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                                                        picked
+                                                            ? 'border-indigo-600 bg-indigo-600'
+                                                            : 'border-slate-300'
+                                                    }`}
+                                                >
+                                                    {picked && (
+                                                        <Check size={11} className="text-white" />
+                                                    )}
                                                 </div>
                                                 <span className="text-sm font-medium text-slate-800 truncate">
                                                     {r.emoji} {r.name}
@@ -510,7 +606,7 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                                     <input
                                         type="text"
                                         value={newRoutineEmoji}
-                                        onChange={e => setNewRoutineEmoji(e.target.value)}
+                                        onChange={(e) => setNewRoutineEmoji(e.target.value)}
                                         maxLength={2}
                                         className="w-12 text-center border border-slate-200 rounded-md px-2 py-2 text-sm"
                                     />
@@ -519,7 +615,7 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                                         autoFocus
                                         placeholder="Activity name (e.g. Morning walk)"
                                         value={newRoutineName}
-                                        onChange={e => setNewRoutineName(e.target.value)}
+                                        onChange={(e) => setNewRoutineName(e.target.value)}
                                         className="flex-1 border border-slate-200 rounded-md px-3 py-2 text-sm"
                                     />
                                 </div>
@@ -529,7 +625,9 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                                         type="number"
                                         min={1}
                                         value={newRoutineMinutes}
-                                        onChange={e => setNewRoutineMinutes(Number(e.target.value))}
+                                        onChange={(e) =>
+                                            setNewRoutineMinutes(Number(e.target.value))
+                                        }
                                         className="w-20 border border-slate-200 rounded-md px-2 py-1 text-sm"
                                     />
                                 </label>
@@ -542,7 +640,12 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                                         {creatingRoutine ? 'Adding…' : 'Save'}
                                     </button>
                                     <button
-                                        onClick={() => { setAddRoutineOpen(false); setNewRoutineName(''); setNewRoutineEmoji('💪'); setNewRoutineMinutes(30); }}
+                                        onClick={() => {
+                                            setAddRoutineOpen(false);
+                                            setNewRoutineName('');
+                                            setNewRoutineEmoji('💪');
+                                            setNewRoutineMinutes(30);
+                                        }}
                                         disabled={creatingRoutine}
                                         className="px-3 text-sm text-slate-600 hover:bg-slate-100 rounded-md"
                                     >
@@ -561,8 +664,8 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-1">
                         <h2 className="font-semibold text-slate-900">Sort your captures</h2>
                         <p className="text-sm text-slate-500">
-                            Let AI pre-sort what you captured, fix anything it got wrong, and route it all in one tap.
-                            Optional — tap Next to skip and do it later.
+                            Let AI pre-sort what you captured, fix anything it got wrong, and route
+                            it all in one tap. Optional — tap Next to skip and do it later.
                         </p>
                     </div>
                     <TriageInbox variant="embedded" />
@@ -576,14 +679,17 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                         <div>
                             <h2 className="font-semibold text-slate-900">Today</h2>
                             <p className="text-sm text-slate-500 mt-0.5">
-                                Pick tasks, set start times and durations, and they'll land on the timeline.
+                                Pick tasks, set start times and durations, and they'll land on the
+                                timeline.
                             </p>
                         </div>
                         <div>
-                            <label className="text-xs font-medium text-slate-500">One word for today (optional)</label>
+                            <label className="text-xs font-medium text-slate-500">
+                                One word for today (optional)
+                            </label>
                             <input
                                 value={intention}
-                                onChange={e => setIntention(e.target.value)}
+                                onChange={(e) => setIntention(e.target.value)}
                                 placeholder="rest · focus · catch up · …"
                                 className="mt-1 w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"
                             />
@@ -595,14 +701,16 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                         dateKey={dateKey}
                         accent="indigo"
                         fullPickerOpen={showFullPicker}
-                        onToggleFullPicker={() => setShowFullPicker(prev => !prev)}
+                        onToggleFullPicker={() => setShowFullPicker((prev) => !prev)}
                     />
 
                     {/* One-a-day someday — surface a single no-pressure task */}
                     {somedayPick && backlogChoice === 'pending' && (
                         <div className="bg-white rounded-2xl border border-violet-200 shadow-sm p-5 space-y-3">
                             <div>
-                                <h3 className="font-semibold text-slate-900">One small thing from someday</h3>
+                                <h3 className="font-semibold text-slate-900">
+                                    One small thing from someday
+                                </h3>
                                 <p className="text-sm text-slate-500 mt-0.5">
                                     No pressure — just one, if you have room.
                                 </p>
@@ -618,7 +726,9 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                                     Do it today
                                 </button>
                                 <button
-                                    onClick={() => setSomedaySkipped(prev => [...prev, somedayPick.id])}
+                                    onClick={() =>
+                                        setSomedaySkipped((prev) => [...prev, somedayPick.id])
+                                    }
                                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
                                 >
                                     Show another
@@ -664,8 +774,14 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                         />
 
                         <div className="pt-3 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
-                            <span>{items.totalCount} picked{totalTimeLabel ? ` · est. ~${totalTimeLabel}` : ''}</span>
-                            <span className="text-slate-400">{items.events.length} event{items.events.length === 1 ? '' : 's'} today</span>
+                            <span>
+                                {items.totalCount} picked
+                                {totalTimeLabel ? ` · est. ~${totalTimeLabel}` : ''}
+                            </span>
+                            <span className="text-slate-400">
+                                {items.events.length} event{items.events.length === 1 ? '' : 's'}{' '}
+                                today
+                            </span>
                         </div>
                     </div>
 
@@ -673,11 +789,15 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                     {items.picks.length > 0 && (
                         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-2">
                             <h3 className="font-semibold text-slate-900 text-sm">Time blocks</h3>
-                            <p className="text-xs text-slate-500">Set start time and duration to place a pick on the timeline.</p>
+                            <p className="text-xs text-slate-500">
+                                Set start time and duration to place a pick on the timeline.
+                            </p>
                             <ul className="space-y-2 pt-1">
-                                {items.picks.map(task => (
+                                {items.picks.map((task) => (
                                     <li key={task.id} className="flex items-center gap-2 flex-wrap">
-                                        <span className={`text-sm flex-1 min-w-0 truncate ${task.completed ? 'text-green-700 line-through' : 'text-slate-800'}`}>
+                                        <span
+                                            className={`text-sm flex-1 min-w-0 truncate ${task.completed ? 'text-green-700 line-through' : 'text-slate-800'}`}
+                                        >
                                             {task.title}
                                         </span>
                                         <label className="text-xs text-slate-500 flex items-center gap-1">
@@ -685,7 +805,9 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                                             <input
                                                 type="time"
                                                 value={task.dueTime ?? ''}
-                                                onChange={e => handleSetPickTime(task, e.target.value || null)}
+                                                onChange={(e) =>
+                                                    handleSetPickTime(task, e.target.value || null)
+                                                }
                                                 className="px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
                                             />
                                         </label>
@@ -694,7 +816,14 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                                                 type="number"
                                                 min={1}
                                                 value={task.estimatedTime ?? ''}
-                                                onChange={e => handleSetPickEstimate(task, e.target.value ? Number(e.target.value) : null)}
+                                                onChange={(e) =>
+                                                    handleSetPickEstimate(
+                                                        task,
+                                                        e.target.value
+                                                            ? Number(e.target.value)
+                                                            : null,
+                                                    )
+                                                }
                                                 className="w-16 px-2 py-1 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
                                                 placeholder="min"
                                             />
@@ -707,103 +836,136 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                     )}
 
                     {showFullPicker && (
-                    <>
-                    <div className="app-segmented">
-                        <button
-                            onClick={() => setPlanSource('tasks')}
-                            className={`app-segment ${planSource === 'tasks' ? 'app-segment-active' : ''}`}
-                        >
-                            Tasks
-                        </button>
-                        <button
-                            onClick={() => setPlanSource('school')}
-                            className={`app-segment ${planSource === 'school' ? 'app-segment-active' : ''}`}
-                        >
-                            School
-                        </button>
-                    </div>
+                        <>
+                            <div className="app-segmented">
+                                <button
+                                    onClick={() => setPlanSource('tasks')}
+                                    className={`app-segment ${planSource === 'tasks' ? 'app-segment-active' : ''}`}
+                                >
+                                    Tasks
+                                </button>
+                                <button
+                                    onClick={() => setPlanSource('school')}
+                                    className={`app-segment ${planSource === 'school' ? 'app-segment-active' : ''}`}
+                                >
+                                    School
+                                </button>
+                            </div>
 
-                    {planSource === 'tasks' ? (
-                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-                            <h3 className="font-semibold text-slate-900">Add from your tasks</h3>
-                            {suggestions.length === 0 ? (
-                                <p className="text-sm text-slate-400">All your open tasks are already in today.</p>
-                            ) : (
-                                <ul className="space-y-1 max-h-64 overflow-y-auto">
-                                    {suggestions.map(task => {
-                                        const isOverdue = task.dueDate && task.dueDate < todayStr;
-                                        return (
-                                            <li key={task.id}>
-                                                <button
-                                                    onClick={() => handleAddPick(task)}
-                                                    className="w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left hover:bg-indigo-50 transition-colors"
-                                                >
-                                                    <Plus size={14} className="text-indigo-500 flex-shrink-0" />
-                                                    <span className={`text-sm flex-1 truncate ${isOverdue ? 'text-red-700' : 'text-slate-800'}`}>
-                                                        {task.title}
-                                                    </span>
-                                                    {task.dueDate && (
-                                                        <span className={`text-xs flex-shrink-0 ${isOverdue ? 'text-red-600 font-medium' : 'text-slate-400'}`}>
-                                                            {isOverdue ? 'overdue' : format(parseDueDate(task.dueDate), 'MMM d')}
-                                                        </span>
-                                                    )}
-                                                    {task.estimatedTime && (
-                                                        <span className="text-xs text-slate-400 flex-shrink-0">{task.estimatedTime}m</span>
-                                                    )}
-                                                </button>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            )}
+                            {planSource === 'tasks' ? (
+                                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+                                    <h3 className="font-semibold text-slate-900">
+                                        Add from your tasks
+                                    </h3>
+                                    {suggestions.length === 0 ? (
+                                        <p className="text-sm text-slate-400">
+                                            All your open tasks are already in today.
+                                        </p>
+                                    ) : (
+                                        <ul className="space-y-1 max-h-64 overflow-y-auto">
+                                            {suggestions.map((task) => {
+                                                const isOverdue =
+                                                    task.dueDate && task.dueDate < todayStr;
+                                                return (
+                                                    <li key={task.id}>
+                                                        <button
+                                                            onClick={() => handleAddPick(task)}
+                                                            className="w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left hover:bg-indigo-50 transition-colors"
+                                                        >
+                                                            <Plus
+                                                                size={14}
+                                                                className="text-indigo-500 flex-shrink-0"
+                                                            />
+                                                            <span
+                                                                className={`text-sm flex-1 truncate ${isOverdue ? 'text-red-700' : 'text-slate-800'}`}
+                                                            >
+                                                                {task.title}
+                                                            </span>
+                                                            {task.dueDate && (
+                                                                <span
+                                                                    className={`text-xs flex-shrink-0 ${isOverdue ? 'text-red-600 font-medium' : 'text-slate-400'}`}
+                                                                >
+                                                                    {isOverdue
+                                                                        ? 'overdue'
+                                                                        : format(
+                                                                              parseDueDate(
+                                                                                  task.dueDate,
+                                                                              ),
+                                                                              'MMM d',
+                                                                          )}
+                                                                </span>
+                                                            )}
+                                                            {task.estimatedTime && (
+                                                                <span className="text-xs text-slate-400 flex-shrink-0">
+                                                                    {task.estimatedTime}m
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    )}
 
-                            <form onSubmit={handleAddNewTask} className="pt-3 border-t border-slate-100 space-y-2">
-                                <input
-                                    value={newTaskTitle}
-                                    onChange={e => setNewTaskTitle(e.target.value)}
-                                    placeholder="Add a new task with a time slot…"
-                                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                                />
-                                <div className="flex gap-2 flex-wrap">
-                                    <label className="flex items-center gap-1 text-xs text-slate-500 flex-shrink-0">
-                                        <Clock size={12} />
-                                        <input
-                                            type="time"
-                                            value={newTaskTime}
-                                            onChange={e => setNewTaskTime(e.target.value)}
-                                            className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                                        />
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={newTaskEstimate}
-                                        onChange={e => setNewTaskEstimate(e.target.value)}
-                                        placeholder="Est. min"
-                                        min={1}
-                                        className="w-20 px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={!newTaskTitle.trim() || addingTask}
-                                        className="ml-auto px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 disabled:opacity-40 transition-colors flex items-center gap-1"
+                                    <form
+                                        onSubmit={handleAddNewTask}
+                                        className="pt-3 border-t border-slate-100 space-y-2"
                                     >
-                                        <Plus size={13} /> {addingTask ? 'Adding…' : 'Add to today'}
-                                    </button>
+                                        <input
+                                            value={newTaskTitle}
+                                            onChange={(e) => setNewTaskTitle(e.target.value)}
+                                            placeholder="Add a new task with a time slot…"
+                                            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                        />
+                                        <div className="flex gap-2 flex-wrap">
+                                            <label className="flex items-center gap-1 text-xs text-slate-500 flex-shrink-0">
+                                                <Clock size={12} />
+                                                <input
+                                                    type="time"
+                                                    value={newTaskTime}
+                                                    onChange={(e) => setNewTaskTime(e.target.value)}
+                                                    className="px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                                />
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={newTaskEstimate}
+                                                onChange={(e) => setNewTaskEstimate(e.target.value)}
+                                                placeholder="Est. min"
+                                                min={1}
+                                                className="w-20 px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={!newTaskTitle.trim() || addingTask}
+                                                className="ml-auto px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 disabled:opacity-40 transition-colors flex items-center gap-1"
+                                            >
+                                                <Plus size={13} />{' '}
+                                                {addingTask ? 'Adding…' : 'Add to today'}
+                                            </button>
+                                        </div>
+                                        {addTaskError && (
+                                            <p className="text-xs text-red-600">{addTaskError}</p>
+                                        )}
+                                    </form>
                                 </div>
-                                {addTaskError && <p className="text-xs text-red-600">{addTaskError}</p>}
-                            </form>
-                        </div>
-                    ) : (
-                        <SchoolPlanningPicker dateKey={dateKey} accent="indigo" onNavigate={onNavigate} />
-                    )}
-                    </>
+                            ) : (
+                                <SchoolPlanningPicker
+                                    dateKey={dateKey}
+                                    accent="indigo"
+                                    onNavigate={onNavigate}
+                                />
+                            )}
+                        </>
                     )}
 
                     {/* Untimed picks reminder */}
                     {items.untimedPicks.length > 0 && (
                         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
                             <p className="text-xs text-amber-800">
-                                {items.untimedPicks.length} pick{items.untimedPicks.length === 1 ? '' : 's'} without a time slot — set times above to place them on the timeline.
+                                {items.untimedPicks.length} pick
+                                {items.untimedPicks.length === 1 ? '' : 's'} without a time slot —
+                                set times above to place them on the timeline.
                             </p>
                         </div>
                     )}
@@ -827,29 +989,36 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
                     >
                         Next <ChevronRight size={16} />
                     </button>
-                ) : !routineProgress.morning && (
-                    <div className="ml-auto flex flex-col items-end gap-1">
-                        <button
-                            onClick={() => {
-                                markRoutineDone('morning', dateKey);
-                                toast.success('Morning routine done — have a good day!');
-                            }}
-                            disabled={!backlogSatisfied}
-                            className="flex items-center gap-1 px-5 py-2 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            <Check size={16} /> Finish morning
-                        </button>
-                        {!backlogSatisfied && (
-                            <span className="text-xs text-slate-400">Pick a someday task or tap "Not today" first.</span>
-                        )}
-                    </div>
+                ) : (
+                    !routineProgress.morning && (
+                        <div className="ml-auto flex flex-col items-end gap-1">
+                            <button
+                                onClick={() => {
+                                    markRoutineDone('morning', dateKey);
+                                    toast.success('Morning routine done — have a good day!');
+                                }}
+                                disabled={!backlogSatisfied}
+                                className="flex items-center gap-1 px-5 py-2 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <Check size={16} /> Finish morning
+                            </button>
+                            {!backlogSatisfied && (
+                                <span className="text-xs text-slate-400">
+                                    Pick a someday task or tap "Not today" first.
+                                </span>
+                            )}
+                        </div>
+                    )
                 )}
             </div>
 
             {showCommsSettings && (
                 <CommsSettingsModal
                     onClose={() => setShowCommsSettings(false)}
-                    onSaved={() => { setShowCommsSettings(false); loadComms(); }}
+                    onSaved={() => {
+                        setShowCommsSettings(false);
+                        loadComms();
+                    }}
                 />
             )}
         </div>

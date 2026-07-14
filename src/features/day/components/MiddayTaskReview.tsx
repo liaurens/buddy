@@ -110,5 +110,4 @@ const MiddayTaskReview: React.FC<Props> = ({ dateKey, accent }) => {
     );
 };
 
-
 export default MiddayTaskReview;

@@ -51,7 +51,9 @@ const CloseDayCard: React.FC<CloseDayCardProps> = ({ date, tomorrowPriority }) =
         }
     }, [user?.id, date]);
 
-    useEffect(() => { refresh(); }, [refresh]);
+    useEffect(() => {
+        refresh();
+    }, [refresh]);
 
     const handleToggle = async () => {
         if (!user?.id || busy) return;
@@ -92,7 +94,8 @@ const CloseDayCard: React.FC<CloseDayCardProps> = ({ date, tomorrowPriority }) =
             {!closed ? (
                 <>
                     <p className="text-xs text-slate-500">
-                        Done reflecting? Close the day — that's the whole ritual. Tomorrow starts fresh.
+                        Done reflecting? Close the day — that's the whole ritual. Tomorrow starts
+                        fresh.
                     </p>
                     <button
                         onClick={handleToggle}
@@ -114,7 +117,9 @@ const CloseDayCard: React.FC<CloseDayCardProps> = ({ date, tomorrowPriority }) =
                             <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500 flex items-center gap-1">
                                 <Sunrise size={12} /> Tomorrow's top item
                             </p>
-                            <p className="mt-1 text-sm font-medium text-indigo-900">{tomorrowTop}</p>
+                            <p className="mt-1 text-sm font-medium text-indigo-900">
+                                {tomorrowTop}
+                            </p>
                         </div>
                     )}
 
@@ -145,8 +150,8 @@ const CloseDayCard: React.FC<CloseDayCardProps> = ({ date, tomorrowPriority }) =
                                         isClosed
                                             ? 'bg-emerald-500 text-white'
                                             : isSelected
-                                                ? 'border-2 border-indigo-300 text-slate-500'
-                                                : 'bg-slate-100 text-slate-400'
+                                              ? 'border-2 border-indigo-300 text-slate-500'
+                                              : 'bg-slate-100 text-slate-400'
                                     }`}
                                 >
                                     {isClosed ? '✓' : WEEKDAY_LABELS[i]}

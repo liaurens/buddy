@@ -54,7 +54,12 @@ const SETTINGS_REGISTRY: Array<{
     { key: 'health', label: 'Health Trackers', Icon: Activity, Modal: TrackerSettingsModal },
     { key: 'check-in', label: 'Check-in', Icon: Heart, Modal: CheckInSettingsModal },
     { key: 'protocols', label: 'Protocols', Icon: Pill, Modal: ProtocolSettingsModal },
-    { key: 'experiments', label: 'Experiments', Icon: FlaskConical, Modal: ExperimentSettingsModal },
+    {
+        key: 'experiments',
+        label: 'Experiments',
+        Icon: FlaskConical,
+        Modal: ExperimentSettingsModal,
+    },
     { key: 'calendar', label: 'Calendar', Icon: Calendar, Modal: CalendarSettingsModal },
     { key: 'reflection', label: 'Reflection', Icon: TrendingUp, Modal: ReflectionSettingsModal },
     { key: 'focus', label: 'Focus Timer', Icon: Timer, Modal: PomodoroSettingsModal },
@@ -63,7 +68,7 @@ const SETTINGS_REGISTRY: Array<{
 
 const MePage: React.FC = () => {
     const [openKey, setOpenKey] = useState<SettingsKey | null>(null);
-    const ActiveModal = openKey ? SETTINGS_REGISTRY.find(s => s.key === openKey)?.Modal : null;
+    const ActiveModal = openKey ? SETTINGS_REGISTRY.find((s) => s.key === openKey)?.Modal : null;
 
     return (
         <div className="app-page">
@@ -85,11 +90,7 @@ const MePage: React.FC = () => {
                     </div>
                     <div className="divide-y divide-slate-100">
                         {SETTINGS_REGISTRY.map(({ key, label, Icon }) => (
-                            <button
-                                key={key}
-                                onClick={() => setOpenKey(key)}
-                                className="app-row"
-                            >
+                            <button key={key} onClick={() => setOpenKey(key)} className="app-row">
                                 <Icon size={18} className="text-slate-500" />
                                 <span className="flex-1 text-sm text-slate-700">{label}</span>
                                 <ChevronRight size={16} className="text-slate-400" />
@@ -102,9 +103,7 @@ const MePage: React.FC = () => {
                 <AccountPage embedded />
             </div>
 
-            {ActiveModal && (
-                <ActiveModal isOpen={true} onClose={() => setOpenKey(null)} />
-            )}
+            {ActiveModal && <ActiveModal isOpen={true} onClose={() => setOpenKey(null)} />}
         </div>
     );
 };

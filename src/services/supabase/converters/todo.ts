@@ -47,10 +47,15 @@ export function dbToTodo(db: DbTodo): Task {
         googleSyncedAt: db.google_synced_at || undefined,
         snoozeCount: db.snooze_count ?? 0,
         lastTouchedAt: db.last_touched_at || undefined,
+        waitingOn: db.waiting_on || undefined,
+        startDate: db.start_date || undefined,
     };
 }
 
-export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: string): Omit<DbTodo, 'id' | 'created_at'> & { id?: string; created_at?: string } {
+export function todoToDb(
+    todo: Omit<Task, 'id'> & { id?: string },
+    userId: string,
+): Omit<DbTodo, 'id' | 'created_at'> & { id?: string; created_at?: string } {
     return {
         id: todo.id,
         user_id: userId,
@@ -94,5 +99,7 @@ export function todoToDb(todo: Omit<Task, 'id'> & { id?: string }, userId: strin
         google_synced_at: todo.googleSyncedAt || null,
         snooze_count: todo.snoozeCount ?? 0,
         last_touched_at: todo.lastTouchedAt || null,
+        waiting_on: todo.waitingOn || null,
+        start_date: todo.startDate || null,
     };
 }

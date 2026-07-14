@@ -14,7 +14,7 @@ interface LogYesterdayStepProps {
 }
 
 const LogYesterdayStep: React.FC<LogYesterdayStepProps> = ({ onNavigate: _onNavigate }) => {
-    const yesterday = subDays(new Date(), 1);
+    const [yesterday] = useState(() => subDays(new Date(), 1));
     const yesterdayLabel = format(yesterday, 'EEEE, MMM do');
     const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
 
@@ -27,17 +27,17 @@ const LogYesterdayStep: React.FC<LogYesterdayStepProps> = ({ onNavigate: _onNavi
     const [doneExpIds, setDoneExpIds] = useState<Set<string>>(new Set());
 
     const activeExperiments = useMemo(
-        () => experiments.filter(e => e.status === 'active'),
-        [experiments]
+        () => experiments.filter((e) => e.status === 'active'),
+        [experiments],
     );
 
-    const activeExp = activeExpId ? activeExperiments.find(e => e.id === activeExpId) : null;
+    const activeExp = activeExpId ? activeExperiments.find((e) => e.id === activeExpId) : null;
     const { saveCheckin, checkinsByDate } = useExperimentCheckins(activeExpId ?? '');
     const existingExpEntries = activeExpId ? (checkinsByDate[yesterdayStr] ?? []) : [];
 
     const yesterdayEntries = useMemo(
         () => entries.filter((e: Entry) => isSameDay(new Date(e.timestamp), yesterday)),
-        [entries, yesterday.getTime()]
+        [entries, yesterday],
     );
 
     return (
@@ -64,7 +64,8 @@ const LogYesterdayStep: React.FC<LogYesterdayStepProps> = ({ onNavigate: _onNavi
                         onClick={() => setCheckinOpen(true)}
                         className="w-full py-2.5 px-4 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 text-sm font-medium hover:bg-indigo-100 transition-colors"
                     >
-                        Log yesterday's metrics ({trackers.length} tracker{trackers.length !== 1 ? 's' : ''})
+                        Log yesterday's metrics ({trackers.length} tracker
+                        {trackers.length !== 1 ? 's' : ''})
                     </button>
                 )}
             </div>
@@ -77,7 +78,7 @@ const LogYesterdayStep: React.FC<LogYesterdayStepProps> = ({ onNavigate: _onNavi
                         Active experiments
                     </h2>
                     <ul className="space-y-2">
-                        {activeExperiments.map(exp => {
+                        {activeExperiments.map((exp) => {
                             const done = doneExpIds.has(exp.id);
                             return (
                                 <li key={exp.id}>
@@ -90,19 +91,28 @@ const LogYesterdayStep: React.FC<LogYesterdayStepProps> = ({ onNavigate: _onNavi
                                         }`}
                                     >
                                         <div className="flex-1">
-                                            <p className="text-sm font-medium text-slate-800">{exp.name}</p>
+                                            <p className="text-sm font-medium text-slate-800">
+                                                {exp.name}
+                                            </p>
                                             <p className="text-xs text-slate-500">
                                                 {done
                                                     ? 'Logged for yesterday'
                                                     : exp.customMetrics.length > 0
-                                                        ? `${exp.customMetrics.length} metric${exp.customMetrics.length !== 1 ? 's' : ''} to log`
-                                                        : 'Tap to log check-in'}
+                                                      ? `${exp.customMetrics.length} metric${exp.customMetrics.length !== 1 ? 's' : ''} to log`
+                                                      : 'Tap to log check-in'}
                                             </p>
                                         </div>
-                                        {done
-                                            ? <Check size={16} className="text-emerald-600 flex-shrink-0" />
-                                            : <ChevronRight size={16} className="text-slate-400 flex-shrink-0" />
-                                        }
+                                        {done ? (
+                                            <Check
+                                                size={16}
+                                                className="text-emerald-600 flex-shrink-0"
+                                            />
+                                        ) : (
+                                            <ChevronRight
+                                                size={16}
+                                                className="text-slate-400 flex-shrink-0"
+                                            />
+                                        )}
                                     </button>
                                 </li>
                             );
@@ -135,7 +145,7 @@ const LogYesterdayStep: React.FC<LogYesterdayStepProps> = ({ onNavigate: _onNavi
                                 existingEntries={existingExpEntries}
                                 onSave={async (date, entries) => {
                                     await saveCheckin(date, entries);
-                                    setDoneExpIds(prev => new Set([...prev, activeExp.id]));
+                                    setDoneExpIds((prev) => new Set([...prev, activeExp.id]));
                                     setActiveExpId(null);
                                 }}
                             />
@@ -147,7 +157,10 @@ const LogYesterdayStep: React.FC<LogYesterdayStepProps> = ({ onNavigate: _onNavi
             <CheckinModal
                 isOpen={checkinOpen}
                 onClose={() => setCheckinOpen(false)}
-                onComplete={() => { setCheckinOpen(false); setCheckinDone(true); }}
+                onComplete={() => {
+                    setCheckinOpen(false);
+                    setCheckinDone(true);
+                }}
                 date={yesterday}
                 existingEntries={yesterdayEntries}
             />

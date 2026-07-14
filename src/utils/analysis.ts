@@ -48,7 +48,7 @@ export const getCorrelationColor = (score: number): string => {
 /**
  * Time-Lagged Cross-Correlation (TLCC)
  * Calculates correlation at different time lags to find optimal delay
- * 
+ *
  * @param x Input time series (cause)
  * @param y Output time series (effect)
  * @param maxLag Maximum lag to test (in data points)
@@ -80,14 +80,18 @@ export const calculateTLCC = (x: number[], y: number[], maxLag: number = 10): TL
 /**
  * Find the optimal lag with the strongest correlation
  */
-export const findOptimalLag = (x: number[], y: number[], maxLag: number = 10): TLCCResult | null => {
+export const findOptimalLag = (
+    x: number[],
+    y: number[],
+    maxLag: number = 10,
+): TLCCResult | null => {
     const tlccResults = calculateTLCC(x, y, maxLag);
 
     if (tlccResults.length === 0) return null;
 
     // Find lag with maximum absolute correlation
     return tlccResults.reduce((best, current) =>
-        Math.abs(current.correlation) > Math.abs(best.correlation) ? current : best
+        Math.abs(current.correlation) > Math.abs(best.correlation) ? current : best,
     );
 };
 
@@ -110,7 +114,7 @@ export const calculatePValue = (r: number, n: number): number | null => {
 
     // Simple approximation using error function
     // p ≈ 2 * (1 - Φ(|t| * sqrt(df/(df-2))))
-    const x = absT / Math.sqrt(1 + absT * absT / df);
+    const x = absT / Math.sqrt(1 + (absT * absT) / df);
     const p = 2 * (1 - normalCDF(x * Math.sqrt(df)));
 
     return Math.min(1, Math.max(0, p));
@@ -131,7 +135,7 @@ const normalCDF = (x: number): number => {
     x = Math.abs(x) / Math.sqrt(2);
 
     const t = 1.0 / (1.0 + p * x);
-    const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+    const y = 1.0 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
 
     return 0.5 * (1.0 + sign * y);
 };
@@ -140,7 +144,10 @@ const normalCDF = (x: number): number => {
  * Calculate 95% confidence interval for correlation
  * Uses Fisher's z-transformation
  */
-export const calculateConfidenceInterval = (r: number, n: number): { low: number; high: number } | null => {
+export const calculateConfidenceInterval = (
+    r: number,
+    n: number,
+): { low: number; high: number } | null => {
     if (n < 4) return null;
 
     // Fisher's z-transformation

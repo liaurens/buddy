@@ -44,8 +44,16 @@ describe('canonical ordering', () => {
     it('a stale task outranks its identical non-stale twin', () => {
         expect(
             order([
-                task({ id: 'fresh', dueDate: '2026-07-04', lastTouchedAt: '2026-07-04T08:00:00.000Z' }),
-                task({ id: 'stale', dueDate: '2026-07-04', lastTouchedAt: '2026-07-01T08:00:00.000Z' }),
+                task({
+                    id: 'fresh',
+                    dueDate: '2026-07-04',
+                    lastTouchedAt: '2026-07-04T08:00:00.000Z',
+                }),
+                task({
+                    id: 'stale',
+                    dueDate: '2026-07-04',
+                    lastTouchedAt: '2026-07-01T08:00:00.000Z',
+                }),
             ]),
         ).toEqual(['stale', 'fresh']);
     });

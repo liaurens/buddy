@@ -38,7 +38,10 @@ const CaptureFAB: React.FC<CaptureFABProps> = ({ activeTab, onNavigate }) => {
 
     const startVoice = () => {
         triggeredLongPress.current = true;
-        const w = window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike };
+        const w = window as unknown as {
+            SpeechRecognition?: new () => SpeechRecognitionLike;
+            webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+        };
         const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
         if (!SR) {
             toast.warning('Voice capture is not supported in this browser.');

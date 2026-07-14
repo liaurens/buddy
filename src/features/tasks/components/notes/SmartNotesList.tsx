@@ -12,21 +12,29 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
     categoryId,
     showCategoryBadge = true,
 }) => {
-    const { notes, categories, deleteNote, markProcessed, moveToCategory, updateNote, convertNoteToTask } = useSmartNotes();
-    const todoCategory = categories.find(c => c.flag === 'todo');
+    const {
+        notes,
+        categories,
+        deleteNote,
+        markProcessed,
+        moveToCategory,
+        updateNote,
+        convertNoteToTask,
+    } = useSmartNotes();
+    const todoCategory = categories.find((c) => c.flag === 'todo');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editContent, setEditContent] = useState('');
     const [movingId, setMovingId] = useState<string | null>(null);
 
     // Filter notes based on categoryId
-    const filteredNotes = notes.filter(note => {
+    const filteredNotes = notes.filter((note) => {
         if (categoryId === undefined) return true; // Show all
         if (categoryId === null) return !note.categoryId; // Show inbox (no category)
         return note.categoryId === categoryId;
     });
 
     const getCategoryById = (id?: string): NoteCategory | undefined => {
-        return categories.find(c => c.id === id);
+        return categories.find((c) => c.id === id);
     };
 
     const handleEdit = (note: SmartNote) => {
@@ -62,7 +70,7 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
 
     return (
         <div className="space-y-2">
-            {filteredNotes.map(note => {
+            {filteredNotes.map((note) => {
                 const category = getCategoryById(note.categoryId);
                 const isEditing = editingId === note.id;
                 const isMoving = movingId === note.id;
@@ -71,9 +79,7 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                     <div
                         key={note.id}
                         className={`bg-white rounded-lg p-3 border shadow-sm transition-colors ${
-                            note.processed
-                                ? 'border-slate-200 opacity-60'
-                                : 'border-slate-200'
+                            note.processed ? 'border-slate-200 opacity-60' : 'border-slate-200'
                         }`}
                     >
                         {isEditing ? (
@@ -105,19 +111,23 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                         ) : (
                             <>
                                 <div className="flex items-start justify-between gap-2">
-                                    <p className={`text-sm flex-1 ${note.processed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                                    <p
+                                        className={`text-sm flex-1 ${note.processed ? 'line-through text-slate-400' : 'text-slate-800'}`}
+                                    >
                                         {note.content}
                                     </p>
                                     <div className="flex items-center gap-1 flex-shrink-0">
-                                        {!note.processed && todoCategory && note.categoryId === todoCategory.id && (
-                                            <button
-                                                onClick={() => convertNoteToTask(note)}
-                                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
-                                                title="Convert to Task"
-                                            >
-                                                <ListChecks className="w-4 h-4" />
-                                            </button>
-                                        )}
+                                        {!note.processed &&
+                                            todoCategory &&
+                                            note.categoryId === todoCategory.id && (
+                                                <button
+                                                    onClick={() => convertNoteToTask(note)}
+                                                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                                                    title="Convert to Task"
+                                                >
+                                                    <ListChecks className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         {!note.processed && (
                                             <button
                                                 onClick={() => markProcessed(note.id)}
@@ -184,19 +194,24 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                                             >
                                                 Inbox
                                             </button>
-                                            {categories.map(cat => (
+                                            {categories.map((cat) => (
                                                 <button
                                                     key={cat.id}
-                                                    onClick={() => handleMoveToCategory(note.id, cat.id)}
+                                                    onClick={() =>
+                                                        handleMoveToCategory(note.id, cat.id)
+                                                    }
                                                     className={`px-2 py-1 rounded text-xs ${
                                                         note.categoryId === cat.id
                                                             ? 'text-white'
                                                             : 'text-white hover:opacity-80'
                                                     }`}
                                                     style={{
-                                                        backgroundColor: note.categoryId === cat.id
-                                                            ? cat.color || '#6366f1'
-                                                            : cat.color ? `${cat.color}80` : '#6366f180',
+                                                        backgroundColor:
+                                                            note.categoryId === cat.id
+                                                                ? cat.color || '#6366f1'
+                                                                : cat.color
+                                                                  ? `${cat.color}80`
+                                                                  : '#6366f180',
                                                     }}
                                                 >
                                                     {cat.emoji} {cat.name}

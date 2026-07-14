@@ -18,8 +18,12 @@ export async function getExperimentLogs(experimentId: string): Promise<Experimen
     return (data as DbExperimentLog[]).map(dbToExperimentLog);
 }
 
-export async function addExperimentLog(log: Omit<ExperimentLog, 'id' | 'createdAt'>): Promise<ExperimentLog> {
-    const { data: { user } } = await supabase.auth.getUser();
+export async function addExperimentLog(
+    log: Omit<ExperimentLog, 'id' | 'createdAt'>,
+): Promise<ExperimentLog> {
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
     const dbLog = {
@@ -31,11 +35,7 @@ export async function addExperimentLog(log: Omit<ExperimentLog, 'id' | 'createdA
         created_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
-        .from('experiment_logs')
-        .insert(dbLog)
-        .select()
-        .single();
+    const { data, error } = await supabase.from('experiment_logs').insert(dbLog).select().single();
 
     if (error) throw error;
     return dbToExperimentLog(data as DbExperimentLog);

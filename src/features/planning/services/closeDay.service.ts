@@ -63,7 +63,10 @@ export async function isDayClosed(userId: string, date: string): Promise<boolean
 }
 
 /** Dates (yyyy-MM-dd) closed in the Monday-to-Sunday week containing `ref`. */
-export async function getClosedDatesThisWeek(userId: string, ref: Date = new Date()): Promise<string[]> {
+export async function getClosedDatesThisWeek(
+    userId: string,
+    ref: Date = new Date(),
+): Promise<string[]> {
     const { start, end } = weekWindow(ref);
     const { data, error } = await supabase
         .from('daily_plans')
@@ -75,5 +78,5 @@ export async function getClosedDatesThisWeek(userId: string, ref: Date = new Dat
     if (error) {
         throw new Error(`Failed to load closed days: ${error.message}`);
     }
-    return (data ?? []).map(row => row.date as string);
+    return (data ?? []).map((row) => row.date as string);
 }

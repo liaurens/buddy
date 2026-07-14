@@ -29,7 +29,7 @@ function tomorrow(): { date: string } {
 
 function thisWeekend(): { date: string } {
     const d = new Date();
-    const diff = ((6 - d.getDay()) + 7) % 7 || 7;
+    const diff = (6 - d.getDay() + 7) % 7 || 7;
     d.setDate(d.getDate() + diff);
     return { date: toIso(d) };
 }
@@ -48,24 +48,37 @@ const SnoozeMenu: React.FC<SnoozeMenuProps> = ({ anchorRef, onSnooze, onClose })
         <PortalMenu anchorRef={anchorRef} open onClose={onClose} width={176}>
             {!picking ? (
                 <>
-                    <button onClick={() => { const t = tonight(); onSnooze(t.date, t.time); }}
-                        className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-700">
+                    <button
+                        onClick={() => {
+                            const t = tonight();
+                            onSnooze(t.date, t.time);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-700"
+                    >
                         Tonight <span className="text-xs text-slate-400">· 6pm</span>
                     </button>
-                    <button onClick={() => onSnooze(tomorrow().date)}
-                        className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-700">
+                    <button
+                        onClick={() => onSnooze(tomorrow().date)}
+                        className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-700"
+                    >
                         Tomorrow
                     </button>
-                    <button onClick={() => onSnooze(thisWeekend().date)}
-                        className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-700">
+                    <button
+                        onClick={() => onSnooze(thisWeekend().date)}
+                        className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-700"
+                    >
                         This weekend
                     </button>
-                    <button onClick={() => onSnooze(nextWeek().date)}
-                        className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-700">
+                    <button
+                        onClick={() => onSnooze(nextWeek().date)}
+                        className="w-full text-left px-3 py-2 hover:bg-slate-50 text-slate-700"
+                    >
                         Next week
                     </button>
-                    <button onClick={() => setPicking(true)}
-                        className="w-full text-left px-3 py-2 hover:bg-slate-50 text-indigo-600 border-t border-slate-100 flex items-center gap-2">
+                    <button
+                        onClick={() => setPicking(true)}
+                        className="w-full text-left px-3 py-2 hover:bg-slate-50 text-indigo-600 border-t border-slate-100 flex items-center gap-2"
+                    >
                         <CalendarIcon size={13} /> Pick date…
                     </button>
                 </>
@@ -74,7 +87,7 @@ const SnoozeMenu: React.FC<SnoozeMenuProps> = ({ anchorRef, onSnooze, onClose })
                     <input
                         type="date"
                         value={customDate}
-                        onChange={e => setCustomDate(e.target.value)}
+                        onChange={(e) => setCustomDate(e.target.value)}
                         className="w-full text-sm rounded border border-slate-200 px-2 py-1"
                     />
                     <button

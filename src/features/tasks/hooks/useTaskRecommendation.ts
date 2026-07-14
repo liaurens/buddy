@@ -6,7 +6,12 @@
 
 import { useMemo } from 'react';
 import { useTasks } from './useTasks';
-import { getRecommendedTask, getRankedTasks, type TaskRecommendation } from '../utils/taskRecommender';
+import { useTaskTypes } from './useTaskTypes';
+import {
+    getRecommendedTask,
+    getRankedTasks,
+    type TaskRecommendation,
+} from '../utils/taskRecommender';
 
 export interface UseTaskRecommendationReturn {
     /** The single best task to work on right now */
@@ -19,13 +24,19 @@ export interface UseTaskRecommendationReturn {
 
 export function useTaskRecommendation(): UseTaskRecommendationReturn {
     const { tasks } = useTasks();
+    const { taskTypes } = useTaskTypes();
 
     return useMemo(() => {
         const today = new Date();
-        const recommended = getRecommendedTask(tasks, today);
-        const ranked = getRankedTasks(tasks, today);
-        const activeCount = tasks.filter(t => !t.completed).length;
+        const homeDaysByType = new Map(
+            taskTypes
+                .filter((type) => type.homeDays?.length)
+                .map((type) => [type.id, type.homeDays ?? []]),
+        );
+        const recommended = getRecommendedTask(tasks, today, homeDaysByType);
+        const ranked = getRankedTasks(tasks, today, homeDaysByType);
+        const activeCount = tasks.filter((t) => !t.completed).length;
 
         return { recommended, ranked, activeCount };
-    }, [tasks]);
+    }, [tasks, taskTypes]);
 }

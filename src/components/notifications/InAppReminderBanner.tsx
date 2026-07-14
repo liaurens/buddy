@@ -59,13 +59,17 @@ const InAppReminderBanner: React.FC<Props> = ({ onNavigate }) => {
         if (!data || data.length === 0) return;
 
         const row = data[0];
-        setCurrent(prev => prev?.id === row.id ? prev : {
-            id: row.id,
-            title: row.title,
-            body: row.body,
-            data: row.data,
-            scheduledFor: row.scheduled_for,
-        });
+        setCurrent((prev) =>
+            prev?.id === row.id
+                ? prev
+                : {
+                      id: row.id,
+                      title: row.title,
+                      body: row.body,
+                      data: row.data,
+                      scheduledFor: row.scheduled_for,
+                  },
+        );
     }, [user?.id]);
 
     useEffect(() => {
@@ -116,7 +120,11 @@ const InAppReminderBanner: React.FC<Props> = ({ onNavigate }) => {
                         </button>
                     </div>
                 </div>
-                <button onClick={handleDismiss} aria-label="Close" className="p-1 text-slate-400 hover:text-slate-600">
+                <button
+                    onClick={handleDismiss}
+                    aria-label="Close"
+                    className="p-1 text-slate-400 hover:text-slate-600"
+                >
                     <X size={16} />
                 </button>
             </div>

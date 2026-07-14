@@ -39,7 +39,8 @@ function checklistToDb(checklist: Partial<Checklist>, userId: string): Partial<D
     if (checklist.emoji !== undefined) db.emoji = checklist.emoji || null;
     if (checklist.items !== undefined) db.items = checklist.items;
     if (checklist.isPinned !== undefined) db.is_pinned = checklist.isPinned;
-    if (checklist.triggerKeyword !== undefined) db.trigger_keyword = checklist.triggerKeyword || null;
+    if (checklist.triggerKeyword !== undefined)
+        db.trigger_keyword = checklist.triggerKeyword || null;
 
     return db;
 }
@@ -57,18 +58,16 @@ export const checklistsService = {
     },
 
     async getById(id: string): Promise<Checklist> {
-        const { data, error } = await supabase
-            .from('checklists')
-            .select('*')
-            .eq('id', id)
-            .single();
+        const { data, error } = await supabase.from('checklists').select('*').eq('id', id).single();
 
         if (error) throw error;
         return dbToChecklist(data as DbChecklist);
     },
 
     async create(checklist: Partial<Checklist>): Promise<Checklist> {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
         const dbPayload = checklistToDb(checklist, user.id);
@@ -84,26 +83,22 @@ export const checklistsService = {
     },
 
     async update(id: string, updates: Partial<Checklist>): Promise<void> {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
         const dbPayload = checklistToDb(updates, user.id);
         dbPayload.updated_at = new Date().toISOString();
 
-        const { error } = await supabase
-            .from('checklists')
-            .update(dbPayload)
-            .eq('id', id);
+        const { error } = await supabase.from('checklists').update(dbPayload).eq('id', id);
 
         if (error) throw error;
     },
 
     async delete(id: string): Promise<void> {
-        const { error } = await supabase
-            .from('checklists')
-            .delete()
-            .eq('id', id);
+        const { error } = await supabase.from('checklists').delete().eq('id', id);
 
         if (error) throw error;
-    }
+    },
 };

@@ -31,7 +31,11 @@ const TasksOrganizationModal: React.FC<TasksOrganizationModalProps> = ({
     );
 };
 
-const TabButton: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
+const TabButton: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({
+    active,
+    onClick,
+    children,
+}) => (
     <button
         onClick={onClick}
         className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${

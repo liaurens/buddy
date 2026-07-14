@@ -36,37 +36,52 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [toasts, setToasts] = useState<Toast[]>([]);
 
     const removeToast = useCallback((id: string) => {
-        setToasts(prev => prev.filter(toast => toast.id !== id));
+        setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, []);
 
-    const addToast = useCallback((type: ToastType, message: string, duration: number = 4000) => {
-        const id = Math.random().toString(36).substring(7);
-        const toast: Toast = { id, type, message, duration };
+    const addToast = useCallback(
+        (type: ToastType, message: string, duration: number = 4000) => {
+            const id = Math.random().toString(36).substring(7);
+            const toast: Toast = { id, type, message, duration };
 
-        setToasts(prev => [...prev, toast]);
+            setToasts((prev) => [...prev, toast]);
 
-        if (duration > 0) {
-            setTimeout(() => {
-                removeToast(id);
-            }, duration);
-        }
-    }, [removeToast]);
+            if (duration > 0) {
+                setTimeout(() => {
+                    removeToast(id);
+                }, duration);
+            }
+        },
+        [removeToast],
+    );
 
-    const success = useCallback((message: string, duration?: number) => {
-        addToast('success', message, duration);
-    }, [addToast]);
+    const success = useCallback(
+        (message: string, duration?: number) => {
+            addToast('success', message, duration);
+        },
+        [addToast],
+    );
 
-    const error = useCallback((message: string, duration?: number) => {
-        addToast('error', message, duration);
-    }, [addToast]);
+    const error = useCallback(
+        (message: string, duration?: number) => {
+            addToast('error', message, duration);
+        },
+        [addToast],
+    );
 
-    const warning = useCallback((message: string, duration?: number) => {
-        addToast('warning', message, duration);
-    }, [addToast]);
+    const warning = useCallback(
+        (message: string, duration?: number) => {
+            addToast('warning', message, duration);
+        },
+        [addToast],
+    );
 
-    const info = useCallback((message: string, duration?: number) => {
-        addToast('info', message, duration);
-    }, [addToast]);
+    const info = useCallback(
+        (message: string, duration?: number) => {
+            addToast('info', message, duration);
+        },
+        [addToast],
+    );
 
     return (
         <ToastContext.Provider value={{ success, error, warning, info }}>
@@ -84,7 +99,7 @@ interface ToastContainerProps {
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemove }) => {
     return (
         <div className="pointer-events-none fixed inset-x-4 bottom-[calc(4.5rem+1rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:bottom-auto sm:right-4 sm:top-4 sm:items-end">
-            {toasts.map(toast => (
+            {toasts.map((toast) => (
                 <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
             ))}
         </div>
@@ -152,14 +167,14 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
                 flex items-start gap-3 p-4 rounded-lg border shadow-lg
                 w-full max-w-[480px] sm:w-auto sm:min-w-[320px]
                 ${getStyles()}
-                ${isExiting
-                    ? 'animate-out fade-out slide-out-to-bottom sm:slide-out-to-right'
-                    : 'animate-in fade-in slide-in-from-bottom sm:slide-in-from-right'}
+                ${
+                    isExiting
+                        ? 'animate-out fade-out slide-out-to-bottom sm:slide-out-to-right'
+                        : 'animate-in fade-in slide-in-from-bottom sm:slide-in-from-right'
+                }
             `}
         >
-            <div className={getIconColor()}>
-                {getIcon()}
-            </div>
+            <div className={getIconColor()}>{getIcon()}</div>
             <p className="flex-1 text-sm font-medium">{toast.message}</p>
             <button
                 onClick={handleClose}

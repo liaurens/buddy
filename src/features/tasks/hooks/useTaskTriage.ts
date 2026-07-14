@@ -13,18 +13,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { isSameDay } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
-import { supabase } from '../../../services/supabase';
 import { useTasks } from './useTasks';
 import { useTaskTypes } from './useTaskTypes';
 import { useAssignments } from '../../school/hooks/useAssignments';
 import { useClasses } from '../../school/hooks/useClasses';
 import {
-    getAIService,
-    isAIConfigured,
-    initializeAIService,
+    getAIConfigStatus,
+    triageTasks,
     type TaskTriageSuggestion,
     type TriageAssignmentOption,
-} from '../../planning/services/ai.service';
+} from '../../assistant/services/ai-actions.service';
 import { sanitizeTriageSuggestions } from '../utils/sanitizeTriageSuggestions';
 import { splitByConfidence, suggestionToDetail } from '../utils/triageConfidence';
 import {
@@ -75,7 +73,7 @@ export function useTaskTriage(): UseTaskTriageReturn {
     const { taskTypes } = useTaskTypes();
     const { assignments } = useAssignments({ activeOnly: true });
     const { classes } = useClasses();
-    const [ready, setReady] = useState(isAIConfigured());
+    const [ready, setReady] = useState(false);
 
     // Untriaged, active capture inbox — same selector as the count badges.
     const untriaged = useMemo(() => tasks.filter(isInInbox), [tasks]);
@@ -96,31 +94,12 @@ export function useTaskTriage(): UseTaskTriageReturn {
         }));
     }, [assignments, classes]);
 
-    // Hydrate the AI service from saved settings (same pattern as AIOrganizeModal).
     useEffect(() => {
-        if (!userId || ready) return;
-        void (async () => {
-            const { data } = await supabase
-                .from('settings')
-                .select('key, value')
-                .eq('user_id', userId)
-                .in('key', ['ai_aiProvider', 'ai_aiApiKey', 'ai_aiModel']);
-            if (!data) return;
-            const m = data.reduce(
-                (acc, s) => {
-                    acc[s.key] = s.value;
-                    return acc;
-                },
-                {} as Record<string, string>,
-            );
-            const provider = m['ai_aiProvider'] as 'openai' | 'anthropic' | 'gemini' | undefined;
-            const apiKey = m['ai_aiApiKey'];
-            if (provider && apiKey) {
-                initializeAIService({ provider, apiKey, model: m['ai_aiModel'] || undefined });
-                setReady(true);
-            }
-        })();
-    }, [userId, ready]);
+        if (!userId) return;
+        void getAIConfigStatus()
+            .then((status) => setReady(status.configured))
+            .catch(() => setReady(false));
+    }, [userId]);
 
     const inboxKey = untriaged.map((t) => t.id).join(',');
     const assignmentsKey = assignmentOptions.map((a) => a.id).join(',');
@@ -140,27 +119,22 @@ export function useTaskTriage(): UseTaskTriageReturn {
         gcTime: 0,
         retry: false,
         queryFn: async () => {
-            const ai = getAIService();
-            if (!ai)
-                throw new Error('AI not configured. Set up an AI provider in Account settings.');
             const todayIso = new Date().toISOString().slice(0, 10);
             const learnings = userId ? await loadTriageLearnings(userId) : '';
-            const result = await ai.triageTasks(
-                untriaged.map((t) => ({
+            const result = await triageTasks({
+                tasks: untriaged.map((t) => ({
                     id: t.id,
                     title: t.title,
                     dueDate: t.dueDate,
                     priority: t.priority,
                 })),
-                assignmentOptions,
-                learnings,
+                assignments: assignmentOptions,
+                learningsDoc: learnings,
                 todayIso,
-                typeOptions,
-            );
-            if (!result.success || !result.data)
-                throw new Error(result.error || 'Failed to sort tasks.');
+                taskTypes: typeOptions,
+            });
             return sanitizeTriageSuggestions(
-                result.data,
+                result,
                 untriaged.map((t) => t.id),
                 assignmentOptions.map((a) => a.id),
                 typeOptions,
