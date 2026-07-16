@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#e9f4f9;font-family:Nunito,system-ui,sans-serif}
+a{color:#3a7fb0;text-decoration:none}a:hover{color:#2a6088}
+</style>
+</helmet>
+
+<div style="max-width:760px;margin:0 auto;padding:40px 24px 80px;color:#1d3a4d">
+
+<div style="display:flex;align-items:center;gap:14px">
+  <svg width="64" height="52" viewBox="0 0 64 52">
+    <ellipse cx="30" cy="32" rx="23" ry="15" fill="#4d9fd6"></ellipse>
+    <ellipse cx="30" cy="40" rx="19" ry="7.5" fill="#bfe2f5"></ellipse>
+    <ellipse cx="55" cy="25" rx="7.5" ry="4.5" fill="#4d9fd6" transform="rotate(38 55 25)"></ellipse>
+    <circle cx="17" cy="27" r="2.6" fill="#173042"></circle>
+  </svg>
+  <div>
+    <div style="font:900 26px/1.2 Nunito,sans-serif">Buddy — what goes where</div>
+    <div style="font:600 14px Nunito,sans-serif;color:#5c86a0">Every feature in the codebase → my proposal for the new UI. Tell me where you disagree.</div>
+  </div>
+</div>
+
+<!-- legend -->
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 8px">
+  <span style="background:#e6f4ec;color:#3d8a63;border-radius:999px;padding:5px 13px;font:800 12px Nunito,sans-serif">FRONT — part of the daily loop, always visible</span>
+  <span style="background:#e3f0fa;color:#3a7fb0;border-radius:999px;padding:5px 13px;font:800 12px Nunito,sans-serif">ONE TAP — lives in Browse, full screen when opened</span>
+  <span style="background:#fdeeda;color:#c07a1e;border-radius:999px;padding:5px 13px;font:800 12px Nunito,sans-serif">FOLDED — merged into another flow, not its own screen</span>
+  <span style="background:#f0eef2;color:#8a8494;border-radius:999px;padding:5px 13px;font:800 12px Nunito,sans-serif">QUIET — settings / power tools, tucked away</span>
+</div>
+
+<!-- ============ THE DAILY LOOP ============ -->
+<div style="font:900 15px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.08em;margin:28px 0 10px">The daily loop (front)</div>
+<div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 3px 14px rgba(40,90,130,.08)">
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3d8a63;background:#e6f4ec;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">FRONT</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Morning check-in (the gate)</strong> — keeps the original light-routine steps: <strong>Comms</strong> (mail/messages checklist) → <strong>Log yesterday</strong> (quick mood + energy) → <strong>Plan today</strong> (meds/protocols, one-word intention, pick 3 tasks). Always first thing every day; skippable manually only.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3d8a63;background:#e6f4ec;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">FRONT</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Now screen</strong> — whale + today's three picks + capture + streak chips. Close-day button appears when picks are done or it's evening.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3d8a63;background:#e6f4ec;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">FRONT</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Midday reset</strong> — original feature, kept as a gentle card on Now in the afternoon ("How's it going?" — review picks, adjust). Not a gate; dismissible.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3d8a63;background:#e6f4ec;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">FRONT</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Close day / evening reflection</strong> — celebration + the original reflection basics folded in: mood &amp; energy tap, one journal line, streak bump. Full journal/skills/goals stays one tap deeper.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3d8a63;background:#e6f4ec;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">FRONT</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Capture + triage inbox</strong> — capture anything anywhere; inbox sorts one item at a time (Today / Later / School). AI auto-sorting stays invisible in the background.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3d8a63;background:#e6f4ec;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">FRONT</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Survival day</strong> — one toggle at the morning gate: 1 pick instead of 3, light everything, notifications hushed. Original capacity feature, made friendlier.</span>
+  </div>
+</div>
+
+<!-- ============ ONE TAP ============ -->
+<div style="font:900 15px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.08em;margin:28px 0 10px">One tap away (Browse)</div>
+<div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 3px 14px rgba(40,90,130,.08)">
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3a7fb0;background:#e3f0fa;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">ONE TAP</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Tasks</strong> — full list with the original chips (Urgent / Today / Someday / Quick wins / Done), snooze, "split this?" on stuck tasks, someday shown one-a-day.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3a7fb0;background:#e3f0fa;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">ONE TAP</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">School</strong> — classes, assignments &amp; deadlines, weekly schedule. Assignments already mirror into tasks, so school work shows up in picks automatically.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3a7fb0;background:#e3f0fa;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">ONE TAP</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Calendar</strong> — day timeline with events + timed picks (Google Calendar sync stays).</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3a7fb0;background:#e3f0fa;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">ONE TAP</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Health</strong> — daily check-in + simple trends. The deep analysis, correlations and experiments stay, but behind a second tap ("Explore my data").</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3a7fb0;background:#e3f0fa;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">ONE TAP</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Notes</strong> — quick note + smart notes list.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3a7fb0;background:#e3f0fa;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">ONE TAP</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Focus timer</strong> — pomodoro, reachable from a task ("focus on this") and from Browse.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#3a7fb0;background:#e3f0fa;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">ONE TAP</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Toolbox &amp; checklists</strong> — coping tools and checklists; calendar-triggered checklists ("work day → work checklist") surface on Now only when triggered.</span>
+  </div>
+</div>
+
+<!-- ============ FOLDED ============ -->
+<div style="font:900 15px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.08em;margin:28px 0 10px">Folded into other flows</div>
+<div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 3px 14px rgba(40,90,130,.08)">
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#c07a1e;background:#fdeeda;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">FOLDED</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Protocols (meds/supplements)</strong> — becomes a step inside the morning check-in, not its own page. Editing protocols → Health.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#c07a1e;background:#fdeeda;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">FOLDED</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Reflection / journal / goals / skills</strong> — the essentials (mood, energy, one line) live in close-day; the full page stays reachable from close-day → "more reflection".</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#c07a1e;background:#fdeeda;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">FOLDED</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Urgent scheduling</strong> — sorting something as "Urgent" immediately asks when + what prep, then writes to calendar. A moment inside triage, not a screen.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#c07a1e;background:#fdeeda;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">FOLDED</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Stats &amp; insights</strong> — week bars, streaks, routine-kept count live behind "More" on Now. No dashboard screen; numbers stay gentle and few.</span>
+  </div>
+</div>
+
+<!-- ============ QUIET ============ -->
+<div style="font:900 15px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.08em;margin:28px 0 10px">Quiet (settings &amp; power tools)</div>
+<div style="background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 3px 14px rgba(40,90,130,.08)">
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#8a8494;background:#f0eef2;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">QUIET</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Notifications</strong> — anchors, quiet hours, per-task reminders → all under Me. The app never shows badges or counts on the nav.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px;border-bottom:1px solid #eef5f9">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#8a8494;background:#f0eef2;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">QUIET</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">AI power tools</strong> — task splitter, AI organize, task types, routine editor → behind a "⋯ tools" button on the Tasks screen. AI assistant chat stays as Capture's smart brain, not a separate chat UI.</span>
+  </div>
+  <div style="display:flex;gap:14px;padding:16px 18px">
+    <span style="flex:none;width:70px;font:800 11px Nunito,sans-serif;color:#8a8494;background:#f0eef2;border-radius:8px;padding:4px 0;text-align:center;height:fit-content">QUIET</span>
+    <span style="font:600 13.5px/1.55 Nunito,sans-serif"><strong style="font-weight:900">Dev &amp; internals</strong> — assistant dev panel, push health, rules/learnings, account details → Me → advanced. Never on the daily path.</span>
+  </div>
+</div>
+
+<!-- ============ QUESTIONS ============ -->
+<div style="font:900 15px Nunito,sans-serif;color:#e0862a;text-transform:uppercase;letter-spacing:.08em;margin:28px 0 10px">For you to decide</div>
+<div style="background:#fdeeda;border-radius:20px;padding:18px 20px;font:600 13.5px/1.9 Nunito,sans-serif;color:#6b4d1e">
+1. <strong>Full vs light morning routine</strong> — the code has both. I propose light-only (3 steps) with the full version retired. Keep both?<br>
+2. <strong>Midday reset</strong> — gentle dismissible card on Now, or a notification-only nudge?<br>
+3. <strong>School</strong> — one tap away is enough, or does your buddy want deadlines visible on Now?<br>
+4. <strong>Experiments &amp; deep health analysis</strong> — keep in the redesign, or park them (data keeps collecting, UI comes later)?<br>
+5. <strong>Assistant chat</strong> — fold fully into Capture (my proposal), or keep a visible chat screen?
+</div>
+
+<div style="font:600 13px Nunito,sans-serif;color:#7fa6bb;margin-top:26px">Answer in chat with the numbers — then I finish the prototype accordingly. The routine gate, Now, close-day and inbox are already being built into <strong>Buddy Cove</strong>.</div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

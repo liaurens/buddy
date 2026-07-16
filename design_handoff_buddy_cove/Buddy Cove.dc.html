@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#dcebf3;font-family:Nunito,system-ui,sans-serif}
+a{color:#3a7fb0;text-decoration:none}a:hover{color:#2a6088}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes spout{0%,55%,100%{opacity:0;transform:translateY(0) scale(.4)}65%{opacity:.9;transform:translateY(-4px) scale(1)}85%{opacity:0;transform:translateY(-10px) scale(1.2)}}
+@keyframes checkpop{0%{transform:scale(.6)}55%{transform:scale(1.25)}100%{transform:scale(1)}}
+@keyframes confetti{0%{opacity:1;transform:translate(0,0) rotate(0deg) scale(1)}100%{opacity:0;transform:translate(var(--cx),var(--cy)) rotate(220deg) scale(.5)}}
+@keyframes fadeslide{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes overlayin{0%{opacity:0}100%{opacity:1}}
+@keyframes bigconfetti{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--cx),var(--cy)) rotate(300deg)}}
+</style>
+</helmet>
+
+<div data-screen-label="Buddy Cove app" style="min-height:100dvh;display:flex;justify-content:center;background:#dcebf3">
+<div style="width:100%;max-width:520px;min-height:100dvh;background:#e9f4f9;display:flex;flex-direction:column;position:relative;box-shadow:0 0 40px rgba(40,90,130,.12);color:#1d3a4d">
+
+<!-- ================= MORNING CHECK-IN (GATE) ================= -->
+<sc-if value="{{ showRoutine }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Morning check-in gate" style="flex:1;display:flex;flex-direction:column;padding:24px 22px 26px;animation:fadeslide .4s ease;overflow-y:auto">
+
+  <div style="display:flex;align-items:center;gap:14px;padding:8px 0 4px">
+    <div style="animation:bob 3.5s ease-in-out infinite;flex:none">
+      <svg width="76" height="62" viewBox="0 0 64 52">
+        <circle cx="30" cy="7" r="2.4" fill="#7cc3e8" style="animation:spout 3.5s ease-in-out infinite"></circle>
+        <circle cx="25" cy="12" r="1.8" fill="#7cc3e8" style="animation:spout 3.5s .25s ease-in-out infinite"></circle>
+        <circle cx="35" cy="11" r="1.4" fill="#7cc3e8" style="animation:spout 3.5s .5s ease-in-out infinite"></circle>
+        <ellipse cx="30" cy="32" rx="23" ry="15" fill="{{ accent }}"></ellipse>
+        <ellipse cx="30" cy="40" rx="19" ry="7.5" fill="#bfe2f5"></ellipse>
+        <ellipse cx="55" cy="25" rx="7.5" ry="4.5" fill="{{ accent }}" transform="rotate(38 55 25)"></ellipse>
+        <circle cx="17" cy="27" r="2.6" fill="#173042"></circle>
+        <circle cx="13" cy="33" r="2.6" fill="#f7b8c2" opacity=".7"></circle>
+      </svg>
+    </div>
+    <div>
+      <div style="font:900 21px/1.2 Nunito,sans-serif">{{ routineGreeting }}</div>
+      <div style="font:600 13.5px/1.45 Nunito,sans-serif;color:#5c86a0">{{ gateSubline }}</div>
+    </div>
+  </div>
+
+  <!-- capacity toggle -->
+  <div style="display:flex;gap:6px;background:#d7e9f2;border-radius:14px;padding:5px;margin-top:16px">
+    <button onClick="{{ setNormalDay }}" style="flex:1;border:none;border-radius:10px;padding:10px;font:800 13px Nunito,sans-serif;cursor:pointer;background:{{ normalBg }};color:{{ normalColor }};box-shadow:{{ normalShadow }}">Normal day</button>
+    <button onClick="{{ setSurvivalDay }}" style="flex:1;border:none;border-radius:10px;padding:10px;font:800 13px Nunito,sans-serif;cursor:pointer;background:{{ survivalBg }};color:{{ survivalColor }};box-shadow:{{ survivalShadow }}">Survival day</button>
+  </div>
+  <sc-if value="{{ isSurvival }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:10px;background:#dff2ea;border-radius:14px;padding:11px 14px;font:700 12.5px/1.5 Nunito,sans-serif;color:#2e6e50;animation:fadeslide .3s ease">Survival mode: one task is enough today. Only anchor reminders will reach you.</div>
+  </sc-if>
+
+  <!-- step chips -->
+  <div style="display:flex;align-items:center;gap:6px;margin-top:18px">
+    <button onClick="{{ goStep0 }}" style="display:flex;align-items:center;gap:6px;border:none;border-radius:10px;padding:8px 12px;font:800 12px Nunito,sans-serif;cursor:pointer;background:{{ step0Bg }};color:{{ step0Color }}">{{ step0Mark }} Comms</button>
+    <div style="flex:1;height:2px;background:#cfe4ef;border-radius:2px"></div>
+    <button onClick="{{ goStep1 }}" style="display:flex;align-items:center;gap:6px;border:none;border-radius:10px;padding:8px 12px;font:800 12px Nunito,sans-serif;cursor:pointer;background:{{ step1Bg }};color:{{ step1Color }}">{{ step1Mark }} Yesterday</button>
+    <div style="flex:1;height:2px;background:#cfe4ef;border-radius:2px"></div>
+    <button onClick="{{ goStep2 }}" style="display:flex;align-items:center;gap:6px;border:none;border-radius:10px;padding:8px 12px;font:800 12px Nunito,sans-serif;cursor:pointer;background:{{ step2Bg }};color:{{ step2Color }}">{{ step2Mark }} Plan</button>
+  </div>
+
+  <!-- STEP 0: COMMS -->
+  <sc-if value="{{ onStep0 }}" hint-placeholder-val="{{ true }}">
+  <div style="margin-top:16px;animation:fadeslide .3s ease">
+    <div style="font:800 15px Nunito,sans-serif;padding:0 2px 4px">Start with your comms</div>
+    <div style="font:600 12.5px Nunito,sans-serif;color:#7fa6bb;padding:0 2px 12px">Check these before diving into your day.</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ commsItems }}" as="c" hint-placeholder-count="4">
+        <button onClick="{{ c.toggle }}" style="display:flex;align-items:center;gap:13px;background:#fff;border:none;border-radius:16px;padding:14px 16px;cursor:pointer;text-align:left;box-shadow:0 3px 12px rgba(40,90,130,.08)">
+          <sc-if value="{{ c.done }}" hint-placeholder-val="{{ false }}">
+            <span style="width:28px;height:28px;border-radius:50%;background:#5cb586;color:#fff;display:flex;align-items:center;justify-content:center;font:800 14px Nunito;flex:none;animation:checkpop .35s ease">✓</span>
+          </sc-if>
+          <sc-if value="{{ c.notDone }}" hint-placeholder-val="{{ true }}">
+            <span style="width:28px;height:28px;border-radius:50%;border:2.5px solid #bcd8e8;flex:none;box-sizing:border-box"></span>
+          </sc-if>
+          <span style="flex:1;font:800 14.5px Nunito,sans-serif;color:{{ c.color }}">{{ c.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- STEP 1: LOG YESTERDAY -->
+  <sc-if value="{{ onStep1 }}" hint-placeholder-val="{{ false }}">
+  <div style="margin-top:16px;animation:fadeslide .3s ease">
+    <div style="font:800 15px Nunito,sans-serif;padding:0 2px 4px">How was yesterday?</div>
+    <div style="font:600 12.5px Nunito,sans-serif;color:#7fa6bb;padding:0 2px 12px">Two taps, no thinking required.</div>
+    <div style="background:#fff;border-radius:18px;padding:16px;box-shadow:0 3px 12px rgba(40,90,130,.08)">
+      <div style="font:800 12px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Mood</div>
+      <div style="display:flex;gap:8px">
+        <sc-for list="{{ moodOptions }}" as="m" hint-placeholder-count="5">
+          <button onClick="{{ m.pick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;border:none;background:transparent;cursor:pointer;padding:6px 2px;border-radius:12px;background:{{ m.bg }}">
+            <span style="width:26px;height:26px;border-radius:50%;background:{{ m.color }};border:3px solid {{ m.ring }};box-sizing:border-box"></span>
+            <span style="font:800 10.5px Nunito,sans-serif;color:{{ m.labelColor }}">{{ m.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="font:800 12px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px">Energy</div>
+      <div style="display:flex;gap:8px">
+        <sc-for list="{{ energyOptions }}" as="e" hint-placeholder-count="3">
+          <button onClick="{{ e.pick }}" style="flex:1;border:none;border-radius:12px;padding:11px;font:800 13px Nunito,sans-serif;cursor:pointer;background:{{ e.bg }};color:{{ e.color }}">{{ e.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- STEP 2: PLAN TODAY -->
+  <sc-if value="{{ onStep2 }}" hint-placeholder-val="{{ false }}">
+  <div style="margin-top:16px;animation:fadeslide .3s ease;display:flex;flex-direction:column;gap:12px">
+    <div>
+      <div style="font:800 15px Nunito,sans-serif;padding:0 2px 4px">Plan today</div>
+      <div style="font:600 12.5px Nunito,sans-serif;color:#7fa6bb;padding:0 2px 4px">Meds, one word, and your picks. That's the whole plan.</div>
+    </div>
+    <div style="background:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 3px 12px rgba(40,90,130,.08)">
+      <div style="font:800 12px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Protocols</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <sc-for list="{{ medsItems }}" as="md" hint-placeholder-count="2">
+          <button onClick="{{ md.toggle }}" style="display:flex;align-items:center;gap:12px;background:transparent;border:none;padding:8px 2px;cursor:pointer;text-align:left">
+            <sc-if value="{{ md.done }}" hint-placeholder-val="{{ false }}">
+              <span style="width:24px;height:24px;border-radius:50%;background:#5cb586;color:#fff;display:flex;align-items:center;justify-content:center;font:800 12px Nunito;flex:none;animation:checkpop .35s ease">✓</span>
+            </sc-if>
+            <sc-if value="{{ md.notDone }}" hint-placeholder-val="{{ true }}">
+              <span style="width:24px;height:24px;border-radius:50%;border:2.5px solid #bcd8e8;flex:none;box-sizing:border-box"></span>
+            </sc-if>
+            <span style="font:800 13.5px Nunito,sans-serif;color:{{ md.color }}">{{ md.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 3px 12px rgba(40,90,130,.08)">
+      <div style="font:800 12px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">One word for today <span style="text-transform:none;font-weight:700;color:#9cb9c9">(optional)</span></div>
+      <input value="{{ intention }}" onChange="{{ onIntentionInput }}" placeholder="rest · focus · catch up · …" style="width:100%;border:none;outline:none;font:800 15px Nunito,sans-serif;color:#1d3a4d;background:#eef6fa;border-radius:10px;padding:10px 12px;box-sizing:border-box"></input>
+    </div>
+    <div style="background:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 3px 12px rgba(40,90,130,.08)">
+      <div style="font:800 12px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">{{ gatePicksLabel }}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ gatePicks }}" as="gp" hint-placeholder-count="3">
+          <div style="display:flex;align-items:center;gap:11px;background:#eef6fa;border-radius:12px;padding:11px 13px">
+            <span style="width:8px;height:8px;border-radius:50%;background:{{ accent }};flex:none"></span>
+            <span style="flex:1;font:800 13.5px Nunito,sans-serif">{{ gp.title }}</span>
+            <span style="font:700 11.5px Nunito,sans-serif;color:#9cb9c9">{{ gp.time }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font:600 11.5px Nunito,sans-serif;color:#9cb9c9;margin-top:9px">Picked for you — smallest wins first. Swap them on the Tasks screen.</div>
+    </div>
+    <button onClick="{{ toggleDeadlines }}" style="border:none;background:transparent;color:#9cb9c9;font:800 12.5px Nunito,sans-serif;cursor:pointer;padding:2px;text-align:left" style-hover="color:#5c86a0">{{ deadlinesLabel }}</button>
+    <sc-if value="{{ showDeadlines }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 3px 12px rgba(40,90,130,.08);animation:fadeslide .3s ease">
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <sc-for list="{{ deadlines }}" as="d" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:11px">
+              <span style="width:8px;height:8px;border-radius:2px;background:{{ d.dot }};flex:none"></span>
+              <span style="flex:1;font:800 13px Nunito,sans-serif">{{ d.title }}</span>
+              <span style="font:700 11.5px Nunito,sans-serif;color:{{ d.dueColor }}">{{ d.due }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- gate nav -->
+  <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:20px">
+    <sc-if value="{{ notLastStep }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ nextStep }}" style="border:none;background:{{ accent }};color:#fff;border-radius:16px;padding:16px;font:800 15px Nunito,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(40,90,130,.2)">Next →</button>
+    </sc-if>
+    <sc-if value="{{ onStep2 }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ finishRoutine }}" style="border:none;background:#5cb586;color:#fff;border-radius:16px;padding:16px;font:800 15px Nunito,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(61,138,99,.25)">Start my day →</button>
+    </sc-if>
+    <button onClick="{{ skipRoutine }}" style="border:none;background:transparent;color:#7fa6bb;padding:7px;font:700 13px Nunito,sans-serif;cursor:pointer" style-hover="color:#3a7fb0">Skip the check-in today</button>
+  </div>
+</div>
+</sc-if>
+
+<!-- ================= MAIN APP ================= -->
+<sc-if value="{{ showApp }}" hint-placeholder-val="{{ false }}">
+
+<div style="flex:1;display:flex;flex-direction:column;overflow-y:auto;padding:18px 18px 110px">
+
+<!-- ===== NOW ===== -->
+<sc-if value="{{ showNow }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Now" style="display:flex;flex-direction:column;animation:fadeslide .35s ease">
+  <div style="display:flex;align-items:flex-end;gap:14px;padding:6px 4px 0">
+    <div style="animation:bob 3.5s ease-in-out infinite;flex:none">
+      <svg width="86" height="70" viewBox="0 0 64 52">
+        <circle cx="30" cy="7" r="2.4" fill="#7cc3e8" style="animation:spout 3.5s ease-in-out infinite"></circle>
+        <circle cx="25" cy="12" r="1.8" fill="#7cc3e8" style="animation:spout 3.5s .25s ease-in-out infinite"></circle>
+        <circle cx="35" cy="11" r="1.4" fill="#7cc3e8" style="animation:spout 3.5s .5s ease-in-out infinite"></circle>
+        <ellipse cx="30" cy="32" rx="23" ry="15" fill="{{ accent }}"></ellipse>
+        <ellipse cx="30" cy="40" rx="19" ry="7.5" fill="#bfe2f5"></ellipse>
+        <ellipse cx="55" cy="25" rx="7.5" ry="4.5" fill="{{ accent }}" transform="rotate(38 55 25)"></ellipse>
+        <circle cx="17" cy="27" r="2.6" fill="#173042"></circle>
+        <circle cx="13" cy="33" r="2.6" fill="#f7b8c2" opacity=".7"></circle>
+      </svg>
+    </div>
+    <div style="flex:1;background:#fff;border-radius:18px 18px 18px 4px;padding:12px 14px;box-shadow:0 3px 12px rgba(40,90,130,.1);margin-bottom:8px">
+      <div style="font:800 15px/1.3 Nunito,sans-serif">{{ heroTitle }}</div>
+      <div style="font:600 13px/1.4 Nunito,sans-serif;color:#5c86a0">{{ whaleLine }}</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;padding:14px 2px 0;flex-wrap:wrap">
+    <span style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:7px 13px;font:800 12.5px Nunito,sans-serif;color:#e0862a;box-shadow:0 2px 8px rgba(40,90,130,.08)"><span style="width:9px;height:9px;background:#f2a541;border-radius:2px;transform:rotate(45deg)"></span>{{ streakLabel }}</span>
+    <span style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:7px 13px;font:800 12.5px Nunito,sans-serif;color:#3d8a63;box-shadow:0 2px 8px rgba(40,90,130,.08)"><span style="width:9px;height:9px;background:#5cb586;border-radius:50%"></span>{{ doneChip }} done today</span>
+    <sc-if value="{{ hasIntention }}" hint-placeholder-val="{{ false }}">
+      <span style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:7px 13px;font:800 12.5px Nunito,sans-serif;color:#3a7fb0;box-shadow:0 2px 8px rgba(40,90,130,.08)"><span style="width:9px;height:9px;background:#4d9fd6;border-radius:50%"></span>{{ intentionChip }}</span>
+    </sc-if>
+  </div>
+
+  <!-- midday reset card -->
+  <sc-if value="{{ showMidday }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:14px;background:#fdeeda;border-radius:20px;padding:16px;box-shadow:0 3px 12px rgba(40,90,130,.07);animation:fadeslide .3s ease">
+      <div style="font:800 14.5px Nunito,sans-serif;color:#8a5c14">Midday reset — how's it going?</div>
+      <div style="font:600 12.5px/1.5 Nunito,sans-serif;color:#a87a2e;margin-top:3px">{{ middayLine }} Adjust if today changed shape — that's allowed.</div>
+      <div style="display:flex;gap:8px;margin-top:11px">
+        <button onClick="{{ dismissMidday }}" style="flex:1;border:none;background:#1d3a4d;color:#fff;border-radius:12px;padding:11px;font:800 13px Nunito,sans-serif;cursor:pointer">All good ✓</button>
+        <button onClick="{{ goTasks }}" style="flex:1;border:none;background:#fff;color:#8a5c14;border-radius:12px;padding:11px;font:800 13px Nunito,sans-serif;cursor:pointer">Adjust picks</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="font:800 13px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.08em;padding:20px 4px 10px">{{ picksHeading }}</div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <sc-for list="{{ picks }}" as="p" hint-placeholder-count="3">
+      <div style="position:relative">
+        <sc-if value="{{ p.confetti }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;top:32px;left:34px;width:0;height:0;z-index:5;pointer-events:none">
+            <span style="position:absolute;width:9px;height:9px;background:#f2a541;border-radius:2px;--cx:-42px;--cy:-58px;animation:confetti .8s ease-out forwards"></span>
+            <span style="position:absolute;width:7px;height:7px;background:#5cb586;border-radius:50%;--cx:38px;--cy:-64px;animation:confetti .85s ease-out forwards"></span>
+            <span style="position:absolute;width:8px;height:8px;background:#4d9fd6;border-radius:2px;--cx:-58px;--cy:-18px;animation:confetti .75s ease-out forwards"></span>
+            <span style="position:absolute;width:6px;height:6px;background:#f7b8c2;border-radius:50%;--cx:52px;--cy:-24px;animation:confetti .9s ease-out forwards"></span>
+            <span style="position:absolute;width:8px;height:8px;background:#f2a541;border-radius:50%;--cx:-24px;--cy:-76px;animation:confetti .95s ease-out forwards"></span>
+            <span style="position:absolute;width:7px;height:7px;background:#4d9fd6;border-radius:2px;--cx:20px;--cy:-80px;animation:confetti .8s .05s ease-out forwards"></span>
+          </div>
+        </sc-if>
+        <button onClick="{{ p.toggle }}" style="display:flex;align-items:center;gap:14px;background:#fff;border:none;border-radius:20px;padding:16px;cursor:pointer;text-align:left;box-shadow:0 3px 12px rgba(40,90,130,.09);width:100%;box-sizing:border-box">
+          <sc-if value="{{ p.done }}" hint-placeholder-val="{{ false }}">
+            <span style="width:34px;height:34px;border-radius:50%;background:#5cb586;color:#fff;display:flex;align-items:center;justify-content:center;font:800 17px Nunito;flex:none;animation:checkpop .4s ease">✓</span>
+          </sc-if>
+          <sc-if value="{{ p.notDone }}" hint-placeholder-val="{{ true }}">
+            <span style="width:34px;height:34px;border-radius:50%;border:2.5px solid #bcd8e8;flex:none;box-sizing:border-box"></span>
+          </sc-if>
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font:800 15px/1.3 Nunito,sans-serif;color:{{ p.titleColor }}">{{ p.title }}</span>
+            <span style="display:inline-flex;margin-top:5px;background:{{ p.tagBg }};color:{{ p.tagColor }};border-radius:8px;padding:2px 9px;font:800 11px Nunito,sans-serif">{{ p.tag }}</span>
+          </span>
+        </button>
+      </div>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ allPicksDone }}" hint-placeholder-val="{{ false }}">
+    <button onClick="{{ openCloseDay }}" style="margin-top:14px;border:none;background:#1d3a4d;color:#fff;border-radius:20px;padding:17px;font:800 16px Nunito,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(29,58,77,.25);animation:fadeslide .4s ease">Close the day with Buddy ✓</button>
+  </sc-if>
+  <sc-if value="{{ notAllDone }}" hint-placeholder-val="{{ false }}">
+    <button onClick="{{ openCloseDay }}" style="margin-top:14px;border:2px solid #c6dbe7;background:transparent;color:#5c86a0;border-radius:20px;padding:14px;font:800 14px Nunito,sans-serif;cursor:pointer" style-hover="background:#fff">Close the day anyway — we'll sort the rest together</button>
+  </sc-if>
+
+  <button onClick="{{ goCapture }}" style="margin-top:14px;display:flex;align-items:center;gap:10px;background:#fff;border:none;border-radius:999px;padding:14px 18px;color:#7fa6bb;font:700 14px Nunito,sans-serif;box-shadow:0 3px 12px rgba(40,90,130,.09);cursor:pointer;text-align:left;width:100%;box-sizing:border-box">
+    <span style="font:800 18px/1 Nunito;color:{{ accent }}">+</span> Tell Buddy anything…
+  </button>
+
+  <button onClick="{{ toggleMore }}" style="margin-top:16px;border:none;background:transparent;color:#9cb9c9;font:800 13px Nunito,sans-serif;cursor:pointer;padding:6px" style-hover="color:#5c86a0">{{ moreLabel }}</button>
+
+  <sc-if value="{{ showMore }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:10px;animation:fadeslide .3s ease">
+      <div style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 3px 12px rgba(40,90,130,.09)">
+        <div style="font:800 13px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Daily routine</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:24px;height:24px;border-radius:50%;background:{{ phaseMorningBg }};color:#fff;display:flex;align-items:center;justify-content:center;font:800 12px Nunito;border:2.5px solid {{ phaseMorningBorder }};box-sizing:border-box;color:{{ phaseMorningMark }}">✓</span><span style="flex:1;font:800 13.5px Nunito,sans-serif">Morning check-in</span><span style="font:700 11.5px Nunito,sans-serif;color:#9cb9c9">{{ phaseMorningLabel }}</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:24px;height:24px;border-radius:50%;background:{{ phaseMiddayBg }};display:flex;align-items:center;justify-content:center;font:800 12px Nunito;border:2.5px solid {{ phaseMiddayBorder }};box-sizing:border-box;color:{{ phaseMiddayMark }}">✓</span><span style="flex:1;font:800 13.5px Nunito,sans-serif">Midday reset</span><span style="font:700 11.5px Nunito,sans-serif;color:#9cb9c9">{{ phaseMiddayLabel }}</span></div>
+          <div style="display:flex;align-items:center;gap:12px"><span style="width:24px;height:24px;border-radius:50%;background:{{ phaseNightBg }};display:flex;align-items:center;justify-content:center;font:800 12px Nunito;border:2.5px solid {{ phaseNightBorder }};box-sizing:border-box;color:{{ phaseNightMark }}">✓</span><span style="flex:1;font:800 13.5px Nunito,sans-serif">Evening close-day</span><span style="font:700 11.5px Nunito,sans-serif;color:#9cb9c9">{{ phaseNightLabel }}</span></div>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 3px 12px rgba(40,90,130,.09)">
+        <div style="font:800 13px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Your week</div>
+        <div style="display:flex;align-items:flex-end;gap:8px;height:64px">
+          <sc-for list="{{ weekBars }}" as="w" hint-placeholder-count="7">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end">
+              <div style="width:100%;max-width:26px;height:{{ w.h }};background:{{ w.bg }};border-radius:7px 7px 3px 3px"></div>
+              <span style="font:800 10.5px Nunito,sans-serif;color:{{ w.labelColor }}">{{ w.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font:600 12.5px/1.5 Nunito,sans-serif;color:#5c86a0;margin-top:12px">A steady week. Tuesdays are usually your strongest day.</div>
+      </div>
+      <div style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 3px 12px rgba(40,90,130,.09);display:flex;justify-content:space-around;text-align:center">
+        <div><div style="font:900 22px Nunito,sans-serif;color:#1d3a4d">{{ statDone }}</div><div style="font:700 11.5px Nunito,sans-serif;color:#9cb9c9">done this week</div></div>
+        <div><div style="font:900 22px Nunito,sans-serif;color:#e0862a">{{ streak }}</div><div style="font:700 11.5px Nunito,sans-serif;color:#9cb9c9">day streak</div></div>
+        <div><div style="font:900 22px Nunito,sans-serif;color:#3d8a63">6/7</div><div style="font:700 11.5px Nunito,sans-serif;color:#9cb9c9">routines kept</div></div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ===== TASKS ===== -->
+<sc-if value="{{ showTasks }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Tasks" style="display:flex;flex-direction:column;animation:fadeslide .35s ease">
+  <div style="font:900 22px Nunito,sans-serif;padding:6px 4px 4px">Tasks</div>
+  <div style="font:600 13.5px Nunito,sans-serif;color:#5c86a0;padding:0 4px 16px">Only what needs you. The rest is parked safely.</div>
+
+  <sc-if value="{{ hasInbox }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#fdeeda;border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 3px 12px rgba(40,90,130,.07)">
+      <div style="font:800 14px Nunito,sans-serif;color:#c07a1e;margin-bottom:10px">{{ inboxCount }} to sort — one at a time</div>
+      <div style="background:#fff;border-radius:14px;padding:14px;font:800 14.5px/1.35 Nunito,sans-serif">{{ inboxTop }}</div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button onClick="{{ sortToday }}" style="flex:1;border:none;background:#1d3a4d;color:#fff;border-radius:12px;padding:11px;font:800 13px Nunito,sans-serif;cursor:pointer">Today</button>
+        <button onClick="{{ sortLater }}" style="flex:1;border:none;background:#fff;color:#1d3a4d;border-radius:12px;padding:11px;font:800 13px Nunito,sans-serif;cursor:pointer">Later</button>
+        <button onClick="{{ sortSchool }}" style="flex:1;border:none;background:#fff;color:#3a7fb0;border-radius:12px;padding:11px;font:800 13px Nunito,sans-serif;cursor:pointer">School</button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ inboxEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#e6f4ec;border-radius:20px;padding:16px;margin-bottom:14px;font:800 14px Nunito,sans-serif;color:#3d8a63;animation:fadeslide .3s ease">Inbox empty — everything is sorted ✓</div>
+  </sc-if>
+
+  <div style="font:800 13px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.08em;padding:6px 4px 10px">Today</div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <sc-for list="{{ picks }}" as="p" hint-placeholder-count="3">
+      <button onClick="{{ p.toggle }}" style="display:flex;align-items:center;gap:14px;background:#fff;border:none;border-radius:18px;padding:14px 16px;cursor:pointer;text-align:left;box-shadow:0 3px 12px rgba(40,90,130,.08);width:100%;box-sizing:border-box">
+        <sc-if value="{{ p.done }}" hint-placeholder-val="{{ false }}">
+          <span style="width:28px;height:28px;border-radius:50%;background:#5cb586;color:#fff;display:flex;align-items:center;justify-content:center;font:800 14px Nunito;flex:none;animation:checkpop .35s ease">✓</span>
+        </sc-if>
+        <sc-if value="{{ p.notDone }}" hint-placeholder-val="{{ true }}">
+          <span style="width:28px;height:28px;border-radius:50%;border:2.5px solid #bcd8e8;flex:none;box-sizing:border-box"></span>
+        </sc-if>
+        <span style="flex:1;font:800 14.5px/1.3 Nunito,sans-serif;color:{{ p.titleColor }}">{{ p.title }}</span>
+        <span style="font:700 11.5px Nunito,sans-serif;color:#9cb9c9">{{ p.time }}</span>
+      </button>
+    </sc-for>
+    <sc-for list="{{ extraToday }}" as="e" hint-placeholder-count="1">
+      <div style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 3px 12px rgba(40,90,130,.08);animation:fadeslide .3s ease">
+        <span style="width:28px;height:28px;border-radius:50%;border:2.5px solid #bcd8e8;flex:none;box-sizing:border-box"></span>
+        <span style="flex:1;font:800 14.5px/1.3 Nunito,sans-serif">{{ e.title }}</span>
+        <span style="font:800 10.5px Nunito,sans-serif;background:#e3f0fa;color:#3a7fb0;border-radius:7px;padding:2px 8px">new</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <button onClick="{{ toggleSomeday }}" style="margin-top:18px;border:none;background:transparent;color:#9cb9c9;font:800 13px Nunito,sans-serif;cursor:pointer;padding:6px;text-align:left" style-hover="color:#5c86a0">{{ somedayLabel }}</button>
+  <sc-if value="{{ showSomeday }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:8px;animation:fadeslide .3s ease">
+      <sc-for list="{{ somedayItems }}" as="s" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.6);border-radius:16px;padding:12px 16px;font:700 13.5px Nunito,sans-serif;color:#5c86a0">{{ s.title }}</div>
+      </sc-for>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ===== CAPTURE ===== -->
+<sc-if value="{{ showCapture }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Capture" style="display:flex;flex-direction:column;flex:1;animation:fadeslide .35s ease">
+  <div style="font:900 22px Nunito,sans-serif;padding:6px 4px 4px">Capture</div>
+  <div style="font:600 13.5px Nunito,sans-serif;color:#5c86a0;padding:0 4px 18px">Dump it here. Buddy sorts it — you don't have to decide now.</div>
+
+  <div style="background:#fff;border-radius:22px;padding:16px;box-shadow:0 3px 12px rgba(40,90,130,.09)">
+    <input value="{{ captureText }}" onChange="{{ onCaptureInput }}" onKeyDown="{{ onCaptureKey }}" placeholder="e.g. 'dentist friday' or 'idea: gift for mom'" style="width:100%;border:none;outline:none;font:700 15px Nunito,sans-serif;color:#1d3a4d;background:transparent;box-sizing:border-box;padding:4px 2px"></input>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button onClick="{{ submitCapture }}" style="border:none;background:{{ accent }};color:#fff;border-radius:12px;padding:10px 20px;font:800 13.5px Nunito,sans-serif;cursor:pointer">Capture it</button>
+    </div>
+  </div>
+
+  <sc-if value="{{ hasCaptured }}" hint-placeholder-val="{{ false }}">
+    <div style="font:800 13px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.08em;padding:20px 4px 10px">Sorted by Buddy</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ captured }}" as="c" hint-placeholder-count="1">
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:13px 16px;box-shadow:0 3px 12px rgba(40,90,130,.08);animation:fadeslide .3s ease">
+          <span style="flex:1;font:800 14px/1.3 Nunito,sans-serif">{{ c.text }}</span>
+          <span style="font:800 10.5px Nunito,sans-serif;background:{{ c.tagBg }};color:{{ c.tagColor }};border-radius:7px;padding:3px 9px">{{ c.tag }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ===== BROWSE ===== -->
+<sc-if value="{{ showBrowse }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Browse" style="display:flex;flex-direction:column;animation:fadeslide .35s ease">
+  <div style="font:900 22px Nunito,sans-serif;padding:6px 4px 4px">Browse</div>
+  <div style="font:600 13.5px Nunito,sans-serif;color:#5c86a0;padding:0 4px 18px">Everything else lives here — out of the way until you want it.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <sc-for list="{{ browseItems }}" as="b" hint-placeholder-count="8">
+      <div style="background:#fff;border-radius:20px;padding:18px 16px;box-shadow:0 3px 12px rgba(40,90,130,.08);display:flex;flex-direction:column;gap:8px;cursor:pointer" style-hover="box-shadow:0 6px 18px rgba(40,90,130,.14)">
+        <span style="width:34px;height:34px;border-radius:12px;background:{{ b.iconBg }};display:flex;align-items:center;justify-content:center"><span style="width:14px;height:14px;border-radius:{{ b.iconShape }};background:{{ b.iconColor }}"></span></span>
+        <span style="font:800 14.5px Nunito,sans-serif">{{ b.label }}</span>
+        <span style="font:600 12px/1.4 Nunito,sans-serif;color:#7fa6bb">{{ b.desc }}</span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- ===== ME ===== -->
+<sc-if value="{{ showMe }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Me" style="display:flex;flex-direction:column;animation:fadeslide .35s ease">
+  <div style="font:900 22px Nunito,sans-serif;padding:6px 4px 18px">Me</div>
+  <div style="background:#fff;border-radius:22px;padding:18px;box-shadow:0 3px 12px rgba(40,90,130,.09);display:flex;align-items:center;gap:14px">
+    <span style="width:52px;height:52px;border-radius:50%;background:{{ accent }};color:#fff;display:flex;align-items:center;justify-content:center;font:900 20px Nunito">L</span>
+    <span><span style="display:block;font:900 16px Nunito,sans-serif">Loek</span><span style="display:block;font:700 12.5px Nunito,sans-serif;color:#7fa6bb">swimming with Buddy since March</span></span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+    <div style="background:#fff;border-radius:16px;padding:15px 16px;font:800 14px Nunito,sans-serif;box-shadow:0 3px 12px rgba(40,90,130,.07);display:flex;justify-content:space-between;color:#1d3a4d">Notifications &amp; anchors <span style="color:#9cb9c9">›</span></div>
+    <div style="background:#fff;border-radius:16px;padding:15px 16px;font:800 14px Nunito,sans-serif;box-shadow:0 3px 12px rgba(40,90,130,.07);display:flex;justify-content:space-between;color:#1d3a4d">Quiet hours <span style="color:#9cb9c9">22:00 – 09:00</span></div>
+    <div style="background:#fff;border-radius:16px;padding:15px 16px;font:800 14px Nunito,sans-serif;box-shadow:0 3px 12px rgba(40,90,130,.07);display:flex;justify-content:space-between;color:#1d3a4d">Routine items (comms, meds) <span style="color:#9cb9c9">›</span></div>
+    <div style="background:#fff;border-radius:16px;padding:15px 16px;font:800 14px Nunito,sans-serif;box-shadow:0 3px 12px rgba(40,90,130,.07);display:flex;justify-content:space-between;color:#1d3a4d">Google Calendar <span style="color:#5cb586">connected</span></div>
+    <div style="background:#fff;border-radius:16px;padding:15px 16px;font:800 14px Nunito,sans-serif;box-shadow:0 3px 12px rgba(40,90,130,.07);display:flex;justify-content:space-between;color:#1d3a4d">Account &amp; advanced <span style="color:#9cb9c9">›</span></div>
+  </div>
+  <button onClick="{{ resetDay }}" style="margin-top:18px;border:none;background:transparent;color:#9cb9c9;font:800 13px Nunito,sans-serif;cursor:pointer;padding:8px" style-hover="color:#5c86a0">Reset day (demo) — shows the morning check-in again</button>
+</div>
+</sc-if>
+
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<div style="position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-around;align-items:center;padding:12px 8px 26px;background:#fff;border-radius:26px 26px 0 0;box-shadow:0 -4px 16px rgba(40,90,130,.08)">
+  <button onClick="{{ goNow }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;font:800 11.5px Nunito,sans-serif;color:{{ navNowColor }};background:none;border:none;cursor:pointer;min-width:56px;padding:4px"><span style="width:22px;height:22px;border-radius:8px;background:{{ navNowBg }};border:2.5px solid {{ navNowBorder }};box-sizing:border-box"></span>Now</button>
+  <button onClick="{{ goTasks }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;font:800 11.5px Nunito,sans-serif;color:{{ navTasksColor }};background:none;border:none;cursor:pointer;min-width:56px;padding:4px"><span style="width:22px;height:22px;border-radius:8px;background:{{ navTasksBg }};border:2.5px solid {{ navTasksBorder }};box-sizing:border-box"></span>Tasks</button>
+  <button onClick="{{ goCapture }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;font:800 11.5px Nunito,sans-serif;color:{{ navCaptureColor }};background:none;border:none;cursor:pointer;min-width:56px;padding:4px"><span style="width:22px;height:22px;border-radius:50%;background:{{ navCaptureBg }};border:2.5px solid {{ navCaptureBorder }};box-sizing:border-box;display:flex;align-items:center;justify-content:center;font:800 14px/1 Nunito;color:{{ navCapturePlus }}">+</span>Capture</button>
+  <button onClick="{{ goBrowse }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;font:800 11.5px Nunito,sans-serif;color:{{ navBrowseColor }};background:none;border:none;cursor:pointer;min-width:56px;padding:4px"><span style="width:22px;height:22px;display:grid;grid-template-columns:1fr 1fr;gap:2.5px"><span style="background:{{ navBrowseCell }};border-radius:3px"></span><span style="background:{{ navBrowseCell }};border-radius:3px"></span><span style="background:{{ navBrowseCell }};border-radius:3px"></span><span style="background:{{ navBrowseCell }};border-radius:3px"></span></span>Browse</button>
+  <button onClick="{{ goMe }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;font:800 11.5px Nunito,sans-serif;color:{{ navMeColor }};background:none;border:none;cursor:pointer;min-width:56px;padding:4px"><span style="width:22px;height:22px;border-radius:50%;background:{{ navMeBg }};border:2.5px solid {{ navMeBorder }};box-sizing:border-box"></span>Me</button>
+</div>
+
+</sc-if>
+
+<!-- ===== CLOSE-DAY ===== -->
+<sc-if value="{{ closeOpen }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Close-day reflection" style="position:absolute;inset:0;z-index:20;background:#1d3a4d;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:14px;padding:40px 28px 32px;animation:overlayin .35s ease;text-align:center;color:#fff;overflow-y:auto">
+
+  <sc-if value="{{ closeCelebrating }}" hint-placeholder-val="{{ false }}">
+    <div style="position:relative;width:0;height:0">
+      <span style="position:absolute;width:11px;height:11px;background:#f2a541;border-radius:2px;--cx:-110px;--cy:-140px;animation:bigconfetti 1.3s ease-out forwards"></span>
+      <span style="position:absolute;width:9px;height:9px;background:#5cb586;border-radius:50%;--cx:120px;--cy:-150px;animation:bigconfetti 1.4s ease-out forwards"></span>
+      <span style="position:absolute;width:10px;height:10px;background:#7cc3e8;border-radius:2px;--cx:-150px;--cy:-40px;animation:bigconfetti 1.2s ease-out forwards"></span>
+      <span style="position:absolute;width:8px;height:8px;background:#f7b8c2;border-radius:50%;--cx:150px;--cy:-60px;animation:bigconfetti 1.5s ease-out forwards"></span>
+      <span style="position:absolute;width:10px;height:10px;background:#f2a541;border-radius:50%;--cx:-60px;--cy:-180px;animation:bigconfetti 1.45s .1s ease-out forwards"></span>
+      <span style="position:absolute;width:9px;height:9px;background:#7cc3e8;border-radius:2px;--cx:70px;--cy:-190px;animation:bigconfetti 1.35s .1s ease-out forwards"></span>
+      <span style="position:absolute;width:8px;height:8px;background:#5cb586;border-radius:2px;--cx:-170px;--cy:-110px;animation:bigconfetti 1.5s .15s ease-out forwards"></span>
+      <span style="position:absolute;width:9px;height:9px;background:#f7b8c2;border-radius:50%;--cx:170px;--cy:-120px;animation:bigconfetti 1.3s .15s ease-out forwards"></span>
+    </div>
+  </sc-if>
+
+  <div style="animation:bob 3s ease-in-out infinite">
+    <svg width="110" height="90" viewBox="0 0 64 52">
+      <circle cx="30" cy="7" r="2.4" fill="#7cc3e8" style="animation:spout 3s ease-in-out infinite"></circle>
+      <circle cx="25" cy="12" r="1.8" fill="#7cc3e8" style="animation:spout 3s .25s ease-in-out infinite"></circle>
+      <ellipse cx="30" cy="32" rx="23" ry="15" fill="#7cc3e8"></ellipse>
+      <ellipse cx="30" cy="40" rx="19" ry="7.5" fill="#bfe2f5"></ellipse>
+      <ellipse cx="55" cy="25" rx="7.5" ry="4.5" fill="#7cc3e8" transform="rotate(38 55 25)"></ellipse>
+      <circle cx="17" cy="27" r="2.6" fill="#173042"></circle>
+      <circle cx="13" cy="33" r="2.6" fill="#f7b8c2" opacity=".7"></circle>
+    </svg>
+  </div>
+
+  <sc-if value="{{ closeLeftovers }}" hint-placeholder-val="{{ false }}">
+    <div style="font:900 22px/1.2 Nunito,sans-serif">Before we close…</div>
+    <div style="font:700 13.5px/1.5 Nunito,sans-serif;color:#a8cbde;max-width:300px">{{ leftoverIntro }} Nothing carries over silently — decide for each one.</div>
+    <div style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{ leftovers }}" as="l" hint-placeholder-count="1">
+        <div style="background:rgba(255,255,255,.08);border-radius:18px;padding:14px;text-align:left">
+          <sc-if value="{{ l.normal }}" hint-placeholder-val="{{ true }}">
+            <div style="font:800 14.5px/1.35 Nunito,sans-serif;color:#fff">{{ l.title }}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px">
+              <button onClick="{{ l.moveTomorrow }}" style="border:none;background:#fff;color:#1d3a4d;border-radius:11px;padding:10px;font:800 12.5px Nunito,sans-serif;cursor:pointer">→ Tomorrow</button>
+              <button onClick="{{ l.startSplit }}" style="border:none;background:rgba(255,255,255,.16);color:#fff;border-radius:11px;padding:10px;font:800 12.5px Nunito,sans-serif;cursor:pointer">Done, but…</button>
+              <button onClick="{{ l.startRename }}" style="border:none;background:rgba(255,255,255,.16);color:#fff;border-radius:11px;padding:10px;font:800 12.5px Nunito,sans-serif;cursor:pointer">Rename</button>
+              <button onClick="{{ l.del }}" style="border:none;background:rgba(255,255,255,.16);color:#f7b8c2;border-radius:11px;padding:10px;font:800 12.5px Nunito,sans-serif;cursor:pointer">Let it go</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ l.renaming }}" hint-placeholder-val="{{ false }}">
+            <div style="font:800 12px Nunito,sans-serif;color:#a8cbde;margin-bottom:8px">Rename &amp; move to tomorrow</div>
+            <input value="{{ renameVal }}" onChange="{{ onRenameInput }}" style="width:100%;border:none;outline:none;font:700 14px Nunito,sans-serif;color:#fff;background:rgba(255,255,255,.12);border-radius:10px;padding:11px 12px;box-sizing:border-box"></input>
+            <button onClick="{{ l.saveRename }}" style="margin-top:9px;border:none;background:#fff;color:#1d3a4d;border-radius:11px;padding:10px 18px;font:800 12.5px Nunito,sans-serif;cursor:pointer">Save → tomorrow</button>
+          </sc-if>
+          <sc-if value="{{ l.splitting }}" hint-placeholder-val="{{ false }}">
+            <div style="font:800 12px Nunito,sans-serif;color:#a8cbde;margin-bottom:8px">Count it as done — what's the follow-up task?</div>
+            <input value="{{ splitVal }}" onChange="{{ onSplitInput }}" placeholder="e.g. 'send the attachment'" style="width:100%;border:none;outline:none;font:700 14px Nunito,sans-serif;color:#fff;background:rgba(255,255,255,.12);border-radius:10px;padding:11px 12px;box-sizing:border-box"></input>
+            <button onClick="{{ l.saveSplit }}" style="margin-top:9px;border:none;background:#5cb586;color:#fff;border-radius:11px;padding:10px 18px;font:800 12.5px Nunito,sans-serif;cursor:pointer">Done ✓ + follow-up</button>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <button onClick="{{ cancelClose }}" style="border:none;background:transparent;color:#7fa6bb;font:700 13px Nunito,sans-serif;cursor:pointer;padding:4px">Not yet</button>
+  </sc-if>
+
+  <sc-if value="{{ closeReflecting }}" hint-placeholder-val="{{ true }}">
+    <div style="font:900 24px/1.2 Nunito,sans-serif">Closing the day</div>
+    <div style="font:700 14px/1.5 Nunito,sans-serif;color:#a8cbde">{{ closeSummary }}</div>
+
+    <div style="width:100%;max-width:320px;background:rgba(255,255,255,.08);border-radius:18px;padding:16px;text-align:left">
+      <div style="font:800 11.5px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">How was today?</div>
+      <div style="display:flex;gap:8px">
+        <sc-for list="{{ todayMoodOptions }}" as="tm" hint-placeholder-count="5">
+          <button onClick="{{ tm.pick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;border:none;background:{{ tm.bg }};cursor:pointer;padding:7px 2px;border-radius:12px">
+            <span style="width:22px;height:22px;border-radius:50%;background:{{ tm.color }};border:3px solid {{ tm.ring }};box-sizing:border-box"></span>
+            <span style="font:800 10px Nunito,sans-serif;color:#d5e7f1">{{ tm.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="font:800 11.5px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px">Energy</div>
+      <div style="display:flex;gap:8px">
+        <sc-for list="{{ closeEnergyOptions }}" as="ce" hint-placeholder-count="3">
+          <button onClick="{{ ce.pick }}" style="flex:1;border:none;border-radius:11px;padding:10px;font:800 12.5px Nunito,sans-serif;cursor:pointer;background:{{ ce.bg }};color:{{ ce.color }}">{{ ce.label }}</button>
+        </sc-for>
+      </div>
+      <div style="font:800 11.5px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px">One line about today <span style="text-transform:none;font-weight:700;color:#5c86a0">(optional)</span></div>
+      <input value="{{ journalLine }}" onChange="{{ onJournalInput }}" placeholder="what stuck with you…" style="width:100%;border:none;outline:none;font:700 14px Nunito,sans-serif;color:#fff;background:rgba(255,255,255,.1);border-radius:10px;padding:11px 12px;box-sizing:border-box"></input>
+      <button onClick="{{ toggleReflectMore }}" style="border:none;background:transparent;color:#7fa6bb;font:800 12px Nunito,sans-serif;cursor:pointer;padding:12px 0 2px;text-align:left;width:100%" style-hover="color:#a8cbde">{{ reflectMoreLabel }}</button>
+      <sc-if value="{{ showReflectMore }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px;animation:fadeslide .3s ease">
+          <div>
+            <div style="font:800 11.5px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">What went well?</div>
+            <input value="{{ workedLine }}" onChange="{{ onWorkedInput }}" style="width:100%;border:none;outline:none;font:700 14px Nunito,sans-serif;color:#fff;background:rgba(255,255,255,.1);border-radius:10px;padding:11px 12px;box-sizing:border-box"></input>
+          </div>
+          <div>
+            <div style="font:800 11.5px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">What was hard?</div>
+            <input value="{{ hardLine }}" onChange="{{ onHardInput }}" style="width:100%;border:none;outline:none;font:700 14px Nunito,sans-serif;color:#fff;background:rgba(255,255,255,.1);border-radius:10px;padding:11px 12px;box-sizing:border-box"></input>
+          </div>
+          <div>
+            <div style="font:800 11.5px Nunito,sans-serif;color:#7fa6bb;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">What would make tomorrow easier?</div>
+            <input value="{{ easierLine }}" onChange="{{ onEasierInput }}" style="width:100%;border:none;outline:none;font:700 14px Nunito,sans-serif;color:#fff;background:rgba(255,255,255,.1);border-radius:10px;padding:11px 12px;box-sizing:border-box"></input>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <button onClick="{{ celebrateClose }}" style="border:none;background:#fff;color:#1d3a4d;border-radius:16px;padding:15px 34px;font:800 15px Nunito,sans-serif;cursor:pointer;margin-top:4px">Close the day ✓</button>
+    <button onClick="{{ cancelClose }}" style="border:none;background:transparent;color:#7fa6bb;font:700 13px Nunito,sans-serif;cursor:pointer;padding:4px">Not yet</button>
+  </sc-if>
+
+  <sc-if value="{{ closeCelebrating }}" hint-placeholder-val="{{ false }}">
+    <div style="font:900 26px/1.2 Nunito,sans-serif;animation:fadeslide .4s ease">Day closed. You did it.</div>
+    <div style="font:700 15px/1.6 Nunito,sans-serif;color:#a8cbde;max-width:280px;animation:fadeslide .5s ease">{{ celebrateSummary }} · streak is now <span style="color:#f2a541">{{ streakNext }} days</span></div>
+    <sc-if value="{{ hasClosedNote }}" hint-placeholder-val="{{ false }}">
+      <div style="font:700 13px/1.5 Nunito,sans-serif;color:#7fa6bb;animation:fadeslide .5s ease">{{ closedNote }}</div>
+    </sc-if>
+    <button onClick="{{ dismissClose }}" style="margin-top:14px;border:none;background:#fff;color:#1d3a4d;border-radius:16px;padding:15px 34px;font:800 15px Nunito,sans-serif;cursor:pointer">Good night, Buddy 🌙</button>
+  </sc-if>
+</div>
+</sc-if>
+
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 420, &quot;height&quot;: 860}, &quot;accentColor&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#4d9fd6&quot;, &quot;options&quot;: [&quot;#4d9fd6&quot;, &quot;#5cb586&quot;, &quot;#8a7fd6&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Look&quot;}, &quot;celebrations&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Behavior&quot;}, &quot;survivalMode&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Behavior&quot;}}">
+class Component extends DCLogic {
+    DAY_KEY = 'buddyCove.routineDay';
+
+    state = {
+        gatePassed: false,
+        gateStep: 0,
+        survival: false,
+        comms: [false, false, false, false],
+        yMood: null,
+        yEnergy: null,
+        meds: [false, false],
+        intention: '',
+        screen: 'now',
+        picks: [
+            { id: 1, title: 'Email Mr. Berg about the deadline', tag: 'quick win · 15 min', time: '15 min', tagBg: '#fdeeda', tagColor: '#c07a1e', done: false },
+            { id: 2, title: 'Read chapter 4 notes', tag: 'school · 20 min', time: '20 min', tagBg: '#e3f0fa', tagColor: '#3a7fb0', done: false },
+            { id: 3, title: 'Refill meds box', tag: 'tiny · 5 min', time: '5 min', tagBg: '#e6f4ec', tagColor: '#3d8a63', done: false },
+        ],
+        confettiAt: null,
+        showMore: false,
+        showSomeday: false,
+        middayDismissed: false,
+        inbox: ['Buy a new charger cable', 'Ask Sam about the weekend'],
+        extraToday: [],
+        captureText: '',
+        captured: [],
+        closeOpen: false,
+        closePhase: 'reflect',
+        todayMood: null,
+        closeEnergy: null,
+        journalLine: '',
+        workedLine: '',
+        hardLine: '',
+        easierLine: '',
+        reflectMore: false,
+        renamingId: null,
+        renameVal: '',
+        splitId: null,
+        splitVal: '',
+        movedCount: 0,
+        deletedCount: 0,
+        followUpCount: 0,
+        showDeadlines: false,
+        streak: 4,
+    };
+
+    commsDefs = ['Check mail', 'School portal', 'WhatsApp & Signal', 'Bank app'];
+    medsDefs = ['Take meds', 'Vitamin D'];
+    moodDefs = [
+        { label: 'rough', color: '#e8899a' },
+        { label: 'meh', color: '#f2a541' },
+        { label: 'okay', color: '#7cc3e8' },
+        { label: 'good', color: '#5cb586' },
+        { label: 'great', color: '#3d8a63' },
+    ];
+
+    componentDidMount() {
+        try {
+            const today = new Date().toDateString();
+            if (localStorage.getItem(this.DAY_KEY) === today) {
+                this.setState({ gatePassed: true });
+            }
+        } catch { /* ignore */ }
+    }
+
+    passGate() {
+        try { localStorage.setItem(this.DAY_KEY, new Date().toDateString()); } catch { /* ignore */ }
+        this.setState({ gatePassed: true, screen: 'now' });
+    }
+
+    tagFor(text) {
+        const t = text.toLowerCase();
+        if (/(school|class|homework|assignment|exam|toets)/.test(t)) return { tag: 'school', tagBg: '#e3f0fa', tagColor: '#3a7fb0' };
+        if (/(idea|gift|maybe|someday|ooit)/.test(t)) return { tag: 'someday', tagBg: '#efe9f8', tagColor: '#7a5fb0' };
+        if (/(friday|monday|tomorrow|dentist|appointment|afspraak|\d{1,2}:\d{2})/.test(t)) return { tag: 'reminder', tagBg: '#fdeeda', tagColor: '#c07a1e' };
+        return { tag: 'today', tagBg: '#e6f4ec', tagColor: '#3d8a63' };
+    }
+
+    renderVals() {
+        const s = this.state;
+        const celebrate = this.props.celebrations ?? true;
+        const accent = this.props.accentColor ?? '#4d9fd6';
+        const hour = new Date().getHours();
+        const greeting = hour < 11 ? 'Good morning, Loek!' : hour < 17 ? 'Hi Loek — starting fresh.' : 'Evening, Loek — better late than never.';
+        const survival = s.survival || (this.props.survivalMode ?? false);
+        const visiblePicks = survival ? s.picks.slice(0, 1) : s.picks;
+        const doneCount = s.picks.filter(p => p.done).length;
+        const visibleDone = visiblePicks.filter(p => p.done).length;
+        const allDone = visiblePicks.every(p => p.done);
+
+        const picks = visiblePicks.map((p) => ({
+            ...p,
+            notDone: !p.done,
+            titleColor: p.done ? '#9cb9c9' : '#1d3a4d',
+            confetti: s.confettiAt === p.id,
+            toggle: () => {
+                const wasDone = p.done;
+                this.setState((st) => ({
+                    picks: st.picks.map(x => x.id === p.id ? { ...x, done: !x.done } : x),
+                    confettiAt: !wasDone && celebrate ? p.id : null,
+                }));
+                if (!wasDone && celebrate) setTimeout(() => this.setState({ confettiAt: null }), 1000);
+            },
+        }));
+
+        const whaleLine = allDone
+            ? 'Everything done. I\u2019m so proud of you!'
+            : visibleDone > 0
+                ? `${visibleDone} down, ${visiblePicks.length - visibleDone} to go. No rush.`
+                : 'One small thing at a time. Ready?';
+
+        const week = [
+            { label: 'W', v: 2 }, { label: 'T', v: 3 }, { label: 'F', v: 1 }, { label: 'S', v: 2 },
+            { label: 'S', v: 0 }, { label: 'M', v: 3 }, { label: 'T', v: doneCount },
+        ];
+        const weekBars = week.map((w, i) => ({
+            label: w.label,
+            h: (w.v === 0 ? 6 : 14 + w.v * 14) + 'px',
+            bg: i === 6 ? accent : w.v === 0 ? '#e3eef5' : '#bcd8e8',
+            labelColor: i === 6 ? '#1d3a4d' : '#9cb9c9',
+        }));
+
+        const nav = (key) => s.screen === key;
+        const navColors = (active) => ({
+            color: active ? '#1d3a4d' : '#9cb9c9',
+            bg: active ? accent : 'transparent',
+            border: active ? accent : '#c6dbe7',
+            cell: active ? accent : '#c6dbe7',
+        });
+        const nNow = navColors(nav('now')), nTasks = navColors(nav('tasks')), nCap = navColors(nav('capture')), nBrowse = navColors(nav('browse')), nMe = navColors(nav('me'));
+        const go = (screen) => () => this.setState({ screen, showMore: false });
+
+        // gate step chips
+        const stepChip = (i) => {
+            const active = s.gateStep === i;
+            const done = s.gateStep > i;
+            return {
+                bg: active ? accent : done ? '#d3ecdd' : '#d7e9f2',
+                color: active ? '#fff' : done ? '#3d8a63' : '#7fa6bb',
+                mark: done ? '\u2713' : String(i + 1) + '.',
+            };
+        };
+        const c0 = stepChip(0), c1 = stepChip(1), c2 = stepChip(2);
+
+        const moodRow = (selectedKey, stateKey) => this.moodDefs.map((m, i) => ({
+            label: m.label,
+            color: m.color,
+            ring: s[stateKey] === i ? '#1d3a4d' : 'transparent',
+            bg: s[stateKey] === i ? (stateKey === 'todayMood' ? 'rgba(255,255,255,.14)' : '#eef6fa') : 'transparent',
+            labelColor: s[stateKey] === i ? '#1d3a4d' : '#9cb9c9',
+            pick: () => this.setState({ [stateKey]: i }),
+        }));
+
+        return {
+            accent,
+            // ---- gate ----
+            showRoutine: !s.gatePassed,
+            showApp: s.gatePassed,
+            routineGreeting: greeting,
+            gateSubline: hour >= 12 ? 'The check-in still comes first \u2014 it only takes a minute.' : 'Three tiny steps, then the day is yours.',
+            isSurvival: survival,
+            setNormalDay: () => this.setState({ survival: false }),
+            setSurvivalDay: () => this.setState({ survival: true }),
+            normalBg: !survival ? '#fff' : 'transparent', normalColor: !survival ? '#1d3a4d' : '#7fa6bb', normalShadow: !survival ? '0 2px 8px rgba(40,90,130,.12)' : 'none',
+            survivalBg: survival ? '#fff' : 'transparent', survivalColor: survival ? '#2e6e50' : '#7fa6bb', survivalShadow: survival ? '0 2px 8px rgba(40,90,130,.12)' : 'none',
+            goStep0: () => this.setState({ gateStep: 0 }),
+            goStep1: () => this.setState({ gateStep: 1 }),
+            goStep2: () => this.setState({ gateStep: 2 }),
+            step0Bg: c0.bg, step0Color: c0.color, step0Mark: c0.mark,
+            step1Bg: c1.bg, step1Color: c1.color, step1Mark: c1.mark,
+            step2Bg: c2.bg, step2Color: c2.color, step2Mark: c2.mark,
+            onStep0: s.gateStep === 0, onStep1: s.gateStep === 1, onStep2: s.gateStep === 2,
+            notLastStep: s.gateStep < 2,
+            nextStep: () => this.setState((st) => ({ gateStep: Math.min(2, st.gateStep + 1) })),
+            commsItems: this.commsDefs.map((label, i) => ({
+                label, done: s.comms[i], notDone: !s.comms[i],
+                color: s.comms[i] ? '#9cb9c9' : '#1d3a4d',
+                toggle: () => this.setState((st) => ({ comms: st.comms.map((v, j) => j === i ? !v : v) })),
+            })),
+            moodOptions: moodRow(s.yMood, 'yMood'),
+            energyOptions: ['Low', 'Medium', 'High'].map((label, i) => ({
+                label,
+                bg: s.yEnergy === i ? '#1d3a4d' : '#eef6fa',
+                color: s.yEnergy === i ? '#fff' : '#5c86a0',
+                pick: () => this.setState({ yEnergy: i }),
+            })),
+            medsItems: this.medsDefs.map((label, i) => ({
+                label, done: s.meds[i], notDone: !s.meds[i],
+                color: s.meds[i] ? '#9cb9c9' : '#1d3a4d',
+                toggle: () => this.setState((st) => ({ meds: st.meds.map((v, j) => j === i ? !v : v) })),
+            })),
+            intention: s.intention,
+            onIntentionInput: (e) => this.setState({ intention: e.target.value }),
+            gatePicksLabel: survival ? 'Your one pick' : 'Your three picks',
+            gatePicks: visiblePicks,
+            toggleDeadlines: () => this.setState((st) => ({ showDeadlines: !st.showDeadlines })),
+            showDeadlines: s.showDeadlines,
+            deadlinesLabel: s.showDeadlines ? 'Hide school deadlines \u2303' : 'School deadlines (2) \u2304',
+            deadlines: [
+                { title: 'Math homework 4.2', due: 'Thu', dot: '#f2a541', dueColor: '#c07a1e' },
+                { title: 'History essay draft', due: 'next Mon', dot: '#7cc3e8', dueColor: '#9cb9c9' },
+            ],
+            finishRoutine: () => this.passGate(),
+            skipRoutine: () => this.passGate(),
+            // ---- screens ----
+            showNow: nav('now'), showTasks: nav('tasks'), showCapture: nav('capture'), showBrowse: nav('browse'), showMe: nav('me'),
+            goNow: go('now'), goTasks: go('tasks'), goCapture: go('capture'), goBrowse: go('browse'), goMe: go('me'),
+            // ---- now ----
+            heroTitle: hour < 11 ? 'Morning, Loek!' : hour < 17 ? 'Hey Loek!' : 'Evening, Loek!',
+            whaleLine,
+            streak: s.streak,
+            streakLabel: `${s.streak}-day streak`,
+            streakNext: s.streak + 1,
+            doneChip: doneCount,
+            hasIntention: s.intention.trim().length > 0,
+            intentionChip: `today: ${s.intention.trim()}`,
+            showMidday: hour >= 12 && hour < 18 && !s.middayDismissed && !allDone,
+            middayLine: visibleDone > 0 ? `${visibleDone} of ${visiblePicks.length} done so far \u2014 nice pace.` : 'Nothing ticked yet \u2014 that\u2019s okay.',
+            dismissMidday: () => this.setState({ middayDismissed: true }),
+            picksHeading: survival ? 'Just one today' : 'Today\u2019s three',
+            picks,
+            allPicksDone: allDone,
+            notAllDone: !allDone,
+            openCloseDay: () => this.setState({ closeOpen: true, closePhase: visiblePicks.some(p => !p.done) ? 'leftovers' : 'reflect' }),
+            toggleMore: () => this.setState((st) => ({ showMore: !st.showMore })),
+            moreLabel: s.showMore ? 'Less \u2303' : 'More \u2014 routine & stats \u2304',
+            showMore: s.showMore,
+            weekBars,
+            statDone: 11 + doneCount,
+            // routine phase card
+            phaseMorningBg: '#5cb586', phaseMorningBorder: '#5cb586', phaseMorningMark: '#fff', phaseMorningLabel: 'done',
+            phaseMiddayBg: s.middayDismissed ? '#5cb586' : 'transparent', phaseMiddayBorder: s.middayDismissed ? '#5cb586' : '#c6dbe7', phaseMiddayMark: s.middayDismissed ? '#fff' : 'transparent', phaseMiddayLabel: s.middayDismissed ? 'done' : hour < 12 ? 'later' : 'now',
+            phaseNightBg: 'transparent', phaseNightBorder: '#c6dbe7', phaseNightMark: 'transparent', phaseNightLabel: 'this evening',
+            // ---- tasks ----
+            hasInbox: s.inbox.length > 0,
+            inboxEmpty: s.inbox.length === 0,
+            inboxCount: s.inbox.length,
+            inboxTop: s.inbox[0] ?? '',
+            sortToday: () => this.setState((st) => ({
+                inbox: st.inbox.slice(1),
+                extraToday: [...st.extraToday, { title: st.inbox[0] }],
+            })),
+            sortLater: () => this.setState((st) => ({ inbox: st.inbox.slice(1) })),
+            sortSchool: () => this.setState((st) => ({ inbox: st.inbox.slice(1) })),
+            extraToday: s.extraToday,
+            toggleSomeday: () => this.setState((st) => ({ showSomeday: !st.showSomeday })),
+            somedayLabel: s.showSomeday ? 'Hide someday (2) \u2303' : 'Someday (2) \u2014 parked safely \u2304',
+            showSomeday: s.showSomeday,
+            somedayItems: [{ title: 'Sort out old photos' }, { title: 'Look into swim lessons' }],
+            // ---- capture ----
+            captureText: s.captureText,
+            onCaptureInput: (e) => this.setState({ captureText: e.target.value }),
+            onCaptureKey: (e) => { if (e.key === 'Enter') this.submitCaptureNow(); },
+            submitCapture: () => this.submitCaptureNow(),
+            hasCaptured: s.captured.length > 0,
+            captured: s.captured,
+            // ---- browse ----
+            browseItems: [
+                { label: 'School', desc: 'Classes, assignments, deadlines', iconBg: '#e3f0fa', iconColor: '#4d9fd6', iconShape: '4px' },
+                { label: 'Calendar', desc: 'Events & timed picks', iconBg: '#e6f4ec', iconColor: '#5cb586', iconShape: '4px' },
+                { label: 'Health', desc: 'Check-in, trends, protocols', iconBg: '#fbe9ec', iconColor: '#e8899a', iconShape: '50%' },
+                { label: 'Notes', desc: 'Quick & smart notes', iconBg: '#efe9f8', iconColor: '#9c8ad0', iconShape: '4px' },
+                { label: 'Focus timer', desc: 'Pomodoro for one task', iconBg: '#fdeeda', iconColor: '#f2a541', iconShape: '50%' },
+                { label: 'Checklists', desc: 'Incl. calendar-triggered', iconBg: '#e3f0fa', iconColor: '#7cc3e8', iconShape: '4px' },
+                { label: 'Toolbox', desc: 'Coping tools & strategies', iconBg: '#e6f4ec', iconColor: '#3d8a63', iconShape: '50%' },
+                { label: 'Reflect', desc: 'Journal, goals, skills', iconBg: '#efe9f8', iconColor: '#7a5fb0', iconShape: '50%' },
+            ],
+            // ---- me ----
+            resetDay: () => {
+                try { localStorage.removeItem(this.DAY_KEY); } catch { /* ignore */ }
+                this.setState({
+                    gatePassed: false, gateStep: 0, survival: false,
+                    comms: [false, false, false, false], yMood: null, yEnergy: null,
+                    meds: [false, false], intention: '', middayDismissed: false, screen: 'now',
+                });
+            },
+            // ---- close-day ----
+            closeOpen: s.closeOpen,
+            closeLeftovers: s.closePhase === 'leftovers',
+            closeReflecting: s.closePhase === 'reflect',
+            closeCelebrating: s.closePhase === 'celebrate',
+            closeSummary: visiblePicks.length === 0 ? 'Everything sorted \u00b7 routine kept' : `${visibleDone} of ${visiblePicks.length} picks done \u00b7 routine kept`,
+            leftoverIntro: (() => { const n = visiblePicks.filter(p => !p.done).length; return n === 1 ? '1 task didn\u2019t happen today \u2014 that\u2019s okay.' : `${n} tasks didn\u2019t happen today \u2014 that\u2019s okay.`; })(),
+            leftovers: visiblePicks.filter(p => !p.done).map((p) => ({
+                title: p.title,
+                normal: s.renamingId !== p.id && s.splitId !== p.id,
+                renaming: s.renamingId === p.id,
+                splitting: s.splitId === p.id,
+                moveTomorrow: () => this.resolveLeftover(p.id, 'moved'),
+                del: () => this.resolveLeftover(p.id, 'deleted'),
+                startRename: () => this.setState({ renamingId: p.id, renameVal: p.title, splitId: null }),
+                saveRename: () => this.resolveLeftover(p.id, 'renamed'),
+                startSplit: () => this.setState({ splitId: p.id, splitVal: '', renamingId: null }),
+                saveSplit: () => this.resolveLeftover(p.id, 'split'),
+            })),
+            renameVal: s.renameVal,
+            onRenameInput: (e) => this.setState({ renameVal: e.target.value }),
+            splitVal: s.splitVal,
+            onSplitInput: (e) => this.setState({ splitVal: e.target.value }),
+            todayMoodOptions: moodRow(s.todayMood, 'todayMood'),
+            closeEnergyOptions: ['Low', 'Medium', 'High'].map((label, i) => ({
+                label,
+                bg: s.closeEnergy === i ? '#fff' : 'rgba(255,255,255,.12)',
+                color: s.closeEnergy === i ? '#1d3a4d' : '#d5e7f1',
+                pick: () => this.setState({ closeEnergy: i }),
+            })),
+            journalLine: s.journalLine,
+            onJournalInput: (e) => this.setState({ journalLine: e.target.value }),
+            workedLine: s.workedLine,
+            onWorkedInput: (e) => this.setState({ workedLine: e.target.value }),
+            hardLine: s.hardLine,
+            onHardInput: (e) => this.setState({ hardLine: e.target.value }),
+            easierLine: s.easierLine,
+            onEasierInput: (e) => this.setState({ easierLine: e.target.value }),
+            toggleReflectMore: () => this.setState((st) => ({ reflectMore: !st.reflectMore })),
+            showReflectMore: s.reflectMore,
+            reflectMoreLabel: s.reflectMore ? 'Less reflection \u2303' : 'More reflection \u2014 the full questions \u2304',
+            celebrateClose: () => this.setState({ closePhase: 'celebrate' }),
+            cancelClose: () => this.setState({ closeOpen: false }),
+            celebrateSummary: visiblePicks.length === 0 ? 'Everything sorted for today' : `${visibleDone} of ${visiblePicks.length} picks done`,
+            hasClosedNote: (s.movedCount + s.deletedCount + s.followUpCount) > 0,
+            closedNote: [
+                s.movedCount ? `${s.movedCount} moved to tomorrow` : null,
+                s.followUpCount ? `${s.followUpCount} follow-up saved` : null,
+                s.deletedCount ? `${s.deletedCount} let go` : null,
+            ].filter(Boolean).join(' \u00b7 '),
+            dismissClose: () => this.setState((st) => ({ closeOpen: false, streak: st.streak + 1 })),
+            // ---- nav ----
+            navNowColor: nNow.color, navNowBg: nNow.bg, navNowBorder: nNow.border,
+            navTasksColor: nTasks.color, navTasksBg: nTasks.bg, navTasksBorder: nTasks.border,
+            navCaptureColor: nCap.color, navCaptureBg: nav('capture') ? accent : 'transparent', navCaptureBorder: nCap.border, navCapturePlus: nav('capture') ? '#fff' : '#9cb9c9',
+            navBrowseColor: nBrowse.color, navBrowseCell: nBrowse.cell,
+            navMeColor: nMe.color, navMeBg: nMe.bg, navMeBorder: nMe.border,
+        };
+    }
+
+    resolveLeftover(id, mode) {
+        this.setState((st) => {
+            let picks = st.picks;
+            let { movedCount, deletedCount, followUpCount, inbox } = st;
+            if (mode === 'moved' || mode === 'deleted') {
+                picks = picks.filter(p => p.id !== id);
+                if (mode === 'moved') movedCount++; else deletedCount++;
+            }
+            if (mode === 'renamed') {
+                picks = picks.filter(p => p.id !== id);
+                movedCount++;
+            }
+            if (mode === 'split') {
+                picks = picks.map(p => p.id === id ? { ...p, done: true } : p);
+                if (st.splitVal.trim()) inbox = [...inbox, st.splitVal.trim()];
+                followUpCount++;
+            }
+            const survival = st.survival || (this.props.survivalMode ?? false);
+            const vis = survival ? picks.slice(0, 1) : picks;
+            const remaining = vis.filter(p => !p.done).length;
+            return {
+                picks, movedCount, deletedCount, followUpCount, inbox,
+                renamingId: null, renameVal: '', splitId: null, splitVal: '',
+                closePhase: remaining === 0 ? 'reflect' : 'leftovers',
+            };
+        });
+    }
+
+    submitCaptureNow() {
+        const text = this.state.captureText.trim();
+        if (!text) return;
+        const t = this.tagFor(text);
+        this.setState((st) => ({
+            captured: [{ text, ...t }, ...st.captured],
+            captureText: '',
+        }));
+    }
+}
+</script>
+</body>
+</html>
