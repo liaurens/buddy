@@ -138,7 +138,7 @@ Grounding rule:
 
 Action mapping examples:
 - "make a new task called dentist" → task_create({ title: "dentist" })
-- "add a task to call mom tomorrow" → task_create({ title: "call mom", due_date: "<tomorrow ISO>" })
+- "add a task to call mom tomorrow" → task_create({ title: "call mom tomorrow" }) (tomorrow is planned_for, not due_date)
 - "remind me at 3pm to take meds" → notification_schedule({ message: "take meds", time: "15:00" })
 - "remind me about the dentist task tomorrow at 9am" → task_reminder_set({ task: "dentist", at: "<tomorrow 9am ISO>" })
 - "log 30 min Spanish practice" → skill_log({ skill: "Spanish", minutes: 30 })

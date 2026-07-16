@@ -21,6 +21,7 @@ import {
     type TriageDetail,
 } from '../utils/triageRouting';
 import type { RecurrencePattern } from '../types';
+import { suggestionToDetail } from '../utils/triageConfidence';
 
 interface TriageInboxProps {
     /** Called after routes are applied, with how many tasks were routed. */
@@ -55,11 +56,7 @@ function baseDecision(s: TaskTriageSuggestion | undefined): {
     detail: TriageDetail;
 } {
     if (!s) return { destination: 'today', detail: {} };
-    const detail: TriageDetail = {};
-    if (s.destination === 'today' && s.dueTime) detail.time = s.dueTime;
-    if (s.destination === 'school' && s.assignmentId) detail.assignmentId = s.assignmentId;
-    if (s.destination === 'routine') detail.recurrence = s.recurrence ?? 'daily';
-    return { destination: s.destination, detail };
+    return { destination: s.destination, detail: suggestionToDetail(s) };
 }
 
 const TriageInbox: React.FC<TriageInboxProps> = ({ onDone, variant = 'page' }) => {
@@ -73,6 +70,8 @@ const TriageInbox: React.FC<TriageInboxProps> = ({ onDone, variant = 'page' }) =
         error,
         refetch,
         applyRoutes,
+        undoLastBatch,
+        canUndo,
     } = useTaskTriage();
 
     const [overrides, setOverrides] = useState<Record<string, Override>>({});
@@ -160,7 +159,7 @@ const TriageInbox: React.FC<TriageInboxProps> = ({ onDone, variant = 'page' }) =
             <div className="flex items-center justify-between gap-2">
                 <div>
                     <h2 className="text-sm font-bold uppercase tracking-wider text-slate-600">
-                        Inbox — {reviewInbox.length} to sort
+                        Smart Inbox — {reviewInbox.length} to review
                     </h2>
                     {!ready && (
                         <p className="text-xs text-slate-400">
@@ -169,14 +168,29 @@ const TriageInbox: React.FC<TriageInboxProps> = ({ onDone, variant = 'page' }) =
                         </p>
                     )}
                 </div>
-                <button
-                    onClick={() => void apply()}
-                    disabled={busy || actionable.length === 0}
-                    className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-40"
-                >
-                    {busy ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />}
-                    Apply all ({actionable.length})
-                </button>
+                <div className="flex items-center gap-2">
+                    {canUndo && (
+                        <button
+                            type="button"
+                            onClick={() => void undoLastBatch()}
+                            className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                        >
+                            Undo batch
+                        </button>
+                    )}
+                    <button
+                        onClick={() => void apply()}
+                        disabled={busy || actionable.length === 0}
+                        className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-40"
+                    >
+                        {busy ? (
+                            <Loader2 size={15} className="animate-spin" />
+                        ) : (
+                            <Check size={15} />
+                        )}
+                        Apply all ({actionable.length})
+                    </button>
+                </div>
             </div>
 
             {autoSortedToday.length > 0 && (
@@ -346,6 +360,35 @@ const TriageInbox: React.FC<TriageInboxProps> = ({ onDone, variant = 'page' }) =
                                             </select>
                                         </label>
                                     )}
+                                    {row.destination === 'deadline' && (
+                                        <label className="flex items-center gap-2 text-xs text-slate-500">
+                                            Due date
+                                            <input
+                                                type="date"
+                                                value={row.detail.dueDate ?? ''}
+                                                onChange={(e) =>
+                                                    editDetail(row.task.id, {
+                                                        dueDate: e.target.value || undefined,
+                                                    })
+                                                }
+                                                className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                                            />
+                                        </label>
+                                    )}
+                                    {row.destination === 'waiting' && (
+                                        <label className="flex items-center gap-2 text-xs text-slate-500">
+                                            Waiting on
+                                            <input
+                                                value={row.detail.waitingOn ?? ''}
+                                                onChange={(e) =>
+                                                    editDetail(row.task.id, {
+                                                        waitingOn: e.target.value || undefined,
+                                                    })
+                                                }
+                                                className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                                            />
+                                        </label>
+                                    )}
                                     {row.destination === 'school' &&
                                         (assignmentOptions.length === 0 ? (
                                             <p className="text-xs text-amber-600">
@@ -377,7 +420,7 @@ const TriageInbox: React.FC<TriageInboxProps> = ({ onDone, variant = 'page' }) =
                                         ))}
                                     {!row.ready && (
                                         <p className="text-xs font-medium text-amber-600">
-                                            Pick an assignment to route this to School.
+                                            Add the required detail before routing this task.
                                         </p>
                                     )}
                                 </div>

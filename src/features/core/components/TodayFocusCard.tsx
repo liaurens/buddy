@@ -75,7 +75,7 @@ const TodayFocusCard: React.FC<Props> = ({ onNavigate }) => {
                             onReschedule={(date, time) =>
                                 updateTask({
                                     ...task,
-                                    dueDate: date,
+                                    plannedFor: date,
                                     dueTime: time ?? task.dueTime,
                                 })
                             }

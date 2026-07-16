@@ -14,18 +14,87 @@ export async function createTask(
     supabase: AssistantSupabaseClient,
     options: { dueDate?: string; priority?: string; isReminder?: boolean } = {},
 ): Promise<ToolResult> {
-    const dueDate = options.dueDate || parseDateExpression(title);
+    const aliases: Record<string, string> = {
+        urgent: 'urgent',
+        today: 'today',
+        vandaag: 'today',
+        deadline: 'deadline',
+        waiting: 'waiting',
+        wachten: 'waiting',
+        school: 'school',
+        routine: 'routine',
+        someday: 'someday',
+        ooit: 'someday',
+    };
+    const flags: string[] = [];
+    const captureTitle = title.replace(/#([\p{L}]+)/giu, (whole, raw: string) => {
+        const flag = aliases[raw.toLowerCase()];
+        if (!flag) return whole;
+        flags.push(flag);
+        return ' ';
+    });
+    const uniqueFlags = [...new Set(flags)];
+    if (uniqueFlags.length > 1) {
+        return {
+            success: false,
+            action_taken: `Choose one task flag: ${uniqueFlags.join(', ')}.`,
+            data: { conflicting_flags: uniqueFlags },
+        };
+    }
+
+    const parsedDate = parseDateExpression(captureTitle);
+    const deadlineLanguage = /\b(?:due|deadline|uiterlijk|vervalt)\b/i.test(captureTitle);
+    let flag = uniqueFlags[0];
+    const dueDate =
+        options.dueDate || (deadlineLanguage || flag === 'deadline' ? parsedDate : null);
+    let plannedFor = !options.dueDate && parsedDate && !dueDate ? parsedDate : null;
+    flag ||= dueDate ? 'deadline' : plannedFor ? 'today' : 'someday';
+    if (flag === 'today' && !plannedFor) plannedFor = new Date().toISOString().slice(0, 10);
+    if (flag === 'urgent' && !plannedFor) plannedFor = new Date().toISOString().slice(0, 10);
+    if (flag === 'someday') plannedFor = null;
+
+    const waitingMatch = captureTitle.match(/\b(?:waiting (?:on|for)|wacht(?:en)? op)\s+(.+)$/i);
+    const waitingOn = waitingMatch?.[1]?.trim() || null;
+    const recurrenceMatch = captureTitle.match(
+        /\b(daily|weekly|monthly|weekdays|dagelijks|wekelijks|maandelijks)\b/i,
+    );
+    const recurrence = recurrenceMatch
+        ? ({ dagelijks: 'daily', wekelijks: 'weekly', maandelijks: 'monthly' }[
+              recurrenceMatch[1].toLowerCase()
+          ] ?? recurrenceMatch[1].toLowerCase())
+        : flag === 'routine'
+          ? 'daily'
+          : 'none';
+    if (flag === 'deadline' && !dueDate) {
+        return { success: false, action_taken: 'A deadline task needs a due date.', data: {} };
+    }
+    if (flag === 'waiting' && !waitingOn) {
+        return { success: false, action_taken: 'Say who or what you are waiting on.', data: {} };
+    }
 
     const cleanTitle = dueDate
-        ? title
+        ? captureTitle
               .replace(/\b(morgen|tomorrow|overmorgen|volgende week|next week)\b/gi, '')
               .replace(
                   /\b(monday|maandag|tuesday|dinsdag|wednesday|woensdag|thursday|donderdag|friday|vrijdag|saturday|zaterdag|sunday|zondag)\b/gi,
                   '',
               )
               .replace(/\b(om|at)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?\b/gi, '')
+              .replace(/\b(?:due|deadline|uiterlijk|vervalt)\b/gi, '')
               .trim()
-        : title;
+        : captureTitle
+              .replace(
+                  /\b(morgen|tomorrow|overmorgen|volgende week|next week|vandaag|today)\b/gi,
+                  '',
+              )
+              .replace(
+                  /\b(monday|maandag|tuesday|dinsdag|wednesday|woensdag|thursday|donderdag|friday|vrijdag|saturday|zaterdag|sunday|zondag)\b/gi,
+                  '',
+              )
+              .replace(/\b(daily|weekly|monthly|weekdays|dagelijks|wekelijks|maandelijks)\b/gi, '')
+              .replace(waitingMatch?.[0] ?? /$^/, '')
+              .replace(/\s+/g, ' ')
+              .trim();
 
     const { data: task, error } = await supabase
         .from('todos')
@@ -34,7 +103,21 @@ export async function createTask(
             title: cleanTitle,
             completed: false,
             due_date: dueDate,
-            priority: options.priority || null,
+            planned_for: plannedFor,
+            flag,
+            waiting_on: waitingOn,
+            recurrence,
+            priority: flag === 'urgent' ? 'urgent' : options.priority || null,
+            reminder_enabled: flag !== 'someday' && flag !== 'school',
+            reminder_cadence:
+                flag === 'urgent' || flag === 'deadline'
+                    ? 'smart'
+                    : flag === 'waiting'
+                      ? 'single'
+                      : null,
+            triaged_at: new Date().toISOString(),
+            triage_source: 'parser',
+            triage_destination: flag,
             created_at: new Date().toISOString(),
         })
         .select()
@@ -52,7 +135,13 @@ export async function createTask(
     return {
         success: true,
         action_taken: `Task created: "${cleanTitle}"${dueDateStr}`,
-        data: { task_id: task.id, title: cleanTitle, due_date: dueDate },
+        data: {
+            task_id: task.id,
+            title: cleanTitle,
+            due_date: dueDate,
+            planned_for: plannedFor,
+            flag,
+        },
         suggestions: ['View in Tasks →'],
     };
 }
@@ -64,15 +153,15 @@ export async function listTasks(
 ): Promise<ToolResult> {
     let query = supabase
         .from('todos')
-        .select('id, title, due_date, priority, completed')
+        .select('id, title, due_date, planned_for, flag, priority, completed')
         .eq('user_id', userId)
         .eq('completed', false)
-        .order('due_date', { ascending: true, nullsLast: true })
+        .order('planned_for', { ascending: true, nullsLast: true })
         .limit(options.limit || 10);
 
     if (options.todayOnly) {
         const today = new Date().toISOString().split('T')[0];
-        query = query.lte('due_date', today);
+        query = query.lte('planned_for', today);
     }
 
     const { data: tasks, error } = await query;

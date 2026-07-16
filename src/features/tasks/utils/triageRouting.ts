@@ -14,9 +14,17 @@
  * Pure: no I/O, no Date.now() — callers pass the timestamps so it stays testable.
  */
 
-import type { Task, RecurrencePattern, Hardness, TaskEnergy, TaskContext } from '../types';
+import type {
+    Task,
+    RecurrencePattern,
+    Hardness,
+    TaskEnergy,
+    TaskContext,
+    TaskFlag,
+} from '../types';
+import { applyTaskFlag } from './taskFlags';
 
-export type TriageDestination = 'urgent' | 'today' | 'someday' | 'school' | 'routine';
+export type TriageDestination = TaskFlag;
 
 export interface TriageDestinationMeta {
     label: string;
@@ -50,6 +58,18 @@ export const TRIAGE_DESTINATION_META: Record<TriageDestination, TriageDestinatio
         description: 'Repeats on a schedule',
         needs: 'cadence',
     },
+    deadline: {
+        label: 'Deadline',
+        emoji: '🎯',
+        color: 'amber',
+        description: 'Track a real due date',
+    },
+    waiting: {
+        label: 'Waiting',
+        emoji: '⏳',
+        color: 'slate',
+        description: 'Follow up later',
+    },
     someday: {
         label: 'Someday',
         emoji: '🗂️',
@@ -62,6 +82,8 @@ export const TRIAGE_DESTINATION_META: Record<TriageDestination, TriageDestinatio
 export const TRIAGE_DESTINATION_ORDER: TriageDestination[] = [
     'urgent',
     'today',
+    'deadline',
+    'waiting',
     'school',
     'routine',
     'someday',
@@ -83,6 +105,9 @@ export interface TriageDetail {
     estimatedMinutes?: number;
     /** User-defined task type to assign (validated upstream). */
     taskTypeId?: string;
+    dueDate?: string;
+    plannedFor?: string;
+    waitingOn?: string;
 }
 
 /**
@@ -127,20 +152,86 @@ export function routeTaskPatch(
 ): Partial<Task> {
     const base = profilePatch(destination, detail, opts.nowIso);
 
+    let routing: Partial<Task>;
     switch (destination) {
         case 'urgent':
-            // Flag urgent, drop any do-date — the Urgent inbox owns scheduling.
-            return { ...base, kind: 'urgent', dueDate: undefined, dueTime: undefined };
+            routing = {
+                flag: 'urgent',
+                kind: 'urgent',
+                plannedFor: detail.plannedFor,
+                dueTime: detail.time,
+            };
+            break;
         case 'today':
-            return { ...base, dueDate: opts.todayIso, dueTime: detail.time, kind: undefined };
+            routing = {
+                flag: 'today',
+                plannedFor: detail.plannedFor ?? opts.todayIso,
+                dueTime: detail.time,
+                kind: 'standard',
+            };
+            break;
         case 'someday':
-            return { ...base, kind: 'backlog', dueDate: undefined, dueTime: undefined };
+            routing = {
+                flag: 'someday',
+                kind: 'backlog',
+                plannedFor: undefined,
+                dueTime: undefined,
+            };
+            break;
         case 'school':
-            // assignmentId optional: unmatched school items become loose school tasks.
-            return { ...base, assignmentId: detail.assignmentId };
+            routing = { flag: 'school', assignmentId: detail.assignmentId };
+            break;
         case 'routine':
-            return { ...base, kind: 'routine', recurrence: detail.recurrence ?? 'daily' };
+            routing = {
+                flag: 'routine',
+                kind: 'routine',
+                recurrence: detail.recurrence ?? 'daily',
+            };
+            break;
+        case 'deadline':
+            routing = {
+                flag: 'deadline',
+                kind: 'deadline',
+                dueDate: detail.dueDate,
+                plannedFor: detail.plannedFor,
+            };
+            break;
+        case 'waiting':
+            routing = {
+                flag: 'waiting',
+                kind: 'waiting',
+                waitingOn: detail.waitingOn,
+                plannedFor: detail.plannedFor,
+            };
+            break;
     }
+
+    // Reuse the same field contract as capture/edit. A temporary Task shape is
+    // sufficient because only the resulting patch is returned.
+    const seed = {
+        id: '',
+        title: '',
+        completed: false,
+        createdAt: opts.nowIso,
+        ...base,
+        ...routing,
+    } as Task;
+    const effected = applyTaskFlag(seed, destination, {
+        now: new Date(`${opts.todayIso}T12:00:00`),
+        source: 'ai',
+        manuallyConfirmed: true,
+        explicitPlannedFor: detail.plannedFor,
+        waitingOn: detail.waitingOn,
+        recurrence: detail.recurrence,
+    }).task;
+    const {
+        id: _id,
+        title: _title,
+        completed: _completed,
+        createdAt: _createdAt,
+        ...patch
+    } = effected;
+    return patch;
 }
 
 /**
@@ -148,10 +239,9 @@ export function routeTaskPatch(
  * school without an assignment becomes a loose school task that still surfaces in
  * school planning.
  */
-export function isDestinationReady(
-    _destination: TriageDestination,
-    _detail: TriageDetail,
-): boolean {
+export function isDestinationReady(destination: TriageDestination, detail: TriageDetail): boolean {
+    if (destination === 'deadline') return Boolean(detail.dueDate);
+    if (destination === 'waiting') return Boolean(detail.waitingOn?.trim());
     return true;
 }
 
@@ -178,6 +268,7 @@ export function kindToDestination(kind: NonNullable<Task['kind']>): TriageDestin
             // Not pickable at capture (derived-only kind), but total for safety.
             return 'school';
         case 'deadline':
+            return 'deadline';
         case 'standard':
             return 'today';
     }

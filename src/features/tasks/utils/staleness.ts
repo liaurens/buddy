@@ -34,13 +34,13 @@ export function isSnooze(
  * for every writer (updateTask, rescheduleMany) so counting can't diverge.
  */
 export function nextSnoozeCount(
-    prev: Pick<Task, 'dueDate' | 'snoozeCount'> | undefined,
+    prev: Pick<Task, 'plannedFor' | 'dueDate' | 'snoozeCount'> | undefined,
     nextDueDate: string | undefined,
     todayIso: string,
 ): number {
     const current = prev?.snoozeCount ?? 0;
     if (!prev) return current;
-    return isSnooze(prev.dueDate, nextDueDate, todayIso) ? current + 1 : current;
+    return isSnooze(prev.plannedFor ?? prev.dueDate, nextDueDate, todayIso) ? current + 1 : current;
 }
 
 /** Whether any subtask progress was made (some but not all complete). */
@@ -60,9 +60,10 @@ export function isStale(task: Task, now: Date): boolean {
 
     if ((task.snoozeCount ?? 0) >= STALE_SNOOZE_COUNT) return true;
 
-    if (!task.dueDate) return false;
+    const scheduledFor = task.plannedFor ?? (!task.flag ? task.dueDate : undefined);
+    if (!scheduledFor) return false;
     const today = format(now, 'yyyy-MM-dd');
-    if (task.dueDate > today) return false;
+    if (scheduledFor > today) return false;
 
     const lastTouched = new Date(task.lastTouchedAt ?? task.createdAt);
     return differenceInCalendarDays(now, lastTouched) >= STALE_UNTOUCHED_DAYS;

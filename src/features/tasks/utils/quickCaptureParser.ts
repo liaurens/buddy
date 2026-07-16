@@ -6,12 +6,21 @@
  * Deterministic — no AI.
  */
 
-import type { Task, TaskType, TaskEnergy, TaskKind } from '../types';
+import type {
+    Task,
+    TaskType,
+    TaskEnergy,
+    TaskKind,
+    TaskFlag,
+    RecurrencePattern,
+    TriageSource,
+} from '../types';
 
 export interface ParsedDraft {
     title: string;
     taskTypeId?: string;
-    dueDate?: string; // YYYY-MM-DD
+    dueDate?: string; // YYYY-MM-DD; real deadline only
+    plannedFor?: string; // YYYY-MM-DD; day it appears in the plan
     dueTime?: string; // HH:MM
     priority?: Task['priority'];
     energy?: TaskEnergy;
@@ -19,6 +28,12 @@ export interface ParsedDraft {
     waitingOn?: string;
     startDate?: string;
     notes?: string;
+    flag?: TaskFlag;
+    recurrence?: RecurrencePattern;
+    triageSource?: TriageSource;
+    /** More than one explicitly typed flag blocks capture. */
+    conflictingFlags?: TaskFlag[];
+    errors?: string[];
 }
 
 // Keyword → preset task type NAME. Hits matched against the name on the user's
@@ -152,6 +167,29 @@ const WEEKDAY_INDEX: Record<string, number> = {
     thurs: 4,
     fri: 5,
     sat: 6,
+    zondag: 0,
+    maandag: 1,
+    dinsdag: 2,
+    woensdag: 3,
+    donderdag: 4,
+    vrijdag: 5,
+    zaterdag: 6,
+};
+
+const FLAG_ALIASES: Record<string, TaskFlag> = {
+    urgent: 'urgent',
+    dringend: 'urgent',
+    today: 'today',
+    vandaag: 'today',
+    deadline: 'deadline',
+    due: 'deadline',
+    waiting: 'waiting',
+    wachten: 'waiting',
+    school: 'school',
+    studie: 'school',
+    routine: 'routine',
+    someday: 'someday',
+    ooit: 'someday',
 };
 
 function toIsoDate(d: Date): string {
@@ -200,9 +238,29 @@ export function parseQuickCapture(
     let priority: Task['priority'] | undefined;
     let energy: TaskEnergy | undefined;
     let dueDate: string | undefined;
+    let plannedFor: string | undefined;
     let dueTime: string | undefined;
     let taskTypeId: string | undefined;
     let kind: TaskKind | undefined;
+    let flag: TaskFlag | undefined;
+    let recurrence: RecurrencePattern | undefined;
+    let waitingOn: string | undefined;
+    const errors: string[] = [];
+
+    // Explicit typed flags. Keep ordinary #labels untouched; only curated aliases
+    // are workflow flags. Multiple different flags are a hard validation error.
+    const typedFlags: TaskFlag[] = [];
+    text = text.replace(/#([\p{L}]+)/giu, (whole, raw: string) => {
+        const parsed = FLAG_ALIASES[raw.toLowerCase()];
+        if (!parsed) return whole;
+        typedFlags.push(parsed);
+        return ' ';
+    });
+    const uniqueFlags = [...new Set(typedFlags)];
+    if (uniqueFlags.length === 1) flag = uniqueFlags[0];
+    if (uniqueFlags.length > 1) {
+        errors.push(`Choose one task flag: ${uniqueFlags.join(', ')}.`);
+    }
 
     // Priority: leading !!! (urgent kind), !! (urgent), or ! (high)
     const prMatch = text.match(/^(!!!|!!|!)\s+/);
@@ -210,6 +268,7 @@ export function parseQuickCapture(
         if (prMatch[1] === '!!!') {
             priority = 'urgent';
             kind = 'urgent';
+            if (!flag) flag = 'urgent';
         } else if (prMatch[1] === '!!') priority = 'urgent';
         else priority = 'high';
         text = text.slice(prMatch[0].length);
@@ -219,7 +278,34 @@ export function parseQuickCapture(
     const kindMatch = text.match(/\b(someday|backlog)\b[:\s]*/i);
     if (kindMatch) {
         kind = 'backlog';
+        if (!flag) flag = 'someday';
         text = text.replace(kindMatch[0], ' ');
+    }
+
+    // Obvious recurrence phrases. A typed routine without a cadence remains
+    // incomplete so the UI can ask for confirmation (manual confirmation defaults daily).
+    const recurrencePhrases: Array<[RegExp, RecurrencePattern]> = [
+        [/\b(every day|daily|dagelijks|elke dag)\b/i, 'daily'],
+        [/\b(every weekday|weekdays|werkdagen|elke werkdag)\b/i, 'weekdays'],
+        [/\b(every week|weekly|wekelijks|elke week)\b/i, 'weekly'],
+        [/\b(every month|monthly|maandelijks|elke maand)\b/i, 'monthly'],
+    ];
+    for (const [pattern, value] of recurrencePhrases) {
+        if (pattern.test(text)) {
+            recurrence = value;
+            flag ??= 'routine';
+            text = text.replace(pattern, ' ');
+            break;
+        }
+    }
+
+    const waitingMatch = text.match(
+        /\b(?:waiting (?:on|for)|wacht(?:en)? op)\s+([^,;]+?)(?=\s+(?:by|due|on|today|tomorrow|vandaag|morgen)\b|$)/i,
+    );
+    if (waitingMatch) {
+        waitingOn = waitingMatch[1].trim();
+        flag ??= 'waiting';
+        text = text.replace(waitingMatch[0], ' ');
     }
 
     // Energy prefix
@@ -241,42 +327,73 @@ export function parseQuickCapture(
         }
     }
 
-    // Date phrases
+    // A deadline marker changes the meaning of the following date. Without it,
+    // natural dates are planning days and never silently become deadlines.
+    const deadlineMarker = /\b(?:due|deadline|uiterlijk|verval(?:t|datum)?)\s+(?:on\s+|op\s+)?/i;
+    const hasDeadlineMarker = deadlineMarker.test(text);
+    if (hasDeadlineMarker) {
+        flag ??= 'deadline';
+        text = text.replace(deadlineMarker, ' ');
+    }
+
+    // Date phrases (English and Dutch)
     const lower = text.toLowerCase();
-    if (/\btoday\b/.test(lower)) {
-        dueDate = toIsoDate(now);
-        text = text.replace(/\btoday\b/i, ' ');
-    } else if (/\btonight\b/.test(lower)) {
-        dueDate = toIsoDate(now);
+    let parsedDate: string | undefined;
+    if (/\b(today|vandaag)\b/.test(lower)) {
+        parsedDate = toIsoDate(now);
+        text = text.replace(/\b(today|vandaag)\b/i, ' ');
+    } else if (/\b(tonight|vanavond)\b/.test(lower)) {
+        parsedDate = toIsoDate(now);
         if (!dueTime) dueTime = '20:00';
-        text = text.replace(/\btonight\b/i, ' ');
-    } else if (/\btomorrow\b/.test(lower)) {
+        text = text.replace(/\b(tonight|vanavond)\b/i, ' ');
+    } else if (/\b(tomorrow|morgen)\b/.test(lower)) {
         const d = new Date(now);
         d.setDate(d.getDate() + 1);
-        dueDate = toIsoDate(d);
-        text = text.replace(/\btomorrow\b/i, ' ');
-    } else if (/\bnext\s+week\b/.test(lower)) {
+        parsedDate = toIsoDate(d);
+        text = text.replace(/\b(tomorrow|morgen)\b/i, ' ');
+    } else if (/\b(next\s+week|volgende\s+week)\b/.test(lower)) {
         const d = new Date(now);
         d.setDate(d.getDate() + 7);
-        dueDate = toIsoDate(d);
-        text = text.replace(/\bnext\s+week\b/i, ' ');
+        parsedDate = toIsoDate(d);
+        text = text.replace(/\b(next\s+week|volgende\s+week)\b/i, ' ');
     } else {
-        const inMatch = lower.match(/\bin\s+(\d+)\s+days?\b/);
+        const inMatch = lower.match(/\b(?:in|over)\s+(\d+)\s+(?:days?|dagen)\b/);
         if (inMatch) {
             const d = new Date(now);
             d.setDate(d.getDate() + parseInt(inMatch[1], 10));
-            dueDate = toIsoDate(d);
+            parsedDate = toIsoDate(d);
             text = text.replace(new RegExp(inMatch[0], 'i'), ' ');
         } else {
             for (const [name, dow] of Object.entries(WEEKDAY_INDEX)) {
                 const re = new RegExp(`\\b${name}\\b`, 'i');
                 if (re.test(lower)) {
-                    dueDate = toIsoDate(nextWeekday(now, dow));
+                    parsedDate = toIsoDate(nextWeekday(now, dow));
                     text = text.replace(re, ' ');
                     break;
                 }
             }
         }
+    }
+
+    if (parsedDate) {
+        if (hasDeadlineMarker || flag === 'deadline') dueDate = parsedDate;
+        else {
+            plannedFor = parsedDate;
+            flag ??= 'today';
+        }
+    }
+
+    // Explicit workflow flags own the field meaning even if another heuristic fired.
+    if (flag === 'today') plannedFor ??= toIsoDate(now);
+    if (flag === 'someday') plannedFor = undefined;
+    if (flag === 'deadline' && !dueDate) {
+        errors.push('A #deadline task needs a due date, for example “due Friday”.');
+    }
+    if (flag === 'waiting' && !waitingOn) {
+        errors.push('A #waiting task needs who or what you are waiting on.');
+    }
+    if (flag === 'routine' && !recurrence) {
+        errors.push('A #routine task needs a recurrence.');
     }
 
     // Type detection — first match wins. Match against the user's actual
@@ -293,5 +410,20 @@ export function parseQuickCapture(
     }
 
     const title = text.replace(/\s+/g, ' ').trim();
-    return { title, taskTypeId, dueDate, dueTime, priority, energy, kind };
+    return {
+        title,
+        taskTypeId,
+        dueDate,
+        plannedFor,
+        dueTime,
+        priority,
+        energy,
+        kind,
+        flag,
+        recurrence,
+        waitingOn,
+        triageSource: flag || parsedDate || recurrence ? 'parser' : undefined,
+        conflictingFlags: uniqueFlags.length > 1 ? uniqueFlags : undefined,
+        errors: errors.length ? errors : undefined,
+    };
 }

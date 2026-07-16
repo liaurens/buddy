@@ -16,10 +16,10 @@ import { useTaskTypes } from '../hooks/useTaskTypes';
 import { useTaskRecommendation } from '../hooks/useTaskRecommendation';
 import type { Task, TaskKind } from '../types';
 import { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from '../utils/taskKind';
-import { kindToDestination } from '../utils/triageRouting';
 import { countInbox } from '../utils/inbox';
 import { sortTasksCanonical, isQuickWin } from '../utils/taskOrdering';
 import { pickSomedayReview } from '../utils/taskContracts';
+import { deriveTaskFlag } from '../utils/taskFlags';
 import { UpcomingDeadlinesBanner } from '../../school/components/UpcomingDeadlinesBanner';
 import type { AppRoute } from '../../../constants/routes';
 
@@ -31,7 +31,6 @@ import EmptyState from '../components/EmptyState';
 import TaskBulkActionBar from '../components/TaskBulkActionBar';
 import TaskSettingsModal from '../components/TaskSettingsModal';
 import TasksOrganizationModal from '../components/TasksOrganizationModal';
-import AIOrganizeModal from '../components/AIOrganizeModal';
 import TriageInbox from '../components/TriageInbox';
 import RoutinePicker from '../components/RoutinePicker';
 import SomedayReviewCard from '../components/SomedayReviewCard';
@@ -80,7 +79,6 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showSettings, setShowSettings] = useState(false);
     const [showOrganize, setShowOrganize] = useState(false);
-    const [showOrganizeAI, setShowOrganizeAI] = useState(false);
     const [showTriage, setShowTriage] = useState(false);
     const [showRoutines, setShowRoutines] = useState(false);
     const [flashMessage, setFlashMessage] = useState<string | null>(null);
@@ -105,7 +103,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
             const newDue = new Date(Date.now() + 15 * 60_000);
             const newDueDate = newDue.toISOString().slice(0, 10);
             const newDueTime = `${String(newDue.getHours()).padStart(2, '0')}:${String(newDue.getMinutes()).padStart(2, '0')}`;
-            updateTask({ ...task, dueDate: newDueDate, dueTime: newDueTime });
+            updateTask({ ...task, plannedFor: newDueDate, dueTime: newDueTime });
         }
     }, [initialParams, user, allTodos, toggleTask, updateTask]);
 
@@ -132,12 +130,6 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
     // Capture inbox = active tasks not yet routed by triage.
     const inboxCount = useMemo(() => countInbox(allTodos), [allTodos]);
 
-    // "Unorganized" inbox = active tasks without a type; the AI organizer targets these.
-    const organizeCandidates = useMemo(
-        () => activeTasks.filter((t) => !t.taskTypeId),
-        [activeTasks],
-    );
-
     const filteredActive = useMemo(
         () =>
             activeTasks.filter((t) => {
@@ -153,11 +145,11 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
         [activeTasks, filter, quickWinsOnly],
     );
     const waitingTasks = useMemo(
-        () => filteredActive.filter((task) => deriveTaskKind(task) === 'waiting'),
+        () => filteredActive.filter((task) => deriveTaskFlag(task) === 'waiting'),
         [filteredActive],
     );
     const workingTasks = useMemo(
-        () => filteredActive.filter((task) => deriveTaskKind(task) !== 'waiting'),
+        () => filteredActive.filter((task) => deriveTaskFlag(task) !== 'waiting'),
         [filteredActive],
     );
     const somedayReview = useMemo(() => pickSomedayReview(activeTasks, new Date()), [activeTasks]);
@@ -189,11 +181,11 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
         const today = new Date();
         const buckets: Record<BucketId, Task[]> = { overdue: [], today: [], week: [], later: [] };
         for (const t of workingTasks) {
-            if (!t.dueDate) {
+            if (!t.plannedFor) {
                 buckets.later.push(t);
                 continue;
             }
-            const diff = daysUntilDue(t.dueDate, today);
+            const diff = daysUntilDue(t.plannedFor, today);
             if (diff === 0) buckets.today.push(t);
             else if (diff < 0) buckets.overdue.push(t);
             else if (diff <= 7) buckets.week.push(t);
@@ -250,14 +242,6 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             setOnlyKind(null);
                         }}
                     />
-                    {organizeCandidates.length > 0 && (
-                        <IconButton
-                            title="Organize with AI"
-                            onClick={() => setShowOrganizeAI(true)}
-                        >
-                            <Sparkles size={18} />
-                        </IconButton>
-                    )}
                     <IconButton title="Run a routine" onClick={() => setShowRoutines(true)}>
                         <Repeat size={18} />
                     </IconButton>
@@ -294,10 +278,11 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                     <span className="flex items-center gap-2">
                         <Sparkles size={16} className="text-indigo-600" />
                         <span className="text-sm font-medium text-indigo-900">
-                            {inboxCount} captured {inboxCount === 1 ? 'task' : 'tasks'} to sort
+                            Smart Inbox · {inboxCount} {inboxCount === 1 ? 'task' : 'tasks'} to
+                            review
                         </span>
                     </span>
-                    <span className="text-xs font-semibold text-indigo-700">Sort now →</span>
+                    <span className="text-xs font-semibold text-indigo-700">Review →</span>
                 </button>
             )}
 
@@ -320,17 +305,21 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             title: draft.title,
                             taskTypeId: draft.taskTypeId,
                             dueDate: draft.dueDate,
+                            plannedFor: draft.plannedFor,
                             dueTime: draft.dueTime,
                             priority: draft.priority || 'medium',
                             energy: draft.energy,
                             kind: draft.kind,
+                            flag: draft.flag,
+                            recurrence: draft.recurrence,
+                            waitingOn: draft.waitingOn,
+                            notes: draft.notes,
+                            triageSource: draft.triageSource,
                             // An explicit kind means the user already sorted it — skip the
                             // triage inbox and record where it went, like routed tasks do.
                             // A bare capture stays untriaged for the morning router.
-                            triagedAt: draft.kind ? new Date().toISOString() : undefined,
-                            triageDestination: draft.kind
-                                ? kindToDestination(draft.kind)
-                                : undefined,
+                            triagedAt: draft.flag ? new Date().toISOString() : undefined,
+                            triageDestination: draft.flag,
                         });
                     }}
                 />
@@ -637,19 +626,6 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
 
             <TaskSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
             <TasksOrganizationModal isOpen={showOrganize} onClose={() => setShowOrganize(false)} />
-            {showOrganizeAI && (
-                <AIOrganizeModal
-                    candidates={organizeCandidates}
-                    taskTypes={taskTypes}
-                    onApply={(updated) => {
-                        updated.forEach(updateTask);
-                        setFlashMessage(
-                            `Organized ${updated.length} ${updated.length === 1 ? 'task' : 'tasks'}`,
-                        );
-                    }}
-                    onClose={() => setShowOrganizeAI(false)}
-                />
-            )}
             <RoutinePicker
                 isOpen={showRoutines}
                 onClose={() => setShowRoutines(false)}

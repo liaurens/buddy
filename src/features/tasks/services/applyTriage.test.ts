@@ -45,7 +45,7 @@ describe('applyTriagePatch', () => {
 
     it('today puts the task on the plan with the chosen time', () => {
         const out = applyTriagePatch(task(), 'today', { time: '14:00' }, OPTS);
-        expect(out.dueDate).toBe(TODAY_ISO);
+        expect(out.plannedFor).toBe(TODAY_ISO);
         expect(out.dueTime).toBe('14:00');
     });
 
@@ -83,9 +83,10 @@ describe('applyTriagePatch', () => {
         expect(out.location).toBe('Library');
     });
 
-    it('urgent still clears the due date on purpose', () => {
+    it('urgent preserves a real deadline while choosing a planned day', () => {
         const out = applyTriagePatch(task({ dueDate: '2026-07-10' }), 'urgent', {}, OPTS);
-        expect(out.dueDate).toBeUndefined();
+        expect(out.dueDate).toBe('2026-07-10');
+        expect(out.plannedFor).toBe(TODAY_ISO);
     });
 
     it('records autoTriaged as given (default false)', () => {

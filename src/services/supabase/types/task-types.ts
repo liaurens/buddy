@@ -4,6 +4,14 @@
 
 export type TaskEnergy = 'low' | 'medium' | 'high';
 export type TaskContext = 'computer' | 'phone' | 'home' | 'out' | 'anywhere';
+export type DbTaskFlag =
+    | 'urgent'
+    | 'today'
+    | 'deadline'
+    | 'waiting'
+    | 'school'
+    | 'routine'
+    | 'someday';
 
 export interface DbTodo {
     id: string;
@@ -11,6 +19,7 @@ export interface DbTodo {
     title: string;
     completed: boolean;
     due_date: string | null;
+    planned_for?: string | null;
     due_time: string | null;
     location: string | null;
     labels: string[] | null;
@@ -49,6 +58,10 @@ export interface DbTodo {
     last_touched_at?: string | null;
     waiting_on?: string | null;
     start_date?: string | null;
+    flag?: DbTaskFlag | null;
+    triage_source?: 'explicit' | 'parser' | 'ai' | 'manual' | null;
+    triage_confidence?: number | null;
+    triage_reason?: string | null;
 }
 
 export interface DbTaskType {

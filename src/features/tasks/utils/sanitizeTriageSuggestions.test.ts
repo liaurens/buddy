@@ -20,7 +20,7 @@ describe('sanitizeTriageSuggestions', () => {
         const [s] = sanitizeTriageSuggestions(raw, inbox, assignments);
         expect(s.id).toBe('t1');
         expect(s.destination).toBe('today');
-        expect(s.confidence).toBe('high');
+        expect(s.confidence).toBe(1);
         expect(s.dueTime).toBe('14:30');
         expect(s.reason).toBe('do it');
     });
@@ -60,14 +60,15 @@ describe('sanitizeTriageSuggestions', () => {
         expect(s.assignmentId).toBe('a2');
     });
 
-    it('defaults routine recurrence to daily when missing or invalid', () => {
+    it('keeps an incomplete routine in review until recurrence is confirmed', () => {
         const [s] = sanitizeTriageSuggestions(
             { suggestions: [{ id: 't1', destination: 'routine', recurrence: 'fortnightly' }] },
             inbox,
             assignments,
         );
         expect(s.destination).toBe('routine');
-        expect(s.recurrence).toBe('daily');
+        expect(s.recurrence).toBeNull();
+        expect(s.confidence).toBeLessThan(0.8);
     });
 
     it('only keeps dueTime for the today destination and validates HH:MM', () => {
@@ -109,19 +110,19 @@ describe('sanitizeTriageSuggestions', () => {
             inbox,
             assignments,
         );
-        expect(a.confidence).toBe('low');
+        expect(a.confidence).toBe(0.5);
         const [b] = sanitizeTriageSuggestions(
             { suggestions: [{ id: 't1', destination: 'today', confidence: 'HIGH' }] },
             inbox,
             assignments,
         );
-        expect(b.confidence).toBe('low');
+        expect(b.confidence).toBe(0.5);
         const [c] = sanitizeTriageSuggestions(
             { suggestions: [{ id: 't1', destination: 'today', confidence: 'high' }] },
             inbox,
             assignments,
         );
-        expect(c.confidence).toBe('high');
+        expect(c.confidence).toBe(1);
     });
 
     it('clamps the metadata fields', () => {

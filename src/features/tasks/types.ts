@@ -4,6 +4,18 @@
 export type TaskEnergy = 'low' | 'medium' | 'high';
 export type TaskContext = 'computer' | 'phone' | 'home' | 'out' | 'anywhere';
 
+/** The single user-facing workflow control for a task. */
+export type TaskFlag =
+    | 'urgent'
+    | 'today'
+    | 'deadline'
+    | 'waiting'
+    | 'school'
+    | 'routine'
+    | 'someday';
+
+export type TriageSource = 'explicit' | 'parser' | 'ai' | 'manual';
+
 // Task Kind — behavioral classification that drives capture, scheduling, and surfacing.
 // Hybrid model: when `kind` is unset it is derived from existing signals
 // (priority/recurrence/dueDate/reminder) via deriveTaskKind(); an explicit value overrides.
@@ -43,6 +55,8 @@ export interface Task {
     title: string;
     completed: boolean;
     dueDate?: string;
+    /** Day the task appears in the plan. `dueDate` is reserved for real deadlines. */
+    plannedFor?: string;
     dueTime?: string; // HH:MM format for specific time
     location?: string; // Location for the task
     labels?: string[]; // Custom labels/tags for grouping
@@ -108,6 +122,12 @@ export interface Task {
     waitingOn?: string;
     /** First day a deadline task should compete for attention (YYYY-MM-DD). */
     startDate?: string;
+
+    /** Canonical workflow classification. Optional only while legacy rows are migrated. */
+    flag?: TaskFlag;
+    triageSource?: TriageSource;
+    triageConfidence?: number;
+    triageReason?: string;
 }
 
 // Task Types (user-defined categories like Email, Home, Study)
@@ -152,7 +172,7 @@ export interface TaskState {
         title: string,
         priority?: Task['priority'],
         estimatedTime?: number,
-        dueDate?: string,
+        plannedFor?: string,
         recurrence?: RecurrencePattern,
         recurrenceConfig?: RecurrenceConfig,
         dueTime?: string,

@@ -14,6 +14,10 @@ export type AppEventType =
     | 'route_visit'
     | 'capture_submitted'
     | 'capture_synced'
+    | 'task_auto_sorted'
+    | 'task_sort_corrected'
+    | 'task_sort_undone'
+    | 'task_scheduled'
     | 'day_closed';
 
 /** How the user arrived at this app open. */

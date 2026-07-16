@@ -366,7 +366,7 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
 
     const handleRemovePick = async (task: Task) => {
         try {
-            await updateTask({ ...task, dueDate: undefined, dueTime: undefined });
+            await updateTask({ ...task, plannedFor: undefined, dueTime: undefined });
         } catch {
             toast.error('Could not remove from today.');
         }
@@ -374,7 +374,7 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
 
     const handleSetPickTime = async (task: Task, time: string | null) => {
         try {
-            await updateTask({ ...task, dueDate: todayStr, dueTime: time || undefined });
+            await updateTask({ ...task, plannedFor: todayStr, dueTime: time || undefined });
         } catch {
             toast.error('Could not update time.');
         }
@@ -382,7 +382,11 @@ const FullMorning: React.FC<Props> = ({ onNavigate, startAtPlan }) => {
 
     const handleSetPickEstimate = async (task: Task, minutes: number | null) => {
         try {
-            await updateTask({ ...task, dueDate: todayStr, estimatedTime: minutes ?? undefined });
+            await updateTask({
+                ...task,
+                plannedFor: todayStr,
+                estimatedTime: minutes ?? undefined,
+            });
         } catch {
             toast.error('Could not update duration.');
         }

@@ -63,7 +63,8 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
             await updateTask({
                 ...task,
                 kind: 'urgent',
-                dueDate: date,
+                flag: 'urgent',
+                plannedFor: date,
                 dueTime: time || undefined,
                 estimatedTime: estimate ? Number(estimate) : task.estimatedTime,
                 notes: notes.trim() || undefined,
@@ -79,7 +80,8 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
                     );
                     return addTaskFull({
                         title: p.title.trim(),
-                        dueDate: prepDate,
+                        plannedFor: prepDate,
+                        flag: 'today',
                         priority: 'high',
                         parentTodoId: task.id,
                         triagedAt: new Date().toISOString(),

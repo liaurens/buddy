@@ -9,7 +9,7 @@
  * the final task via applyTriagePatch so results are byte-identical.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { isSameDay } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
@@ -38,6 +38,11 @@ import {
     type TriageCorrection,
 } from '../services/triageLearnings';
 import type { Task } from '../types';
+import { logAppEvent } from '../../../services/app-events';
+import { supabase } from '../../../services/supabase';
+import { getCategorySettings } from '../../../services/settings';
+import { useDayCapacity } from '../../day/hooks/useDayCapacity';
+import { remainingCalendarMinutes, selectUrgentPlannedDate } from '../utils/taskFlags';
 
 /** One resolved routing decision, ready to apply. */
 export interface TriageDecision {
@@ -64,6 +69,8 @@ export interface UseTaskTriageReturn {
     refetch: () => void;
     /** Apply the routes; returns how many tasks were routed. */
     applyRoutes: (decisions: TriageDecision[]) => Promise<number>;
+    undoLastBatch: () => Promise<number>;
+    canUndo: boolean;
 }
 
 export function useTaskTriage(): UseTaskTriageReturn {
@@ -74,6 +81,49 @@ export function useTaskTriage(): UseTaskTriageReturn {
     const { assignments } = useAssignments({ activeOnly: true });
     const { classes } = useClasses();
     const [ready, setReady] = useState(false);
+    const todayForCapacity = new Date().toISOString().slice(0, 10);
+    const { capacity: dayCapacity } = useDayCapacity(todayForCapacity);
+    const scheduleContextQuery = useQuery({
+        queryKey: ['urgent-schedule-context', userId, todayForCapacity],
+        enabled: !!userId,
+        staleTime: 60_000,
+        queryFn: async () => {
+            const now = new Date();
+            const endOfDay = new Date(`${todayForCapacity}T23:59:59`);
+            const [settings, eventsResult] = await Promise.all([
+                getCategorySettings(userId!, 'notifications').catch(() => ({
+                    nightTime: '21:00',
+                })),
+                supabase
+                    .from('calendar_events')
+                    .select('start_time, end_time')
+                    .eq('user_id', userId!)
+                    .gte('end_time', now.toISOString())
+                    .lte('start_time', endOfDay.toISOString()),
+            ]);
+
+            if (eventsResult.error) {
+                console.warn(
+                    'Urgent scheduling: calendar availability unavailable:',
+                    eventsResult.error.message,
+                );
+            }
+            const blocks = (eventsResult.data ?? []).map((event) => ({
+                start: event.start_time,
+                end: event.end_time,
+            }));
+            return {
+                nightTime: settings.nightTime,
+                freeMinutes: eventsResult.error
+                    ? undefined
+                    : remainingCalendarMinutes(blocks, now, settings.nightTime),
+            };
+        },
+    });
+    const nightTime = scheduleContextQuery.data?.nightTime ?? '21:00';
+    const freeMinutes = scheduleContextQuery.data?.freeMinutes;
+    const undoBatchRef = useRef<Map<string, Task>>(new Map());
+    const [canUndo, setCanUndo] = useState(false);
 
     // Untriaged, active capture inbox — same selector as the count badges.
     const untriaged = useMemo(() => tasks.filter(isInInbox), [tasks]);
@@ -113,7 +163,14 @@ export function useTaskTriage(): UseTaskTriageReturn {
         error,
         refetch,
     } = useQuery({
-        queryKey: ['triage-tasks', inboxKey, assignmentsKey, typeOptions.length],
+        queryKey: [
+            'triage-tasks',
+            inboxKey,
+            assignmentsKey,
+            typeOptions.length,
+            dayCapacity,
+            freeMinutes,
+        ],
         enabled: ready && untriaged.length > 0,
         staleTime: Infinity,
         gcTime: 0,
@@ -127,11 +184,25 @@ export function useTaskTriage(): UseTaskTriageReturn {
                     title: t.title,
                     dueDate: t.dueDate,
                     priority: t.priority,
+                    plannedFor: t.plannedFor,
+                    flag: t.triageSource ? t.flag : undefined,
+                    recurrence: t.recurrence,
+                    estimatedMinutes: t.estimatedTime,
                 })),
                 assignments: assignmentOptions,
                 learningsDoc: learnings,
                 todayIso,
                 taskTypes: typeOptions,
+                workload: tasks
+                    .filter((t) => !t.completed && !untriaged.some((u) => u.id === t.id))
+                    .map((t) => ({
+                        plannedFor: t.plannedFor,
+                        estimatedMinutes: t.estimatedTime,
+                        flag: t.flag,
+                    })),
+                dayCapacity,
+                calendarAvailability:
+                    freeMinutes === undefined ? undefined : [{ date: todayIso, freeMinutes }],
             });
             return sanitizeTriageSuggestions(
                 result,
@@ -165,13 +236,35 @@ export function useTaskTriage(): UseTaskTriageReturn {
                 const task = byId.get(s.id);
                 if (!task) continue;
                 try {
+                    undoBatchRef.current.set(task.id, task);
+                    const detail = suggestionToDetail(s);
+                    if (s.destination === 'urgent' && !detail.plannedFor) {
+                        detail.plannedFor = selectUrgentPlannedDate({
+                            now: new Date(),
+                            dayMode: dayCapacity,
+                            nightTime,
+                            plannedTaskCount: tasks.filter(
+                                (t) => t.plannedFor === todayIso && !t.completed,
+                            ).length,
+                            remainingCalendarMinutes: freeMinutes,
+                            estimatedMinutes: detail.estimatedMinutes,
+                        });
+                    }
                     await updateTask(
-                        applyTriagePatch(task, s.destination, suggestionToDetail(s), {
+                        applyTriagePatch(task, s.destination, detail, {
                             nowIso,
                             todayIso,
                             autoTriaged: true,
+                            confidence: s.confidence,
+                            reason: s.reason,
                         }),
                     );
+                    setCanUndo(true);
+                    void logAppEvent('task_auto_sorted', {
+                        taskId: task.id,
+                        destination: s.destination,
+                        confidence: s.confidence,
+                    });
                 } catch (e) {
                     console.warn('Auto-apply failed; task returned to review inbox:', e);
                     failed.push(s.id);
@@ -181,14 +274,24 @@ export function useTaskTriage(): UseTaskTriageReturn {
                 setFailedAutoApply((prev) => new Set([...prev, ...failed]));
             }
         })();
-    }, [suggestions, untriaged, userId, updateTask, failedAutoApply]);
+    }, [
+        suggestions,
+        untriaged,
+        userId,
+        updateTask,
+        failedAutoApply,
+        dayCapacity,
+        tasks,
+        nightTime,
+        freeMinutes,
+    ]);
 
     // The review section: untriaged tasks the AI was NOT confident about, plus any
     // whose auto-apply write failed. High-confidence tasks being applied right now
     // are hidden to avoid a flash before they leave.
     const reviewInbox = useMemo(() => {
         const highConfidence = new Set(
-            (suggestions ?? []).filter((s) => s.confidence === 'high').map((s) => s.id),
+            (suggestions ?? []).filter((s) => s.confidence >= 0.8).map((s) => s.id),
         );
         return untriaged.filter((t) => !highConfidence.has(t.id) || failedAutoApply.has(t.id));
     }, [untriaged, suggestions, failedAutoApply]);
@@ -200,14 +303,29 @@ export function useTaskTriage(): UseTaskTriageReturn {
             const todayIso = nowIso.slice(0, 10);
             const byId = new Map(tasks.map((t) => [t.id, t]));
             const corrections: TriageCorrection[] = [];
+            const snapshots = new Map<string, Task>();
             let applied = 0;
 
             for (const d of decisions) {
                 const task = byId.get(d.taskId);
                 if (!task || !isDestinationReady(d.destination, d.detail)) continue;
+                const detail = { ...d.detail };
+                if (d.destination === 'urgent' && !detail.plannedFor) {
+                    detail.plannedFor = selectUrgentPlannedDate({
+                        now: new Date(),
+                        dayMode: dayCapacity,
+                        nightTime,
+                        plannedTaskCount: tasks.filter(
+                            (t) => t.plannedFor === todayIso && !t.completed,
+                        ).length,
+                        remainingCalendarMinutes: freeMinutes,
+                        estimatedMinutes: detail.estimatedMinutes,
+                    });
+                }
+                snapshots.set(task.id, task);
                 // A human confirmed/corrected this — it is no longer an unreviewed auto-apply.
                 await updateTask(
-                    applyTriagePatch(task, d.destination, d.detail, {
+                    applyTriagePatch(task, d.destination, detail, {
                         nowIso,
                         todayIso,
                         autoTriaged: false,
@@ -215,6 +333,11 @@ export function useTaskTriage(): UseTaskTriageReturn {
                 );
                 applied += 1;
                 if (d.destination !== d.aiDestination) {
+                    void logAppEvent('task_sort_corrected', {
+                        taskId: task.id,
+                        from: d.aiDestination,
+                        to: d.destination,
+                    });
                     corrections.push({
                         title: task.title,
                         aiDestination: d.aiDestination,
@@ -224,10 +347,25 @@ export function useTaskTriage(): UseTaskTriageReturn {
                 }
             }
             await recordTriageCorrections(userId, corrections, nowIso);
+            if (snapshots.size > 0) {
+                undoBatchRef.current = snapshots;
+                setCanUndo(true);
+            }
             return applied;
         },
-        [userId, tasks, updateTask],
+        [userId, tasks, updateTask, dayCapacity, nightTime, freeMinutes],
     );
+
+    const undoLastBatch = useCallback(async (): Promise<number> => {
+        const snapshots = [...undoBatchRef.current.values()];
+        if (snapshots.length === 0) return 0;
+        for (const task of snapshots) await updateTask(task);
+        setFailedAutoApply((prev) => new Set([...prev, ...snapshots.map((t) => t.id)]));
+        undoBatchRef.current.clear();
+        setCanUndo(false);
+        void logAppEvent('task_sort_undone', { count: snapshots.length });
+        return snapshots.length;
+    }, [updateTask]);
 
     return {
         ready,
@@ -239,5 +377,7 @@ export function useTaskTriage(): UseTaskTriageReturn {
         error,
         refetch,
         applyRoutes,
+        undoLastBatch,
+        canUndo,
     };
 }

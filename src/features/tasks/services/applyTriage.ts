@@ -18,6 +18,8 @@ export interface TriageOpts {
     todayIso: string;
     /** True when the AI routed this without a human confirming. */
     autoTriaged?: boolean;
+    confidence?: number;
+    reason?: string;
 }
 
 /** Inferred profile fields — routing never overwrites what the task already has. */
@@ -55,7 +57,14 @@ export function applyTriagePatch(
         if (patch[field] === undefined || task[field] != null) delete patch[field];
     }
 
-    const merged: Task = { ...task, ...patch, autoTriaged: opts.autoTriaged ?? false };
+    const merged: Task = {
+        ...task,
+        ...patch,
+        autoTriaged: opts.autoTriaged ?? false,
+        triageSource: opts.autoTriaged ? 'ai' : 'manual',
+        triageConfidence: opts.confidence,
+        triageReason: opts.reason,
+    };
     return patch.kind ? { ...merged, ...kindSignalPatch(patch.kind) } : merged;
 }
 

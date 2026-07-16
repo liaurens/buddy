@@ -76,19 +76,20 @@ describe('parseQuickCapture', () => {
 
     it('parses "tomorrow"', () => {
         const r = parseQuickCapture('email boss tomorrow', TYPES, NOW);
-        expect(r.dueDate).toBe('2026-05-13');
+        expect(r.plannedFor).toBe('2026-05-13');
+        expect(r.dueDate).toBeUndefined();
     });
 
     it('parses "tonight" with default 20:00', () => {
         const r = parseQuickCapture('clean room tonight', TYPES, NOW);
-        expect(r.dueDate).toBe('2026-05-12');
+        expect(r.plannedFor).toBe('2026-05-12');
         expect(r.dueTime).toBe('20:00');
     });
 
     it('parses 12h time "2pm"', () => {
         const r = parseQuickCapture('email mom tomorrow 2pm', TYPES, NOW);
         expect(r.dueTime).toBe('14:00');
-        expect(r.dueDate).toBe('2026-05-13');
+        expect(r.plannedFor).toBe('2026-05-13');
         expect(r.title.toLowerCase()).toContain('email mom');
     });
 
@@ -100,17 +101,17 @@ describe('parseQuickCapture', () => {
     it('parses next weekday name', () => {
         // NOW is Tue 2026-05-12, "friday" should give the next Friday = 2026-05-15
         const r = parseQuickCapture('study chapter 4 friday', TYPES, NOW);
-        expect(r.dueDate).toBe('2026-05-15');
+        expect(r.plannedFor).toBe('2026-05-15');
     });
 
     it('parses "in 3 days"', () => {
         const r = parseQuickCapture('review essay in 3 days', TYPES, NOW);
-        expect(r.dueDate).toBe('2026-05-15');
+        expect(r.plannedFor).toBe('2026-05-15');
     });
 
     it('parses "next week"', () => {
         const r = parseQuickCapture('meeting next week', TYPES, NOW);
-        expect(r.dueDate).toBe('2026-05-19');
+        expect(r.plannedFor).toBe('2026-05-19');
     });
 
     it('parses priority "!!" → urgent', () => {
@@ -140,7 +141,7 @@ describe('parseQuickCapture', () => {
         const r = parseQuickCapture('!! email professor tomorrow 9am', TYPES, NOW);
         expect(r.priority).toBe('urgent');
         expect(r.taskTypeId).toBe('email-id');
-        expect(r.dueDate).toBe('2026-05-13');
+        expect(r.plannedFor).toBe('2026-05-13');
         expect(r.dueTime).toBe('09:00');
     });
 
@@ -167,5 +168,29 @@ describe('parseQuickCapture', () => {
         expect(r.kind).toBe('backlog');
         expect(r.title.toLowerCase()).toContain('learn guitar');
         expect(r.title.toLowerCase()).not.toContain('someday');
+    });
+
+    it('keeps planned dates separate from explicit deadlines', () => {
+        const planned = parseQuickCapture('write report tomorrow #urgent', TYPES, NOW);
+        expect(planned.plannedFor).toBe('2026-05-13');
+        expect(planned.dueDate).toBeUndefined();
+
+        const deadline = parseQuickCapture('submit report due friday', TYPES, NOW);
+        expect(deadline.flag).toBe('deadline');
+        expect(deadline.dueDate).toBe('2026-05-15');
+        expect(deadline.plannedFor).toBeUndefined();
+    });
+
+    it('parses Dutch planning and deadline dates', () => {
+        expect(parseQuickCapture('bel docent morgen', TYPES, NOW).plannedFor).toBe('2026-05-13');
+        expect(parseQuickCapture('verslag deadline vrijdag', TYPES, NOW).dueDate).toBe(
+            '2026-05-15',
+        );
+    });
+
+    it('blocks conflicting explicit flags', () => {
+        const result = parseQuickCapture('finish report #today #someday', TYPES, NOW);
+        expect(result.conflictingFlags).toEqual(['today', 'someday']);
+        expect(result.errors?.[0]).toContain('Choose one');
     });
 });

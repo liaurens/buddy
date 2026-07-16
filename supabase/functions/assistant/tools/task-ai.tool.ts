@@ -308,8 +308,11 @@ async function handleTriage(
             : new Date().toISOString().slice(0, 10);
     const learnings =
         typeof params.learningsDoc === 'string' ? params.learningsDoc.slice(0, 8000) : '';
-    const systemPrompt = `Sort captured tasks. Destinations: urgent, today, someday, school, routine. Return JSON only. Use confidence high only when the route is obvious. Today is ${todayIso}. Use only supplied assignment ids and task type names.`;
-    const userPrompt = `Assignments: ${JSON.stringify(assignments)}\nTask types: ${JSON.stringify(taskTypes)}\nPast corrections: ${learnings}\nTasks: ${JSON.stringify(tasks)}\nReturn {"suggestions":[{"id":"...","destination":"today","confidence":"low","hardness":null,"dueDate":null,"dueTime":null,"assignmentId":null,"recurrence":null,"location":null,"context":null,"energy":null,"estimatedMinutes":null,"taskTypeName":null,"reason":"short reason"}]}.`;
+    const workload = asRecordArray(params.workload);
+    const availability = asRecordArray(params.calendarAvailability);
+    const dayCapacity = params.dayCapacity ?? null;
+    const systemPrompt = `Classify captured tasks into exactly one flag: urgent, today, deadline, waiting, school, routine, someday. Return JSON only. Confidence is a number from 0 to 1. Explicit user flags and dates are immutable. "tomorrow" is plannedFor; only "due" or "deadline" creates dueDate. Deadline requires dueDate, waiting requires waitingOn, routine requires recurrence. Today is ${todayIso}. Use only supplied assignment ids and task type names.`;
+    const userPrompt = `Assignments: ${JSON.stringify(assignments)}\nTask types: ${JSON.stringify(taskTypes)}\nCurrent workload: ${JSON.stringify(workload)}\nCalendar availability: ${JSON.stringify(availability)}\nDay capacity: ${JSON.stringify(dayCapacity)}\nPast corrections: ${learnings}\nTasks: ${JSON.stringify(tasks)}\nReturn {"suggestions":[{"id":"...","destination":"today","confidence":0.5,"hardness":null,"dueDate":null,"plannedFor":null,"dueTime":null,"waitingOn":null,"assignmentId":null,"recurrence":null,"location":null,"context":null,"energy":null,"estimatedMinutes":null,"taskTypeName":null,"reason":"short reason"}]}.`;
     const data = await generateJSON(context, 'task_triage', systemPrompt, userPrompt, 2400);
     return { success: true, action_taken: 'Generated triage suggestions', data };
 }

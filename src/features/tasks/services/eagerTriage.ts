@@ -20,6 +20,8 @@ import { suggestionToDetail } from '../utils/triageConfidence';
 import { loadTriageLearnings } from './triageLearnings';
 import { applyTriage } from './applyTriage';
 import type { Task } from '../types';
+import { getCategorySettings } from '../../../services/settings';
+import { remainingCalendarMinutes, selectUrgentPlannedDate } from '../utils/taskFlags';
 
 /** The user's active assignments, so eager sorting can route school tasks too. */
 async function loadAssignmentOptions(userId: string): Promise<TriageAssignmentOption[]> {
@@ -50,7 +52,8 @@ async function loadTaskTypeOptions(userId: string): Promise<TriageTaskTypeOption
 
 export async function eagerTriageTask(userId: string, task: Task): Promise<void> {
     try {
-        const nowIso = new Date().toISOString();
+        const now = new Date();
+        const nowIso = now.toISOString();
         const todayIso = nowIso.slice(0, 10);
         const [learnings, assignmentOptions, typeOptions] = await Promise.all([
             loadTriageLearnings(userId),
@@ -59,7 +62,16 @@ export async function eagerTriageTask(userId: string, task: Task): Promise<void>
         ]);
         const result = await triageTasks({
             tasks: [
-                { id: task.id, title: task.title, dueDate: task.dueDate, priority: task.priority },
+                {
+                    id: task.id,
+                    title: task.title,
+                    dueDate: task.dueDate,
+                    plannedFor: task.plannedFor,
+                    flag: task.triageSource ? task.flag : undefined,
+                    recurrence: task.recurrence,
+                    priority: task.priority,
+                    estimatedMinutes: task.estimatedTime,
+                },
             ],
             assignments: assignmentOptions,
             learningsDoc: learnings,
@@ -72,11 +84,58 @@ export async function eagerTriageTask(userId: string, task: Task): Promise<void>
             assignmentOptions.map((a) => a.id),
             typeOptions,
         );
-        if (!s || s.confidence !== 'high') return; // unsure → leave for the morning batch
-        await applyTriage(userId, task, s.destination, suggestionToDetail(s), {
+        if (!s || s.confidence < 0.8) return; // unsure → leave for the Smart Inbox
+        const detail = suggestionToDetail(s);
+        if (s.destination === 'urgent' && !detail.plannedFor) {
+            const endOfDay = new Date(`${todayIso}T23:59:59`);
+            const [{ data: plan }, { count }, settings, eventsResult] = await Promise.all([
+                supabase
+                    .from('daily_plans')
+                    .select('capacity')
+                    .eq('user_id', userId)
+                    .eq('date', todayIso)
+                    .maybeSingle(),
+                supabase
+                    .from('todos')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('user_id', userId)
+                    .eq('planned_for', todayIso)
+                    .eq('completed', false),
+                getCategorySettings(userId, 'notifications').catch(() => ({
+                    nightTime: '21:00',
+                })),
+                supabase
+                    .from('calendar_events')
+                    .select('start_time, end_time')
+                    .eq('user_id', userId)
+                    .gte('end_time', nowIso)
+                    .lte('start_time', endOfDay.toISOString()),
+            ]);
+            const freeMinutes = eventsResult.error
+                ? undefined
+                : remainingCalendarMinutes(
+                      (eventsResult.data ?? []).map((event) => ({
+                          start: event.start_time,
+                          end: event.end_time,
+                      })),
+                      now,
+                      settings.nightTime,
+                  );
+            detail.plannedFor = selectUrgentPlannedDate({
+                now,
+                dayMode: plan?.capacity === 'survival' ? 'survival' : 'normal',
+                nightTime: settings.nightTime,
+                plannedTaskCount: count ?? 0,
+                remainingCalendarMinutes: freeMinutes,
+                estimatedMinutes: detail.estimatedMinutes,
+            });
+        }
+        await applyTriage(userId, task, s.destination, detail, {
             nowIso,
             todayIso,
             autoTriaged: true,
+            confidence: s.confidence,
+            reason: s.reason,
         });
     } catch (e) {
         console.warn('Eager triage skipped:', e);

@@ -34,6 +34,7 @@ import {
 import AITaskSplitter from './AITaskSplitter';
 import SnoozeMenu from './SnoozeMenu';
 import PortalMenu from './PortalMenu';
+import { TASK_FLAG_META } from '../utils/taskFlags';
 
 const ENERGY_DOT: Record<TaskEnergy, string> = {
     low: 'bg-emerald-400',
@@ -55,7 +56,7 @@ function priorityClasses(p?: string): string {
 
 function recurrenceLabel(task: Task): string | null {
     if (!task.recurrence || task.recurrence === 'none') return null;
-    const next = calculateNextDueDate(task.dueDate, task.recurrence, task.recurrenceConfig);
+    const next = calculateNextDueDate(task.plannedFor, task.recurrence, task.recurrenceConfig);
     if (!next) return null;
     const d = parseDueDate(next);
     const diff = daysUntilDue(next, new Date());
@@ -125,7 +126,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     const progress = hasSubtasks ? Math.round((subtaskDone / subtaskCount) * 100) : 0;
     // Stuck signal: repeatedly snoozed or due/overdue and untouched — offer a split.
     const stale = isStale(task, new Date());
-    const routineMisses = missedRoutineOccurrences(task.dueDate, task.recurrence, new Date());
+    const routineMisses = missedRoutineOccurrences(task.plannedFor, task.recurrence, new Date());
     const routineNeedsDecision = !task.completed && needsRoutineDecision(task, new Date());
     const deadlineSlipped = isDeadlineStartSlipped(task, new Date());
 
@@ -143,7 +144,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             ...task,
             recurrence,
             recurrenceConfig,
-            dueDate: format(new Date(), 'yyyy-MM-dd'),
+            plannedFor: format(new Date(), 'yyyy-MM-dd'),
         });
         setRoutineDecisionOpen(false);
     };
@@ -176,8 +177,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
         setExpanded(true);
     };
 
-    const handleSnooze = (dueDate: string, dueTime?: string) => {
-        onUpdate({ ...task, dueDate, dueTime });
+    const handleSnooze = (plannedFor: string, dueTime?: string) => {
+        onUpdate({ ...task, plannedFor, dueTime });
         setSnoozeOpen(false);
     };
 
@@ -244,6 +245,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             <p className="mt-0.5 text-xs text-indigo-400">Why: {topPickReason}</p>
                         )}
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-xs">
+                            {task.flag && (
+                                <span className="rounded bg-slate-50 px-1.5 py-0.5 font-semibold text-slate-600">
+                                    {TASK_FLAG_META[task.flag].emoji}{' '}
+                                    {TASK_FLAG_META[task.flag].label}
+                                </span>
+                            )}
                             {task.energy && (
                                 <span
                                     className="flex items-center gap-1 text-slate-500"
@@ -280,15 +287,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                         </span>
                                     );
                                 })()}
+                            {task.plannedFor && (
+                                <span className="flex items-center gap-1 rounded bg-indigo-50 px-1.5 py-0.5 font-medium text-indigo-700">
+                                    <CalendarIcon size={11} /> Planned{' '}
+                                    {format(parseDueDate(task.plannedFor), 'MMM d')}
+                                    {task.dueTime ? (
+                                        <>
+                                            <Clock size={9} /> {task.dueTime}
+                                        </>
+                                    ) : null}
+                                </span>
+                            )}
                             {task.waitingOn && (
                                 <span className="flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-600">
                                     <UserRound size={10} /> {task.waitingOn}
                                 </span>
                             )}
-                            {task.kind === 'deadline' && task.startDate && (
+                            {task.flag === 'deadline' && task.plannedFor && (
                                 <span className="flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 font-medium text-blue-700">
                                     <CalendarIcon size={10} /> Starts{' '}
-                                    {format(parseDueDate(task.startDate), 'MMM d')}
+                                    {format(parseDueDate(task.plannedFor), 'MMM d')}
                                 </span>
                             )}
                             {deadlineSlipped && (

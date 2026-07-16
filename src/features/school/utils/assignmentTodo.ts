@@ -11,6 +11,7 @@
 
 import { format } from 'date-fns';
 import type { Task } from '../../tasks/types';
+import { suggestDeadlineWorkday } from '../../tasks/utils/taskFlags';
 
 export interface AssignmentTodoSource {
     id: string;
@@ -21,12 +22,15 @@ export interface AssignmentTodoSource {
 }
 
 export function buildAssignmentTodo(a: AssignmentTodoSource, now: Date): Omit<Task, 'id'> {
+    const dueDate = format(new Date(a.deadline), 'yyyy-MM-dd');
     return {
         title: a.title,
         completed: false,
         createdAt: now.toISOString(),
         // Local date of the deadline — a 23:30 deadline is still "due that day".
-        dueDate: format(new Date(a.deadline), 'yyyy-MM-dd'),
+        dueDate,
+        plannedFor: suggestDeadlineWorkday(dueDate, a.estimatedMinutes ?? 30, now),
+        flag: 'school',
         kind: 'deadline',
         priority: 'medium',
         estimatedTime: a.estimatedMinutes ?? undefined,

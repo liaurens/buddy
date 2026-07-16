@@ -58,7 +58,12 @@ const SomedayReviewCard: React.FC<SomedayReviewCardProps> = ({
                         type="button"
                         onClick={() =>
                             finish(() =>
-                                onUpdate({ ...task, kind: 'standard', dueDate: scheduleDate }),
+                                onUpdate({
+                                    ...task,
+                                    flag: 'today',
+                                    kind: 'standard',
+                                    plannedFor: scheduleDate,
+                                }),
                             )
                         }
                         className="rounded-md bg-violet-700 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-violet-800"

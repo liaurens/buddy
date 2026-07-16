@@ -391,6 +391,8 @@ async function handleCommit(
             // Mirror the deadline onto a linked todo (same shape as the client's
             // buildAssignmentTodo) so imported deadlines land on the task surface.
             const nowIso = new Date().toISOString();
+            const planned = new Date(deadline);
+            planned.setUTCDate(planned.getUTCDate() - 3);
             const { error: todoError } = await supabase.from('todos').insert({
                 id: crypto.randomUUID(),
                 user_id: userId,
@@ -398,12 +400,15 @@ async function handleCommit(
                 completed: false,
                 created_at: nowIso,
                 due_date: deadline.toISOString().slice(0, 10),
+                planned_for: planned.toISOString().slice(0, 10),
+                flag: 'school',
                 kind: 'deadline',
                 priority: 'medium',
                 estimated_time: assignment.estimatedMinutes ?? null,
                 assignment_id: inserted.id,
                 triage_destination: 'school',
                 triaged_at: nowIso,
+                triage_source: 'ai',
                 recurrence: 'none',
             });
             if (todoError) throw todoError;

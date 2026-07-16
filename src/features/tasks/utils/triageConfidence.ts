@@ -13,7 +13,7 @@ export function splitByConfidence(suggestions: TaskTriageSuggestion[]): {
 } {
     const autoApply: TaskTriageSuggestion[] = [];
     const review: TaskTriageSuggestion[] = [];
-    for (const s of suggestions) (s.confidence === 'high' ? autoApply : review).push(s);
+    for (const s of suggestions) (s.confidence >= 0.8 ? autoApply : review).push(s);
     return { autoApply, review };
 }
 
@@ -21,6 +21,9 @@ export function splitByConfidence(suggestions: TaskTriageSuggestion[]): {
 export function suggestionToDetail(s: TaskTriageSuggestion): TriageDetail {
     const detail: TriageDetail = {};
     if (s.destination === 'today' && s.dueTime) detail.time = s.dueTime;
+    if (s.dueDate) detail.dueDate = s.dueDate;
+    if (s.plannedFor) detail.plannedFor = s.plannedFor;
+    if (s.waitingOn) detail.waitingOn = s.waitingOn;
     if (s.destination === 'school' && s.assignmentId) detail.assignmentId = s.assignmentId;
     if (s.destination === 'routine') detail.recurrence = s.recurrence ?? 'daily';
     if (s.hardness) detail.hardness = s.hardness;

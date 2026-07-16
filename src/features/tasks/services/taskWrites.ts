@@ -15,7 +15,8 @@ import {
     cancelTaskReminders,
 } from '../../../services/notifications/scheduler.service';
 import { getCategorySettings } from '../../../services/settings';
-import { deriveTaskKind, kindSignalPatch } from '../utils/taskKind';
+import { kindSignalPatch } from '../utils/taskKind';
+import { applyTaskFlag, deriveTaskFlag, flagToLegacyKind } from '../utils/taskFlags';
 import {
     pushTaskToGoogle,
     updateTaskOnGoogle,
@@ -42,7 +43,8 @@ export async function syncTaskReminders(userId: string, task: Task): Promise<voi
             return;
         }
         const absoluteAt = task.reminderAt ? new Date(task.reminderAt) : undefined;
-        const dueAt = resolveDueAt(task.dueDate, task.dueTime);
+        const reminderDate = task.flag === 'deadline' ? task.dueDate : task.plannedFor;
+        const dueAt = resolveDueAt(reminderDate, task.dueTime);
         if (!absoluteAt && !dueAt) {
             await cancelTaskReminders(userId, task.id);
             return;
@@ -69,7 +71,14 @@ export async function syncTaskReminders(userId: string, task: Task): Promise<voi
 
 /** Hybrid write-through: seed the canonical signal for an explicit kind so the two never drift. */
 export function applyKindWriteThrough(task: Task): Task {
-    return task.kind ? { ...task, ...kindSignalPatch(task.kind) } : task;
+    const withKind = task.kind ? { ...task, ...kindSignalPatch(task.kind) } : task;
+    const flag = deriveTaskFlag(withKind);
+    const { task: flagged } = applyTaskFlag(withKind, flag, {
+        source: withKind.triageSource,
+        manuallyConfirmed: true,
+        explicitPlannedFor: withKind.plannedFor,
+    });
+    return { ...flagged, kind: flagToLegacyKind(flag) };
 }
 
 /**
@@ -79,11 +88,18 @@ export function applyKindWriteThrough(task: Task): Task {
  */
 export async function syncTaskToGoogle(task: Task): Promise<void> {
     try {
+        const calendarDate = task.plannedFor;
+        const calendarTask = calendarDate ? { ...task, dueDate: calendarDate } : task;
         if (task.googleEventId) {
-            if (task.completed || !task.dueDate) await removeTaskFromGoogle(task);
-            else await updateTaskOnGoogle(task);
-        } else if (!task.completed && task.dueDate && deriveTaskKind(task) === 'urgent') {
-            await pushTaskToGoogle(task);
+            if (task.completed || !calendarDate) await removeTaskFromGoogle(task);
+            else await updateTaskOnGoogle(calendarTask);
+        } else if (
+            !task.completed &&
+            calendarDate &&
+            deriveTaskFlag(task) === 'urgent' &&
+            task.dueTime
+        ) {
+            await pushTaskToGoogle(calendarTask);
         }
     } catch (e) {
         console.warn('Google Calendar sync skipped:', e);

@@ -1,22 +1,21 @@
 import React, { useMemo, useState } from 'react';
 import { addDays, format } from 'date-fns';
 import { Sparkles, Calendar as CalendarIcon, Plus } from 'lucide-react';
-import type { TaskType, TaskKind } from '../types';
+import type { TaskType, TaskFlag } from '../types';
 import { parseQuickCapture } from '../utils/quickCaptureParser';
-import { deriveTaskKind, TASK_KIND_META, PICKABLE_TASK_KINDS } from '../utils/taskKind';
-import { suggestedDeadlineStart } from '../utils/taskContracts';
+import { TASK_FLAGS, TASK_FLAG_META, suggestDeadlineWorkday } from '../utils/taskFlags';
 
 interface QuickCaptureProps {
     taskTypes: TaskType[];
     onSubmit: (draft: ReturnType<typeof parseQuickCapture>) => Promise<void> | void;
 }
 
-type KindChoice = TaskKind | 'auto';
+type FlagChoice = TaskFlag | 'auto';
 
 const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
     const [text, setText] = useState('');
     const [busy, setBusy] = useState(false);
-    const [kindChoice, setKindChoice] = useState<KindChoice>('auto');
+    const [flagChoice, setFlagChoice] = useState<FlagChoice>('auto');
     const [waitingOn, setWaitingOn] = useState('');
     const [chaseDate, setChaseDate] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -24,31 +23,66 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
 
     const parsed = useMemo(() => parseQuickCapture(text, taskTypes), [text, taskTypes]);
     const deadlineStart =
-        startDate || (parsed.dueDate ? suggestedDeadlineStart(parsed.dueDate, new Date()) : '');
+        startDate || (parsed.dueDate ? suggestDeadlineWorkday(parsed.dueDate, 30, new Date()) : '');
     // Explicit button choice wins; otherwise use whatever the text implied.
     const draft = useMemo(() => {
-        if (kindChoice === 'auto') return parsed;
-        if (kindChoice === 'waiting') {
+        if (flagChoice === 'auto') return parsed;
+        if (parsed.conflictingFlags?.length) return parsed;
+        if (parsed.flag && parsed.flag !== flagChoice) {
             return {
                 ...parsed,
-                kind: kindChoice,
-                waitingOn: waitingOn.trim() || undefined,
-                dueDate: chaseDate || parsed.dueDate,
-                notes: contractNote.trim() || undefined,
+                conflictingFlags: [parsed.flag, flagChoice],
+                errors: [`Choose one task flag: ${parsed.flag}, ${flagChoice}.`],
             };
         }
-        if (kindChoice === 'deadline') {
-            return { ...parsed, kind: kindChoice, startDate: deadlineStart || undefined };
+        if (flagChoice === 'waiting') {
+            return {
+                ...parsed,
+                errors: undefined,
+                flag: flagChoice,
+                waitingOn: waitingOn.trim() || undefined,
+                plannedFor: chaseDate || parsed.plannedFor,
+                notes: contractNote.trim() || undefined,
+                triageSource: 'explicit' as const,
+            };
         }
-        return { ...parsed, kind: kindChoice };
-    }, [parsed, kindChoice, waitingOn, chaseDate, contractNote, deadlineStart]);
+        if (flagChoice === 'deadline') {
+            return {
+                ...parsed,
+                errors: undefined,
+                flag: flagChoice,
+                dueDate: parsed.dueDate ?? parsed.plannedFor,
+                plannedFor: deadlineStart || undefined,
+                startDate: deadlineStart || undefined,
+                triageSource: 'explicit' as const,
+            };
+        }
+        if (flagChoice === 'routine') {
+            return {
+                ...parsed,
+                flag: flagChoice,
+                recurrence: parsed.recurrence ?? 'daily',
+                triageSource: 'explicit' as const,
+            };
+        }
+        return {
+            ...parsed,
+            errors: undefined,
+            flag: flagChoice,
+            plannedFor:
+                flagChoice === 'today' ? format(new Date(), 'yyyy-MM-dd') : parsed.plannedFor,
+            triageSource: 'explicit' as const,
+        };
+    }, [parsed, flagChoice, waitingOn, chaseDate, contractNote, deadlineStart]);
     const matchedType = draft.taskTypeId
         ? taskTypes.find((t) => t.id === draft.taskTypeId)
         : undefined;
-    const effectiveKind = draft.kind ?? deriveTaskKind(draft);
+    const effectiveFlag = draft.flag ?? 'someday';
     const contractReady =
-        (kindChoice !== 'waiting' || Boolean(draft.waitingOn)) &&
-        (kindChoice !== 'deadline' || Boolean(draft.dueDate && draft.startDate));
+        !draft.conflictingFlags?.length &&
+        !draft.errors?.length &&
+        (flagChoice !== 'waiting' || Boolean(draft.waitingOn)) &&
+        (flagChoice !== 'deadline' || Boolean(draft.dueDate && draft.plannedFor));
 
     const submit = async () => {
         if (!draft.title.trim() || busy) return;
@@ -56,7 +90,7 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
         try {
             await onSubmit(draft);
             setText('');
-            setKindChoice('auto');
+            setFlagChoice('auto');
             setWaitingOn('');
             setChaseDate('');
             setStartDate('');
@@ -80,7 +114,7 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
                             void submit();
                         }
                     }}
-                    placeholder="Add task… try 'email mom tomorrow 2pm'"
+                    placeholder="Add task… try 'email mom tomorrow #today'"
                     className="flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
                 />
                 <button
@@ -92,37 +126,39 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
                 </button>
             </div>
 
-            {/* Kind selector — Auto derives from the text; tap to force a kind. */}
+            {/* One workflow flag; normal labels remain independent and multi-select. */}
             <div className="mt-2 flex flex-wrap gap-1 pl-6">
                 <KindButton
                     label="Auto"
-                    active={kindChoice === 'auto'}
+                    active={flagChoice === 'auto'}
                     hint={
-                        kindChoice === 'auto'
-                            ? `→ ${TASK_KIND_META[effectiveKind].label}`
+                        flagChoice === 'auto'
+                            ? `→ ${TASK_FLAG_META[effectiveFlag].label}`
                             : undefined
                     }
-                    onClick={() => setKindChoice('auto')}
+                    onClick={() => setFlagChoice('auto')}
                 />
-                {PICKABLE_TASK_KINDS.map((k) => (
+                {TASK_FLAGS.map((k) => (
                     <KindButton
                         key={k}
-                        label={`${TASK_KIND_META[k].emoji} ${TASK_KIND_META[k].label}`}
-                        active={kindChoice === k}
+                        label={`${TASK_FLAG_META[k].emoji} ${TASK_FLAG_META[k].label}`}
+                        active={flagChoice === k}
                         onClick={() => {
-                            setKindChoice((prev) => (prev === k ? 'auto' : k));
+                            setFlagChoice((prev) => (prev === k ? 'auto' : k));
                             if (k === 'waiting' && !chaseDate) {
                                 setChaseDate(format(addDays(new Date(), 3), 'yyyy-MM-dd'));
                             }
                             if (k === 'deadline' && parsed.dueDate && !startDate) {
-                                setStartDate(suggestedDeadlineStart(parsed.dueDate, new Date()));
+                                setStartDate(
+                                    suggestDeadlineWorkday(parsed.dueDate, 30, new Date()),
+                                );
                             }
                         }}
                     />
                 ))}
             </div>
 
-            {kindChoice === 'waiting' && (
+            {flagChoice === 'waiting' && (
                 <div className="mt-3 grid gap-2 border-t border-slate-100 pt-3 pl-6 sm:grid-cols-3">
                     <label className="text-xs font-medium text-slate-600">
                         Waiting on <span className="text-rose-600">*</span>
@@ -154,13 +190,13 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
                 </div>
             )}
 
-            {kindChoice === 'deadline' && (
+            {flagChoice === 'deadline' && (
                 <div className="mt-3 grid gap-2 border-t border-slate-100 pt-3 pl-6 sm:grid-cols-2">
                     <label className="text-xs font-medium text-slate-600">
                         Deadline
                         <input
                             type="date"
-                            value={parsed.dueDate ?? ''}
+                            value={draft.dueDate ?? ''}
                             readOnly
                             className="mt-1 w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-sm font-normal text-slate-800"
                         />
@@ -170,12 +206,12 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
                         <input
                             type="date"
                             value={deadlineStart}
-                            max={parsed.dueDate}
+                            max={draft.dueDate}
                             onChange={(event) => setStartDate(event.target.value)}
                             className="mt-1 w-full rounded-md border border-slate-200 px-2.5 py-2 text-sm font-normal text-slate-800"
                         />
                     </label>
-                    {!parsed.dueDate && (
+                    {!draft.dueDate && (
                         <p className="text-xs text-amber-700 sm:col-span-2">
                             Add a date in the task text, for example “submit report Friday”.
                         </p>
@@ -183,17 +219,30 @@ const QuickCapture: React.FC<QuickCaptureProps> = ({ taskTypes, onSubmit }) => {
                 </div>
             )}
 
-            {(matchedType || draft.dueDate || draft.priority || draft.energy) && (
+            {draft.errors?.length ? (
+                <p className="mt-2 pl-6 text-xs font-medium text-rose-700">{draft.errors[0]}</p>
+            ) : null}
+
+            {(matchedType ||
+                draft.plannedFor ||
+                draft.dueDate ||
+                draft.priority ||
+                draft.energy) && (
                 <div className="mt-2 flex flex-wrap gap-1.5 text-xs pl-6">
                     {matchedType && (
                         <span className="app-chip">
                             {matchedType.emoji} {matchedType.name}
                         </span>
                     )}
+                    {draft.plannedFor && (
+                        <span className="app-chip">
+                            <CalendarIcon size={11} /> Plan {draft.plannedFor}
+                            {draft.dueTime && ` ${draft.dueTime}`}
+                        </span>
+                    )}
                     {draft.dueDate && (
                         <span className="app-chip">
-                            <CalendarIcon size={11} /> {draft.dueDate}
-                            {draft.dueTime && ` ${draft.dueTime}`}
+                            <CalendarIcon size={11} /> Due {draft.dueDate}
                         </span>
                     )}
                     {draft.priority && (

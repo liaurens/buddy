@@ -53,8 +53,9 @@ export function useNextUp(): NextUp {
             });
     }, [user?.id]);
 
-    const taskWhen = recommended?.task.dueDate
-        ? new Date(recommended.task.dueDate).getTime()
+    const taskDate = recommended?.task.plannedFor ?? recommended?.task.dueDate;
+    const taskWhen = taskDate
+        ? new Date(taskDate).getTime()
         : recommended
           ? Number.MAX_SAFE_INTEGER
           : undefined;

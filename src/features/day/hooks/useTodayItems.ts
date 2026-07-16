@@ -37,7 +37,7 @@ function sortKeyForHHMM(hhmm: string): number {
 }
 
 /**
- * Returns today's calendar events + picks (todos due today), merged into a
+ * Returns today's calendar events + picks (todos planned today), merged into a
  * single time-sorted timeline. Untimed picks are returned separately so the
  * caller can render them in an "Anytime" group.
  */
@@ -71,7 +71,7 @@ export function useTodayItems(dateKey?: string): UseTodayItems {
         if (eventsQuery.data) setEvents(eventsQuery.data);
     }, [eventsQuery.data]);
 
-    const picks = useMemo(() => tasks.filter((t) => t.dueDate === today), [tasks, today]);
+    const picks = useMemo(() => tasks.filter((t) => t.plannedFor === today), [tasks, today]);
 
     const timedItems = useMemo<TimelineItem[]>(() => {
         const items: TimelineItem[] = [];

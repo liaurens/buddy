@@ -11,6 +11,7 @@ function fullDbTodo(): DbTodo {
         title: 'Write tests',
         completed: false,
         due_date: '2026-06-22',
+        planned_for: '2026-06-20',
         due_time: '09:30',
         location: 'desk',
         labels: ['focus', 'school'],
@@ -36,6 +37,10 @@ function fullDbTodo(): DbTodo {
         routine_id: 'routine-1',
         routine_order: 2,
         kind: 'deadline',
+        flag: 'school',
+        triage_source: 'ai',
+        triage_confidence: 0.91,
+        triage_reason: 'matches an assignment',
         parent_todo_id: 'parent-1',
         notes: 'remember the edge cases',
         triaged_at: '2026-06-21T07:00:00.000Z',
@@ -53,6 +58,7 @@ describe('dbToTodo', () => {
             title: 'Write tests',
             completed: false,
             dueDate: '2026-06-22',
+            plannedFor: '2026-06-20',
             dueTime: '09:30',
             location: 'desk',
             labels: ['focus', 'school'],
@@ -72,6 +78,10 @@ describe('dbToTodo', () => {
             routineId: 'routine-1',
             routineOrder: 2,
             kind: 'deadline',
+            flag: 'school',
+            triageSource: 'ai',
+            triageConfidence: 0.91,
+            triageReason: 'matches an assignment',
             parentTodoId: 'parent-1',
             notes: 'remember the edge cases',
             googleEventId: 'gcal-1',
@@ -129,6 +139,9 @@ describe('todoToDb', () => {
         expect(db.user_id).toBe('user-9');
         expect(db.title).toBe('Write tests');
         expect(db.due_date).toBe('2026-06-22');
+        expect(db.planned_for).toBe('2026-06-20');
+        expect(db.flag).toBe('school');
+        expect(db.triage_confidence).toBe(0.91);
         expect(db.task_type_id).toBe('type-1');
         expect(db.recurrence_config).toEqual({ daysOfWeek: [1, 3], interval: 1 });
     });

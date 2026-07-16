@@ -4,13 +4,15 @@
 
 import type { Task } from '../../../features/tasks/types';
 import type { DbTodo } from '../types';
+import { deriveTaskFlag } from '../../../features/tasks/utils/taskFlags';
 
 export function dbToTodo(db: DbTodo): Task {
-    return {
+    const task: Task = {
         id: db.id,
         title: db.title,
         completed: db.completed,
         dueDate: db.due_date || undefined,
+        plannedFor: db.planned_for || undefined,
         dueTime: db.due_time || undefined,
         location: db.location || undefined,
         labels: db.labels || undefined,
@@ -49,7 +51,13 @@ export function dbToTodo(db: DbTodo): Task {
         lastTouchedAt: db.last_touched_at || undefined,
         waitingOn: db.waiting_on || undefined,
         startDate: db.start_date || undefined,
+        flag: db.flag || undefined,
+        triageSource: db.triage_source || undefined,
+        triageConfidence: db.triage_confidence ?? undefined,
+        triageReason: db.triage_reason || undefined,
     };
+    task.flag = deriveTaskFlag(task);
+    return task;
 }
 
 export function todoToDb(
@@ -62,6 +70,7 @@ export function todoToDb(
         title: todo.title,
         completed: todo.completed,
         due_date: todo.dueDate || null,
+        planned_for: todo.plannedFor || null,
         due_time: todo.dueTime || null,
         location: todo.location || null,
         labels: todo.labels || null,
@@ -101,5 +110,9 @@ export function todoToDb(
         last_touched_at: todo.lastTouchedAt || null,
         waiting_on: todo.waitingOn || null,
         start_date: todo.startDate || null,
+        flag: todo.flag || deriveTaskFlag(todo),
+        triage_source: todo.triageSource || null,
+        triage_confidence: todo.triageConfidence ?? null,
+        triage_reason: todo.triageReason || null,
     };
 }

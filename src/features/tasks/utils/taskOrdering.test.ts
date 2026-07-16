@@ -86,6 +86,19 @@ describe('canonical ordering', () => {
         ];
         expect(order(tasks)).toEqual(['sooner', 'later']);
     });
+
+    it('keeps planned workdays ahead of otherwise-equal unplanned tasks', () => {
+        const scoreById = new Map([
+            ['planned', 20],
+            ['unplanned', 20],
+        ]);
+        expect(
+            sortTasksCanonical(
+                [task({ id: 'unplanned' }), task({ id: 'planned', plannedFor: '2026-07-04' })],
+                scoreById,
+            ).map((t) => t.id),
+        ).toEqual(['planned', 'unplanned']);
+    });
 });
 
 describe('isQuickWin', () => {

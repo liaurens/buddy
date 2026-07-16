@@ -63,7 +63,7 @@ export function rankMorningCandidates(tasks: Task[], opts: MorningPickOptions): 
         .filter(
             (t) =>
                 !t.completed &&
-                t.dueDate !== opts.today &&
+                (t.plannedFor ?? (!t.flag ? t.dueDate : undefined)) !== opts.today &&
                 !isRoutine(t) &&
                 !isLocked(t) &&
                 !isTaskParked(t, now),

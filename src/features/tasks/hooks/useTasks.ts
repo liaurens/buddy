@@ -17,6 +17,7 @@ import {
     syncTaskReminders,
     syncTaskToGoogle,
 } from '../services/taskWrites';
+import { logAppEvent } from '../../../services/app-events';
 
 export const useTasks = (): TaskState => {
     const { user } = useAuth();
@@ -51,7 +52,7 @@ export const useTasks = (): TaskState => {
             title: string,
             priority?: Task['priority'],
             estimatedTime?: number,
-            dueDate?: string,
+            plannedFor?: string,
             recurrence?: RecurrencePattern,
             recurrenceConfig?: RecurrenceConfig,
             dueTime?: string,
@@ -65,11 +66,17 @@ export const useTasks = (): TaskState => {
                 createdAt: new Date().toISOString(),
                 priority: priority || 'medium',
                 estimatedTime,
-                dueDate,
+                plannedFor,
                 dueTime,
                 subtasks: [],
                 recurrence: recurrence || 'none',
                 recurrenceConfig,
+                flag:
+                    recurrence && recurrence !== 'none'
+                        ? 'routine'
+                        : plannedFor
+                          ? 'today'
+                          : 'someday',
                 // Captures land in the inbox (triagedAt unset); eager triage may sort them below.
             };
 
@@ -172,7 +179,7 @@ export const useTasks = (): TaskState => {
             // Spawn next occurrence for recurring tasks
             if (nowCompleting && task.recurrence && task.recurrence !== 'none') {
                 const nextDue = calculateNextDueDate(
-                    task.dueDate,
+                    task.plannedFor,
                     task.recurrence,
                     task.recurrenceConfig,
                 );
@@ -182,7 +189,7 @@ export const useTasks = (): TaskState => {
                         id: uuidv4(),
                         completed: false,
                         createdAt: new Date().toISOString(),
-                        dueDate: nextDue || undefined,
+                        plannedFor: nextDue || undefined,
                         completedAt: undefined,
                         startedAt: undefined,
                         actualMinutes: undefined,
@@ -234,7 +241,7 @@ export const useTasks = (): TaskState => {
             await persistTaskUpdate(userId, {
                 ...updatedTask,
                 snoozeCount: prev
-                    ? nextSnoozeCount(prev, updatedTask.dueDate, todayIso)
+                    ? nextSnoozeCount(prev, updatedTask.plannedFor, todayIso)
                     : (updatedTask.snoozeCount ?? 0),
                 lastTouchedAt: new Date().toISOString(),
             });
@@ -303,46 +310,20 @@ export const useTasks = (): TaskState => {
             const nowIso = new Date().toISOString();
             const todayIso = format(new Date(), 'yyyy-MM-dd');
 
-            // Pushes to a later date count as snoozes (stuck signal); pulling a
-            // task into today (the morning pick) is planning, not avoidance.
-            // Snoozed tasks get one combined write each (count differs per task);
-            // the rest move in a single bulk update.
-            const snoozed: Task[] = [];
-            const plainIds: string[] = [];
+            // Use the same canonical write path as capture, triage and editing so
+            // flags, reminders and the calendar cannot drift during bulk planning.
             for (const id of movable) {
                 const t = tasks.find((x) => x.id === id);
-                if (t && nextSnoozeCount(t, isoDate, todayIso) !== (t.snoozeCount ?? 0)) {
-                    snoozed.push(t);
-                } else {
-                    plainIds.push(id);
-                }
+                if (!t) continue;
+                await persistTaskUpdate(userId, {
+                    ...t,
+                    flag: t.flag === 'someday' ? 'today' : (t.flag ?? 'today'),
+                    plannedFor: isoDate,
+                    lastTouchedAt: nowIso,
+                    snoozeCount: nextSnoozeCount(t, isoDate, todayIso),
+                });
             }
-
-            if (plainIds.length > 0) {
-                const { error } = await supabase
-                    .from('todos')
-                    .update({ due_date: isoDate, last_touched_at: nowIso })
-                    .in('id', plainIds)
-                    .eq('user_id', userId);
-                if (error) throw error;
-            }
-            for (const t of snoozed) {
-                const { error } = await supabase
-                    .from('todos')
-                    .update({
-                        due_date: isoDate,
-                        last_touched_at: nowIso,
-                        snooze_count: nextSnoozeCount(t, isoDate, todayIso),
-                    })
-                    .eq('id', t.id)
-                    .eq('user_id', userId);
-                if (error) throw error;
-            }
-            // Mirror the new schedule to Google (urgent tasks land on the calendar; already-synced tasks move).
-            movable.forEach((id) => {
-                const task = tasks.find((t) => t.id === id);
-                if (task) void syncTaskToGoogle({ ...task, dueDate: isoDate });
-            });
+            void logAppEvent('task_scheduled', { taskIds: movable, plannedFor: isoDate });
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
         },
         [userId, tasks, queryClient],
@@ -392,9 +373,9 @@ export const useTasks = (): TaskState => {
                             id: uuidv4(),
                             completed: false,
                             createdAt: new Date().toISOString(),
-                            dueDate:
+                            plannedFor:
                                 calculateNextDueDate(
-                                    task.dueDate,
+                                    task.plannedFor,
                                     task.recurrence!,
                                     task.recurrenceConfig,
                                 ) || undefined,

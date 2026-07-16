@@ -16,6 +16,8 @@ import type { RecurrencePattern, Hardness, TaskEnergy, TaskContext } from '../ty
 const VALID_DESTINATIONS: TriageDestinationValue[] = [
     'urgent',
     'today',
+    'deadline',
+    'waiting',
     'someday',
     'school',
     'routine',
@@ -36,6 +38,8 @@ interface RawSuggestion {
     hardness?: unknown;
     dueDate?: unknown;
     dueTime?: unknown;
+    plannedFor?: unknown;
+    waitingOn?: unknown;
     assignmentId?: unknown;
     recurrence?: unknown;
     location?: unknown;
@@ -105,18 +109,39 @@ export function sanitizeTriageSuggestions(
 
         const timeRaw = asString(entry?.dueTime);
         const dueTime =
-            destination === 'today' && timeRaw && TIME_RE.test(timeRaw) ? timeRaw : null;
+            destination !== 'someday' && timeRaw && TIME_RE.test(timeRaw) ? timeRaw : null;
 
         const dateRaw = asString(entry?.dueDate);
         const dueDate = dateRaw && DATE_RE.test(dateRaw) ? dateRaw : null;
+        const plannedRaw = asString(entry?.plannedFor);
+        const plannedFor = plannedRaw && DATE_RE.test(plannedRaw) ? plannedRaw : null;
+        const waitingOn = asString(entry?.waitingOn)?.trim().slice(0, MAX_LOCATION) ?? null;
+
+        const confidenceRaw = entry?.confidence;
+        let confidence =
+            typeof confidenceRaw === 'number' && Number.isFinite(confidenceRaw)
+                ? Math.max(0, Math.min(1, confidenceRaw))
+                : confidenceRaw === 'high'
+                  ? 1
+                  : 0.5;
 
         const recRaw = asString(entry?.recurrence) as RecurrencePattern | null;
         const recurrence =
             destination === 'routine'
                 ? recRaw && VALID_RECURRENCE.includes(recRaw) && recRaw !== 'none'
                     ? recRaw
-                    : 'daily'
+                    : null
                 : null;
+
+        // Incomplete suggestions always go to Smart Inbox even if the model
+        // claimed high confidence.
+        if (
+            (destination === 'deadline' && !dueDate) ||
+            (destination === 'waiting' && !waitingOn) ||
+            (destination === 'routine' && !recurrence)
+        ) {
+            confidence = Math.min(confidence, 0.79);
+        }
 
         const locRaw = asString(entry?.location);
         const location = locRaw ? locRaw.trim().slice(0, MAX_LOCATION) : null;
@@ -124,10 +149,12 @@ export function sanitizeTriageSuggestions(
         out.push({
             id,
             destination,
-            confidence: entry?.confidence === 'high' ? 'high' : 'low',
+            confidence,
             hardness: asEnum<Hardness>(entry?.hardness, VALID_HARDNESS),
             dueDate,
             dueTime,
+            plannedFor,
+            waitingOn,
             assignmentId: destination === 'school' ? assignmentId : null,
             recurrence,
             location,

@@ -68,7 +68,7 @@ const MiddayTaskReview: React.FC<Props> = ({ dateKey, accent }) => {
                             onReschedule={(date, time) =>
                                 updateTask({
                                     ...task,
-                                    dueDate: date,
+                                    plannedFor: date,
                                     dueTime: time ?? task.dueTime,
                                 })
                             }

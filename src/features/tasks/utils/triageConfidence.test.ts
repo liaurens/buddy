@@ -6,10 +6,12 @@ function sug(p: Partial<TaskTriageSuggestion>): TaskTriageSuggestion {
     return {
         id: 'x',
         destination: 'today',
-        confidence: 'low',
+        confidence: 0.5,
         hardness: null,
         dueDate: null,
         dueTime: null,
+        plannedFor: null,
+        waitingOn: null,
         assignmentId: null,
         recurrence: null,
         location: null,
@@ -25,8 +27,8 @@ function sug(p: Partial<TaskTriageSuggestion>): TaskTriageSuggestion {
 describe('splitByConfidence', () => {
     it('separates high-confidence from the rest', () => {
         const { autoApply, review } = splitByConfidence([
-            sug({ id: 'a', confidence: 'high' }),
-            sug({ id: 'b', confidence: 'low' }),
+            sug({ id: 'a', confidence: 0.8 }),
+            sug({ id: 'b', confidence: 0.79 }),
         ]);
         expect(autoApply.map((s) => s.id)).toEqual(['a']);
         expect(review.map((s) => s.id)).toEqual(['b']);

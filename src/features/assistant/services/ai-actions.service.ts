@@ -29,9 +29,20 @@ export interface TaskTriageInput {
     title: string;
     dueDate?: string;
     priority?: string;
+    plannedFor?: string;
+    flag?: string;
+    recurrence?: string;
+    estimatedMinutes?: number;
 }
 
-export type TriageDestinationValue = 'urgent' | 'today' | 'someday' | 'school' | 'routine';
+export type TriageDestinationValue =
+    | 'urgent'
+    | 'today'
+    | 'deadline'
+    | 'waiting'
+    | 'someday'
+    | 'school'
+    | 'routine';
 
 export interface TriageAssignmentOption {
     id: string;
@@ -47,10 +58,13 @@ export interface TriageTaskTypeOption {
 export interface TaskTriageSuggestion {
     id: string;
     destination: TriageDestinationValue;
-    confidence: 'high' | 'low';
+    /** Normalized 0..1 confidence; suggestions at 0.80 or above may auto-apply. */
+    confidence: number;
     hardness: 'fixed' | 'flexible' | null;
     dueDate: string | null;
     dueTime: string | null;
+    plannedFor: string | null;
+    waitingOn: string | null;
     assignmentId: string | null;
     recurrence: 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays' | null;
     location: string | null;
@@ -112,6 +126,9 @@ export function triageTasks(params: {
     learningsDoc: string;
     todayIso: string;
     taskTypes?: TriageTaskTypeOption[];
+    workload?: Array<{ plannedFor?: string; estimatedMinutes?: number; flag?: string }>;
+    calendarAvailability?: Array<{ date: string; freeMinutes: number }>;
+    dayCapacity?: 'normal' | 'survival';
 }): Promise<{ suggestions: TaskTriageSuggestion[] }> {
     return invokeAIAction('task.ai.triage', params);
 }

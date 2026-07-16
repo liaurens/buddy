@@ -27,6 +27,12 @@ export interface TaskRecommendation {
     reason: string;
 }
 
+export interface TaskRankingContext {
+    nextFreeBlockMinutes?: number;
+    energy?: Task['energy'];
+    context?: Task['context'];
+}
+
 const PRIORITY_WEIGHTS: Record<string, number> = {
     // Urgent must outrank a plain medium due-today task (20 + 80 = 100).
     urgent: 120,
@@ -48,6 +54,7 @@ export function scoreTask(
     task: Task,
     today: Date,
     homeDaysByType: ReadonlyMap<string, number[]> = new Map(),
+    rankingContext: TaskRankingContext = {},
 ): { score: number; reason: string } {
     if (isTaskParked(task, today))
         return {
@@ -56,6 +63,21 @@ export function scoreTask(
         };
     let score = 0;
     const reasons: string[] = [];
+    const todayIso = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, '0'),
+        String(today.getDate()).padStart(2, '0'),
+    ].join('-');
+
+    if (task.plannedFor) {
+        if (task.plannedFor < todayIso) {
+            score += 95;
+            reasons.push('planned day passed');
+        } else if (task.plannedFor === todayIso) {
+            score += 70;
+            reasons.push('planned today');
+        }
+    }
 
     // Priority score
     const priorityScore = PRIORITY_WEIGHTS[task.priority || 'medium'] || 20;
@@ -109,6 +131,23 @@ export function scoreTask(
         reasons.push('fits today');
     }
 
+    if (
+        rankingContext.nextFreeBlockMinutes != null &&
+        task.estimatedTime != null &&
+        task.estimatedTime <= rankingContext.nextFreeBlockMinutes
+    ) {
+        score += 10;
+        reasons.push('fits the next free block');
+    }
+    if (rankingContext.energy && task.energy === rankingContext.energy) {
+        score += 8;
+        reasons.push('matches your energy');
+    }
+    if (rankingContext.context && task.context === rankingContext.context) {
+        score += 8;
+        reasons.push('fits your context');
+    }
+
     return { score, reason: reasons.join(', ') };
 }
 
@@ -140,12 +179,13 @@ export function getRankedTasks(
     tasks: Task[],
     today: Date = new Date(),
     homeDaysByType: ReadonlyMap<string, number[]> = new Map(),
+    rankingContext: TaskRankingContext = {},
 ): TaskRecommendation[] {
     const activeTasks = tasks.filter((task) => !task.completed && !isTaskParked(task, today));
 
     return activeTasks
         .map((task) => {
-            const { score, reason } = scoreTask(task, today, homeDaysByType);
+            const { score, reason } = scoreTask(task, today, homeDaysByType, rankingContext);
             const subtask = getNextSubtask(task);
             return { task, subtask, score, reason };
         })

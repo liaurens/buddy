@@ -174,7 +174,7 @@ const LightMorning: React.FC<Props> = ({ onNavigate, startAtPlan, pickSlots = 3 
 
     const handleRemovePick = async (task: Task) => {
         try {
-            await updateTask({ ...task, dueDate: undefined, dueTime: undefined });
+            await updateTask({ ...task, plannedFor: undefined, dueTime: undefined });
         } catch (err) {
             console.error('Failed to remove pick:', err);
             toast.error('Could not remove from today.');
@@ -183,7 +183,7 @@ const LightMorning: React.FC<Props> = ({ onNavigate, startAtPlan, pickSlots = 3 
 
     const handleSetPickTime = async (task: Task, time: string | null) => {
         try {
-            await updateTask({ ...task, dueDate: todayStr, dueTime: time || undefined });
+            await updateTask({ ...task, plannedFor: todayStr, dueTime: time || undefined });
         } catch (err) {
             console.error('Failed to update pick time:', err);
             toast.error('Could not update time.');

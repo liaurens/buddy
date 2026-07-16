@@ -20,9 +20,9 @@ describe('routeTaskPatch', () => {
 
     it('today sets the due date to today and keeps the optional time', () => {
         const patch = routeTaskPatch('today', { time: '13:00' }, opts);
-        expect(patch.dueDate).toBe('2026-06-21');
+        expect(patch.plannedFor).toBe('2026-06-21');
         expect(patch.dueTime).toBe('13:00');
-        expect(patch.kind).toBeUndefined();
+        expect(patch.kind).toBe('standard');
     });
 
     it('someday makes it a no-pressure backlog item with no date', () => {
@@ -61,7 +61,7 @@ describe('routeTaskPatch — metadata', () => {
             estimatedMinutes: 45,
         };
         const patch = routeTaskPatch('today', detail, opts);
-        expect(patch.dueDate).toBe('2026-06-21');
+        expect(patch.plannedFor).toBe('2026-06-21');
         expect(patch.dueTime).toBe('14:30');
         expect(patch.hardness).toBe('flexible');
         expect(patch.location).toBe('Library');
@@ -114,7 +114,7 @@ describe('kindToDestination', () => {
         expect(kindToDestination('urgent')).toBe('urgent');
         expect(kindToDestination('backlog')).toBe('someday');
         expect(kindToDestination('routine')).toBe('routine');
-        expect(kindToDestination('deadline')).toBe('today');
+        expect(kindToDestination('deadline')).toBe('deadline');
         expect(kindToDestination('standard')).toBe('today');
     });
 });

@@ -10,16 +10,31 @@ function todayIso(now: Date): string {
     return format(now, 'yyyy-MM-dd');
 }
 
-export function isWaitingParked(task: Pick<Task, 'kind' | 'dueDate'>, now: Date): boolean {
-    return task.kind === 'waiting' && Boolean(task.dueDate && task.dueDate > todayIso(now));
+export function isWaitingParked(
+    task: Pick<Task, 'flag' | 'kind' | 'plannedFor' | 'dueDate'>,
+    now: Date,
+): boolean {
+    return (
+        (task.flag === 'waiting' || task.kind === 'waiting') &&
+        Boolean(
+            (task.plannedFor ?? task.dueDate) && (task.plannedFor ?? task.dueDate)! > todayIso(now),
+        )
+    );
 }
 
-export function isDeadlineParked(task: Pick<Task, 'kind' | 'startDate'>, now: Date): boolean {
-    return task.kind === 'deadline' && Boolean(task.startDate && task.startDate > todayIso(now));
+export function isDeadlineParked(
+    task: Pick<Task, 'flag' | 'kind' | 'plannedFor' | 'dueDate' | 'startDate'>,
+    now: Date,
+): boolean {
+    const start = task.plannedFor ?? task.startDate;
+    return (
+        (task.flag === 'deadline' || task.kind === 'deadline') &&
+        Boolean(start && start > todayIso(now))
+    );
 }
 
 export function isTaskParked(
-    task: Pick<Task, 'kind' | 'dueDate' | 'startDate'>,
+    task: Pick<Task, 'flag' | 'kind' | 'plannedFor' | 'dueDate' | 'startDate'>,
     now: Date,
 ): boolean {
     return isWaitingParked(task, now) || isDeadlineParked(task, now);
@@ -32,20 +47,25 @@ export function suggestedDeadlineStart(dueDate: string, now: Date): string {
 }
 
 export function isDeadlineStartSlipped(
-    task: Pick<Task, 'kind' | 'startDate' | 'lastTouchedAt' | 'createdAt' | 'completed'>,
+    task: Pick<
+        Task,
+        'flag' | 'kind' | 'plannedFor' | 'startDate' | 'lastTouchedAt' | 'createdAt' | 'completed'
+    >,
     now: Date,
 ): boolean {
-    if (task.completed || task.kind !== 'deadline' || !task.startDate) return false;
-    if (task.startDate >= todayIso(now)) return false;
+    const start = task.plannedFor ?? task.startDate;
+    if (task.completed || (task.flag !== 'deadline' && task.kind !== 'deadline') || !start)
+        return false;
+    if (start >= todayIso(now)) return false;
     const touched = (task.lastTouchedAt ?? task.createdAt).slice(0, 10);
-    return touched < task.startDate;
+    return touched < start;
 }
 
 export function isSomedayReviewEligible(
-    task: Pick<Task, 'kind' | 'lastTouchedAt' | 'createdAt' | 'completed'>,
+    task: Pick<Task, 'flag' | 'kind' | 'lastTouchedAt' | 'createdAt' | 'completed'>,
     now: Date,
 ): boolean {
-    if (task.completed || task.kind !== 'backlog') return false;
+    if (task.completed || (task.flag !== 'someday' && task.kind !== 'backlog')) return false;
     const touched = new Date(task.lastTouchedAt ?? task.createdAt);
     return differenceInCalendarDays(now, touched) >= SOMEDAY_REVIEW_DAYS;
 }
@@ -78,10 +98,13 @@ export function missedRoutineOccurrences(
 }
 
 export function needsRoutineDecision(
-    task: Pick<Task, 'dueDate' | 'recurrence'>,
+    task: Pick<Task, 'plannedFor' | 'dueDate' | 'recurrence'>,
     now: Date,
 ): boolean {
-    return missedRoutineOccurrences(task.dueDate, task.recurrence, now) >= ROUTINE_MISS_THRESHOLD;
+    return (
+        missedRoutineOccurrences(task.plannedFor ?? task.dueDate, task.recurrence, now) >=
+        ROUTINE_MISS_THRESHOLD
+    );
 }
 
 export function taskFitsHomeDay(
