@@ -13,6 +13,7 @@ import type { Task } from '../../tasks/types';
 import { Whale, SpeechBubble, Confetti, PickCircle, TagChip, taskTagFor } from '../components';
 import { useCelebration } from '../hooks/useCelebration';
 import { useCheckinStatus } from '../gate/useCheckinStatus';
+import CloseDayOverlay from '../closeday/CloseDayOverlay';
 import { whaleCopy } from './whaleCopy';
 import { dismissMidday, isMiddayDismissed, middayLine, shouldShowMidday } from './middayVisibility';
 import MoreFold from './MoreFold';
@@ -70,7 +71,9 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
     }, [picks, survival]);
 
     const visibleDone = visiblePicks.filter((p) => p.completed).length;
-    const allDone = visiblePicks.length > 0 && visibleDone === visiblePicks.length;
+    // Empty picks count as "all done" (prototype semantics): the dark
+    // close-day button stays reachable on a day with nothing planned.
+    const allDone = visibleDone === visiblePicks.length;
 
     const copy = whaleCopy(visibleDone, visiblePicks.length, hour, survival);
 
@@ -99,9 +102,8 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
         setMiddayDismissed(true);
     };
 
-    // Until the close-day overlay lands (Phase 4), closing routes to the
-    // existing reflection close-day surface.
-    const openCloseDay = () => onNavigate('reflection');
+    const [closeOpen, setCloseOpen] = useState(false);
+    const openCloseDay = () => setCloseOpen(true);
 
     return (
         <div className="cove-fadeslide flex flex-col">
@@ -207,6 +209,14 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
             </button>
 
             <MoreFold dateKey={dateKey} streak={streak} />
+
+            {closeOpen ? (
+                <CloseDayOverlay
+                    dateKey={dateKey}
+                    picks={visiblePicks}
+                    onClose={() => setCloseOpen(false)}
+                />
+            ) : null}
         </div>
     );
 };
