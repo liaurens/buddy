@@ -2,12 +2,14 @@
  * Close-day service.
  *
  * Closing the day is the explicit end state of the daily loop: it marks the
- * `daily_plans` row for the date as closed and feeds the low-pressure
- * continuity indicator (days closed this week — deliberately not a streak
- * that punishes a miss).
+ * `daily_plans` row for the date as closed and feeds two continuity signals:
+ * days closed this week (circle row) and the close streak (Buddy Cove chip +
+ * celebration). The streak only ever celebrates — copy around it must never
+ * shame a miss, and a day that isn't closed yet doesn't break it until
+ * tomorrow (the count anchors on yesterday when today is still open).
  */
 
-import { format, startOfWeek, addDays } from 'date-fns';
+import { format, startOfWeek, addDays, subDays } from 'date-fns';
 import { supabase } from '../../../services/supabase';
 import { logAppEvent } from '../../../services/app-events';
 
@@ -60,6 +62,40 @@ export async function isDayClosed(userId: string, date: string): Promise<boolean
         throw new Error(`Failed to load day state: ${error.message}`);
     }
     return !!data?.closed_at;
+}
+
+/**
+ * Consecutive closed days ending at `todayIso` — or at yesterday when today
+ * isn't closed yet, so an open evening doesn't read as a broken streak.
+ */
+export function computeCloseStreak(closedDates: Iterable<string>, todayIso: string): number {
+    const closed = new Set(closedDates);
+    const today = new Date(`${todayIso}T12:00:00`);
+    let cursor = closed.has(todayIso) ? today : subDays(today, 1);
+    let streak = 0;
+    while (closed.has(format(cursor, DATE_FORMAT))) {
+        streak += 1;
+        cursor = subDays(cursor, 1);
+    }
+    return streak;
+}
+
+const STREAK_LOOKBACK_DAYS = 90;
+
+/** Current close streak, derived from `daily_plans.closed_at` (last 90 days). */
+export async function getCloseStreak(userId: string, ref: Date = new Date()): Promise<number> {
+    const since = format(subDays(ref, STREAK_LOOKBACK_DAYS), DATE_FORMAT);
+    const { data, error } = await supabase
+        .from('daily_plans')
+        .select('date')
+        .eq('user_id', userId)
+        .gte('date', since)
+        .not('closed_at', 'is', null);
+    if (error) {
+        throw new Error(`Failed to load close streak: ${error.message}`);
+    }
+    const closedDates = (data ?? []).map((row) => row.date as string);
+    return computeCloseStreak(closedDates, format(ref, DATE_FORMAT));
 }
 
 /** Dates (yyyy-MM-dd) closed in the Monday-to-Sunday week containing `ref`. */

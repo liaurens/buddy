@@ -3,7 +3,7 @@ import { MessageSquare } from 'lucide-react';
 import { ToastProvider } from './components/ui/Toast';
 import MainLayout from './layouts/MainLayout';
 // Feature imports
-import HomePage from './features/core/pages/HomePage';
+import NowPage from './features/cove/now/NowPage';
 import UrgentInboxCard from './features/core/components/UrgentInboxCard';
 import NextUpCard from './features/core/components/NextUpCard';
 import LoginScreen from './features/core/components/LoginScreen';
@@ -158,7 +158,7 @@ const App: React.FC = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'home':
-                return <HomePage onNavigate={handleNavigate} />;
+                return <NowPage onNavigate={handleNavigate} />;
             case 'health':
                 return <TrackerPage initialParams={navParams} />;
             case 'protocols':
@@ -215,7 +215,7 @@ const App: React.FC = () => {
             case 'notifications':
                 return <NotificationsPage />;
             default:
-                return <HomePage onNavigate={handleNavigate} />;
+                return <NowPage onNavigate={handleNavigate} />;
         }
     };
 
