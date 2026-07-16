@@ -201,7 +201,7 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
 
             <button
                 type="button"
-                onClick={() => onNavigate('assistant')}
+                onClick={() => onNavigate('capture')}
                 className="mt-3.5 flex w-full items-center gap-2.5 rounded-full bg-white px-[18px] py-3.5 text-left text-sm font-bold text-cove-soft shadow-cove"
             >
                 <span className="text-lg font-extrabold leading-none text-cove-accent">+</span>

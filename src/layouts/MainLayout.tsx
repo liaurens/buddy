@@ -9,12 +9,12 @@ interface MainLayoutProps {
     navHidden?: boolean;
 }
 
-type TabKey = 'home' | 'tasks' | 'assistant' | 'browse' | 'me';
+type TabKey = 'home' | 'tasks' | 'capture' | 'browse' | 'me';
 
 const TABS: Array<{ key: TabKey; label: string }> = [
     { key: 'home', label: 'Now' },
     { key: 'tasks', label: 'Tasks' },
-    { key: 'assistant', label: 'Capture' },
+    { key: 'capture', label: 'Capture' },
     { key: 'browse', label: 'Browse' },
     { key: 'me', label: 'Me' },
 ];
@@ -34,7 +34,7 @@ const NavGlyph: React.FC<{ tab: TabKey; active: boolean }> = ({ tab, active }) =
             </span>
         );
     }
-    if (tab === 'assistant') {
+    if (tab === 'capture') {
         return (
             <span
                 className="box-border flex h-[22px] w-[22px] items-center justify-center rounded-full border-[2.5px] text-sm font-extrabold leading-none"

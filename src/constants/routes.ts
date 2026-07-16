@@ -16,6 +16,7 @@ export type AppRoute =
     | 'focus'
     | 'account'
     | 'assistant'
+    | 'capture'
     | 'growth'
     | 'browse'
     | 'me'

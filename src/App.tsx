@@ -8,8 +8,6 @@ import NowPage from './features/cove/now/NowPage';
 import CheckInGate from './features/cove/gate/CheckInGate';
 import { useCheckinStatus } from './features/cove/gate/useCheckinStatus';
 import { isGateNeeded } from './features/cove/gate/gateState';
-import UrgentInboxCard from './features/core/components/UrgentInboxCard';
-import NextUpCard from './features/core/components/NextUpCard';
 import LoginScreen from './features/core/components/LoginScreen';
 import { ensureAnchorSchedule } from './features/notifications/services/notifications-schedule.service';
 import InAppReminderBanner from './components/notifications/InAppReminderBanner';
@@ -29,7 +27,8 @@ const ProtocolsPage = lazy(() => import('./features/health-tracking/pages/Protoc
 const ExperimentsPage = lazy(() => import('./features/health-tracking/pages/ExperimentsPage'));
 const CalendarPage = lazy(() => import('./features/planning/pages/CalendarPage'));
 const ReflectionPage = lazy(() => import('./features/planning/pages/ReflectionPage'));
-const TodoPage = lazy(() => import('./features/tasks/pages/TodoPage'));
+const CoveTasksPage = lazy(() => import('./features/cove/tasks/CoveTasksPage'));
+const CoveCapturePage = lazy(() => import('./features/cove/capture/CoveCapturePage'));
 const NotesPage = lazy(() => import('./features/tasks/pages/NotesPage'));
 const ChecklistsPage = lazy(() =>
     import('./features/checklists/pages/ChecklistsPage').then((module) => ({
@@ -175,18 +174,9 @@ const App: React.FC = () => {
             case 'toolbox':
                 return <ToolboxPage />;
             case 'tasks':
-                return (
-                    <TodoPage
-                        initialParams={navParams}
-                        onNavigate={handleNavigate}
-                        topSlot={
-                            <>
-                                <UrgentInboxCard onNavigate={handleNavigate} />
-                                <NextUpCard onNavigate={handleNavigate} />
-                            </>
-                        }
-                    />
-                );
+                return <CoveTasksPage onNavigate={handleNavigate} />;
+            case 'capture':
+                return <CoveCapturePage />;
             case 'calendar':
                 return <CalendarPage />;
             case 'account':
