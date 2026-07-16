@@ -12,6 +12,7 @@ import { getCloseStreak } from '../../planning/services/closeDay.service';
 import type { Task } from '../../tasks/types';
 import { Whale, SpeechBubble, Confetti, PickCircle, TagChip, taskTagFor } from '../components';
 import { useCelebration } from '../hooks/useCelebration';
+import { useCheckinStatus } from '../gate/useCheckinStatus';
 import { whaleCopy } from './whaleCopy';
 import { dismissMidday, isMiddayDismissed, middayLine, shouldShowMidday } from './middayVisibility';
 import MoreFold from './MoreFold';
@@ -80,6 +81,7 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
         staleTime: 60_000,
     });
     const streak = streakQuery.data ?? 0;
+    const intention = useCheckinStatus(dateKey).state?.intention?.trim() ?? '';
 
     const showMidday = shouldShowMidday(hour, {
         donePicks: visibleDone,
@@ -119,6 +121,12 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
                     <span className="h-[9px] w-[9px] rounded-full bg-cove-success" />
                     {completedCount} done today
                 </span>
+                {intention ? (
+                    <span className="flex items-center gap-1.5 rounded-full bg-white px-3 py-[7px] text-[12.5px] font-extrabold text-[#3a7fb0] shadow-[0_2px_8px_rgba(40,90,130,0.08)]">
+                        <span className="h-[9px] w-[9px] rounded-full bg-cove-accent" />
+                        today: {intention}
+                    </span>
+                ) : null}
             </div>
 
             {showMidday ? (

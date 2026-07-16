@@ -1,9 +1,13 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { MessageSquare } from 'lucide-react';
 import { ToastProvider } from './components/ui/Toast';
 import MainLayout from './layouts/MainLayout';
 // Feature imports
 import NowPage from './features/cove/now/NowPage';
+import CheckInGate from './features/cove/gate/CheckInGate';
+import { useCheckinStatus } from './features/cove/gate/useCheckinStatus';
+import { isGateNeeded } from './features/cove/gate/gateState';
 import UrgentInboxCard from './features/core/components/UrgentInboxCard';
 import NextUpCard from './features/core/components/NextUpCard';
 import LoginScreen from './features/core/components/LoginScreen';
@@ -70,6 +74,11 @@ const App: React.FC = () => {
 
     // Check if user is logged in
     const { isLoggedIn, isLoading, user } = useAuth();
+
+    // Morning check-in gate — every route waits behind it once per day.
+    const todayKey = format(new Date(), 'yyyy-MM-dd');
+    const checkin = useCheckinStatus(todayKey);
+    const gateNeeded = isLoggedIn && isGateNeeded(checkin.state?.status);
 
     // Timeout for loading state
     useEffect(() => {
@@ -274,8 +283,10 @@ const App: React.FC = () => {
 
     return (
         <ToastProvider>
-            <MainLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-                <Suspense fallback={<PageFallback />}>{renderContent()}</Suspense>
+            <MainLayout activeTab={activeTab} setActiveTab={setActiveTab} navHidden={gateNeeded}>
+                <Suspense fallback={<PageFallback />}>
+                    {gateNeeded ? <CheckInGate dateKey={todayKey} /> : renderContent()}
+                </Suspense>
             </MainLayout>
             <InAppReminderBanner onNavigate={handleNavigate} />
             {import.meta.env.DEV && (
