@@ -1,151 +1,123 @@
 import React from 'react';
 import {
-    Activity,
     Calendar,
-    StickyNote,
-    TrendingUp,
     CheckSquare,
-    Bell,
     GraduationCap,
-    ChevronRight,
     Heart,
-    Settings,
-    Sparkles,
-    Sun,
+    StickyNote,
+    Timer,
+    TrendingUp,
+    Wrench,
 } from 'lucide-react';
 import type { AppRoute } from '../../../constants/routes';
-import InsightCard from '../../core/components/InsightCard';
 
 interface BrowsePageProps {
     onNavigate: (tab: AppRoute, params?: Record<string, unknown>) => void;
 }
 
-const SHORTCUTS: Array<{
-    tab: AppRoute;
-    label: string;
-    Icon: React.ComponentType<{ size?: number; className?: string }>;
-}> = [
-    { tab: 'today', label: 'Routines', Icon: Sun },
-    { tab: 'calendar', label: 'Calendar', Icon: Calendar },
-    { tab: 'notes', label: 'Notes', Icon: StickyNote },
-    { tab: 'school', label: 'School', Icon: GraduationCap },
-    { tab: 'health', label: 'Health', Icon: Heart },
-];
-
-const EXPLORE: Array<{
+const ITEMS: Array<{
     tab: AppRoute;
     label: string;
     desc: string;
-    Icon: React.ComponentType<{ size?: number; className?: string }>;
+    Icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+    tileBg: string;
+    iconColor: string;
 }> = [
-    { tab: 'tasks', label: 'Tasks', desc: 'Organize and get things done', Icon: CheckSquare },
-    { tab: 'notes', label: 'Notes', desc: 'Capture and connect ideas', Icon: StickyNote },
     {
         tab: 'school',
         label: 'School',
-        desc: 'Classes, assignments, and grades',
+        desc: 'Classes, assignments, deadlines',
         Icon: GraduationCap,
+        tileBg: '#e3f0fa',
+        iconColor: '#4d9fd6',
     },
-    { tab: 'calendar', label: 'Calendar', desc: 'Events and time blocking', Icon: Calendar },
-    { tab: 'health', label: 'Health', desc: 'Track habits and wellness', Icon: Activity },
+    {
+        tab: 'calendar',
+        label: 'Calendar',
+        desc: 'Events & timed picks',
+        Icon: Calendar,
+        tileBg: '#e6f4ec',
+        iconColor: '#5cb586',
+    },
+    {
+        tab: 'health',
+        label: 'Health',
+        desc: 'Check-in, trends, protocols',
+        Icon: Heart,
+        tileBg: '#fbe9ec',
+        iconColor: '#e8899a',
+    },
+    {
+        tab: 'notes',
+        label: 'Notes',
+        desc: 'Quick & smart notes',
+        Icon: StickyNote,
+        tileBg: '#efe9f8',
+        iconColor: '#9c8ad0',
+    },
+    {
+        tab: 'focus',
+        label: 'Focus timer',
+        desc: 'Pomodoro for one task',
+        Icon: Timer,
+        tileBg: '#fdeeda',
+        iconColor: '#f2a541',
+    },
+    {
+        tab: 'checklists',
+        label: 'Checklists',
+        desc: 'Incl. calendar-triggered',
+        Icon: CheckSquare,
+        tileBg: '#e3f0fa',
+        iconColor: '#7cc3e8',
+    },
+    {
+        tab: 'toolbox',
+        label: 'Toolbox',
+        desc: 'Coping tools & strategies',
+        Icon: Wrench,
+        tileBg: '#e6f4ec',
+        iconColor: '#3d8a63',
+    },
     {
         tab: 'reflection',
-        label: 'Reflection & Growth',
-        desc: 'Journal, goals, and skills',
+        label: 'Reflect',
+        desc: 'Journal, goals, skills',
         Icon: TrendingUp,
-    },
-    {
-        tab: 'assistant',
-        label: 'AI Capture',
-        desc: 'Smart capture and suggestions',
-        Icon: Sparkles,
+        tileBg: '#efe9f8',
+        iconColor: '#7a5fb0',
     },
 ];
 
-const MORE: Array<{
-    tab: AppRoute;
-    label: string;
-    desc: string;
-    Icon: React.ComponentType<{ size?: number; className?: string }>;
-}> = [
-    {
-        tab: 'notifications',
-        label: 'Notifications',
-        desc: 'Manage alerts and reminders',
-        Icon: Bell,
-    },
-    { tab: 'me', label: 'Settings', desc: 'Preferences and app settings', Icon: Settings },
-];
-
-const BrowsePage: React.FC<BrowsePageProps> = ({ onNavigate }) => {
-    return (
-        <div className="app-page">
-            <header className="hidden items-end justify-between gap-4 lg:flex">
-                <div>
-                    <h1 className="app-title">Browse</h1>
-                    <p className="app-subtitle">All your stuff in one place.</p>
-                </div>
-            </header>
-
-            <div className="mx-auto max-w-3xl space-y-7 lg:mx-0 lg:max-w-5xl">
-                <InsightCard />
-
-                <section className="space-y-3">
-                    <h2 className="text-sm font-semibold text-slate-950">Shortcuts</h2>
-                    <div className="grid grid-cols-5 gap-2.5">
-                        {SHORTCUTS.map(({ tab, label, Icon }) => (
-                            <button
-                                key={tab}
-                                onClick={() => onNavigate(tab)}
-                                className="app-surface flex aspect-square min-h-[4.7rem] flex-col items-center justify-center gap-2 text-center"
-                            >
-                                <Icon size={21} className="text-indigo-800" />
-                                <span className="max-w-full truncate px-1 text-xs font-medium text-slate-800">
-                                    {label}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                </section>
-
-                <BrowseList title="Explore" items={EXPLORE} onNavigate={onNavigate} />
-                <BrowseList title="More" items={MORE} onNavigate={onNavigate} />
-            </div>
+/** Browse — everything else lives here, out of the way until you want it. */
+const BrowsePage: React.FC<BrowsePageProps> = ({ onNavigate }) => (
+    <div className="cove-fadeslide flex flex-col">
+        <div className="px-1 pb-1 pt-1.5 text-[22px] font-black text-cove-ink">Browse</div>
+        <div className="px-1 pb-[18px] text-[13.5px] font-semibold text-cove-muted">
+            Everything else lives here — out of the way until you want it.
         </div>
-    );
-};
-
-const BrowseList: React.FC<{
-    title: string;
-    items: Array<{
-        tab: AppRoute;
-        label: string;
-        desc: string;
-        Icon: React.ComponentType<{ size?: number; className?: string }>;
-    }>;
-    onNavigate: (tab: AppRoute) => void;
-}> = ({ title, items, onNavigate }) => (
-    <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-950">{title}</h2>
-        <div className="app-surface overflow-hidden">
-            {items.map(({ tab, label, desc, Icon }) => (
+        <div className="grid grid-cols-2 gap-3">
+            {ITEMS.map(({ tab, label, desc, Icon, tileBg, iconColor }) => (
                 <button
                     key={tab}
+                    type="button"
                     onClick={() => onNavigate(tab)}
-                    className="flex w-full items-center gap-4 border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-slate-50"
+                    className="flex flex-col gap-2 rounded-card-lg bg-white px-4 py-[18px] text-left shadow-cove transition-shadow hover:shadow-[0_6px_18px_rgba(40,90,130,0.14)]"
                 >
-                    <Icon size={22} className="text-indigo-800" />
-                    <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-slate-900">
-                            {label}
-                        </span>
-                        <span className="block truncate text-xs text-slate-500">{desc}</span>
+                    <span
+                        className="flex h-[34px] w-[34px] items-center justify-center rounded-xl"
+                        style={{ background: tileBg }}
+                    >
+                        <Icon size={17} style={{ color: iconColor }} />
                     </span>
-                    <ChevronRight size={17} className="text-slate-300" />
+                    <span className="text-[14.5px] font-extrabold text-cove-ink">{label}</span>
+                    <span className="text-xs font-semibold leading-[1.4] text-cove-soft">
+                        {desc}
+                    </span>
                 </button>
             ))}
         </div>
-    </section>
+    </div>
 );
 
 export default BrowsePage;

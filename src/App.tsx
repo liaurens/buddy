@@ -206,7 +206,7 @@ const App: React.FC = () => {
             case 'browse':
                 return <BrowsePage onNavigate={handleNavigate} />;
             case 'me':
-                return <MePage />;
+                return <MePage onNavigate={handleNavigate} />;
             case 'today':
                 return <DayPage onNavigate={handleNavigate} initialParams={navParams} />;
             case 'goals':
