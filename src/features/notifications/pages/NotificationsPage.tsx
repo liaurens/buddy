@@ -161,27 +161,29 @@ const NotificationsPage: React.FC = () => {
     };
 
     if (loading || !settings) {
-        return <div className="text-center py-12 text-sm text-slate-400">Loading…</div>;
+        return (
+            <div className="text-center py-12 text-sm font-semibold text-cove-soft">Loading…</div>
+        );
     }
 
     return (
         <div className="app-page-readable">
-            <header className="hidden pt-2 lg:block">
-                <h1 className="app-title flex items-center gap-2">
-                    <Bell size={24} className="text-indigo-600" /> Notifications
-                </h1>
-                <p className="app-subtitle">
+            <header>
+                <div className="px-1 pb-1 pt-1.5 text-[22px] font-black text-cove-ink flex items-center gap-2">
+                    <Bell size={22} className="text-cove-accent" /> Notifications
+                </div>
+                <div className="px-1 pb-4 text-[13.5px] font-semibold text-cove-muted">
                     Tune when, how often, and on which days you get nudged.
-                </p>
+                </div>
             </header>
 
             {/* iOS install hint (shown when not running as installed PWA) */}
             {showIOSInstallHint && (
-                <section className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2">
-                    <div className="flex items-center gap-2 text-amber-900 font-semibold text-sm">
+                <section className="bg-cove-tint-amber rounded-[18px] p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-cove-streak-text font-extrabold text-sm">
                         <Share size={16} /> Install on your iPhone for push
                     </div>
-                    <p className="text-xs text-amber-800 leading-relaxed">
+                    <p className="text-xs font-semibold text-cove-streak-text leading-relaxed">
                         iOS only allows push notifications when the app is added to your Home
                         Screen. Tap the <span className="font-semibold">Share</span> icon in Safari,
                         then choose <span className="font-semibold">"Add to Home Screen"</span>.
@@ -193,17 +195,19 @@ const NotificationsPage: React.FC = () => {
             {/* Push status */}
             <section className="app-surface p-5 space-y-3">
                 <div className="flex items-center gap-2">
-                    <Smartphone size={18} className="text-slate-500" />
-                    <h2 className="font-semibold text-slate-900">Push on this device</h2>
+                    <Smartphone size={18} className="text-cove-muted" />
+                    <h2 className="text-[14.5px] font-extrabold text-cove-ink">
+                        Push on this device
+                    </h2>
                 </div>
                 {!pushSupported ? (
-                    <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    <p className="text-sm font-semibold text-cove-streak-text bg-cove-tint-amber rounded-[12px] px-3 py-2">
                         This browser does not support push notifications. On iPhone, you must first
                         add the app to your home screen and open it from there.
                     </p>
                 ) : pushSubscribed ? (
                     <div className="space-y-2">
-                        <p className="text-sm text-emerald-700 flex items-center gap-2">
+                        <p className="text-sm font-semibold text-cove-success-deep flex items-center gap-2">
                             <Check size={16} /> Push is enabled on this device (permission:{' '}
                             {pushPermission}).
                         </p>
@@ -215,13 +219,13 @@ const NotificationsPage: React.FC = () => {
                                         'If you see this, local notifications work.',
                                     )
                                 }
-                                className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg hover:bg-slate-50"
+                                className="px-3 py-1.5 text-sm font-extrabold text-cove-muted bg-[#eef6fa] rounded-[12px] hover:bg-cove-track transition-colors"
                             >
                                 Send test notification
                             </button>
                             <button
                                 onClick={handleDisablePush}
-                                className="px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                                className="px-3 py-1.5 text-sm font-extrabold text-cove-pink bg-cove-tint-pink rounded-[12px] hover:bg-cove-pink/20 transition-colors"
                             >
                                 Disable push
                             </button>
@@ -229,7 +233,7 @@ const NotificationsPage: React.FC = () => {
                     </div>
                 ) : (
                     <div className="space-y-2">
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm font-semibold text-cove-muted">
                             Push is not enabled. You'll only see in-app banners while the app is
                             open.
                         </p>
@@ -246,14 +250,16 @@ const NotificationsPage: React.FC = () => {
             {/* Routine reminders */}
             <section className="app-surface p-5 space-y-5">
                 <div>
-                    <h2 className="font-semibold text-slate-900">Daily routine reminders</h2>
-                    <p className="mt-0.5 text-xs text-slate-500">
+                    <h2 className="text-[14.5px] font-extrabold text-cove-ink">
+                        Daily routine reminders
+                    </h2>
+                    <p className="mt-0.5 text-xs font-semibold text-cove-muted">
                         Pick a time and the days each anchor should fire.
                     </p>
                 </div>
 
                 <RoutineRow
-                    icon={<Sun size={18} className="text-amber-500" />}
+                    icon={<Sun size={18} className="text-cove-streak" />}
                     label="Morning"
                     enabled={settings.morningEnabled}
                     time={settings.morningTime}
@@ -266,7 +272,7 @@ const NotificationsPage: React.FC = () => {
                     }
                 />
                 <RoutineRow
-                    icon={<CloudSun size={18} className="text-sky-500" />}
+                    icon={<CloudSun size={18} className="text-cove-accent-light" />}
                     label="Midday"
                     enabled={settings.middayEnabled}
                     time={settings.middayTime}
@@ -279,7 +285,7 @@ const NotificationsPage: React.FC = () => {
                     }
                 />
                 <RoutineRow
-                    icon={<Moon size={18} className="text-indigo-500" />}
+                    icon={<Moon size={18} className="text-cove-purple" />}
                     label="Night"
                     enabled={settings.nightEnabled}
                     time={settings.nightTime}
@@ -300,8 +306,10 @@ const NotificationsPage: React.FC = () => {
             <section className="app-surface p-5 space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <CheckSquare size={18} className="text-emerald-500" />
-                        <h2 className="font-semibold text-slate-900">Task reminders</h2>
+                        <CheckSquare size={18} className="text-cove-success" />
+                        <h2 className="text-[14.5px] font-extrabold text-cove-ink">
+                            Task reminders
+                        </h2>
                     </div>
                     <ToggleSwitch
                         checked={settings.taskDueEnabled}
@@ -310,7 +318,7 @@ const NotificationsPage: React.FC = () => {
                 </div>
                 {settings.taskDueEnabled && (
                     <>
-                        <label className="flex items-center gap-3 text-sm text-slate-600">
+                        <label className="flex items-center gap-3 text-sm font-semibold text-cove-muted">
                             Notify me
                             <input
                                 type="number"
@@ -320,16 +328,16 @@ const NotificationsPage: React.FC = () => {
                                 onChange={(e) =>
                                     update('taskDueAdvanceMinutes', Number(e.target.value))
                                 }
-                                className="w-20 px-2 py-1 border border-slate-200 rounded-lg"
+                                className="w-20 px-2 py-1 border border-cove-border rounded-[11px] font-semibold text-cove-ink"
                             />
                             minutes before the task's due time
                         </label>
 
                         <div className="space-y-2">
-                            <p className="text-sm font-medium text-slate-700">
+                            <p className="text-sm font-bold text-cove-ink">
                                 Default reminder style
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs font-semibold text-cove-muted">
                                 Used for tasks without their own reminder setting. Change it per
                                 task in the task editor.
                             </p>
@@ -346,13 +354,13 @@ const NotificationsPage: React.FC = () => {
                                             onChange={() =>
                                                 update('taskReminderCadence', opt.value)
                                             }
-                                            className="mt-0.5 w-4 h-4 border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                            className="mt-0.5 w-4 h-4 border-cove-border text-cove-accent focus:ring-cove-accent-pale"
                                         />
                                         <span className="text-sm">
-                                            <span className="font-medium text-slate-800">
+                                            <span className="font-bold text-cove-ink">
                                                 {opt.label}
                                             </span>
-                                            <span className="block text-xs text-slate-500">
+                                            <span className="block text-xs font-semibold text-cove-muted">
                                                 {opt.hint}
                                             </span>
                                         </span>
@@ -368,8 +376,10 @@ const NotificationsPage: React.FC = () => {
             <section className="app-surface p-5 space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Calendar size={18} className="text-rose-500" />
-                        <h2 className="font-semibold text-slate-900">Calendar event reminders</h2>
+                        <Calendar size={18} className="text-cove-pink" />
+                        <h2 className="text-[14.5px] font-extrabold text-cove-ink">
+                            Calendar event reminders
+                        </h2>
                     </div>
                     <ToggleSwitch
                         checked={settings.calendarEventEnabled}
@@ -377,7 +387,7 @@ const NotificationsPage: React.FC = () => {
                     />
                 </div>
                 {settings.calendarEventEnabled && (
-                    <label className="flex items-center gap-3 text-sm text-slate-600">
+                    <label className="flex items-center gap-3 text-sm font-semibold text-cove-muted">
                         Notify me
                         <input
                             type="number"
@@ -387,7 +397,7 @@ const NotificationsPage: React.FC = () => {
                             onChange={(e) =>
                                 update('calendarEventAdvanceMinutes', Number(e.target.value))
                             }
-                            className="w-20 px-2 py-1 border border-slate-200 rounded-lg"
+                            className="w-20 px-2 py-1 border border-cove-border rounded-[11px] font-semibold text-cove-ink"
                         />
                         minutes before an event starts
                     </label>
@@ -398,15 +408,17 @@ const NotificationsPage: React.FC = () => {
             <section className="app-surface p-5 space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <AlertTriangle size={18} className="text-orange-500" />
-                        <h2 className="font-semibold text-slate-900">Off-track nudges</h2>
+                        <AlertTriangle size={18} className="text-cove-streak" />
+                        <h2 className="text-[14.5px] font-extrabold text-cove-ink">
+                            Off-track nudges
+                        </h2>
                     </div>
                     <ToggleSwitch
                         checked={settings.offTrackEnabled}
                         onChange={(v) => update('offTrackEnabled', v)}
                     />
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs font-semibold text-cove-muted">
                     Get a reminder when you fall behind on what matters.
                 </p>
                 {settings.offTrackEnabled && (
@@ -439,37 +451,39 @@ const NotificationsPage: React.FC = () => {
             <section className="app-surface p-5 space-y-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <MoonStar size={18} className="text-indigo-500" />
-                        <h2 className="font-semibold text-slate-900">Quiet hours & rate limit</h2>
+                        <MoonStar size={18} className="text-cove-purple" />
+                        <h2 className="text-[14.5px] font-extrabold text-cove-ink">
+                            Quiet hours & rate limit
+                        </h2>
                     </div>
                     <ToggleSwitch
                         checked={settings.quietHoursEnabled}
                         onChange={(v) => update('quietHoursEnabled', v)}
                     />
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs font-semibold text-cove-muted">
                     While quiet hours are on, every push is held until the window ends — nothing
                     wakes you up.
                 </p>
                 {settings.quietHoursEnabled && (
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                    <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-cove-muted">
                         Quiet from
                         <input
                             type="time"
                             value={settings.quietHoursStart}
                             onChange={(e) => update('quietHoursStart', e.target.value)}
-                            className="px-2 py-1 border border-slate-200 rounded-lg"
+                            className="px-2 py-1 border border-cove-border rounded-[11px] font-semibold text-cove-ink"
                         />
                         to
                         <input
                             type="time"
                             value={settings.quietHoursEnd}
                             onChange={(e) => update('quietHoursEnd', e.target.value)}
-                            className="px-2 py-1 border border-slate-200 rounded-lg"
+                            className="px-2 py-1 border border-cove-border rounded-[11px] font-semibold text-cove-ink"
                         />
                     </div>
                 )}
-                <label className="flex items-center gap-3 text-sm text-slate-600">
+                <label className="flex items-center gap-3 text-sm font-semibold text-cove-muted">
                     Max
                     <input
                         type="number"
@@ -477,7 +491,7 @@ const NotificationsPage: React.FC = () => {
                         max={20}
                         value={settings.maxRemindersPerHour}
                         onChange={(e) => update('maxRemindersPerHour', Number(e.target.value))}
-                        className="w-20 px-2 py-1 border border-slate-200 rounded-lg"
+                        className="w-20 px-2 py-1 border border-cove-border rounded-[11px] font-semibold text-cove-ink"
                     />
                     reminders per hour (routine anchors are always allowed)
                 </label>
@@ -488,12 +502,12 @@ const NotificationsPage: React.FC = () => {
 
             {/* Feedback + Save */}
             {error && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-start gap-2">
+                <p className="text-sm font-semibold text-cove-pink bg-cove-tint-pink rounded-[12px] px-3 py-2 flex items-start gap-2">
                     <AlertCircle size={16} className="flex-shrink-0 mt-0.5" /> {error}
                 </p>
             )}
             {success && (
-                <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 flex items-start gap-2">
+                <p className="text-sm font-semibold text-cove-success-deep bg-cove-tint-green rounded-[12px] px-3 py-2 flex items-start gap-2">
                     <Check size={16} className="flex-shrink-0 mt-0.5" /> {success}
                 </p>
             )}
@@ -525,12 +539,12 @@ const RoutineRow: React.FC<{
     <div className="space-y-2">
         <div className="flex items-center gap-3">
             {icon}
-            <span className="text-sm font-medium text-slate-800 flex-1">{label}</span>
+            <span className="text-sm font-bold text-cove-ink flex-1">{label}</span>
             <button
                 type="button"
                 onClick={onPreview}
                 disabled={!enabled}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-30"
+                className="p-1.5 text-cove-soft hover:text-cove-muted hover:bg-[#eef6fa] rounded-[10px] transition-colors disabled:opacity-30"
                 aria-label={`Preview ${label} notification`}
                 title="Preview this notification"
             >
@@ -541,7 +555,7 @@ const RoutineRow: React.FC<{
                 value={time}
                 disabled={!enabled}
                 onChange={(e) => onTimeChange(e.target.value)}
-                className="px-2 py-1 text-sm border border-slate-200 rounded-lg disabled:opacity-40"
+                className="px-2 py-1 text-sm border border-cove-border rounded-[11px] font-semibold text-cove-ink disabled:opacity-40"
             />
             <ToggleSwitch checked={enabled} onChange={onToggle} />
         </div>
@@ -558,12 +572,12 @@ const CheckRow: React.FC<{ label: string; checked: boolean; onChange: (v: boolea
     checked,
     onChange,
 }) => (
-    <label className="flex items-center gap-3 text-sm text-slate-700 cursor-pointer">
+    <label className="flex items-center gap-3 text-sm font-semibold text-cove-ink cursor-pointer">
         <input
             type="checkbox"
             checked={checked}
             onChange={(e) => onChange(e.target.checked)}
-            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            className="w-4 h-4 rounded border-cove-border text-cove-accent focus:ring-cove-accent-pale"
         />
         {label}
     </label>
@@ -576,7 +590,7 @@ const ToggleSwitch: React.FC<{ checked: boolean; onChange: (v: boolean) => void 
     <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors ${checked ? 'bg-indigo-600' : 'bg-slate-300'}`}
+        className={`relative w-11 h-6 rounded-full transition-colors ${checked ? 'bg-cove-accent' : 'bg-cove-track'}`}
         aria-pressed={checked}
     >
         <span

@@ -40,12 +40,16 @@ const SmartNotesPage: React.FC = () => {
     return (
         <div className="app-page-readable">
             {/* Header */}
-            <div className="flex items-center justify-end lg:justify-between">
-                <div className="hidden lg:block">
-                    <h1 className="app-title">Quick Notes</h1>
-                    <p className="app-subtitle">Capture and sort ideas without clutter.</p>
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <div className="px-1 pb-1 pt-1.5 text-[22px] font-black text-cove-ink">
+                        Quick Notes
+                    </div>
+                    <div className="px-1 pb-4 text-[13.5px] font-semibold text-cove-muted">
+                        Capture and sort ideas without clutter.
+                    </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="mt-1.5 flex shrink-0 gap-2">
                     <button
                         onClick={() => setIsSettingsOpen(true)}
                         className="app-icon-button"
@@ -62,9 +66,12 @@ const SmartNotesPage: React.FC = () => {
             {/* Quick Input */}
             <div className="mb-8">
                 <QuickNoteInput autoFocus />
-                <p className="text-xs text-slate-500 mt-2">
-                    Use <code className="bg-slate-100 px-1 rounded">-flag</code> to auto-sort.
-                    Example: "Buy milk -boodschap"
+                <p className="mt-2 px-1 text-xs font-semibold text-cove-soft">
+                    Use{' '}
+                    <code className="rounded bg-[#eef6fa] px-1 font-bold text-cove-muted">
+                        -flag
+                    </code>{' '}
+                    to auto-sort. Example: "Buy milk -boodschap"
                 </p>
             </div>
 
@@ -73,7 +80,10 @@ const SmartNotesPage: React.FC = () => {
             ) : isLoading ? (
                 <div className="space-y-3">
                     {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="bg-slate-100 h-24 rounded-xl animate-pulse" />
+                        <div
+                            key={i}
+                            className="h-24 animate-pulse rounded-[16px] bg-cove-track/50"
+                        />
                     ))}
                 </div>
             ) : (
@@ -92,7 +102,7 @@ const SmartNotesPage: React.FC = () => {
                             <Inbox className="w-4 h-4" />
                             Inbox
                             {inboxCount > 0 && (
-                                <span className="bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                <span className="rounded-full bg-cove-streak px-1.5 py-0.5 text-[11px] font-extrabold text-white">
                                     {inboxCount}
                                 </span>
                             )}
@@ -119,10 +129,10 @@ const SmartNotesPage: React.FC = () => {
                     {/* Content */}
                     {viewMode === 'inbox' && (
                         <div>
-                            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                                <Inbox className="w-5 h-5 text-amber-600" />
+                            <h2 className="mb-4 flex items-center gap-2 px-1 text-[15px] font-extrabold text-cove-ink">
+                                <Inbox className="w-5 h-5 text-cove-streak-deep" />
                                 Inbox
-                                <span className="text-sm font-normal text-slate-500">
+                                <span className="text-[12.5px] font-semibold text-cove-soft">
                                     (unsorted notes)
                                 </span>
                             </h2>
@@ -136,23 +146,23 @@ const SmartNotesPage: React.FC = () => {
                             <div className="app-surface overflow-hidden">
                                 <button
                                     onClick={() => toggleCategory('inbox')}
-                                    className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
+                                    className="w-full flex items-center justify-between p-3 hover:bg-[#f3f9fc] transition-colors"
                                 >
                                     <div className="flex items-center gap-3">
                                         {expandedCategories.has('inbox') ? (
-                                            <ChevronDown className="w-4 h-4 text-slate-600" />
+                                            <ChevronDown className="w-4 h-4 text-cove-soft" />
                                         ) : (
-                                            <ChevronRight className="w-4 h-4 text-slate-600" />
+                                            <ChevronRight className="w-4 h-4 text-cove-soft" />
                                         )}
-                                        <Inbox className="w-5 h-5 text-amber-600" />
-                                        <span className="font-medium text-slate-800">Inbox</span>
+                                        <Inbox className="w-5 h-5 text-cove-streak-deep" />
+                                        <span className="font-bold text-cove-ink">Inbox</span>
                                     </div>
-                                    <span className="text-sm text-slate-500">
+                                    <span className="text-[12.5px] font-semibold text-cove-soft">
                                         {getNotesCount(null)} notes
                                     </span>
                                 </button>
                                 {expandedCategories.has('inbox') && (
-                                    <div className="p-3 pt-0 border-t border-slate-100">
+                                    <div className="p-3 pt-0 border-t border-cove-border/60">
                                         <SmartNotesList
                                             categoryId={null}
                                             showCategoryBadge={false}
@@ -166,35 +176,35 @@ const SmartNotesPage: React.FC = () => {
                                 <div key={category.id} className="app-surface overflow-hidden">
                                     <button
                                         onClick={() => toggleCategory(category.id)}
-                                        className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
+                                        className="w-full flex items-center justify-between p-3 hover:bg-[#f3f9fc] transition-colors"
                                     >
                                         <div className="flex items-center gap-3">
                                             {expandedCategories.has(category.id) ? (
-                                                <ChevronDown className="w-4 h-4 text-slate-600" />
+                                                <ChevronDown className="w-4 h-4 text-cove-soft" />
                                             ) : (
-                                                <ChevronRight className="w-4 h-4 text-slate-600" />
+                                                <ChevronRight className="w-4 h-4 text-cove-soft" />
                                             )}
                                             <span
-                                                className="w-8 h-8 rounded flex items-center justify-center text-lg"
+                                                className="w-8 h-8 rounded-[10px] flex items-center justify-center text-lg"
                                                 style={{
-                                                    backgroundColor: category.color || '#6366f1',
+                                                    backgroundColor: category.color || '#4d9fd6',
                                                 }}
                                             >
                                                 {category.emoji}
                                             </span>
-                                            <span className="font-medium text-slate-800">
+                                            <span className="font-bold text-cove-ink">
                                                 {category.name}
                                             </span>
-                                            <span className="text-xs text-slate-500">
+                                            <span className="text-[11.5px] font-bold text-cove-faint">
                                                 -{category.flag}
                                             </span>
                                         </div>
-                                        <span className="text-sm text-slate-500">
+                                        <span className="text-[12.5px] font-semibold text-cove-soft">
                                             {getNotesCount(category.id)} notes
                                         </span>
                                     </button>
                                     {expandedCategories.has(category.id) && (
-                                        <div className="p-3 pt-0 border-t border-slate-100">
+                                        <div className="p-3 pt-0 border-t border-cove-border/60">
                                             <SmartNotesList
                                                 categoryId={category.id}
                                                 showCategoryBadge={false}
@@ -217,11 +227,11 @@ const SmartNotesPage: React.FC = () => {
                                 if (!category) return null;
                                 return (
                                     <>
-                                        <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                        <h2 className="mb-4 flex items-center gap-2 px-1 text-[15px] font-extrabold text-cove-ink">
                                             <span
-                                                className="w-8 h-8 rounded flex items-center justify-center text-lg"
+                                                className="w-8 h-8 rounded-[10px] flex items-center justify-center text-lg"
                                                 style={{
-                                                    backgroundColor: category.color || '#6366f1',
+                                                    backgroundColor: category.color || '#4d9fd6',
                                                 }}
                                             >
                                                 {category.emoji}

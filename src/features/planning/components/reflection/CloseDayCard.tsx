@@ -86,21 +86,21 @@ const CloseDayCard: React.FC<CloseDayCardProps> = ({ date, tomorrowPriority }) =
     const tomorrowTop = tomorrowPriority?.trim() || recommended?.task.title || null;
 
     return (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-4">
-            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <Moon size={18} className="text-indigo-500" /> Close the day
+        <div className="bg-white rounded-[18px] p-6 shadow-cove space-y-4">
+            <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
+                <Moon size={18} className="text-cove-purple" /> Close the day
             </h2>
 
             {!closed ? (
                 <>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs font-semibold text-cove-muted">
                         Done reflecting? Close the day — that's the whole ritual. Tomorrow starts
                         fresh.
                     </p>
                     <button
                         onClick={handleToggle}
                         disabled={busy}
-                        className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                        className="w-full px-4 py-3 bg-cove-accent hover:bg-[#3a8dc7] disabled:opacity-50 text-white rounded-[14px] text-sm font-extrabold transition-colors flex items-center justify-center gap-2"
                     >
                         <CheckCircle2 size={16} />
                         {busy ? 'Closing…' : 'Close day'}
@@ -108,25 +108,23 @@ const CloseDayCard: React.FC<CloseDayCardProps> = ({ date, tomorrowPriority }) =
                 </>
             ) : (
                 <div className="space-y-4">
-                    <p className="text-sm text-emerald-700 flex items-center gap-2 font-medium">
+                    <p className="text-sm text-cove-success-deep flex items-center gap-2 font-bold">
                         <CheckCircle2 size={16} /> Day closed. See you tomorrow.
                     </p>
 
                     {tomorrowTop && (
-                        <div className="rounded-lg bg-indigo-50 px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-500 flex items-center gap-1">
+                        <div className="rounded-[12px] bg-cove-tint-blue px-4 py-3">
+                            <p className="text-[11px] font-extrabold uppercase tracking-wide text-cove-accent flex items-center gap-1">
                                 <Sunrise size={12} /> Tomorrow's top item
                             </p>
-                            <p className="mt-1 text-sm font-medium text-indigo-900">
-                                {tomorrowTop}
-                            </p>
+                            <p className="mt-1 text-sm font-bold text-cove-ink">{tomorrowTop}</p>
                         </div>
                     )}
 
                     <button
                         onClick={handleToggle}
                         disabled={busy}
-                        className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                        className="text-xs font-semibold text-cove-soft hover:text-cove-muted transition-colors"
                     >
                         Reopen day
                     </button>
@@ -135,7 +133,7 @@ const CloseDayCard: React.FC<CloseDayCardProps> = ({ date, tomorrowPriority }) =
 
             {/* Continuity row — informational, never shaming */}
             <div>
-                <p className="text-[11px] text-slate-400 mb-1.5">
+                <p className="text-[11px] font-semibold text-cove-soft mb-1.5">
                     {closedDates.length} day{closedDates.length === 1 ? '' : 's'} closed this week
                 </p>
                 <div className="flex gap-2">
@@ -146,12 +144,12 @@ const CloseDayCard: React.FC<CloseDayCardProps> = ({ date, tomorrowPriority }) =
                         return (
                             <div key={key} className="flex flex-col items-center gap-1">
                                 <div
-                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold ${
+                                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-extrabold ${
                                         isClosed
-                                            ? 'bg-emerald-500 text-white'
+                                            ? 'bg-cove-success text-white'
                                             : isSelected
-                                              ? 'border-2 border-indigo-300 text-slate-500'
-                                              : 'bg-slate-100 text-slate-400'
+                                              ? 'border-2 border-cove-accent-light text-cove-muted'
+                                              : 'bg-[#eef6fa] text-cove-soft'
                                     }`}
                                 >
                                     {isClosed ? '✓' : WEEKDAY_LABELS[i]}
@@ -162,7 +160,7 @@ const CloseDayCard: React.FC<CloseDayCardProps> = ({ date, tomorrowPriority }) =
                 </div>
             </div>
 
-            {error && <p className="text-xs text-rose-600">{error}</p>}
+            {error && <p className="text-xs font-semibold text-cove-pink">{error}</p>}
         </div>
     );
 };

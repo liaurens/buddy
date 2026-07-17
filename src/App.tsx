@@ -1,11 +1,13 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { MessageSquare } from 'lucide-react';
 import { ToastProvider } from './components/ui/Toast';
 import MainLayout from './layouts/MainLayout';
 // Feature imports
-import HomePage from './features/core/pages/HomePage';
-import UrgentInboxCard from './features/core/components/UrgentInboxCard';
-import NextUpCard from './features/core/components/NextUpCard';
+import NowPage from './features/cove/now/NowPage';
+import CheckInGate from './features/cove/gate/CheckInGate';
+import { useCheckinStatus } from './features/cove/gate/useCheckinStatus';
+import { isGateNeeded } from './features/cove/gate/gateState';
 import LoginScreen from './features/core/components/LoginScreen';
 import { ensureAnchorSchedule } from './features/notifications/services/notifications-schedule.service';
 import InAppReminderBanner from './components/notifications/InAppReminderBanner';
@@ -25,7 +27,8 @@ const ProtocolsPage = lazy(() => import('./features/health-tracking/pages/Protoc
 const ExperimentsPage = lazy(() => import('./features/health-tracking/pages/ExperimentsPage'));
 const CalendarPage = lazy(() => import('./features/planning/pages/CalendarPage'));
 const ReflectionPage = lazy(() => import('./features/planning/pages/ReflectionPage'));
-const TodoPage = lazy(() => import('./features/tasks/pages/TodoPage'));
+const CoveTasksPage = lazy(() => import('./features/cove/tasks/CoveTasksPage'));
+const CoveCapturePage = lazy(() => import('./features/cove/capture/CoveCapturePage'));
 const NotesPage = lazy(() => import('./features/tasks/pages/NotesPage'));
 const ChecklistsPage = lazy(() =>
     import('./features/checklists/pages/ChecklistsPage').then((module) => ({
@@ -38,7 +41,6 @@ const AssistantChat = lazy(() => import('./features/assistant/components/Assista
 const SchoolPage = lazy(() => import('./features/school/pages/SchoolPage'));
 const MePage = lazy(() => import('./features/me/pages/MePage'));
 const BrowsePage = lazy(() => import('./features/browse/pages/BrowsePage'));
-const DayPage = lazy(() => import('./features/day/pages/DayPage'));
 const NotificationsPage = lazy(() => import('./features/notifications/pages/NotificationsPage'));
 const GoogleOAuthCallbackPage = lazy(
     () => import('./features/planning/pages/GoogleOAuthCallbackPage'),
@@ -70,6 +72,11 @@ const App: React.FC = () => {
 
     // Check if user is logged in
     const { isLoggedIn, isLoading, user } = useAuth();
+
+    // Morning check-in gate — every route waits behind it once per day.
+    const todayKey = format(new Date(), 'yyyy-MM-dd');
+    const checkin = useCheckinStatus(todayKey);
+    const gateNeeded = isLoggedIn && isGateNeeded(checkin.state?.status);
 
     // Timeout for loading state
     useEffect(() => {
@@ -158,7 +165,7 @@ const App: React.FC = () => {
     const renderContent = () => {
         switch (activeTab) {
             case 'home':
-                return <HomePage onNavigate={handleNavigate} />;
+                return <NowPage onNavigate={handleNavigate} />;
             case 'health':
                 return <TrackerPage initialParams={navParams} />;
             case 'protocols':
@@ -166,18 +173,9 @@ const App: React.FC = () => {
             case 'toolbox':
                 return <ToolboxPage />;
             case 'tasks':
-                return (
-                    <TodoPage
-                        initialParams={navParams}
-                        onNavigate={handleNavigate}
-                        topSlot={
-                            <>
-                                <UrgentInboxCard onNavigate={handleNavigate} />
-                                <NextUpCard onNavigate={handleNavigate} />
-                            </>
-                        }
-                    />
-                );
+                return <CoveTasksPage onNavigate={handleNavigate} />;
+            case 'capture':
+                return <CoveCapturePage />;
             case 'calendar':
                 return <CalendarPage />;
             case 'account':
@@ -207,15 +205,17 @@ const App: React.FC = () => {
             case 'browse':
                 return <BrowsePage onNavigate={handleNavigate} />;
             case 'me':
-                return <MePage />;
+                return <MePage onNavigate={handleNavigate} />;
+            // The old DayPage routines are folded into the gate (morning), the
+            // Now midday card, and the close-day overlay — old deep-links land on Now.
             case 'today':
-                return <DayPage onNavigate={handleNavigate} initialParams={navParams} />;
+                return <NowPage onNavigate={handleNavigate} />;
             case 'goals':
                 return <ReflectionPage />;
             case 'notifications':
                 return <NotificationsPage />;
             default:
-                return <HomePage onNavigate={handleNavigate} />;
+                return <NowPage onNavigate={handleNavigate} />;
         }
     };
 
@@ -274,8 +274,10 @@ const App: React.FC = () => {
 
     return (
         <ToastProvider>
-            <MainLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-                <Suspense fallback={<PageFallback />}>{renderContent()}</Suspense>
+            <MainLayout activeTab={activeTab} setActiveTab={setActiveTab} navHidden={gateNeeded}>
+                <Suspense fallback={<PageFallback />}>
+                    {gateNeeded ? <CheckInGate dateKey={todayKey} /> : renderContent()}
+                </Suspense>
             </MainLayout>
             <InAppReminderBanner onNavigate={handleNavigate} />
             {import.meta.env.DEV && (

@@ -18,13 +18,13 @@ import { supabase, dbToStrategy, strategyToDb, type DbStrategy } from '../../../
 import ToolboxSettingsModal from '../components/ToolboxSettingsModal';
 
 const PRESET_TAGS = [
-    { label: 'Strength', color: 'bg-emerald-100 text-emerald-700' },
-    { label: 'Weakness', color: 'bg-rose-100 text-rose-700' },
-    { label: 'Focus', color: 'bg-blue-100 text-blue-700' },
-    { label: 'Anxiety', color: 'bg-amber-100 text-amber-700' },
-    { label: 'Sleep', color: 'bg-indigo-100 text-indigo-700' },
-    { label: 'Energy', color: 'bg-yellow-100 text-yellow-700' },
-    { label: 'Morning', color: 'bg-orange-100 text-orange-700' },
+    { label: 'Strength', color: 'bg-cove-tint-green text-cove-success-deep' },
+    { label: 'Weakness', color: 'bg-cove-tint-pink text-cove-pink' },
+    { label: 'Focus', color: 'bg-cove-tint-blue text-cove-accent' },
+    { label: 'Anxiety', color: 'bg-cove-tint-amber text-cove-streak-text' },
+    { label: 'Sleep', color: 'bg-cove-tint-purple text-cove-purple' },
+    { label: 'Energy', color: 'bg-cove-tint-amber text-cove-streak-deep' },
+    { label: 'Morning', color: 'bg-cove-tint-amber text-cove-streak-text' },
 ];
 
 const ToolboxPage: React.FC = () => {
@@ -143,9 +143,9 @@ const ToolboxPage: React.FC = () => {
             <div
                 className={`flex-1 flex flex-col space-y-4 ${selectedStrategy ? 'hidden md:flex' : 'flex'}`}
             >
-                <header className="flex items-center justify-end lg:justify-between">
-                    <h1 className="app-title hidden items-center gap-3 lg:flex">
-                        <div className="rounded-xl bg-amber-50 p-2 text-amber-600">
+                <header className="flex items-center justify-between">
+                    <h1 className="flex items-center gap-3 px-1 text-[22px] font-black text-cove-ink">
+                        <div className="rounded-xl bg-cove-tint-amber p-2 text-cove-streak-text">
                             <Lightbulb size={24} />
                         </div>
                         Toolbox
@@ -168,10 +168,10 @@ const ToolboxPage: React.FC = () => {
                                         activeFilterTag === tag.label ? null : tag.label,
                                     )
                                 }
-                                className={`whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-extrabold transition-all ${
                                     activeFilterTag === tag.label
-                                        ? 'border-indigo-700 bg-indigo-700 text-white'
-                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                                        ? 'bg-cove-accent text-white shadow-cove'
+                                        : 'bg-white text-cove-muted shadow-cove hover:text-cove-ink'
                                 }`}
                             >
                                 {tag.label}
@@ -182,7 +182,7 @@ const ToolboxPage: React.FC = () => {
 
                 <div className="relative">
                     <Search
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-cove-soft"
                         size={20}
                     />
                     <input
@@ -190,14 +190,14 @@ const ToolboxPage: React.FC = () => {
                         placeholder="Search strategies..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 shadow-sm outline-none focus:ring-2 focus:ring-indigo-100"
+                        className="w-full rounded-[14px] bg-white py-3 pl-10 pr-4 font-semibold text-cove-ink shadow-cove outline-none placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale"
                     />
                 </div>
 
                 <div className="flex-1 overflow-y-auto space-y-3 pb-20">
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 p-4 font-medium text-slate-400 transition-all hover:border-indigo-300 hover:text-indigo-600"
+                        className="flex w-full items-center justify-center gap-2 rounded-[16px] border border-dashed border-cove-border p-4 font-bold text-cove-soft transition-all hover:border-cove-accent hover:text-cove-accent"
                     >
                         <Plus size={20} /> Add New Strategy
                     </button>
@@ -206,10 +206,10 @@ const ToolboxPage: React.FC = () => {
                         <div
                             key={strategy.id}
                             onClick={() => setSelectedStrategy(strategy)}
-                            className={`cursor-pointer rounded-xl border bg-white p-4 text-left transition-all ${
+                            className={`cursor-pointer rounded-[18px] bg-white p-4 text-left transition-all ${
                                 selectedStrategy?.id === strategy.id
-                                    ? 'border-indigo-300 shadow-md ring-1 ring-indigo-200'
-                                    : 'border-slate-100 shadow-sm hover:border-slate-300'
+                                    ? 'shadow-cove-strong ring-2 ring-cove-accent-pale'
+                                    : 'shadow-cove hover:shadow-cove-strong'
                             }`}
                         >
                             <div className="flex flex-wrap gap-2 mb-2">
@@ -218,17 +218,17 @@ const ToolboxPage: React.FC = () => {
                                     return (
                                         <span
                                             key={tag}
-                                            className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider ${preset?.color || 'bg-slate-100 text-slate-600'}`}
+                                            className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase tracking-wider ${preset?.color || 'bg-cove-track text-cove-muted'}`}
                                         >
                                             {tag}
                                         </span>
                                     );
                                 })}
                             </div>
-                            <h3 className="font-bold text-slate-800 text-lg mb-1">
+                            <h3 className="text-[15px] font-extrabold text-cove-ink mb-1">
                                 {strategy.title}
                             </h3>
-                            <p className="text-sm text-slate-500 line-clamp-2">
+                            <p className="text-[13px] font-semibold text-cove-muted line-clamp-2">
                                 {strategy.description}
                             </p>
                         </div>
@@ -238,16 +238,16 @@ const ToolboxPage: React.FC = () => {
 
             {/* Right Panel: Details (or Modal on Mobile) */}
             {selectedStrategy && (
-                <div className="fixed inset-0 z-50 md:static md:z-0 md:flex-[1.5] bg-slate-50 md:bg-transparent flex flex-col md:h-full">
+                <div className="fixed inset-0 z-50 md:static md:z-0 md:flex-[1.5] bg-cove-bg md:bg-transparent flex flex-col md:h-full">
                     {/* Mobile Back Button */}
-                    <div className="md:hidden p-4 bg-white border-b border-slate-200 flex items-center gap-2">
+                    <div className="md:hidden p-4 bg-white shadow-cove flex items-center gap-2">
                         <button
                             onClick={() => setSelectedStrategy(null)}
-                            className="p-2 hover:bg-slate-100 rounded-lg"
+                            className="p-2 hover:bg-cove-track/60 rounded-xl text-cove-muted"
                         >
                             <ChevronRight size={24} className="rotate-180" />
                         </button>
-                        <h2 className="font-bold text-lg">Details</h2>
+                        <h2 className="font-extrabold text-lg text-cove-ink">Details</h2>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 md:p-0">
@@ -260,41 +260,41 @@ const ToolboxPage: React.FC = () => {
                                             return (
                                                 <span
                                                     key={tag}
-                                                    className={`px-3 py-1 rounded-lg text-xs font-bold ${preset?.color || 'bg-slate-100 text-slate-600'}`}
+                                                    className={`px-3 py-1 rounded-full text-xs font-extrabold ${preset?.color || 'bg-cove-track text-cove-muted'}`}
                                                 >
                                                     {tag}
                                                 </span>
                                             );
                                         })}
                                     </div>
-                                    <h2 className="text-3xl font-bold text-slate-900 mb-2">
+                                    <h2 className="text-[22px] font-black text-cove-ink mb-2">
                                         {selectedStrategy.title}
                                     </h2>
                                 </div>
                                 <button
                                     onClick={() => handleDelete(selectedStrategy.id)}
-                                    className="text-slate-300 hover:text-rose-500 transition-colors p-2"
+                                    className="text-cove-faint hover:text-cove-pink transition-colors p-2"
                                 >
                                     <Trash2 size={20} />
                                 </button>
                             </div>
 
                             <div className="prose prose-slate max-w-none mb-8">
-                                <p className="text-lg text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                <p className="text-[14px] font-semibold text-cove-muted leading-relaxed whitespace-pre-wrap">
                                     {selectedStrategy.description}
                                 </p>
                             </div>
 
                             {/* Findings / Logs Section */}
-                            <div className="mt-auto border-t border-slate-100 pt-6">
-                                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                    <BookOpen size={20} className="text-indigo-500" /> Findings &
+                            <div className="mt-auto border-t border-cove-border/50 pt-6">
+                                <h3 className="text-[15px] font-extrabold text-cove-ink mb-4 flex items-center gap-2">
+                                    <BookOpen size={20} className="text-cove-accent" /> Findings &
                                     Application
                                 </h3>
 
-                                <div className="bg-slate-50 rounded-xl p-4 mb-4">
+                                <div className="bg-[#eef6fa] rounded-[14px] p-4 mb-4">
                                     <input
-                                        className="w-full bg-transparent border-none outline-none font-medium text-slate-700 placeholder:text-slate-400 mb-2"
+                                        className="w-full bg-transparent border-none outline-none font-semibold text-cove-ink placeholder:text-cove-faint mb-2"
                                         placeholder="Add a new finding or observation..."
                                         value={newFindingNote}
                                         onChange={(e) => setNewFindingNote(e.target.value)}
@@ -308,7 +308,7 @@ const ToolboxPage: React.FC = () => {
                                                 <button
                                                     key={star}
                                                     onClick={() => setNewFindingRating(star)}
-                                                    className={`transition-all hover:scale-110 ${star <= newFindingRating ? 'text-amber-400 fill-amber-400' : 'text-slate-300'}`}
+                                                    className={`transition-all hover:scale-110 ${star <= newFindingRating ? 'text-cove-streak fill-cove-streak' : 'text-cove-faint'}`}
                                                 >
                                                     <Star size={16} />
                                                 </button>
@@ -317,7 +317,7 @@ const ToolboxPage: React.FC = () => {
                                         <button
                                             onClick={addFinding}
                                             disabled={!newFindingNote.trim()}
-                                            className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 disabled:opacity-50"
+                                            className="px-3 py-1 bg-cove-accent text-white rounded-[11px] text-xs font-extrabold hover:bg-[#3a8dc7] disabled:opacity-50"
                                         >
                                             Log Finding
                                         </button>
@@ -326,7 +326,7 @@ const ToolboxPage: React.FC = () => {
 
                                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
                                     {selectedStrategy.findings?.length === 0 && (
-                                        <p className="text-slate-400 text-sm text-center italic">
+                                        <p className="text-cove-soft text-sm font-semibold text-center italic">
                                             No findings recorded yet. Try this tool and log how it
                                             went!
                                         </p>
@@ -334,10 +334,10 @@ const ToolboxPage: React.FC = () => {
                                     {selectedStrategy.findings?.map((finding) => (
                                         <div
                                             key={finding.id}
-                                            className="bg-white border border-slate-100 p-3 rounded-lg text-sm"
+                                            className="bg-white shadow-cove p-3 rounded-[12px] text-sm"
                                         >
                                             <div className="flex justify-between mb-1">
-                                                <span className="text-slate-400 text-xs font-medium">
+                                                <span className="text-cove-soft text-xs font-bold">
                                                     {format(
                                                         new Date(finding.date),
                                                         'MMM d, h:mm a',
@@ -350,14 +350,16 @@ const ToolboxPage: React.FC = () => {
                                                             size={10}
                                                             className={
                                                                 i < finding.rating
-                                                                    ? 'text-amber-400 fill-amber-400'
-                                                                    : 'text-slate-200'
+                                                                    ? 'text-cove-streak fill-cove-streak'
+                                                                    : 'text-cove-border'
                                                             }
                                                         />
                                                     ))}
                                                 </div>
                                             </div>
-                                            <p className="text-slate-700">{finding.note}</p>
+                                            <p className="font-semibold text-cove-ink">
+                                                {finding.note}
+                                            </p>
                                         </div>
                                     ))}
                                 </div>
@@ -369,13 +371,13 @@ const ToolboxPage: React.FC = () => {
 
             {/* Add Modal */}
             {isAdding && (
-                <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 animate-in zoom-in-95">
+                <div className="fixed inset-0 z-[60] bg-cove-overlay/50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-[22px] shadow-cove-strong w-full max-w-md p-6 animate-in zoom-in-95">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold text-slate-800">New Strategy</h3>
+                            <h3 className="text-[18px] font-black text-cove-ink">New Strategy</h3>
                             <button
                                 onClick={() => setIsAdding(false)}
-                                className="p-2 hover:bg-slate-100 rounded-full"
+                                className="p-2 hover:bg-cove-track/60 rounded-full text-cove-muted"
                             >
                                 <X size={20} />
                             </button>
@@ -383,11 +385,11 @@ const ToolboxPage: React.FC = () => {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                                <label className="block text-[11px] font-extrabold text-cove-soft uppercase tracking-wider mb-1">
                                     Title
                                 </label>
                                 <input
-                                    className="w-full text-lg font-bold border-b-2 border-slate-200 outline-none py-1 focus:border-indigo-500 transition-colors"
+                                    className="w-full text-lg font-extrabold text-cove-ink border-b-2 border-cove-border outline-none py-1 placeholder:text-cove-faint focus:border-cove-accent transition-colors"
                                     placeholder="e.g. Pomodoro Technique"
                                     value={newTitle}
                                     onChange={(e) => setNewTitle(e.target.value)}
@@ -396,7 +398,7 @@ const ToolboxPage: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                                <label className="block text-[11px] font-extrabold text-cove-soft uppercase tracking-wider mb-1">
                                     Tags
                                 </label>
                                 <div className="flex flex-wrap gap-2">
@@ -404,9 +406,9 @@ const ToolboxPage: React.FC = () => {
                                         <button
                                             key={tag.label}
                                             onClick={() => toggleTag(tag.label)}
-                                            className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+                                            className={`px-3 py-1 rounded-full text-xs font-extrabold border transition-all ${
                                                 newTags.includes(tag.label)
-                                                    ? 'bg-slate-800 text-white border-slate-800'
+                                                    ? 'bg-cove-ink text-white border-cove-ink'
                                                     : `${tag.color.split(' ')[0]} ${tag.color.split(' ')[1]} border-transparent opacity-60 hover:opacity-100`
                                             }`}
                                         >
@@ -417,11 +419,11 @@ const ToolboxPage: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                                <label className="block text-[11px] font-extrabold text-cove-soft uppercase tracking-wider mb-1">
                                     Description
                                 </label>
                                 <textarea
-                                    className="w-full p-3 bg-slate-50 rounded-xl outline-none resize-none h-32 focus:ring-2 focus:ring-indigo-100 transition-all font-medium text-slate-700"
+                                    className="w-full p-3 bg-[#eef6fa] rounded-[14px] outline-none resize-none h-32 focus:ring-2 focus:ring-cove-accent-pale transition-all font-semibold text-cove-ink placeholder:text-cove-faint"
                                     placeholder="How does this strategy work?"
                                     value={newDesc}
                                     onChange={(e) => setNewDesc(e.target.value)}
@@ -431,7 +433,7 @@ const ToolboxPage: React.FC = () => {
                             <button
                                 onClick={handleAdd}
                                 disabled={!newTitle.trim()}
-                                className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all disabled:opacity-50"
+                                className="w-full bg-cove-accent text-white py-3 rounded-[14px] font-extrabold shadow-cove-strong hover:bg-[#3a8dc7] transition-all disabled:opacity-50"
                             >
                                 Add to Toolbox
                             </button>

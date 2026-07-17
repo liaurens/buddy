@@ -46,14 +46,16 @@ const LoginScreen: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+        <div className="min-h-screen bg-[#e9f4f9] flex items-center justify-center p-4">
+            <div className="bg-white rounded-[22px] shadow-cove max-w-md w-full p-8">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
-                        <Cloud className="w-8 h-8 text-indigo-600" />
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-cove-tint-blue rounded-full mb-4">
+                        <Cloud className="w-8 h-8 text-cove-accent" />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900">Welcome to Life Tracker</h1>
-                    <p className="text-slate-500 mt-2">
+                    <h1 className="text-[22px] font-black text-cove-ink">
+                        Welcome to Life Tracker
+                    </h1>
+                    <p className="text-[13.5px] font-semibold text-cove-muted mt-2">
                         {mode === 'login'
                             ? 'Sign in to sync your data across all your devices'
                             : 'Create an account to get started'}
@@ -64,19 +66,19 @@ const LoginScreen: React.FC = () => {
                     <div>
                         <label
                             htmlFor="email"
-                            className="block text-sm font-medium text-slate-700 mb-1"
+                            className="block text-sm font-bold text-cove-ink mb-1"
                         >
                             Email Address
                         </label>
                         <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cove-soft" />
                             <input
                                 type="email"
                                 id="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="you@example.com"
-                                className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="w-full pl-10 pr-4 py-3 border border-cove-border rounded-[12px] font-semibold text-cove-ink placeholder:text-cove-faint focus:outline-none focus:ring-2 focus:ring-cove-accent focus:border-transparent"
                                 required
                                 autoFocus
                             />
@@ -86,12 +88,12 @@ const LoginScreen: React.FC = () => {
                     <div>
                         <label
                             htmlFor="password"
-                            className="block text-sm font-medium text-slate-700 mb-1"
+                            className="block text-sm font-bold text-cove-ink mb-1"
                         >
                             Password
                         </label>
                         <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cove-soft" />
                             <input
                                 type="password"
                                 id="password"
@@ -102,7 +104,7 @@ const LoginScreen: React.FC = () => {
                                         ? 'At least 6 characters'
                                         : 'Enter your password'
                                 }
-                                className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="w-full pl-10 pr-4 py-3 border border-cove-border rounded-[12px] font-semibold text-cove-ink placeholder:text-cove-faint focus:outline-none focus:ring-2 focus:ring-cove-accent focus:border-transparent"
                                 required
                                 minLength={6}
                             />
@@ -110,13 +112,15 @@ const LoginScreen: React.FC = () => {
                     </div>
 
                     {error && (
-                        <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</p>
+                        <p className="text-cove-pink text-sm font-semibold bg-cove-tint-pink p-3 rounded-[12px]">
+                            {error}
+                        </p>
                     )}
 
                     <button
                         type="submit"
                         disabled={isLoading || !email || !password}
-                        className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-2 bg-cove-accent text-white py-3 rounded-[14px] font-extrabold shadow-cove-strong hover:bg-[#3a8dc7] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLoading ? (
                             <>
@@ -143,7 +147,7 @@ const LoginScreen: React.FC = () => {
                             setMode(mode === 'login' ? 'signup' : 'login');
                             setError('');
                         }}
-                        className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+                        className="text-cove-accent hover:text-[#3a8dc7] text-sm font-bold"
                     >
                         {mode === 'login'
                             ? "Don't have an account? Sign up"
@@ -151,7 +155,7 @@ const LoginScreen: React.FC = () => {
                     </button>
                 </div>
 
-                <p className="text-center text-xs text-slate-400 mt-6">
+                <p className="text-center text-xs font-semibold text-cove-soft mt-6">
                     Your data is stored securely and synced across all your devices.
                 </p>
             </div>

@@ -2,28 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Buddy Cove design tokens — see design_handoff_buddy_cove/README.md (high-fidelity, final). */
 :root {
-    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    font-family: 'Nunito', system-ui, Avenir, Helvetica, Arial, sans-serif;
     color-scheme: light;
-    --buddy-bg: #f7f8fb;
+    --buddy-bg: #e9f4f9;
+    --buddy-backdrop: #dcebf3;
     --buddy-surface: #ffffff;
-    --buddy-surface-soft: #f9fafc;
-    --buddy-border: #e2e8f0;
-    --buddy-border-soft: #edf1f6;
-    --buddy-text: #101828;
-    --buddy-muted: #667085;
-    --buddy-primary: #25329b;
-    --buddy-primary-soft: #eef1ff;
-    --buddy-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+    --buddy-surface-soft: #eef6fa;
+    --buddy-border: #c6dbe7;
+    --buddy-border-soft: #bcd8e8;
+    --buddy-text: #1d3a4d;
+    --buddy-muted: #5c86a0;
+    --buddy-primary: #4d9fd6;
+    --buddy-primary-soft: #e3f0fa;
+    --buddy-shadow: 0 3px 12px rgba(40, 90, 130, 0.09);
+
+    --cove-ink: #1d3a4d;
+    --cove-muted: #5c86a0;
+    --cove-soft: #7fa6bb;
+    --cove-faint: #9cb9c9;
+    --cove-accent: #4d9fd6;
+    --cove-accent-light: #7cc3e8;
+    --cove-accent-pale: #bfe2f5;
+    --cove-success: #5cb586;
+    --cove-success-deep: #3d8a63;
+    --cove-streak: #f2a541;
+    --cove-streak-deep: #e0862a;
+    --cove-streak-text: #c07a1e;
+    --cove-tint-amber: #fdeeda;
+    --cove-tint-blue: #e3f0fa;
+    --cove-tint-green: #e6f4ec;
+    --cove-tint-purple: #efe9f8;
+    --cove-purple: #7a5fb0;
+    --cove-tint-pink: #fbe9ec;
+    --cove-pink: #e8899a;
+    --cove-pink-accent: #f7b8c2;
+    --cove-track: #d7e9f2;
+    --cove-overlay: #1d3a4d;
+    --cove-overlay-muted: #a8cbde;
+    --cove-shadow-nav: 0 -4px 16px rgba(40, 90, 130, 0.08);
 }
 
 html {
-    background: var(--buddy-bg);
+    background: var(--buddy-backdrop);
 }
 
 body {
-    @apply text-slate-900 antialiased;
-    background: var(--buddy-bg);
+    @apply antialiased;
+    background: var(--buddy-backdrop);
+    color: var(--buddy-text);
 }
 
 button,
@@ -38,75 +66,183 @@ button {
 }
 
 ::selection {
-    background: rgba(37, 50, 155, 0.14);
+    background: rgba(77, 159, 214, 0.22);
+}
+
+/* Cove motion — bob/spout only when motion is allowed; confetti elements are
+   simply not rendered under reduced motion (see useCelebration). */
+@keyframes cove-bob {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes cove-spout {
+    0%,
+    55%,
+    100% {
+        opacity: 0;
+        transform: translateY(0) scale(0.4);
+    }
+    65% {
+        opacity: 0.9;
+        transform: translateY(-4px) scale(1);
+    }
+    85% {
+        opacity: 0;
+        transform: translateY(-10px) scale(1.2);
+    }
+}
+
+@keyframes cove-checkpop {
+    0% {
+        transform: scale(0.6);
+    }
+    55% {
+        transform: scale(1.25);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes cove-confetti {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) rotate(0deg) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(var(--cx), var(--cy)) rotate(220deg) scale(0.5);
+    }
+}
+
+@keyframes cove-bigconfetti {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) rotate(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(var(--cx), var(--cy)) rotate(300deg);
+    }
+}
+
+@keyframes cove-fadeslide {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes cove-overlayin {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.cove-bob {
+    animation: cove-bob 3.5s ease-in-out infinite;
+}
+
+.cove-spout {
+    animation: cove-spout 3.5s ease-in-out infinite;
+}
+
+.cove-fadeslide {
+    animation: cove-fadeslide 0.35s ease;
+}
+
+.cove-overlayin {
+    animation: cove-overlayin 0.35s ease;
+}
+
+.cove-checkpop {
+    animation: cove-checkpop 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cove-bob,
+    .cove-spout,
+    .cove-checkpop {
+        animation: none;
+    }
+
+    .cove-fadeslide,
+    .cove-overlayin {
+        animation-duration: 0.01ms;
+    }
 }
 
 @layer components {
     .app-page {
-        @apply mx-auto w-full max-w-6xl space-y-5 pb-28 lg:pb-10;
+        @apply mx-auto w-full space-y-5 pb-28;
     }
 
     .app-page-readable {
-        @apply mx-auto w-full max-w-3xl space-y-5 pb-28 lg:pb-10;
+        @apply mx-auto w-full space-y-5 pb-28;
     }
 
     .app-title {
-        @apply text-[1.65rem] font-semibold leading-tight tracking-normal text-slate-950;
+        @apply text-[22px] font-black leading-tight tracking-normal text-[color:var(--cove-ink)];
     }
 
     .app-subtitle {
-        @apply mt-1 text-sm leading-6 text-slate-500;
+        @apply mt-1 text-[13.5px] font-semibold leading-6 text-[color:var(--cove-muted)];
     }
 
     .app-label {
-        @apply text-xs font-semibold uppercase tracking-wide text-slate-500;
+        @apply text-[13px] font-extrabold uppercase tracking-[0.08em] text-[color:var(--cove-soft)];
     }
 
     .app-surface {
-        @apply rounded-xl border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.06)];
+        @apply rounded-[18px] border-0 bg-white shadow-[0_3px_12px_rgba(40,90,130,0.09)];
     }
 
     .app-surface-soft {
-        @apply rounded-xl border border-slate-200/70 bg-slate-50/70;
+        @apply rounded-[16px] border-0 bg-[color:var(--buddy-surface-soft)];
     }
 
     .app-row {
-        @apply flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-slate-50;
+        @apply flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-[color:var(--buddy-surface-soft)];
     }
 
     .app-icon-button {
-        @apply inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900;
+        @apply inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[color:var(--buddy-border)] bg-white text-[color:var(--cove-muted)] shadow-sm transition-colors hover:bg-[color:var(--buddy-surface-soft)] hover:text-[color:var(--cove-ink)];
     }
 
     .app-primary-button {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-45;
+        @apply inline-flex items-center justify-center gap-2 rounded-[14px] bg-[color:var(--cove-accent)] px-4 py-2 text-sm font-extrabold text-white shadow-[0_6px_18px_rgba(40,90,130,0.2)] transition-colors hover:bg-[#3a8dc7] disabled:cursor-not-allowed disabled:opacity-45;
     }
 
     .app-secondary-button {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50;
+        @apply inline-flex items-center justify-center gap-2 rounded-[14px] border-2 border-[color:var(--buddy-border)] bg-white px-4 py-2 text-sm font-extrabold text-[color:var(--cove-muted)] transition-colors hover:bg-[color:var(--buddy-surface-soft)];
     }
 
     .app-segmented {
-        @apply flex gap-1 rounded-xl border border-slate-200/70 bg-slate-100/80 p-1;
+        @apply flex gap-1.5 rounded-[14px] border-0 bg-[color:var(--cove-track)] p-[5px];
     }
 
     .app-segment {
-        @apply flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800;
+        @apply flex flex-1 items-center justify-center gap-2 rounded-[10px] px-3 py-2 text-[13px] font-extrabold text-[color:var(--cove-soft)] transition-colors hover:text-[color:var(--cove-muted)];
     }
 
     .app-segment-active {
-        @apply bg-white text-slate-950 shadow-sm;
+        @apply bg-white text-[color:var(--cove-ink)] shadow-[0_2px_8px_rgba(40,90,130,0.12)];
     }
 
     .app-chip {
-        @apply inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600;
-    }
-}
-
-@media (min-width: 1024px) {
-    body {
-        background:
-            linear-gradient(90deg, rgba(255, 255, 255, 0.72) 0 17.5rem, transparent 17.5rem),
-            var(--buddy-bg);
+        @apply inline-flex items-center gap-1 rounded-full bg-[color:var(--cove-tint-blue)] px-2.5 py-1 text-xs font-extrabold text-[color:var(--cove-muted)];
     }
 }

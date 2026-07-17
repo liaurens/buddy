@@ -28,7 +28,7 @@ export const WeeklyScheduleGrid: React.FC<WeeklyScheduleGridProps> = ({
 
     if (sessions.length === 0) {
         return (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-12 text-center text-sm text-slate-500">
+            <div className="rounded-[18px] bg-white px-4 py-12 text-center text-[13.5px] font-semibold text-cove-muted shadow-cove">
                 No class times yet.
             </div>
         );
@@ -42,8 +42,10 @@ export const WeeklyScheduleGrid: React.FC<WeeklyScheduleGridProps> = ({
                 return (
                     <section key={day} className="app-surface p-4">
                         <div className="mb-3 flex items-center justify-between gap-3">
-                            <h3 className="text-sm font-semibold text-slate-950">{DAYS[i]}</h3>
-                            <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
+                                {DAYS[i]}
+                            </h3>
+                            <span className="rounded-full bg-cove-track px-2.5 py-1 text-[11px] font-extrabold text-cove-muted">
                                 {list.length}
                             </span>
                         </div>
@@ -53,17 +55,17 @@ export const WeeklyScheduleGrid: React.FC<WeeklyScheduleGridProps> = ({
                                 return (
                                     <li
                                         key={s.id}
-                                        className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3 py-3 transition-colors hover:border-slate-300"
+                                        className="flex items-center gap-3 rounded-xl bg-[#eef6fa] px-3 py-3 transition-colors hover:bg-cove-tint-blue"
                                     >
                                         <span
                                             className="h-12 w-1.5 flex-shrink-0 rounded-full"
-                                            style={{ backgroundColor: cls?.color ?? '#94a3b8' }}
+                                            style={{ backgroundColor: cls?.color ?? '#9cb9c9' }}
                                         />
                                         <div className="min-w-0 flex-1">
-                                            <div className="truncate text-base font-semibold text-slate-950">
+                                            <div className="truncate text-[14.5px] font-extrabold text-cove-ink">
                                                 {cls?.name ?? 'Unknown'}
                                             </div>
-                                            <div className="mt-1 truncate text-sm text-slate-600">
+                                            <div className="mt-1 truncate text-[13px] font-semibold text-cove-muted">
                                                 {s.startTime.slice(0, 5)} – {s.endTime.slice(0, 5)}
                                                 {s.location ? ` · ${s.location}` : ''}
                                             </div>
@@ -73,7 +75,7 @@ export const WeeklyScheduleGrid: React.FC<WeeklyScheduleGridProps> = ({
                                                 type="button"
                                                 onClick={() => onDelete(s)}
                                                 aria-label={`Remove ${cls?.name ?? 'class'} at ${s.startTime.slice(0, 5)}`}
-                                                className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-red-50 hover:text-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+                                                className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl text-cove-soft transition-colors hover:bg-cove-tint-pink hover:text-cove-pink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cove-pink"
                                             >
                                                 <Trash2 size={18} />
                                             </button>

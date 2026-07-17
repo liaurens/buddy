@@ -95,26 +95,26 @@ const InAppReminderBanner: React.FC<Props> = ({ onNavigate }) => {
     };
 
     return (
-        <div className="fixed bottom-20 left-4 right-4 z-40 sm:left-auto sm:right-6 sm:max-w-sm">
-            <div className="bg-white border border-indigo-200 rounded-2xl shadow-xl p-4 flex items-start gap-3 animate-in slide-in-from-bottom-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                    <Bell size={18} className="text-indigo-600" />
+        <div className="fixed bottom-28 left-4 right-4 z-40 sm:left-auto sm:right-6 sm:max-w-sm">
+            <div className="flex items-start gap-3 rounded-card-lg bg-white p-4 shadow-cove-strong animate-in slide-in-from-bottom-4">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-cove-tint-blue">
+                    <Bell size={18} className="text-cove-accent" />
                 </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{current.title}</p>
-                    <p className="text-xs text-slate-600 mt-0.5">{current.body}</p>
-                    <div className="flex gap-2 mt-2">
+                <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-extrabold text-cove-ink">{current.title}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-cove-muted">{current.body}</p>
+                    <div className="mt-2 flex gap-2">
                         {route && onNavigate && (
                             <button
                                 onClick={handleGo}
-                                className="flex items-center gap-1 px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700"
+                                className="flex items-center gap-1 rounded-lg bg-cove-accent px-3 py-1 text-xs font-extrabold text-white hover:bg-[#3a8dc7]"
                             >
                                 Go <ArrowRight size={12} />
                             </button>
                         )}
                         <button
                             onClick={handleDismiss}
-                            className="px-3 py-1 text-xs text-slate-500 hover:text-slate-700"
+                            className="px-3 py-1 text-xs font-bold text-cove-soft hover:text-cove-muted"
                         >
                             Dismiss
                         </button>
@@ -123,7 +123,7 @@ const InAppReminderBanner: React.FC<Props> = ({ onNavigate }) => {
                 <button
                     onClick={handleDismiss}
                     aria-label="Close"
-                    className="p-1 text-slate-400 hover:text-slate-600"
+                    className="p-1 text-cove-faint hover:text-cove-muted"
                 >
                     <X size={16} />
                 </button>

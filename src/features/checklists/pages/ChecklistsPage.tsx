@@ -42,15 +42,16 @@ export const ChecklistsPage: React.FC = () => {
 
     return (
         <div className="app-page animate-in fade-in">
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div className="hidden lg:block">
-                    <h1 className="app-title">Checklists</h1>
-                    <p className="app-subtitle">Smart lists that reset and grow with you.</p>
+            <header className="flex items-end justify-between gap-4">
+                <div>
+                    <div className="px-1 pb-1 pt-1.5 text-[22px] font-black text-cove-ink">
+                        Checklists
+                    </div>
+                    <div className="px-1 text-[13.5px] font-semibold text-cove-muted">
+                        Smart lists that reset and grow with you.
+                    </div>
                 </div>
-                <button
-                    onClick={() => setIsCreating(true)}
-                    className="app-primary-button self-start md:self-auto"
-                >
+                <button onClick={() => setIsCreating(true)} className="app-primary-button shrink-0">
                     <Plus size={18} />
                     New Checklist
                 </button>
@@ -58,24 +59,24 @@ export const ChecklistsPage: React.FC = () => {
 
             {isCreating && (
                 <div className="app-surface p-5 animate-slideIn">
-                    <h3 className="mb-4 text-lg font-semibold text-slate-900">
+                    <h3 className="mb-4 text-[15px] font-extrabold text-cove-ink">
                         Create new checklist
                     </h3>
                     <form onSubmit={handleCreate} className="space-y-4">
                         <div className="flex gap-4">
                             <div className="w-16">
-                                <label className="mb-1 block text-sm font-medium text-slate-700">
+                                <label className="mb-1 block text-[13px] font-bold text-cove-muted">
                                     Icon
                                 </label>
                                 <input
                                     type="text"
                                     value={newEmoji}
                                     onChange={(e) => setNewEmoji(e.target.value)}
-                                    className="w-full rounded-lg border border-slate-200 bg-white p-2 text-center text-2xl"
+                                    className="w-full rounded-[12px] border border-cove-border bg-white p-2 text-center text-2xl"
                                 />
                             </div>
                             <div className="flex-1">
-                                <label className="mb-1 block text-sm font-medium text-slate-700">
+                                <label className="mb-1 block text-[13px] font-bold text-cove-muted">
                                     Name
                                 </label>
                                 <input
@@ -83,7 +84,7 @@ export const ChecklistsPage: React.FC = () => {
                                     value={newName}
                                     onChange={(e) => setNewName(e.target.value)}
                                     placeholder="e.g. Packing List, Weekly Review..."
-                                    className="w-full rounded-lg border border-slate-200 bg-white p-2.5 outline-none focus:ring-2 focus:ring-indigo-100"
+                                    className="w-full rounded-[12px] border border-cove-border bg-white p-2.5 font-semibold text-cove-ink outline-none placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale"
                                     autoFocus
                                 />
                             </div>
@@ -111,7 +112,10 @@ export const ChecklistsPage: React.FC = () => {
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="h-40 animate-pulse rounded-xl bg-slate-100" />
+                        <div
+                            key={i}
+                            className="h-40 animate-pulse rounded-[18px] bg-cove-track/50"
+                        />
                     ))}
                 </div>
             ) : (
@@ -125,17 +129,17 @@ export const ChecklistsPage: React.FC = () => {
                     ))}
 
                     {checklists.length === 0 && !isCreating && (
-                        <div className="col-span-full rounded-xl border border-dashed border-slate-200 bg-slate-50 py-20 text-center">
+                        <div className="col-span-full rounded-[18px] border border-dashed border-cove-border bg-white/60 py-20 text-center">
                             <span className="text-6xl block mb-4">📝</span>
-                            <h3 className="mb-2 text-xl font-medium text-slate-900">
+                            <h3 className="mb-2 text-xl font-extrabold text-cove-ink">
                                 No checklists yet
                             </h3>
-                            <p className="mb-6 text-slate-500">
+                            <p className="mb-6 font-semibold text-cove-muted">
                                 Create your first checklist to get started.
                             </p>
                             <button
                                 onClick={() => setIsCreating(true)}
-                                className="text-sm font-medium text-indigo-700 hover:underline"
+                                className="text-sm font-bold text-cove-accent hover:underline"
                             >
                                 Create one now
                             </button>

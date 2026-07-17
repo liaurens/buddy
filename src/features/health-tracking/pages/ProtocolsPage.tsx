@@ -22,14 +22,16 @@ const ProtocolsPage = () => {
 
     return (
         <div className="app-page">
-            <div className="flex items-center justify-end lg:justify-between">
-                <div className="hidden lg:block">
-                    <h1 className="app-title">Protocols</h1>
-                    <p className="app-subtitle">
-                        Manage your supplements, medications, and routines.
-                    </p>
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <div className="px-1 pb-1 pt-1.5 text-[22px] font-black text-cove-ink">
+                        Protocols
+                    </div>
+                    <div className="px-1 pb-4 text-[13.5px] font-semibold text-cove-muted">
+                        Your supplements, meds, and routines in one place.
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="mt-1.5 flex shrink-0 items-center gap-2">
                     <button
                         onClick={() => setShowSettings(true)}
                         className="app-icon-button"
