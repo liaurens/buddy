@@ -21,6 +21,17 @@ Student Buddy App — a PWA for executive function, self-regulation, and holisti
 
 No router library — `App.tsx` uses a `useState<AppRoute>` (typed in `src/constants/routes.ts`) with a switch statement to render pages. Navigation is done via `onNavigate(tab, params?)` callbacks passed down as props. Deep-links from notifications are parsed from `?route=…&intent=…&taskId=…` on load.
 
+### Buddy Cove UI (the current design system)
+
+The app UI is the "Buddy Cove" redesign (spec: `design_handoff_buddy_cove/README.md` — high-fidelity, final tokens/copy; docs: `docs/cove.md`). Hard rules:
+
+- **Tokens**: CSS vars (`--cove-*`) + retherned `.app-*` classes in `src/index.css`; Tailwind colors under `cove.*` in `tailwind.config.js`. Font is self-hosted Nunito (`@fontsource/nunito`, imported in `main.tsx`). New-surface components live in `src/features/cove/` (shared primitives: Whale, SpeechBubble, Fold, Confetti, PickCircle, MoodRow, EnergyRow, TagChip).
+- **Motion**: use the `.cove-bob/.cove-spout/.cove-checkpop/.cove-fadeslide/.cove-overlayin` classes — they self-disable under `prefers-reduced-motion`; confetti must never render under reduced motion (gate it through `useCelebration`/`usePrefersReducedMotion`).
+- **Check-in gate**: the whole app renders `CheckInGate` until today's check-in is done or skipped — persisted on `daily_plans.checked_in_at`/`checkin_skipped`/`intention` with localStorage mirror `cove_checkin_<date>`. Finishing also calls `markRoutineDone('morning')`.
+- **Streak is derived, never stored**: `computeCloseStreak`/`getCloseStreak` in `closeDay.service.ts` over `daily_plans.closed_at`. Copy around it must celebrate only, never shame a miss.
+- **Mood/energy**: UI taps (5 moods / 3 energies) must map through `src/features/cove/services/moodScale.ts` to the 1–10 CHECK on `daily_plans.mood_at_plan_time`/`energy_at_plan_time` — never write raw indices.
+- **Nav**: 5 tabs (Now `home`, Tasks, Capture `capture`, Browse, Me) — **never any badge or count on nav**. Assistant chat stays routed at `assistant` (reachable via Me → Account & advanced only). `today` deep-links land on Now; DayPage/HomePage/CaptureFAB were deleted (voice capture currently has no home).
+
 ### Feature Modules (`src/features/`)
 
 Each feature is a self-contained module with its own components, hooks, services, and types:
@@ -151,7 +162,7 @@ Edge functions (`supabase/functions/`) use the **service role key** — they byp
 
 ### Migrations
 
-Numbered migrations live in `supabase/migrations/`. Two unnumbered legacy files (`smart_notes_migration.sql`, `daily_planning_migration.sql`) were applied manually and are NOT tracked by the CLI. Use `supabase migration repair` if the CLI history gets out of sync (see memory for the full repair pattern).
+Numbered migrations live in `supabase/migrations/`. Two unnumbered legacy files (`smart_notes_migration.sql`, `daily_planning_migration.sql`) were applied manually and are NOT tracked by the CLI. `20260716000001_checkin_gate.sql` was applied to the live DB via the Supabase MCP (remote history name `checkin_gate`) — reconcile with `supabase migration repair` if the CLI complains. Use `supabase migration repair` if the CLI history gets out of sync (see memory for the full repair pattern).
 
 Some migrations also schedule Postgres cron jobs (e.g. `20260130000000_setup_notification_cron.sql`, `20260501000001_off_track_scanner_cron.sql`) that invoke edge functions over HTTP — keep these in mind when renaming or removing functions.
 
