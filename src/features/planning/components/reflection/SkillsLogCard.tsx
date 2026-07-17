@@ -44,25 +44,25 @@ const SkillsLogCard: React.FC = () => {
     };
 
     return (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-4">
-            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <Zap size={18} className="text-yellow-500" /> Skills practiced today
+        <div className="bg-white rounded-[18px] p-6 shadow-cove space-y-4">
+            <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
+                <Zap size={18} className="text-cove-streak" /> Skills practiced today
             </h2>
-            <p className="text-xs text-slate-500 -mt-2">
+            <p className="text-xs font-semibold text-cove-muted -mt-2">
                 Minutes spent practicing each skill — XP is logged immediately.
             </p>
-            {logError && <p className="text-xs text-rose-600">{logError}</p>}
+            {logError && <p className="text-xs font-semibold text-cove-pink">{logError}</p>}
             <ul className="space-y-3">
                 {skills.map((skill) => (
                     <li key={skill.id} className="flex items-center gap-3">
-                        <span className="flex-1 min-w-0 text-sm font-medium text-slate-800 truncate">
+                        <span className="flex-1 min-w-0 text-sm font-bold text-cove-ink truncate">
                             {skill.icon} {skill.name}
-                            <span className="ml-2 text-xs font-normal text-slate-400">
+                            <span className="ml-2 text-xs font-semibold text-cove-soft">
                                 lvl {skill.level}
                             </span>
                         </span>
                         {feedback?.skillId === skill.id ? (
-                            <span className="text-xs font-medium text-emerald-600">
+                            <span className="text-xs font-bold text-cove-success-deep">
                                 {feedback.message}
                             </span>
                         ) : (
@@ -78,9 +78,9 @@ const SkillsLogCard: React.FC = () => {
                                             [skill.id]: e.target.value,
                                         }))
                                     }
-                                    className="w-20 px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-yellow-400"
+                                    className="w-20 px-2 py-1.5 text-sm font-semibold text-cove-ink border border-cove-border rounded-[10px] focus:outline-none focus:ring-1 focus:ring-cove-accent-pale"
                                 />
-                                <span className="text-xs text-slate-500">min</span>
+                                <span className="text-xs font-semibold text-cove-muted">min</span>
                                 <button
                                     type="button"
                                     onClick={() => handleLog(skill.id)}
@@ -88,7 +88,7 @@ const SkillsLogCard: React.FC = () => {
                                         busySkillId === skill.id ||
                                         !Number(minutesBySkill[skill.id])
                                     }
-                                    className="px-3 py-1.5 text-xs font-medium text-yellow-700 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors disabled:opacity-50"
+                                    className="px-3 py-1.5 text-xs font-extrabold text-cove-streak-text bg-cove-tint-amber hover:bg-cove-streak/20 rounded-full transition-colors disabled:opacity-50"
                                 >
                                     {busySkillId === skill.id ? 'Logging…' : 'Log'}
                                 </button>

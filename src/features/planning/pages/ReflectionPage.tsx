@@ -489,11 +489,13 @@ const ReflectionPage: React.FC = () => {
 
             {/* Goals check-in */}
             {goals.length > 0 && (
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-4">
-                    <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                        <Target size={18} className="text-emerald-500" /> Today's goals
+                <div className="app-surface p-6 space-y-4">
+                    <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
+                        <Target size={18} className="text-cove-success" /> Today's goals
                     </h2>
-                    <p className="text-xs text-slate-500 -mt-2">Log how your goals went today.</p>
+                    <p className="text-xs font-semibold text-cove-muted -mt-2">
+                        Log how your goals went today.
+                    </p>
                     <ul className="space-y-4">
                         {goals.map((goal: Goal) => {
                             const entry = goalEntries[goal.id] ?? {};
@@ -504,9 +506,7 @@ const ReflectionPage: React.FC = () => {
                                 }));
                             return (
                                 <li key={goal.id} className="space-y-2">
-                                    <p className="text-sm font-medium text-slate-800">
-                                        {goal.title}
-                                    </p>
+                                    <p className="text-sm font-bold text-cove-ink">{goal.title}</p>
                                     {goal.goalType === 'action' && (
                                         <div className="flex gap-2">
                                             {(['Done', 'Not done'] as const).map((label) => (
@@ -516,16 +516,16 @@ const ReflectionPage: React.FC = () => {
                                                     onClick={() =>
                                                         update({ completed: label === 'Done' })
                                                     }
-                                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-colors ${
                                                         (
                                                             label === 'Done'
                                                                 ? entry.completed
                                                                 : entry.completed === false
                                                         )
                                                             ? label === 'Done'
-                                                                ? 'bg-green-500 text-white'
-                                                                : 'bg-slate-500 text-white'
-                                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                                ? 'bg-cove-success text-white'
+                                                                : 'bg-cove-muted text-white'
+                                                            : 'bg-[#eef6fa] text-cove-muted hover:bg-cove-track'
                                                     }`}
                                                 >
                                                     {label}
@@ -542,16 +542,16 @@ const ReflectionPage: React.FC = () => {
                                                     onClick={() =>
                                                         update({ completed: label === 'Yes' })
                                                     }
-                                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-colors ${
                                                         (
                                                             label === 'Yes'
                                                                 ? entry.completed
                                                                 : entry.completed === false
                                                         )
                                                             ? label === 'Yes'
-                                                                ? 'bg-orange-500 text-white'
-                                                                : 'bg-slate-500 text-white'
-                                                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                                                ? 'bg-cove-streak text-white'
+                                                                : 'bg-cove-muted text-white'
+                                                            : 'bg-[#eef6fa] text-cove-muted hover:bg-cove-track'
                                                     }`}
                                                 >
                                                     {label === 'Yes' ? '🔥 Did it' : 'Skipped'}
@@ -569,9 +569,9 @@ const ReflectionPage: React.FC = () => {
                                                 onChange={(e) =>
                                                     update({ minutesSpent: Number(e.target.value) })
                                                 }
-                                                className="w-20 px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                                                className="w-20 px-2 py-1.5 text-sm font-semibold text-cove-ink border border-cove-border rounded-[10px] focus:outline-none focus:ring-1 focus:ring-cove-accent-pale"
                                             />
-                                            <span className="text-xs text-slate-500">
+                                            <span className="text-xs font-semibold text-cove-muted">
                                                 min spent
                                                 {goal.targetMinutes
                                                     ? ` / ${goal.targetMinutes} target`
@@ -581,7 +581,7 @@ const ReflectionPage: React.FC = () => {
                                     )}
                                     {goal.goalType === 'progress' && (
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-slate-500">
+                                            <span className="text-xs font-semibold text-cove-muted">
                                                 Progress added:
                                             </span>
                                             <input
@@ -595,9 +595,11 @@ const ReflectionPage: React.FC = () => {
                                                         progressDelta: Number(e.target.value),
                                                     })
                                                 }
-                                                className="w-16 px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                                                className="w-16 px-2 py-1.5 text-sm font-semibold text-cove-ink border border-cove-border rounded-[10px] focus:outline-none focus:ring-1 focus:ring-cove-accent-pale"
                                             />
-                                            <span className="text-xs text-slate-500">%</span>
+                                            <span className="text-xs font-semibold text-cove-muted">
+                                                %
+                                            </span>
                                         </div>
                                     )}
                                 </li>
@@ -614,119 +616,124 @@ const ReflectionPage: React.FC = () => {
             <JournalCard refreshToken={savedAt} />
 
             {/* Collapsible day metrics */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100">
+            <div className="app-surface">
                 <button
                     type="button"
                     onClick={() => setMetricsOpen((o) => !o)}
-                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors rounded-xl"
+                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#eef6fa] transition-colors rounded-[18px]"
                 >
-                    <span className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
-                        Day metrics
-                    </span>
+                    <span className="app-label">Day metrics</span>
                     {metricsOpen ? (
-                        <ChevronDown size={18} className="text-slate-400" />
+                        <ChevronDown size={18} className="text-cove-soft" />
                     ) : (
-                        <ChevronRight size={18} className="text-slate-400" />
+                        <ChevronRight size={18} className="text-cove-soft" />
                     )}
                 </button>
 
                 {metricsOpen && (
                     <div className="p-5 pt-0 space-y-6">
                         {loading ? (
-                            <div className="text-slate-500 text-sm">Loading metrics…</div>
+                            <div className="text-cove-muted font-semibold text-sm">
+                                Loading metrics…
+                            </div>
                         ) : error ? (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800 text-sm">
+                            <div className="bg-cove-tint-pink rounded-[12px] p-4 text-cove-pink font-semibold text-sm">
                                 <AlertCircle className="inline mr-2" size={16} /> {error}
                             </div>
                         ) : !reflection ? (
-                            <div className="text-center py-8 text-slate-500 text-sm">
-                                <Clock className="mx-auto text-slate-400 mb-3" size={32} />
+                            <div className="text-center py-8 text-cove-muted font-semibold text-sm">
+                                <Clock className="mx-auto text-cove-soft mb-3" size={32} />
                                 No blocks logged for this date yet.
                             </div>
                         ) : (
                             <>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
                                         <div className="flex items-center gap-3 mb-3">
-                                            <CheckCircle className="text-green-600" size={24} />
-                                            <h3 className="font-semibold text-slate-800">
+                                            <CheckCircle
+                                                className="text-cove-success-deep"
+                                                size={24}
+                                            />
+                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
                                                 Completion
                                             </h3>
                                         </div>
-                                        <div className="text-3xl font-bold text-slate-900 mb-2">
+                                        <div className="text-3xl font-black text-cove-ink mb-2">
                                             {Math.round(reflection.completionRate)}%
                                         </div>
-                                        <div className="text-sm text-slate-600">
+                                        <div className="text-sm font-semibold text-cove-muted">
                                             {reflection.completedBlocks} of {reflection.totalBlocks}{' '}
                                             blocks
                                         </div>
-                                        <div className="mt-3 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                        <div className="mt-3 h-2 bg-cove-track rounded-full overflow-hidden">
                                             <div
-                                                className="h-full bg-green-600 transition-all"
+                                                className="h-full bg-cove-success transition-all"
                                                 style={{ width: `${reflection.completionRate}%` }}
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
                                         <div className="flex items-center gap-3 mb-3">
                                             <Target
-                                                className={`${Math.abs(reflection.avgVariancePercent) <= 10 ? 'text-green-600' : 'text-amber-600'}`}
+                                                className={`${Math.abs(reflection.avgVariancePercent) <= 10 ? 'text-cove-success-deep' : 'text-[#c07a1e]'}`}
                                                 size={24}
                                             />
-                                            <h3 className="font-semibold text-slate-800">
+                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
                                                 Accuracy
                                             </h3>
                                         </div>
-                                        <div className="text-3xl font-bold text-slate-900 mb-2">
+                                        <div className="text-3xl font-black text-cove-ink mb-2">
                                             {formatPercent(reflection.avgVariancePercent)}
                                         </div>
-                                        <div className="text-sm text-slate-600">
+                                        <div className="text-sm font-semibold text-cove-muted">
                                             {reflection.avgVariancePercent > 0
                                                 ? 'Underestimated'
                                                 : 'Overestimated'}
                                         </div>
                                     </div>
 
-                                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
                                         <div className="flex items-center gap-3 mb-3">
-                                            <Clock className="text-indigo-600" size={24} />
-                                            <h3 className="font-semibold text-slate-800">
+                                            <Clock className="text-cove-accent" size={24} />
+                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
                                                 Time Variance
                                             </h3>
                                         </div>
-                                        <div className="text-3xl font-bold text-slate-900 mb-2">
+                                        <div className="text-3xl font-black text-cove-ink mb-2">
                                             {formatVariance(reflection.totalVariance)}
                                         </div>
-                                        <div className="text-sm text-slate-600">
+                                        <div className="text-sm font-semibold text-cove-muted">
                                             Planned: {reflection.totalEstimatedMinutes}min
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <TrendingUp className="text-red-600" size={20} />
-                                            <h3 className="font-semibold text-slate-800">
+                                            <TrendingUp className="text-cove-pink" size={20} />
+                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
                                                 Took Longer
                                             </h3>
                                         </div>
                                         {reflection.underestimated.length === 0 ? (
-                                            <p className="text-sm text-slate-500 italic">None</p>
+                                            <p className="text-sm font-semibold text-cove-soft italic">
+                                                None
+                                            </p>
                                         ) : (
                                             <div className="space-y-2">
                                                 {reflection.underestimated
                                                     .slice(0, 3)
                                                     .map((item) => (
                                                         <div key={item.blockId} className="text-sm">
-                                                            <div className="font-medium text-slate-800">
+                                                            <div className="font-bold text-cove-ink">
                                                                 {item.activityName}
                                                             </div>
-                                                            <div className="text-xs text-slate-600">
+                                                            <div className="text-xs font-semibold text-cove-muted">
                                                                 Est: {item.estimatedMinutes}min →
                                                                 Actual: {item.actualMinutes}min
-                                                                <span className="text-red-600 ml-1">
+                                                                <span className="text-cove-pink ml-1">
                                                                     (
                                                                     {formatPercent(
                                                                         item.variancePercent,
@@ -740,26 +747,28 @@ const ReflectionPage: React.FC = () => {
                                         )}
                                     </div>
 
-                                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <Target className="text-green-600" size={20} />
-                                            <h3 className="font-semibold text-slate-800">
+                                            <Target className="text-cove-success-deep" size={20} />
+                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
                                                 Accurate (±10%)
                                             </h3>
                                         </div>
                                         {reflection.accurate.length === 0 ? (
-                                            <p className="text-sm text-slate-500 italic">None</p>
+                                            <p className="text-sm font-semibold text-cove-soft italic">
+                                                None
+                                            </p>
                                         ) : (
                                             <div className="space-y-2">
                                                 {reflection.accurate.slice(0, 3).map((item) => (
                                                     <div key={item.blockId} className="text-sm">
-                                                        <div className="font-medium text-slate-800">
+                                                        <div className="font-bold text-cove-ink">
                                                             {item.activityName}
                                                         </div>
-                                                        <div className="text-xs text-slate-600">
+                                                        <div className="text-xs font-semibold text-cove-muted">
                                                             Est: {item.estimatedMinutes}min →
                                                             Actual: {item.actualMinutes}min
-                                                            <span className="text-green-600 ml-1">
+                                                            <span className="text-cove-success-deep ml-1">
                                                                 ✓
                                                             </span>
                                                         </div>
@@ -769,28 +778,30 @@ const ReflectionPage: React.FC = () => {
                                         )}
                                     </div>
 
-                                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <TrendingDown className="text-blue-600" size={20} />
-                                            <h3 className="font-semibold text-slate-800">
+                                            <TrendingDown className="text-cove-accent" size={20} />
+                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
                                                 Took Less Time
                                             </h3>
                                         </div>
                                         {reflection.overestimated.length === 0 ? (
-                                            <p className="text-sm text-slate-500 italic">None</p>
+                                            <p className="text-sm font-semibold text-cove-soft italic">
+                                                None
+                                            </p>
                                         ) : (
                                             <div className="space-y-2">
                                                 {reflection.overestimated
                                                     .slice(0, 3)
                                                     .map((item) => (
                                                         <div key={item.blockId} className="text-sm">
-                                                            <div className="font-medium text-slate-800">
+                                                            <div className="font-bold text-cove-ink">
                                                                 {item.activityName}
                                                             </div>
-                                                            <div className="text-xs text-slate-600">
+                                                            <div className="text-xs font-semibold text-cove-muted">
                                                                 Est: {item.estimatedMinutes}min →
                                                                 Actual: {item.actualMinutes}min
-                                                                <span className="text-blue-600 ml-1">
+                                                                <span className="text-cove-accent ml-1">
                                                                     (
                                                                     {formatPercent(
                                                                         item.variancePercent,
@@ -806,10 +817,10 @@ const ReflectionPage: React.FC = () => {
                                 </div>
 
                                 {patterns.length > 0 && (
-                                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
+                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
                                         <div className="flex items-center gap-3 mb-4">
-                                            <Lightbulb className="text-amber-600" size={24} />
-                                            <h3 className="text-xl font-semibold text-slate-800">
+                                            <Lightbulb className="text-cove-streak" size={24} />
+                                            <h3 className="text-[15px] font-extrabold text-cove-ink">
                                                 Insights & Patterns
                                             </h3>
                                         </div>
@@ -817,24 +828,24 @@ const ReflectionPage: React.FC = () => {
                                             {patterns.map((pattern, idx) => (
                                                 <div
                                                     key={idx}
-                                                    className="p-4 bg-amber-50 border border-amber-200 rounded-lg"
+                                                    className="p-4 bg-cove-tint-amber rounded-[12px]"
                                                 >
                                                     <div className="flex items-start gap-3">
                                                         <Lightbulb
-                                                            className="text-amber-600 mt-1 flex-shrink-0"
+                                                            className="text-cove-streak-deep mt-1 flex-shrink-0"
                                                             size={20}
                                                         />
                                                         <div className="flex-1">
-                                                            <div className="font-medium text-slate-800 mb-1">
+                                                            <div className="font-bold text-cove-ink mb-1">
                                                                 {pattern.pattern}
                                                             </div>
-                                                            <div className="text-sm text-slate-600 mb-2">
+                                                            <div className="text-sm font-semibold text-cove-muted mb-2">
                                                                 Based on {pattern.sampleSize} task
                                                                 {pattern.sampleSize !== 1
                                                                     ? 's'
                                                                     : ''}
                                                             </div>
-                                                            <div className="text-sm text-amber-900 bg-amber-100 px-3 py-2 rounded">
+                                                            <div className="text-sm font-semibold text-cove-streak-text bg-white/70 px-3 py-2 rounded-[10px]">
                                                                 💡 <strong>Recommendation:</strong>{' '}
                                                                 {pattern.recommendation}
                                                             </div>

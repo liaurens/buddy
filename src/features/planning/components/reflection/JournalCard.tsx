@@ -36,40 +36,43 @@ const JournalCard: React.FC<JournalCardProps> = ({ refreshToken }) => {
     });
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100">
+        <div className="bg-white rounded-[18px] shadow-cove">
             <button
                 type="button"
                 onClick={() => setOpen((o) => !o)}
-                className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors rounded-xl"
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#eef6fa] transition-colors rounded-[18px]"
             >
-                <span className="flex items-center gap-2 text-sm font-semibold text-slate-700 uppercase tracking-wide">
-                    <BookOpen size={16} className="text-amber-500" /> Journal — last {HISTORY_DAYS}{' '}
-                    days
+                <span className="flex items-center gap-2 text-sm font-extrabold text-cove-muted uppercase tracking-wide">
+                    <BookOpen size={16} className="text-cove-streak" /> Journal — last{' '}
+                    {HISTORY_DAYS} days
                 </span>
                 {open ? (
-                    <ChevronDown size={18} className="text-slate-400" />
+                    <ChevronDown size={18} className="text-cove-soft" />
                 ) : (
-                    <ChevronRight size={18} className="text-slate-400" />
+                    <ChevronRight size={18} className="text-cove-soft" />
                 )}
             </button>
 
             {open && (
                 <div className="px-5 pb-5">
                     {isLoading ? (
-                        <p className="text-sm text-slate-400 py-2">Loading…</p>
+                        <p className="text-sm font-semibold text-cove-soft py-2">Loading…</p>
                     ) : error ? (
-                        <p className="text-sm text-rose-600 py-2">
+                        <p className="text-sm font-semibold text-cove-pink py-2">
                             Could not load journal entries.
                         </p>
                     ) : entries.length === 0 ? (
-                        <p className="text-sm text-slate-400 py-2 italic">
+                        <p className="text-sm font-semibold text-cove-soft py-2 italic">
                             No journal entries yet. Save a reflection above and it lands here.
                         </p>
                     ) : (
                         <ul className="space-y-4">
                             {entries.map((entry) => (
-                                <li key={entry.id} className="border-l-2 border-amber-200 pl-3">
-                                    <p className="text-xs font-semibold text-slate-500">
+                                <li
+                                    key={entry.id}
+                                    className="border-l-2 border-cove-streak/40 pl-3"
+                                >
+                                    <p className="text-xs font-bold text-cove-muted">
                                         {format(parseISO(entry.date), 'EEEE, MMM d')}
                                     </p>
                                     <div className="mt-1 space-y-1.5">
@@ -77,10 +80,10 @@ const JournalCard: React.FC<JournalCardProps> = ({ refreshToken }) => {
                                             .filter((p) => p.answer)
                                             .map((p) => (
                                                 <div key={p.promptId}>
-                                                    <span className="text-xs text-slate-400">
+                                                    <span className="text-xs font-semibold text-cove-soft">
                                                         {p.question}
                                                     </span>
-                                                    <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                                                    <p className="text-sm font-semibold text-cove-ink whitespace-pre-wrap">
                                                         {p.answer}
                                                     </p>
                                                 </div>

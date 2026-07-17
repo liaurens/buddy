@@ -360,7 +360,7 @@ const CalendarPage: React.FC = () => {
                                                             )}
                                                         </div>
                                                         {a.description && (
-                                                            <div className="text-xs text-slate-500 mt-1">
+                                                            <div className="text-xs text-cove-soft mt-1">
                                                                 {a.description}
                                                             </div>
                                                         )}
@@ -378,17 +378,17 @@ const CalendarPage: React.FC = () => {
                                         {getCalendarEventsForDay(selectedDay).map((event) => (
                                             <div
                                                 key={event.id}
-                                                className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg border border-purple-100"
+                                                className="flex items-start gap-3 p-3 bg-cove-tint-purple rounded-lg"
                                             >
                                                 <CalendarIcon
                                                     size={16}
-                                                    className="text-purple-600 mt-0.5 shrink-0"
+                                                    className="text-cove-purple mt-0.5 shrink-0"
                                                 />
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="font-medium text-slate-800 truncate">
+                                                    <div className="font-bold text-cove-ink truncate">
                                                         {event.title}
                                                     </div>
-                                                    <div className="text-xs text-slate-600 mt-1">
+                                                    <div className="text-xs font-semibold text-cove-muted mt-1">
                                                         {format(
                                                             new Date(event.startTime),
                                                             'h:mm a',
@@ -397,13 +397,13 @@ const CalendarPage: React.FC = () => {
                                                         {format(new Date(event.endTime), 'h:mm a')}
                                                     </div>
                                                     {event.location && (
-                                                        <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                                                        <div className="text-xs text-cove-soft mt-1 flex items-center gap-1">
                                                             <MapPin size={12} />
                                                             {event.location}
                                                         </div>
                                                     )}
                                                     {event.description && (
-                                                        <div className="text-xs text-slate-500 mt-1">
+                                                        <div className="text-xs text-cove-soft mt-1">
                                                             {event.description}
                                                         </div>
                                                     )}
@@ -423,16 +423,16 @@ const CalendarPage: React.FC = () => {
                                                 {todo.completed ? (
                                                     <CheckCircle
                                                         size={18}
-                                                        className="text-emerald-500"
+                                                        className="text-cove-success"
                                                     />
                                                 ) : (
-                                                    <Circle size={18} className="text-slate-300" />
+                                                    <Circle size={18} className="text-cove-faint" />
                                                 )}
                                                 <span
                                                     className={
                                                         todo.completed
-                                                            ? 'line-through text-slate-400'
-                                                            : 'text-slate-700'
+                                                            ? 'line-through font-semibold text-cove-faint'
+                                                            : 'font-semibold text-cove-ink'
                                                     }
                                                 >
                                                     {todo.title}

@@ -272,32 +272,34 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
         <div className={embedded ? 'space-y-5' : 'app-page-readable'}>
             {/* Page Header */}
             {!embedded && (
-                <header className="hidden lg:block">
-                    <h1 className="app-title flex items-center gap-3">
-                        <div className="rounded-xl bg-indigo-50 p-2 text-indigo-700">
-                            <User size={24} />
-                        </div>
+                <header>
+                    <div className="px-1 pb-1 pt-1.5 text-[22px] font-black text-cove-ink">
                         Account
-                    </h1>
+                    </div>
+                    <div className="px-1 pb-4 text-[13.5px] font-semibold text-cove-muted">
+                        Your profile, AI setup, capture key, and data.
+                    </div>
                 </header>
             )}
 
             {/* Account Info */}
-            <div className="rounded-xl border border-indigo-100 bg-indigo-700 p-5 text-white shadow-[0_12px_30px_rgba(37,50,155,0.14)]">
+            <div className="rounded-[20px] bg-cove-accent p-5 text-white shadow-cove-strong">
                 <div className="flex items-center gap-3 mb-4">
                     <User size={24} />
-                    <h2 className="text-xl font-semibold">Profile</h2>
+                    <h2 className="text-lg font-extrabold">Profile</h2>
                 </div>
 
                 <div className="space-y-4">
-                    <div className="bg-white/20 rounded-lg p-4">
-                        <p className="text-sm opacity-90">Logged in as:</p>
-                        <p className="font-semibold text-lg">{user?.email}</p>
-                        <p className="text-xs opacity-75 mt-1">Data synced across all devices</p>
+                    <div className="bg-white/20 rounded-[14px] p-4">
+                        <p className="text-sm font-semibold opacity-90">Logged in as:</p>
+                        <p className="font-extrabold text-lg">{user?.email}</p>
+                        <p className="text-xs font-semibold opacity-75 mt-1">
+                            Data synced across all devices
+                        </p>
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center justify-center gap-2 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors"
+                        className="w-full flex items-center justify-center gap-2 py-2 bg-white/20 hover:bg-white/30 rounded-[12px] font-extrabold transition-colors"
                     >
                         <LogOut size={18} /> Log Out
                     </button>
@@ -307,10 +309,10 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
             {/* AI Provider Settings */}
             <div className="app-surface p-5">
                 <div className="flex items-center gap-3 mb-4">
-                    <Brain className="text-indigo-700" size={24} />
+                    <Brain className="text-cove-accent" size={24} />
                     <div>
-                        <h2 className="text-xl font-semibold text-slate-800">AI Provider</h2>
-                        <p className="text-xs text-slate-500">
+                        <h2 className="text-[15px] font-extrabold text-cove-ink">AI Provider</h2>
+                        <p className="text-xs font-semibold text-cove-muted">
                             Powers the Buddy Assistant and AI planning
                         </p>
                     </div>
@@ -319,7 +321,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                 {aiSettings ? (
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-bold text-cove-ink mb-1">
                                 Provider
                             </label>
                             <select
@@ -330,7 +332,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                                         aiProvider: e.target.value as AISettings['aiProvider'],
                                     })
                                 }
-                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                className="w-full rounded-[12px] border border-cove-border px-3 py-2 text-sm font-semibold text-cove-ink focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
                             >
                                 <option value="openai">OpenAI</option>
                                 <option value="anthropic">Anthropic</option>
@@ -339,7 +341,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-bold text-cove-ink mb-1">
                                 API Key
                             </label>
                             <input
@@ -356,16 +358,16 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                                         aiApiKey: e.target.value || null,
                                     })
                                 }
-                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                className="w-full rounded-[12px] border border-cove-border px-3 py-2 text-sm font-semibold text-cove-ink focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
                             />
-                            <p className="text-xs text-slate-400 mt-1">
+                            <p className="text-xs font-semibold text-cove-soft mt-1">
                                 The saved key is only available to the server and is never returned
                                 to this browser.
                             </p>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-bold text-cove-ink mb-1">
                                 Model (optional)
                             </label>
                             <input
@@ -378,7 +380,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                                         aiModel: e.target.value || null,
                                     })
                                 }
-                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                                className="w-full rounded-[12px] border border-cove-border px-3 py-2 text-sm font-semibold text-cove-ink focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
                             />
                         </div>
 
@@ -386,7 +388,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                             <button
                                 onClick={handleTestAiSettings}
                                 disabled={aiSaving || aiTesting}
-                                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                                className="rounded-[12px] bg-[#eef6fa] px-4 py-2 text-sm font-extrabold text-cove-muted hover:bg-cove-track transition-colors disabled:opacity-50"
                             >
                                 {aiTesting ? 'Testing...' : 'Test connection'}
                             </button>
@@ -400,7 +402,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                         </div>
                     </div>
                 ) : (
-                    <p className="text-sm text-slate-400">Loading...</p>
+                    <p className="text-sm font-semibold text-cove-soft">Loading...</p>
                 )}
             </div>
 
@@ -411,24 +413,24 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
 
                     {/* Test Notification Buttons */}
                     <div className="app-surface p-4">
-                        <h3 className="text-sm font-semibold text-slate-700 mb-3">
+                        <h3 className="text-[14.5px] font-extrabold text-cove-ink mb-3">
                             Test Notifications
                         </h3>
                         <div className="flex gap-2">
                             <button
                                 onClick={handleTestNotificationNow}
-                                className="flex-1 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium"
+                                className="flex-1 px-4 py-2 bg-cove-tint-blue text-cove-accent rounded-[12px] hover:bg-cove-accent-pale transition-colors text-sm font-extrabold"
                             >
                                 Send Now
                             </button>
                             <button
                                 onClick={handleTestNotificationScheduled}
-                                className="flex-1 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors text-sm font-medium"
+                                className="flex-1 px-4 py-2 bg-cove-tint-purple text-cove-purple rounded-[12px] hover:bg-cove-tint-purple/70 transition-colors text-sm font-extrabold"
                             >
                                 Schedule (1 min)
                             </button>
                         </div>
-                        <p className="text-xs text-slate-500 mt-2">
+                        <p className="text-xs font-semibold text-cove-muted mt-2">
                             First enable notifications above, then test with these buttons
                         </p>
                     </div>
@@ -438,12 +440,12 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
             {/* Quick Capture API Section */}
             <div className="app-surface p-5">
                 <div className="flex items-center gap-3 mb-4">
-                    <Zap className="text-cyan-600" size={24} />
-                    <h2 className="text-xl font-semibold text-slate-800">
+                    <Zap className="text-cove-accent" size={24} />
+                    <h2 className="text-[15px] font-extrabold text-cove-ink">
                         Quick Capture API (iPhone Shortcut)
                     </h2>
                 </div>
-                <p className="text-sm text-slate-500 mb-4">
+                <p className="text-sm font-semibold text-cove-muted mb-4">
                     Use this API key with an iPhone Shortcut to capture anything via Siri /
                     back-tap. Free text → AI figures it out. Prefix with a flag (e.g.{' '}
                     <code>-remind 14:00 …</code>) to skip AI.
@@ -452,25 +454,25 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                 {apiKeyConfigured ? (
                     <div className="space-y-3">
                         <div className="flex items-center gap-2">
-                            <code className="flex-1 p-3 bg-slate-100 rounded-lg text-sm font-mono text-slate-700 truncate">
+                            <code className="flex-1 p-3 bg-[#eef6fa] rounded-[12px] text-sm font-mono text-cove-ink truncate">
                                 {apiKey ?? `${apiKeyPrefix ?? 'qn_'}••••••••••••••••••••`}
                             </code>
                             {apiKey && (
                                 <button
                                     onClick={copyApiKey}
-                                    className="p-3 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                                    className="p-3 bg-[#eef6fa] hover:bg-cove-track rounded-[12px] transition-colors"
                                     title="Copy"
                                 >
                                     {apiKeyCopied ? (
-                                        <Check size={18} className="text-green-600" />
+                                        <Check size={18} className="text-cove-success" />
                                     ) : (
-                                        <Copy size={18} className="text-slate-600" />
+                                        <Copy size={18} className="text-cove-muted" />
                                     )}
                                 </button>
                             )}
                         </div>
                         {!apiKey && (
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs font-semibold text-cove-muted">
                                 The token is stored as a one-way hash. Rotate it to reveal a new
                                 token once.
                             </p>
@@ -478,7 +480,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                         <button
                             onClick={generateApiKey}
                             disabled={isGeneratingKey}
-                            className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-800"
+                            className="flex items-center gap-2 text-sm font-bold text-cove-muted hover:text-cove-ink"
                         >
                             <RefreshCw
                                 size={14}
@@ -486,26 +488,26 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                             />
                             Rotate Key
                         </button>
-                        <div className="mt-4 p-3 bg-cyan-50 rounded-lg border border-cyan-100 space-y-2">
-                            <p className="text-xs text-cyan-900">
+                        <div className="mt-4 p-3 bg-cove-tint-blue rounded-[12px] space-y-2">
+                            <p className="text-xs font-semibold text-cove-ink">
                                 <strong>Endpoint:</strong>{' '}
                                 <code>{`<supabase-url>/functions/v1/assistant`}</code> (POST)
                             </p>
-                            <p className="text-xs text-cyan-900">
+                            <p className="text-xs font-semibold text-cove-ink">
                                 <strong>Body:</strong>{' '}
                                 <code>{`{ "input": "<text>", "api_key": "<key above>", "source": "iphone" }`}</code>
                             </p>
-                            <p className="text-xs text-cyan-900">
+                            <p className="text-xs font-semibold text-cove-ink">
                                 <strong>Response:</strong> JSON with <code>success</code>,{' '}
                                 <code>action_taken</code>, <code>data</code>. Show{' '}
                                 <code>action_taken</code> in a Notification action to confirm.
                             </p>
                         </div>
-                        <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <p className="text-xs font-semibold text-slate-700 mb-2">
+                        <div className="mt-2 p-3 bg-[#eef6fa] rounded-[12px]">
+                            <p className="text-xs font-extrabold text-cove-ink mb-2">
                                 Flag cheat sheet (skip AI):
                             </p>
-                            <ul className="text-xs text-slate-600 space-y-1 font-mono">
+                            <ul className="text-xs text-cove-muted space-y-1 font-mono">
                                 <li>
                                     <code>-task</code> / <code>-todo</code> &nbsp; fix bike by
                                     friday
@@ -548,7 +550,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                                     <code>-habits</code> &nbsp; <em>(streaks &amp; open tasks)</em>
                                 </li>
                             </ul>
-                            <p className="text-[11px] text-slate-500 mt-2">
+                            <p className="text-[11px] font-semibold text-cove-soft mt-2">
                                 No flag → AI routes it. Slash form (<code>/task …</code>) works too.
                             </p>
                         </div>
@@ -557,7 +559,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                     <button
                         onClick={generateApiKey}
                         disabled={isGeneratingKey}
-                        className="flex items-center gap-2 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 font-medium"
+                        className="app-primary-button"
                     >
                         {isGeneratingKey ? (
                             <RefreshCw size={16} className="animate-spin" />
@@ -574,56 +576,53 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
 
             {/* Data Management Section */}
             <div className="app-surface overflow-hidden">
-                <div className="p-4 border-b border-slate-100 bg-slate-50">
-                    <h2 className="font-bold text-slate-800">Data Management</h2>
+                <div className="p-4 bg-[#eef6fa]">
+                    <h2 className="text-[14.5px] font-extrabold text-cove-ink">Data Management</h2>
                 </div>
                 <div className="p-4 space-y-4">
                     <div className="flex gap-4">
                         <button
                             onClick={handleExport}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 font-medium transition-colors"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#eef6fa] text-cove-muted rounded-[14px] hover:bg-cove-track font-extrabold transition-colors"
                         >
                             <Download size={20} /> Export Data
                         </button>
                         <button
                             onClick={() => setShowImport(!showImport)}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 font-medium transition-colors"
+                            className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#eef6fa] text-cove-muted rounded-[14px] hover:bg-cove-track font-extrabold transition-colors"
                         >
                             <Upload size={20} /> Import Data
                         </button>
                     </div>
 
                     {showImport && (
-                        <div className="space-y-3 p-4 bg-slate-50 rounded-xl">
-                            <label className="block text-sm font-medium text-slate-700">
+                        <div className="space-y-3 p-4 bg-[#eef6fa] rounded-[14px]">
+                            <label className="block text-sm font-bold text-cove-ink">
                                 Paste JSON Data
                             </label>
                             <textarea
                                 value={importText}
                                 onChange={(e) => setImportText(e.target.value)}
-                                className="w-full h-32 p-3 text-sm font-mono border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                className="w-full h-32 p-3 text-sm font-mono border border-cove-border rounded-[12px] bg-white text-cove-ink focus:ring-2 focus:ring-cove-accent-pale outline-none"
                                 placeholder='{"entries": [...], "trackers": [...] }'
                             />
-                            <button
-                                onClick={handleImport}
-                                className="w-full py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
-                            >
+                            <button onClick={handleImport} className="app-primary-button w-full">
                                 Import Data
                             </button>
                         </div>
                     )}
 
-                    <div className="pt-4 border-t border-slate-100">
-                        <h3 className="font-bold text-rose-600 mb-2 text-sm uppercase tracking-wider">
+                    <div className="pt-4 border-t border-cove-border/50">
+                        <h3 className="font-extrabold text-cove-pink mb-2 text-sm uppercase tracking-wider">
                             Danger Zone
                         </h3>
                         <button
                             onClick={handleResetDatabase}
-                            className="w-full py-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl font-bold hover:bg-rose-100 transition-colors flex items-center justify-center gap-2"
+                            className="w-full py-3 bg-cove-tint-pink text-cove-pink rounded-[14px] font-extrabold hover:bg-cove-pink/20 transition-colors flex items-center justify-center gap-2"
                         >
                             <Trash2 size={20} /> Delete All Data
                         </button>
-                        <p className="text-xs text-center text-slate-400 mt-2">
+                        <p className="text-xs font-semibold text-center text-cove-soft mt-2">
                             This will permanently delete all your data from the cloud.
                         </p>
                     </div>
