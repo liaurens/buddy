@@ -5,7 +5,7 @@ import Analysis from '../components/tracker/Analysis';
 import CreateTrackerModal from '../components/tracker/CreateTrackerModal';
 import SegmentComparePanel from '../components/tracker/SegmentComparePanel';
 import type { TrackerDefinition } from '../types';
-import { Plus } from 'lucide-react';
+import { ChevronDown, Plus } from 'lucide-react';
 
 interface TrackerPageProps {
     initialParams?: {
@@ -16,20 +16,20 @@ interface TrackerPageProps {
 }
 
 const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
-    const [trackerSubTab, setTrackerSubTab] = useState<'dashboard' | 'add' | 'analysis'>(
-        initialParams?.subTab || 'dashboard',
-    );
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingTracker, setEditingTracker] = useState<TrackerDefinition | undefined>(undefined);
     const [analysisPair, setAnalysisPair] = useState<{ xId?: string; yId?: string }>({
         xId: initialParams?.xId,
         yId: initialParams?.yId,
     });
+    const [isAnalysisOpen, setIsAnalysisOpen] = useState(
+        initialParams?.subTab === 'analysis' || Boolean(initialParams?.xId || initialParams?.yId),
+    );
 
-    // Reset subtab if params change (optional, but good for navigation)
+    // Deep-links (e.g. correlation notifications) still open the analysis fold.
     useEffect(() => {
-        if (initialParams?.subTab) {
-            setTrackerSubTab(initialParams.subTab);
+        if (initialParams?.subTab === 'analysis' || initialParams?.xId || initialParams?.yId) {
+            setIsAnalysisOpen(true);
         }
         if (initialParams?.xId || initialParams?.yId) {
             setAnalysisPair({ xId: initialParams.xId, yId: initialParams.yId });
@@ -39,75 +39,67 @@ const TrackerPage: React.FC<TrackerPageProps> = ({ initialParams }) => {
     return (
         <div className="app-page">
             {/* Page Header */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div className="hidden lg:block">
-                    <h1 className="app-title">Health Tracking</h1>
-                    <p className="app-subtitle">Monitor your metrics and discover patterns.</p>
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <div className="px-1 pb-1 pt-1.5 text-[22px] font-black text-cove-ink">
+                        Health
+                    </div>
+                    <div className="px-1 pb-4 text-[13.5px] font-semibold text-cove-muted">
+                        Check in daily and watch your patterns.
+                    </div>
                 </div>
                 <button
                     onClick={() => {
                         setEditingTracker(undefined);
                         setIsCreateModalOpen(true);
                     }}
-                    className="app-primary-button self-start sm:self-auto"
+                    className="app-primary-button mt-1.5 shrink-0"
                 >
                     <Plus size={18} />
                     <span>New Tracker</span>
                 </button>
             </div>
 
-            {/* Tracker Sub-Navigation */}
-            <div className="app-segmented">
-                <button
-                    onClick={() => setTrackerSubTab('dashboard')}
-                    className={`app-segment ${
-                        trackerSubTab === 'dashboard' ? 'app-segment-active' : ''
-                    }`}
-                >
-                    Dashboard
-                </button>
-                <button
-                    onClick={() => setTrackerSubTab('add')}
-                    className={`app-segment ${trackerSubTab === 'add' ? 'app-segment-active' : ''}`}
-                >
-                    Add Entry
-                </button>
-                <button
-                    onClick={() => setTrackerSubTab('analysis')}
-                    className={`app-segment ${
-                        trackerSubTab === 'analysis' ? 'app-segment-active' : ''
-                    }`}
-                >
-                    Analysis
-                </button>
-            </div>
+            {/* Daily check-in first */}
+            <EntryForm
+                onManageTrackers={() => {
+                    setEditingTracker(undefined);
+                    setIsCreateModalOpen(true);
+                }}
+            />
 
-            {trackerSubTab === 'dashboard' && (
-                <Dashboard
-                    onEditTracker={(tracker) => {
-                        setEditingTracker(tracker);
-                        setIsCreateModalOpen(true);
-                    }}
-                />
-            )}
-            {trackerSubTab === 'add' && (
-                <EntryForm
-                    onManageTrackers={() => {
-                        setEditingTracker(undefined);
-                        setIsCreateModalOpen(true);
-                    }}
-                />
-            )}
-            {trackerSubTab === 'analysis' && (
-                <>
-                    <Analysis
-                        key={`${analysisPair.xId ?? ''}-${analysisPair.yId ?? ''}`}
-                        initialX={analysisPair.xId}
-                        initialY={analysisPair.yId}
+            {/* Simple trends */}
+            <Dashboard
+                onEditTracker={(tracker) => {
+                    setEditingTracker(tracker);
+                    setIsCreateModalOpen(true);
+                }}
+            />
+
+            {/* Deep analysis, folded behind one quiet disclosure */}
+            <div>
+                <button
+                    type="button"
+                    onClick={() => setIsAnalysisOpen((open) => !open)}
+                    className="flex items-center gap-1 px-1 text-[13px] font-extrabold text-cove-faint transition-colors hover:text-cove-muted"
+                >
+                    Explore my data
+                    <ChevronDown
+                        size={15}
+                        className={`transition-transform ${isAnalysisOpen ? 'rotate-180' : ''}`}
                     />
-                    <SegmentComparePanel />
-                </>
-            )}
+                </button>
+                {isAnalysisOpen && (
+                    <div className="mt-4 space-y-5">
+                        <Analysis
+                            key={`${analysisPair.xId ?? ''}-${analysisPair.yId ?? ''}`}
+                            initialX={analysisPair.xId}
+                            initialY={analysisPair.yId}
+                        />
+                        <SegmentComparePanel />
+                    </div>
+                )}
+            </div>
 
             <CreateTrackerModal
                 isOpen={isCreateModalOpen}

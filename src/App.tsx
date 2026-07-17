@@ -41,7 +41,6 @@ const AssistantChat = lazy(() => import('./features/assistant/components/Assista
 const SchoolPage = lazy(() => import('./features/school/pages/SchoolPage'));
 const MePage = lazy(() => import('./features/me/pages/MePage'));
 const BrowsePage = lazy(() => import('./features/browse/pages/BrowsePage'));
-const DayPage = lazy(() => import('./features/day/pages/DayPage'));
 const NotificationsPage = lazy(() => import('./features/notifications/pages/NotificationsPage'));
 const GoogleOAuthCallbackPage = lazy(
     () => import('./features/planning/pages/GoogleOAuthCallbackPage'),
@@ -207,8 +206,10 @@ const App: React.FC = () => {
                 return <BrowsePage onNavigate={handleNavigate} />;
             case 'me':
                 return <MePage onNavigate={handleNavigate} />;
+            // The old DayPage routines are folded into the gate (morning), the
+            // Now midday card, and the close-day overlay — old deep-links land on Now.
             case 'today':
-                return <DayPage onNavigate={handleNavigate} initialParams={navParams} />;
+                return <NowPage onNavigate={handleNavigate} />;
             case 'goals':
                 return <ReflectionPage />;
             case 'notifications':

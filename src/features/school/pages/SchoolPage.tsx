@@ -103,83 +103,81 @@ const SchoolFocusRail: React.FC<SchoolFocusRailProps> = ({ assignments, classes,
             <section className="app-surface p-4">
                 <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
-                        <h2 className="text-sm font-semibold text-slate-950">Today focus</h2>
-                        <p className="mt-1 text-sm leading-5 text-slate-500">
+                        <h2 className="text-[14.5px] font-extrabold text-cove-ink">Today focus</h2>
+                        <p className="mt-1 text-[13px] font-semibold leading-5 text-cove-muted">
                             What needs attention first.
                         </p>
                     </div>
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cove-tint-blue text-cove-accent">
                         <CalendarCheck size={19} />
                     </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
-                        <p className="text-2xl font-semibold leading-none text-slate-950">
+                    <div className="rounded-xl bg-[#eef6fa] p-3">
+                        <p className="text-2xl font-extrabold leading-none text-cove-ink">
                             {open.length}
                         </p>
-                        <p className="mt-1 text-xs font-medium text-slate-500">Open</p>
+                        <p className="mt-1 text-xs font-bold text-cove-muted">Open</p>
                     </div>
-                    <div className="rounded-xl border border-red-100 bg-red-50/70 p-3">
-                        <p className="text-2xl font-semibold leading-none text-red-700">
+                    <div className="rounded-xl bg-cove-tint-pink p-3">
+                        <p className="text-2xl font-extrabold leading-none text-cove-pink">
                             {overdue.length}
                         </p>
-                        <p className="mt-1 text-xs font-medium text-red-700">Overdue</p>
+                        <p className="mt-1 text-xs font-bold text-cove-pink">Overdue</p>
                     </div>
-                    <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 p-3">
-                        <p className="text-2xl font-semibold leading-none text-indigo-800">
+                    <div className="rounded-xl bg-cove-tint-blue p-3">
+                        <p className="text-2xl font-extrabold leading-none text-cove-accent">
                             {dueSoon.length}
                         </p>
-                        <p className="mt-1 text-xs font-medium text-indigo-700">Due soon</p>
+                        <p className="mt-1 text-xs font-bold text-cove-accent">Due soon</p>
                     </div>
-                    <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3">
-                        <p className="text-2xl font-semibold leading-none text-emerald-700">
+                    <div className="rounded-xl bg-cove-tint-green p-3">
+                        <p className="text-2xl font-extrabold leading-none text-cove-success-deep">
                             {submitted.length}
                         </p>
-                        <p className="mt-1 text-xs font-medium text-emerald-700">Submitted</p>
+                        <p className="mt-1 text-xs font-bold text-cove-success-deep">Submitted</p>
                     </div>
                 </div>
             </section>
 
             <section className="app-surface p-4">
-                <h2 className="text-sm font-semibold text-slate-950">Next up</h2>
+                <h2 className="text-[14.5px] font-extrabold text-cove-ink">Next up</h2>
                 {nextAssignment ? (
-                    <div className="mt-3 rounded-xl border border-slate-200/80 bg-white p-3">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-950">
+                    <div className="mt-3 rounded-xl bg-[#eef6fa] p-3">
+                        <div className="flex items-center gap-2 text-sm font-bold text-cove-ink">
                             <span
                                 className="h-2.5 w-2.5 rounded-full"
                                 style={{
                                     backgroundColor:
-                                        classMap.get(nextAssignment.classId)?.color ?? '#64748b',
+                                        classMap.get(nextAssignment.classId)?.color ?? '#9cb9c9',
                                 }}
                             />
                             <span className="min-w-0 truncate">{nextAssignment.title}</span>
                         </div>
-                        <p className="mt-2 flex items-center gap-2 text-sm text-slate-600">
-                            <Clock size={15} className="text-slate-400" />
+                        <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-cove-muted">
+                            <Clock size={15} className="text-cove-soft" />
                             {format(new Date(nextAssignment.deadline), 'EEE, MMM d, h:mm a')}
                         </p>
                     </div>
                 ) : (
-                    <p className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-sm text-slate-500">
+                    <p className="mt-3 rounded-xl bg-[#eef6fa] p-3 text-sm font-semibold text-cove-muted">
                         No upcoming open school tasks.
                     </p>
                 )}
 
-                <div className="mt-4 border-t border-slate-100 pt-4">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Next class
-                    </h3>
+                <div className="mt-4 border-t border-cove-border/50 pt-4">
+                    <h3 className="app-label">Next class</h3>
                     {nextSession ? (
                         <div className="mt-2 flex items-start gap-3">
                             <span
                                 className="mt-1 h-9 w-1.5 rounded-full"
-                                style={{ backgroundColor: nextSessionClass?.color ?? '#64748b' }}
+                                style={{ backgroundColor: nextSessionClass?.color ?? '#9cb9c9' }}
                             />
                             <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-slate-900">
+                                <p className="truncate text-sm font-bold text-cove-ink">
                                     {nextSessionClass?.name ?? 'Unknown class'}
                                 </p>
-                                <p className="mt-0.5 text-sm text-slate-500">
+                                <p className="mt-0.5 text-sm font-semibold text-cove-muted">
                                     {nextSession.startTime.slice(0, 5)} -{' '}
                                     {nextSession.endTime.slice(0, 5)}
                                     {nextSession.location ? ` · ${nextSession.location}` : ''}
@@ -187,39 +185,41 @@ const SchoolFocusRail: React.FC<SchoolFocusRailProps> = ({ assignments, classes,
                             </div>
                         </div>
                     ) : (
-                        <p className="mt-2 text-sm text-slate-500">No class times scheduled.</p>
+                        <p className="mt-2 text-sm font-semibold text-cove-muted">
+                            No class times scheduled.
+                        </p>
                     )}
                 </div>
             </section>
 
             <section className="app-surface p-4">
-                <h2 className="text-sm font-semibold text-slate-950">Class load</h2>
+                <h2 className="text-[14.5px] font-extrabold text-cove-ink">Class load</h2>
                 <div className="mt-3 space-y-2">
                     {mostLoadedClasses.length === 0 ? (
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm font-semibold text-cove-muted">
                             Add classes to see a lighter course snapshot here.
                         </p>
                     ) : (
                         mostLoadedClasses.map(({ classItem, openCount, overdueCount }) => (
                             <div
                                 key={classItem.id}
-                                className="flex items-center gap-3 rounded-xl border border-slate-200/80 px-3 py-2.5"
+                                className="flex items-center gap-3 rounded-xl bg-[#eef6fa] px-3 py-2.5"
                             >
                                 <span
                                     className="h-8 w-1.5 rounded-full"
                                     style={{ backgroundColor: classItem.color }}
                                 />
                                 <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-medium text-slate-900">
+                                    <p className="truncate text-sm font-bold text-cove-ink">
                                         {classItem.name}
                                     </p>
-                                    <p className="text-xs text-slate-500">
+                                    <p className="text-xs font-semibold text-cove-muted">
                                         {openCount} open
                                         {overdueCount > 0 ? ` · ${overdueCount} overdue` : ''}
                                     </p>
                                 </div>
                                 {overdueCount > 0 && (
-                                    <AlertTriangle size={16} className="text-red-500" />
+                                    <AlertTriangle size={16} className="text-cove-pink" />
                                 )}
                             </div>
                         ))
@@ -272,46 +272,46 @@ const SchoolPage: React.FC = () => {
     };
 
     return (
-        <div className="app-page max-w-7xl space-y-6">
-            <header className="flex flex-col gap-4 rounded-3xl border border-slate-200/70 bg-white px-4 py-4 shadow-[0_18px_48px_rgba(15,23,42,0.05)] sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="app-page space-y-5">
+            <header className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <div className="mb-3 flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
-                        <span className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-indigo-800">
-                            <GraduationCap size={15} />
+                    <h1 className="px-1 pb-1 pt-1.5 text-[22px] font-black text-cove-ink">
+                        School
+                    </h1>
+                    <p className="px-1 pb-2 text-[13.5px] font-semibold text-cove-muted">
+                        Classes, school tasks, hard deadlines, and weekly schedule in one calmer
+                        view.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 px-1 pb-2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-cove-tint-blue px-3 py-1 text-[12px] font-extrabold text-cove-accent">
+                            <GraduationCap size={14} />
                             {activeClasses.length} active classes
                         </span>
                         {overdueAssignments.length > 0 && (
-                            <span className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-3 py-1 text-red-700">
-                                <AlertTriangle size={15} />
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-cove-tint-pink px-3 py-1 text-[12px] font-extrabold text-cove-pink">
+                                <AlertTriangle size={14} />
                                 {overdueAssignments.length} overdue
                             </span>
                         )}
                     </div>
-                    <h1 className="text-3xl font-semibold leading-tight tracking-normal text-slate-950">
-                        School
-                    </h1>
-                    <p className="mt-2 max-w-2xl text-base leading-7 text-slate-600">
-                        Classes, school tasks, hard deadlines, and weekly schedule in one calmer
-                        view.
-                    </p>
                 </div>
                 <button
                     onClick={handleAddPrimary}
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700 disabled:cursor-not-allowed disabled:opacity-45"
+                    className="app-primary-button mt-1.5 min-h-11 flex-shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cove-accent"
                 >
                     <Plus size={16} /> Add
                 </button>
             </header>
 
-            <div className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200/80 bg-slate-100/80 p-1">
+            <div className="flex gap-1 overflow-x-auto rounded-full bg-cove-track p-1">
                 {TABS.map(({ id, label, Icon }) => (
                     <button
                         key={id}
                         onClick={() => setTab(id)}
-                        className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-700 ${
+                        className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-extrabold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cove-accent ${
                             tab === id
-                                ? 'bg-white text-slate-950 shadow-sm'
-                                : 'text-slate-600 hover:text-slate-900'
+                                ? 'bg-white text-cove-ink shadow-cove'
+                                : 'text-cove-muted hover:text-cove-ink'
                         }`}
                     >
                         <Icon size={16} /> {label}
