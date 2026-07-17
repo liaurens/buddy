@@ -29,7 +29,7 @@ import { supabase, saveJournalEntry } from '../../../services/supabase';
 import ReflectionSettingsModal from '../components/reflection/ReflectionSettingsModal';
 import MoodEnergySparkline from '../components/reflection/MoodEnergySparkline';
 import CloseDayCard from '../components/reflection/CloseDayCard';
-import JournalCard from '../components/reflection/JournalCard';
+import JournalFeed from '../components/reflection/JournalFeed';
 import SkillsLogCard from '../components/reflection/SkillsLogCard';
 import StrategySpotlightCard from '../components/reflection/StrategySpotlightCard';
 import type { DayReflection, LearningPattern } from '../services/reflection.service';
@@ -67,6 +67,7 @@ const ReflectionPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [showSettings, setShowSettings] = useState(false);
     const [metricsOpen, setMetricsOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'reflect' | 'journal'>('reflect');
 
     // Reflection capture state
     const [memory, setMemory] = useState('');
@@ -191,7 +192,7 @@ const ReflectionPage: React.FC = () => {
                 { subtype: 'reflection_priority' as const, text: priority },
             ]);
             // Compose the day's answers into a durable journal entry as well —
-            // the JournalCard below reads these back as the journal.
+            // the Journal tab reads these back as the diary feed.
             const journalPrompts = [
                 { promptId: 'core_memory', question: "Today's core memory", answer: memory.trim() },
                 { promptId: 'gratitude', question: 'Gratitude', answer: gratitude.trim() },
@@ -253,614 +254,710 @@ const ReflectionPage: React.FC = () => {
                 </div>
             </div>
 
-            {survivalDay && (
-                <div className="rounded-[16px] bg-cove-tint-green px-4 py-3 text-sm font-semibold text-cove-success-deep">
-                    Survival day — closing it counts double. One line is plenty; everything below is
-                    optional.
-                </div>
-            )}
-
-            {/* Sparkline */}
-            <div className="app-surface p-5">
-                <div className="flex items-center justify-between mb-3">
-                    <h2 className="app-label">Last 14 days</h2>
-                </div>
-                <MoodEnergySparkline points={historyPoints} />
+            {/* Reflect / Journal tab bar */}
+            <div className="flex gap-1 rounded-full bg-[#eef6fa] p-1">
+                {(
+                    [
+                        { key: 'reflect', label: 'Reflect' },
+                        { key: 'journal', label: 'Journal' },
+                    ] as const
+                ).map((tab) => (
+                    <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`flex-1 rounded-full py-2 text-sm font-extrabold transition-colors ${
+                            activeTab === tab.key
+                                ? 'bg-white text-cove-ink shadow-cove'
+                                : 'text-cove-muted hover:text-cove-ink'
+                        }`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
-            {/* Capture form */}
-            <div className="app-surface p-6 space-y-6">
-                <div>
-                    <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
-                        <Sparkles size={18} className="text-cove-streak" /> Today's Core Memory
-                    </h2>
-                    <p className="text-xs font-semibold text-cove-muted mt-1">
-                        A single cool memory, funny moment, or highlight you want to remember.
-                    </p>
-                    <textarea
-                        value={memory}
-                        onChange={(e) => setMemory(e.target.value)}
-                        rows={1}
-                        placeholder="What was one cool memory from today?"
-                        className="mt-3 w-full px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent resize-y"
-                    />
-                </div>
+            {activeTab === 'journal' ? <JournalFeed /> : null}
 
-                <div>
-                    <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
-                        <Heart size={18} className="text-cove-pink" /> Gratitude
-                    </h2>
-                    <p className="text-xs font-semibold text-cove-muted mt-1">
-                        What is one thing you are truly grateful for today?
-                    </p>
-                    <textarea
-                        value={gratitude}
-                        onChange={(e) => setGratitude(e.target.value)}
-                        rows={1}
-                        placeholder="Something big or small..."
-                        className="mt-3 w-full px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent resize-y"
-                    />
-                </div>
+            {activeTab === 'reflect' && (
+                <>
+                    {survivalDay && (
+                        <div className="rounded-[16px] bg-cove-tint-green px-4 py-3 text-sm font-semibold text-cove-success-deep">
+                            Survival day — closing it counts double. One line is plenty; everything
+                            below is optional.
+                        </div>
+                    )}
 
-                <div>
-                    <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
-                        <Mountain size={18} className="text-cove-success" /> Challenge & Growth
-                    </h2>
-                    <p className="text-xs font-semibold text-cove-muted mt-1">
-                        What challenged you today, and how did you handle it?
-                    </p>
-                    <textarea
-                        value={challenge}
-                        onChange={(e) => setChallenge(e.target.value)}
-                        rows={2}
-                        placeholder="A difficult moment and what I learned..."
-                        className="mt-3 w-full px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent resize-y"
-                    />
-                </div>
+                    {/* Sparkline */}
+                    <div className="app-surface p-5">
+                        <div className="flex items-center justify-between mb-3">
+                            <h2 className="app-label">Last 14 days</h2>
+                        </div>
+                        <MoodEnergySparkline points={historyPoints} />
+                    </div>
 
-                <div>
-                    <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
-                        <Compass size={18} className="text-cove-accent" /> Tomorrow's Focus
-                    </h2>
-                    <p className="text-xs font-semibold text-cove-muted mt-1">
-                        If you only do one thing tomorrow, what is it? (planner reads this next
-                        morning)
-                    </p>
-                    <textarea
-                        value={priority}
-                        onChange={(e) => setPriority(e.target.value)}
-                        rows={2}
-                        placeholder="The one thing that would make tomorrow a win…"
-                        className="mt-3 w-full px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent resize-y"
-                    />
-                </div>
+                    {/* Capture form */}
+                    <div className="app-surface p-6 space-y-6">
+                        <div>
+                            <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
+                                <Sparkles size={18} className="text-cove-streak" /> Today's Core
+                                Memory
+                            </h2>
+                            <p className="text-xs font-semibold text-cove-muted mt-1">
+                                A single cool memory, funny moment, or highlight you want to
+                                remember.
+                            </p>
+                            <textarea
+                                value={memory}
+                                onChange={(e) => setMemory(e.target.value)}
+                                rows={1}
+                                placeholder="What was one cool memory from today?"
+                                className="mt-3 w-full px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent resize-y"
+                            />
+                        </div>
 
-                {/* Goals & Projects to push tomorrow */}
-                <div>
-                    <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
-                        <Rocket size={18} className="text-cove-purple" /> Push goals or projects
-                        tomorrow
-                    </h2>
-                    <p className="text-xs font-semibold text-cove-muted mt-1">
-                        Pick a goal or project and write the concrete thing you'll do to move it
-                        forward.
-                    </p>
+                        <div>
+                            <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
+                                <Heart size={18} className="text-cove-pink" /> Gratitude
+                            </h2>
+                            <p className="text-xs font-semibold text-cove-muted mt-1">
+                                What is one thing you are truly grateful for today?
+                            </p>
+                            <textarea
+                                value={gratitude}
+                                onChange={(e) => setGratitude(e.target.value)}
+                                rows={1}
+                                placeholder="Something big or small..."
+                                className="mt-3 w-full px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent resize-y"
+                            />
+                        </div>
 
-                    <ul className="mt-3 space-y-3">
-                        {focusPicks.map((pick, idx) => {
-                            const update = (patch: Partial<ReflectionFocusPick>) =>
-                                setFocusPicks((prev) =>
-                                    prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)),
-                                );
-                            const remove = () =>
-                                setFocusPicks((prev) => prev.filter((_, i) => i !== idx));
-                            const selectValue = pick.refId ? `${pick.kind}:${pick.refId}` : '';
-                            return (
-                                <li key={idx} className="rounded-[14px] p-3 space-y-2 bg-[#eef6fa]">
-                                    <div className="flex items-start gap-2">
-                                        <select
-                                            value={selectValue}
-                                            onChange={(e) => {
-                                                const v = e.target.value;
-                                                if (!v) {
-                                                    update({ refId: '', refTitle: '' });
-                                                    return;
-                                                }
-                                                const [kind, id] = v.split(':') as [
-                                                    'goal' | 'project' | 'skill',
-                                                    string,
-                                                ];
-                                                const title =
-                                                    kind === 'goal'
-                                                        ? (goals.find((g) => g.id === id)?.title ??
-                                                          '')
-                                                        : kind === 'project'
-                                                          ? (activeProjects.find((p) => p.id === id)
-                                                                ?.name ?? '')
-                                                          : (skills.find((s) => s.id === id)
-                                                                ?.name ?? '');
-                                                update({ kind, refId: id, refTitle: title });
-                                            }}
-                                            className="flex-1 px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink bg-white focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent"
+                        <div>
+                            <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
+                                <Mountain size={18} className="text-cove-success" /> Challenge &
+                                Growth
+                            </h2>
+                            <p className="text-xs font-semibold text-cove-muted mt-1">
+                                What challenged you today, and how did you handle it?
+                            </p>
+                            <textarea
+                                value={challenge}
+                                onChange={(e) => setChallenge(e.target.value)}
+                                rows={2}
+                                placeholder="A difficult moment and what I learned..."
+                                className="mt-3 w-full px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent resize-y"
+                            />
+                        </div>
+
+                        <div>
+                            <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
+                                <Compass size={18} className="text-cove-accent" /> Tomorrow's Focus
+                            </h2>
+                            <p className="text-xs font-semibold text-cove-muted mt-1">
+                                If you only do one thing tomorrow, what is it? (planner reads this
+                                next morning)
+                            </p>
+                            <textarea
+                                value={priority}
+                                onChange={(e) => setPriority(e.target.value)}
+                                rows={2}
+                                placeholder="The one thing that would make tomorrow a win…"
+                                className="mt-3 w-full px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent resize-y"
+                            />
+                        </div>
+
+                        {/* Goals & Projects to push tomorrow */}
+                        <div>
+                            <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
+                                <Rocket size={18} className="text-cove-purple" /> Push goals or
+                                projects tomorrow
+                            </h2>
+                            <p className="text-xs font-semibold text-cove-muted mt-1">
+                                Pick a goal or project and write the concrete thing you'll do to
+                                move it forward.
+                            </p>
+
+                            <ul className="mt-3 space-y-3">
+                                {focusPicks.map((pick, idx) => {
+                                    const update = (patch: Partial<ReflectionFocusPick>) =>
+                                        setFocusPicks((prev) =>
+                                            prev.map((p, i) =>
+                                                i === idx ? { ...p, ...patch } : p,
+                                            ),
+                                        );
+                                    const remove = () =>
+                                        setFocusPicks((prev) => prev.filter((_, i) => i !== idx));
+                                    const selectValue = pick.refId
+                                        ? `${pick.kind}:${pick.refId}`
+                                        : '';
+                                    return (
+                                        <li
+                                            key={idx}
+                                            className="rounded-[14px] p-3 space-y-2 bg-[#eef6fa]"
                                         >
-                                            <option value="">Select a goal or project…</option>
-                                            {goals.length > 0 && (
-                                                <optgroup label="Goals">
-                                                    {goals.map((g) => (
-                                                        <option
-                                                            key={`goal-${g.id}`}
-                                                            value={`goal:${g.id}`}
-                                                        >
-                                                            {g.title}
-                                                        </option>
-                                                    ))}
-                                                </optgroup>
-                                            )}
-                                            {activeProjects.length > 0 && (
-                                                <optgroup label="Projects">
-                                                    {activeProjects.map((p) => (
-                                                        <option
-                                                            key={`project-${p.id}`}
-                                                            value={`project:${p.id}`}
-                                                        >
-                                                            {p.name}
-                                                        </option>
-                                                    ))}
-                                                </optgroup>
-                                            )}
-                                            {skills.length > 0 && (
-                                                <optgroup label="Skills">
-                                                    {skills.map((s) => (
-                                                        <option
-                                                            key={`skill-${s.id}`}
-                                                            value={`skill:${s.id}`}
-                                                        >
-                                                            {s.name}
-                                                        </option>
-                                                    ))}
-                                                </optgroup>
-                                            )}
-                                        </select>
-                                        <button
-                                            type="button"
-                                            onClick={remove}
-                                            aria-label="Remove pick"
-                                            className="p-2 text-cove-soft hover:text-cove-pink hover:bg-white rounded-[10px] transition-colors"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                    <textarea
-                                        value={pick.plan}
-                                        onChange={(e) => update({ plan: e.target.value })}
-                                        rows={2}
-                                        placeholder="What will you do tomorrow to move this forward?"
-                                        className="w-full px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink bg-white placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent resize-y"
-                                    />
-                                </li>
-                            );
-                        })}
-                    </ul>
+                                            <div className="flex items-start gap-2">
+                                                <select
+                                                    value={selectValue}
+                                                    onChange={(e) => {
+                                                        const v = e.target.value;
+                                                        if (!v) {
+                                                            update({ refId: '', refTitle: '' });
+                                                            return;
+                                                        }
+                                                        const [kind, id] = v.split(':') as [
+                                                            'goal' | 'project' | 'skill',
+                                                            string,
+                                                        ];
+                                                        const title =
+                                                            kind === 'goal'
+                                                                ? (goals.find((g) => g.id === id)
+                                                                      ?.title ?? '')
+                                                                : kind === 'project'
+                                                                  ? (activeProjects.find(
+                                                                        (p) => p.id === id,
+                                                                    )?.name ?? '')
+                                                                  : (skills.find((s) => s.id === id)
+                                                                        ?.name ?? '');
+                                                        update({
+                                                            kind,
+                                                            refId: id,
+                                                            refTitle: title,
+                                                        });
+                                                    }}
+                                                    className="flex-1 px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink bg-white focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent"
+                                                >
+                                                    <option value="">
+                                                        Select a goal or project…
+                                                    </option>
+                                                    {goals.length > 0 && (
+                                                        <optgroup label="Goals">
+                                                            {goals.map((g) => (
+                                                                <option
+                                                                    key={`goal-${g.id}`}
+                                                                    value={`goal:${g.id}`}
+                                                                >
+                                                                    {g.title}
+                                                                </option>
+                                                            ))}
+                                                        </optgroup>
+                                                    )}
+                                                    {activeProjects.length > 0 && (
+                                                        <optgroup label="Projects">
+                                                            {activeProjects.map((p) => (
+                                                                <option
+                                                                    key={`project-${p.id}`}
+                                                                    value={`project:${p.id}`}
+                                                                >
+                                                                    {p.name}
+                                                                </option>
+                                                            ))}
+                                                        </optgroup>
+                                                    )}
+                                                    {skills.length > 0 && (
+                                                        <optgroup label="Skills">
+                                                            {skills.map((s) => (
+                                                                <option
+                                                                    key={`skill-${s.id}`}
+                                                                    value={`skill:${s.id}`}
+                                                                >
+                                                                    {s.name}
+                                                                </option>
+                                                            ))}
+                                                        </optgroup>
+                                                    )}
+                                                </select>
+                                                <button
+                                                    type="button"
+                                                    onClick={remove}
+                                                    aria-label="Remove pick"
+                                                    className="p-2 text-cove-soft hover:text-cove-pink hover:bg-white rounded-[10px] transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                            <textarea
+                                                value={pick.plan}
+                                                onChange={(e) => update({ plan: e.target.value })}
+                                                rows={2}
+                                                placeholder="What will you do tomorrow to move this forward?"
+                                                className="w-full px-3 py-2 rounded-[12px] border border-cove-border text-sm font-semibold text-cove-ink bg-white placeholder:text-cove-faint focus:ring-2 focus:ring-cove-accent-pale focus:border-transparent resize-y"
+                                            />
+                                        </li>
+                                    );
+                                })}
+                            </ul>
 
-                    {goals.length === 0 && activeProjects.length === 0 && skills.length === 0 ? (
-                        <p className="mt-3 text-xs font-semibold text-cove-soft italic">
-                            No active goals, projects, or skills yet. Add one and it will show up
-                            here.
-                        </p>
-                    ) : (
+                            {goals.length === 0 &&
+                            activeProjects.length === 0 &&
+                            skills.length === 0 ? (
+                                <p className="mt-3 text-xs font-semibold text-cove-soft italic">
+                                    No active goals, projects, or skills yet. Add one and it will
+                                    show up here.
+                                </p>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setFocusPicks((prev) => [
+                                            ...prev,
+                                            { kind: 'goal', refId: '', refTitle: '', plan: '' },
+                                        ])
+                                    }
+                                    className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold text-cove-purple bg-cove-tint-purple hover:bg-cove-tint-purple/70 rounded-full transition-colors"
+                                >
+                                    <Plus size={14} /> Add another
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div className="text-xs font-semibold text-cove-muted">
+                                {captureError && (
+                                    <span className="text-cove-pink">{captureError}</span>
+                                )}
+                                {!captureError && savedAt && <span>Saved at {savedAt}.</span>}
+                                {!captureError && !savedAt && hasExistingData && (
+                                    <span className="text-cove-soft">Previously saved.</span>
+                                )}
+                            </div>
+                            <button
+                                onClick={handleSaveReflection}
+                                disabled={saving}
+                                className="app-primary-button"
+                            >
+                                {saving ? 'Saving…' : 'Save reflection'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Close the day — explicit end state of the loop */}
+                    <CloseDayCard date={selectedDate} tomorrowPriority={priority} />
+
+                    {/* Skills practiced today (Growth Hub lives here now) */}
+                    <SkillsLogCard />
+
+                    {/* Goals check-in */}
+                    {goals.length > 0 && (
+                        <div className="app-surface p-6 space-y-4">
+                            <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
+                                <Target size={18} className="text-cove-success" /> Today's goals
+                            </h2>
+                            <p className="text-xs font-semibold text-cove-muted -mt-2">
+                                Log how your goals went today.
+                            </p>
+                            <ul className="space-y-4">
+                                {goals.map((goal: Goal) => {
+                                    const entry = goalEntries[goal.id] ?? {};
+                                    const update = (patch: GoalEntry) =>
+                                        setGoalEntries((prev) => ({
+                                            ...prev,
+                                            [goal.id]: { ...prev[goal.id], ...patch },
+                                        }));
+                                    return (
+                                        <li key={goal.id} className="space-y-2">
+                                            <p className="text-sm font-bold text-cove-ink">
+                                                {goal.title}
+                                            </p>
+                                            {goal.goalType === 'action' && (
+                                                <div className="flex gap-2">
+                                                    {(['Done', 'Not done'] as const).map(
+                                                        (label) => (
+                                                            <button
+                                                                key={label}
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    update({
+                                                                        completed: label === 'Done',
+                                                                    })
+                                                                }
+                                                                className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-colors ${
+                                                                    (
+                                                                        label === 'Done'
+                                                                            ? entry.completed
+                                                                            : entry.completed ===
+                                                                              false
+                                                                    )
+                                                                        ? label === 'Done'
+                                                                            ? 'bg-cove-success text-white'
+                                                                            : 'bg-cove-muted text-white'
+                                                                        : 'bg-[#eef6fa] text-cove-muted hover:bg-cove-track'
+                                                                }`}
+                                                            >
+                                                                {label}
+                                                            </button>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            )}
+                                            {goal.goalType === 'habit' && (
+                                                <div className="flex gap-2">
+                                                    {(['Yes', 'No'] as const).map((label) => (
+                                                        <button
+                                                            key={label}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                update({
+                                                                    completed: label === 'Yes',
+                                                                })
+                                                            }
+                                                            className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-colors ${
+                                                                (
+                                                                    label === 'Yes'
+                                                                        ? entry.completed
+                                                                        : entry.completed === false
+                                                                )
+                                                                    ? label === 'Yes'
+                                                                        ? 'bg-cove-streak text-white'
+                                                                        : 'bg-cove-muted text-white'
+                                                                    : 'bg-[#eef6fa] text-cove-muted hover:bg-cove-track'
+                                                            }`}
+                                                        >
+                                                            {label === 'Yes'
+                                                                ? '🔥 Did it'
+                                                                : 'Skipped'}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {goal.goalType === 'time' && (
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        placeholder="0"
+                                                        value={entry.minutesSpent ?? ''}
+                                                        onChange={(e) =>
+                                                            update({
+                                                                minutesSpent: Number(
+                                                                    e.target.value,
+                                                                ),
+                                                            })
+                                                        }
+                                                        className="w-20 px-2 py-1.5 text-sm font-semibold text-cove-ink border border-cove-border rounded-[10px] focus:outline-none focus:ring-1 focus:ring-cove-accent-pale"
+                                                    />
+                                                    <span className="text-xs font-semibold text-cove-muted">
+                                                        min spent
+                                                        {goal.targetMinutes
+                                                            ? ` / ${goal.targetMinutes} target`
+                                                            : ''}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {goal.goalType === 'progress' && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-semibold text-cove-muted">
+                                                        Progress added:
+                                                    </span>
+                                                    <input
+                                                        type="number"
+                                                        min={0}
+                                                        max={100}
+                                                        placeholder="0"
+                                                        value={entry.progressDelta ?? ''}
+                                                        onChange={(e) =>
+                                                            update({
+                                                                progressDelta: Number(
+                                                                    e.target.value,
+                                                                ),
+                                                            })
+                                                        }
+                                                        className="w-16 px-2 py-1.5 text-sm font-semibold text-cove-ink border border-cove-border rounded-[10px] focus:outline-none focus:ring-1 focus:ring-cove-accent-pale"
+                                                    />
+                                                    <span className="text-xs font-semibold text-cove-muted">
+                                                        %
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    )}
+
+                    {/* Toolbox strategies, resurfaced at reflection time */}
+                    <StrategySpotlightCard />
+
+                    {/* Collapsible day metrics */}
+                    <div className="app-surface">
                         <button
                             type="button"
-                            onClick={() =>
-                                setFocusPicks((prev) => [
-                                    ...prev,
-                                    { kind: 'goal', refId: '', refTitle: '', plan: '' },
-                                ])
-                            }
-                            className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold text-cove-purple bg-cove-tint-purple hover:bg-cove-tint-purple/70 rounded-full transition-colors"
+                            onClick={() => setMetricsOpen((o) => !o)}
+                            className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#eef6fa] transition-colors rounded-[18px]"
                         >
-                            <Plus size={14} /> Add another
+                            <span className="app-label">Day metrics</span>
+                            {metricsOpen ? (
+                                <ChevronDown size={18} className="text-cove-soft" />
+                            ) : (
+                                <ChevronRight size={18} className="text-cove-soft" />
+                            )}
                         </button>
-                    )}
-                </div>
 
-                <div className="flex items-center justify-between">
-                    <div className="text-xs font-semibold text-cove-muted">
-                        {captureError && <span className="text-cove-pink">{captureError}</span>}
-                        {!captureError && savedAt && <span>Saved at {savedAt}.</span>}
-                        {!captureError && !savedAt && hasExistingData && (
-                            <span className="text-cove-soft">Previously saved.</span>
-                        )}
-                    </div>
-                    <button
-                        onClick={handleSaveReflection}
-                        disabled={saving}
-                        className="app-primary-button"
-                    >
-                        {saving ? 'Saving…' : 'Save reflection'}
-                    </button>
-                </div>
-            </div>
-
-            {/* Close the day — explicit end state of the loop */}
-            <CloseDayCard date={selectedDate} tomorrowPriority={priority} />
-
-            {/* Skills practiced today (Growth Hub lives here now) */}
-            <SkillsLogCard />
-
-            {/* Goals check-in */}
-            {goals.length > 0 && (
-                <div className="app-surface p-6 space-y-4">
-                    <h2 className="text-[15px] font-extrabold text-cove-ink flex items-center gap-2">
-                        <Target size={18} className="text-cove-success" /> Today's goals
-                    </h2>
-                    <p className="text-xs font-semibold text-cove-muted -mt-2">
-                        Log how your goals went today.
-                    </p>
-                    <ul className="space-y-4">
-                        {goals.map((goal: Goal) => {
-                            const entry = goalEntries[goal.id] ?? {};
-                            const update = (patch: GoalEntry) =>
-                                setGoalEntries((prev) => ({
-                                    ...prev,
-                                    [goal.id]: { ...prev[goal.id], ...patch },
-                                }));
-                            return (
-                                <li key={goal.id} className="space-y-2">
-                                    <p className="text-sm font-bold text-cove-ink">{goal.title}</p>
-                                    {goal.goalType === 'action' && (
-                                        <div className="flex gap-2">
-                                            {(['Done', 'Not done'] as const).map((label) => (
-                                                <button
-                                                    key={label}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        update({ completed: label === 'Done' })
-                                                    }
-                                                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-colors ${
-                                                        (
-                                                            label === 'Done'
-                                                                ? entry.completed
-                                                                : entry.completed === false
-                                                        )
-                                                            ? label === 'Done'
-                                                                ? 'bg-cove-success text-white'
-                                                                : 'bg-cove-muted text-white'
-                                                            : 'bg-[#eef6fa] text-cove-muted hover:bg-cove-track'
-                                                    }`}
-                                                >
-                                                    {label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {goal.goalType === 'habit' && (
-                                        <div className="flex gap-2">
-                                            {(['Yes', 'No'] as const).map((label) => (
-                                                <button
-                                                    key={label}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        update({ completed: label === 'Yes' })
-                                                    }
-                                                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold transition-colors ${
-                                                        (
-                                                            label === 'Yes'
-                                                                ? entry.completed
-                                                                : entry.completed === false
-                                                        )
-                                                            ? label === 'Yes'
-                                                                ? 'bg-cove-streak text-white'
-                                                                : 'bg-cove-muted text-white'
-                                                            : 'bg-[#eef6fa] text-cove-muted hover:bg-cove-track'
-                                                    }`}
-                                                >
-                                                    {label === 'Yes' ? '🔥 Did it' : 'Skipped'}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {goal.goalType === 'time' && (
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="number"
-                                                min={0}
-                                                placeholder="0"
-                                                value={entry.minutesSpent ?? ''}
-                                                onChange={(e) =>
-                                                    update({ minutesSpent: Number(e.target.value) })
-                                                }
-                                                className="w-20 px-2 py-1.5 text-sm font-semibold text-cove-ink border border-cove-border rounded-[10px] focus:outline-none focus:ring-1 focus:ring-cove-accent-pale"
-                                            />
-                                            <span className="text-xs font-semibold text-cove-muted">
-                                                min spent
-                                                {goal.targetMinutes
-                                                    ? ` / ${goal.targetMinutes} target`
-                                                    : ''}
-                                            </span>
-                                        </div>
-                                    )}
-                                    {goal.goalType === 'progress' && (
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-semibold text-cove-muted">
-                                                Progress added:
-                                            </span>
-                                            <input
-                                                type="number"
-                                                min={0}
-                                                max={100}
-                                                placeholder="0"
-                                                value={entry.progressDelta ?? ''}
-                                                onChange={(e) =>
-                                                    update({
-                                                        progressDelta: Number(e.target.value),
-                                                    })
-                                                }
-                                                className="w-16 px-2 py-1.5 text-sm font-semibold text-cove-ink border border-cove-border rounded-[10px] focus:outline-none focus:ring-1 focus:ring-cove-accent-pale"
-                                            />
-                                            <span className="text-xs font-semibold text-cove-muted">
-                                                %
-                                            </span>
-                                        </div>
-                                    )}
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </div>
-            )}
-
-            {/* Toolbox strategies, resurfaced at reflection time */}
-            <StrategySpotlightCard />
-
-            {/* Journal read-back — composed from saved reflections */}
-            <JournalCard refreshToken={savedAt} />
-
-            {/* Collapsible day metrics */}
-            <div className="app-surface">
-                <button
-                    type="button"
-                    onClick={() => setMetricsOpen((o) => !o)}
-                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#eef6fa] transition-colors rounded-[18px]"
-                >
-                    <span className="app-label">Day metrics</span>
-                    {metricsOpen ? (
-                        <ChevronDown size={18} className="text-cove-soft" />
-                    ) : (
-                        <ChevronRight size={18} className="text-cove-soft" />
-                    )}
-                </button>
-
-                {metricsOpen && (
-                    <div className="p-5 pt-0 space-y-6">
-                        {loading ? (
-                            <div className="text-cove-muted font-semibold text-sm">
-                                Loading metrics…
-                            </div>
-                        ) : error ? (
-                            <div className="bg-cove-tint-pink rounded-[12px] p-4 text-cove-pink font-semibold text-sm">
-                                <AlertCircle className="inline mr-2" size={16} /> {error}
-                            </div>
-                        ) : !reflection ? (
-                            <div className="text-center py-8 text-cove-muted font-semibold text-sm">
-                                <Clock className="mx-auto text-cove-soft mb-3" size={32} />
-                                No blocks logged for this date yet.
-                            </div>
-                        ) : (
-                            <>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <CheckCircle
-                                                className="text-cove-success-deep"
-                                                size={24}
-                                            />
-                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
-                                                Completion
-                                            </h3>
-                                        </div>
-                                        <div className="text-3xl font-black text-cove-ink mb-2">
-                                            {Math.round(reflection.completionRate)}%
-                                        </div>
-                                        <div className="text-sm font-semibold text-cove-muted">
-                                            {reflection.completedBlocks} of {reflection.totalBlocks}{' '}
-                                            blocks
-                                        </div>
-                                        <div className="mt-3 h-2 bg-cove-track rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-cove-success transition-all"
-                                                style={{ width: `${reflection.completionRate}%` }}
-                                            />
-                                        </div>
+                        {metricsOpen && (
+                            <div className="p-5 pt-0 space-y-6">
+                                {loading ? (
+                                    <div className="text-cove-muted font-semibold text-sm">
+                                        Loading metrics…
                                     </div>
-
-                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <Target
-                                                className={`${Math.abs(reflection.avgVariancePercent) <= 10 ? 'text-cove-success-deep' : 'text-[#c07a1e]'}`}
-                                                size={24}
-                                            />
-                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
-                                                Accuracy
-                                            </h3>
-                                        </div>
-                                        <div className="text-3xl font-black text-cove-ink mb-2">
-                                            {formatPercent(reflection.avgVariancePercent)}
-                                        </div>
-                                        <div className="text-sm font-semibold text-cove-muted">
-                                            {reflection.avgVariancePercent > 0
-                                                ? 'Underestimated'
-                                                : 'Overestimated'}
-                                        </div>
+                                ) : error ? (
+                                    <div className="bg-cove-tint-pink rounded-[12px] p-4 text-cove-pink font-semibold text-sm">
+                                        <AlertCircle className="inline mr-2" size={16} /> {error}
                                     </div>
-
-                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
-                                        <div className="flex items-center gap-3 mb-3">
-                                            <Clock className="text-cove-accent" size={24} />
-                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
-                                                Time Variance
-                                            </h3>
-                                        </div>
-                                        <div className="text-3xl font-black text-cove-ink mb-2">
-                                            {formatVariance(reflection.totalVariance)}
-                                        </div>
-                                        <div className="text-sm font-semibold text-cove-muted">
-                                            Planned: {reflection.totalEstimatedMinutes}min
-                                        </div>
+                                ) : !reflection ? (
+                                    <div className="text-center py-8 text-cove-muted font-semibold text-sm">
+                                        <Clock className="mx-auto text-cove-soft mb-3" size={32} />
+                                        No blocks logged for this date yet.
                                     </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <TrendingUp className="text-cove-pink" size={20} />
-                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
-                                                Took Longer
-                                            </h3>
-                                        </div>
-                                        {reflection.underestimated.length === 0 ? (
-                                            <p className="text-sm font-semibold text-cove-soft italic">
-                                                None
-                                            </p>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                {reflection.underestimated
-                                                    .slice(0, 3)
-                                                    .map((item) => (
-                                                        <div key={item.blockId} className="text-sm">
-                                                            <div className="font-bold text-cove-ink">
-                                                                {item.activityName}
-                                                            </div>
-                                                            <div className="text-xs font-semibold text-cove-muted">
-                                                                Est: {item.estimatedMinutes}min →
-                                                                Actual: {item.actualMinutes}min
-                                                                <span className="text-cove-pink ml-1">
-                                                                    (
-                                                                    {formatPercent(
-                                                                        item.variancePercent,
-                                                                    )}
-                                                                    )
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <Target className="text-cove-success-deep" size={20} />
-                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
-                                                Accurate (±10%)
-                                            </h3>
-                                        </div>
-                                        {reflection.accurate.length === 0 ? (
-                                            <p className="text-sm font-semibold text-cove-soft italic">
-                                                None
-                                            </p>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                {reflection.accurate.slice(0, 3).map((item) => (
-                                                    <div key={item.blockId} className="text-sm">
-                                                        <div className="font-bold text-cove-ink">
-                                                            {item.activityName}
-                                                        </div>
-                                                        <div className="text-xs font-semibold text-cove-muted">
-                                                            Est: {item.estimatedMinutes}min →
-                                                            Actual: {item.actualMinutes}min
-                                                            <span className="text-cove-success-deep ml-1">
-                                                                ✓
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <TrendingDown className="text-cove-accent" size={20} />
-                                            <h3 className="text-[14.5px] font-extrabold text-cove-ink">
-                                                Took Less Time
-                                            </h3>
-                                        </div>
-                                        {reflection.overestimated.length === 0 ? (
-                                            <p className="text-sm font-semibold text-cove-soft italic">
-                                                None
-                                            </p>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                {reflection.overestimated
-                                                    .slice(0, 3)
-                                                    .map((item) => (
-                                                        <div key={item.blockId} className="text-sm">
-                                                            <div className="font-bold text-cove-ink">
-                                                                {item.activityName}
-                                                            </div>
-                                                            <div className="text-xs font-semibold text-cove-muted">
-                                                                Est: {item.estimatedMinutes}min →
-                                                                Actual: {item.actualMinutes}min
-                                                                <span className="text-cove-accent ml-1">
-                                                                    (
-                                                                    {formatPercent(
-                                                                        item.variancePercent,
-                                                                    )}
-                                                                    )
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {patterns.length > 0 && (
-                                    <div className="rounded-[16px] bg-[#eef6fa] p-5">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <Lightbulb className="text-cove-streak" size={24} />
-                                            <h3 className="text-[15px] font-extrabold text-cove-ink">
-                                                Insights & Patterns
-                                            </h3>
-                                        </div>
-                                        <div className="space-y-4">
-                                            {patterns.map((pattern, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className="p-4 bg-cove-tint-amber rounded-[12px]"
-                                                >
-                                                    <div className="flex items-start gap-3">
-                                                        <Lightbulb
-                                                            className="text-cove-streak-deep mt-1 flex-shrink-0"
-                                                            size={20}
-                                                        />
-                                                        <div className="flex-1">
-                                                            <div className="font-bold text-cove-ink mb-1">
-                                                                {pattern.pattern}
-                                                            </div>
-                                                            <div className="text-sm font-semibold text-cove-muted mb-2">
-                                                                Based on {pattern.sampleSize} task
-                                                                {pattern.sampleSize !== 1
-                                                                    ? 's'
-                                                                    : ''}
-                                                            </div>
-                                                            <div className="text-sm font-semibold text-cove-streak-text bg-white/70 px-3 py-2 rounded-[10px]">
-                                                                💡 <strong>Recommendation:</strong>{' '}
-                                                                {pattern.recommendation}
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="rounded-[16px] bg-[#eef6fa] p-5">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <CheckCircle
+                                                        className="text-cove-success-deep"
+                                                        size={24}
+                                                    />
+                                                    <h3 className="text-[14.5px] font-extrabold text-cove-ink">
+                                                        Completion
+                                                    </h3>
                                                 </div>
-                                            ))}
+                                                <div className="text-3xl font-black text-cove-ink mb-2">
+                                                    {Math.round(reflection.completionRate)}%
+                                                </div>
+                                                <div className="text-sm font-semibold text-cove-muted">
+                                                    {reflection.completedBlocks} of{' '}
+                                                    {reflection.totalBlocks} blocks
+                                                </div>
+                                                <div className="mt-3 h-2 bg-cove-track rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-cove-success transition-all"
+                                                        style={{
+                                                            width: `${reflection.completionRate}%`,
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="rounded-[16px] bg-[#eef6fa] p-5">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <Target
+                                                        className={`${Math.abs(reflection.avgVariancePercent) <= 10 ? 'text-cove-success-deep' : 'text-[#c07a1e]'}`}
+                                                        size={24}
+                                                    />
+                                                    <h3 className="text-[14.5px] font-extrabold text-cove-ink">
+                                                        Accuracy
+                                                    </h3>
+                                                </div>
+                                                <div className="text-3xl font-black text-cove-ink mb-2">
+                                                    {formatPercent(reflection.avgVariancePercent)}
+                                                </div>
+                                                <div className="text-sm font-semibold text-cove-muted">
+                                                    {reflection.avgVariancePercent > 0
+                                                        ? 'Underestimated'
+                                                        : 'Overestimated'}
+                                                </div>
+                                            </div>
+
+                                            <div className="rounded-[16px] bg-[#eef6fa] p-5">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <Clock className="text-cove-accent" size={24} />
+                                                    <h3 className="text-[14.5px] font-extrabold text-cove-ink">
+                                                        Time Variance
+                                                    </h3>
+                                                </div>
+                                                <div className="text-3xl font-black text-cove-ink mb-2">
+                                                    {formatVariance(reflection.totalVariance)}
+                                                </div>
+                                                <div className="text-sm font-semibold text-cove-muted">
+                                                    Planned: {reflection.totalEstimatedMinutes}min
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="rounded-[16px] bg-[#eef6fa] p-5">
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <TrendingUp
+                                                        className="text-cove-pink"
+                                                        size={20}
+                                                    />
+                                                    <h3 className="text-[14.5px] font-extrabold text-cove-ink">
+                                                        Took Longer
+                                                    </h3>
+                                                </div>
+                                                {reflection.underestimated.length === 0 ? (
+                                                    <p className="text-sm font-semibold text-cove-soft italic">
+                                                        None
+                                                    </p>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {reflection.underestimated
+                                                            .slice(0, 3)
+                                                            .map((item) => (
+                                                                <div
+                                                                    key={item.blockId}
+                                                                    className="text-sm"
+                                                                >
+                                                                    <div className="font-bold text-cove-ink">
+                                                                        {item.activityName}
+                                                                    </div>
+                                                                    <div className="text-xs font-semibold text-cove-muted">
+                                                                        Est: {item.estimatedMinutes}
+                                                                        min → Actual:{' '}
+                                                                        {item.actualMinutes}min
+                                                                        <span className="text-cove-pink ml-1">
+                                                                            (
+                                                                            {formatPercent(
+                                                                                item.variancePercent,
+                                                                            )}
+                                                                            )
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="rounded-[16px] bg-[#eef6fa] p-5">
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <Target
+                                                        className="text-cove-success-deep"
+                                                        size={20}
+                                                    />
+                                                    <h3 className="text-[14.5px] font-extrabold text-cove-ink">
+                                                        Accurate (±10%)
+                                                    </h3>
+                                                </div>
+                                                {reflection.accurate.length === 0 ? (
+                                                    <p className="text-sm font-semibold text-cove-soft italic">
+                                                        None
+                                                    </p>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {reflection.accurate
+                                                            .slice(0, 3)
+                                                            .map((item) => (
+                                                                <div
+                                                                    key={item.blockId}
+                                                                    className="text-sm"
+                                                                >
+                                                                    <div className="font-bold text-cove-ink">
+                                                                        {item.activityName}
+                                                                    </div>
+                                                                    <div className="text-xs font-semibold text-cove-muted">
+                                                                        Est: {item.estimatedMinutes}
+                                                                        min → Actual:{' '}
+                                                                        {item.actualMinutes}min
+                                                                        <span className="text-cove-success-deep ml-1">
+                                                                            ✓
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="rounded-[16px] bg-[#eef6fa] p-5">
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <TrendingDown
+                                                        className="text-cove-accent"
+                                                        size={20}
+                                                    />
+                                                    <h3 className="text-[14.5px] font-extrabold text-cove-ink">
+                                                        Took Less Time
+                                                    </h3>
+                                                </div>
+                                                {reflection.overestimated.length === 0 ? (
+                                                    <p className="text-sm font-semibold text-cove-soft italic">
+                                                        None
+                                                    </p>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {reflection.overestimated
+                                                            .slice(0, 3)
+                                                            .map((item) => (
+                                                                <div
+                                                                    key={item.blockId}
+                                                                    className="text-sm"
+                                                                >
+                                                                    <div className="font-bold text-cove-ink">
+                                                                        {item.activityName}
+                                                                    </div>
+                                                                    <div className="text-xs font-semibold text-cove-muted">
+                                                                        Est: {item.estimatedMinutes}
+                                                                        min → Actual:{' '}
+                                                                        {item.actualMinutes}min
+                                                                        <span className="text-cove-accent ml-1">
+                                                                            (
+                                                                            {formatPercent(
+                                                                                item.variancePercent,
+                                                                            )}
+                                                                            )
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {patterns.length > 0 && (
+                                            <div className="rounded-[16px] bg-[#eef6fa] p-5">
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <Lightbulb
+                                                        className="text-cove-streak"
+                                                        size={24}
+                                                    />
+                                                    <h3 className="text-[15px] font-extrabold text-cove-ink">
+                                                        Insights & Patterns
+                                                    </h3>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {patterns.map((pattern, idx) => (
+                                                        <div
+                                                            key={idx}
+                                                            className="p-4 bg-cove-tint-amber rounded-[12px]"
+                                                        >
+                                                            <div className="flex items-start gap-3">
+                                                                <Lightbulb
+                                                                    className="text-cove-streak-deep mt-1 flex-shrink-0"
+                                                                    size={20}
+                                                                />
+                                                                <div className="flex-1">
+                                                                    <div className="font-bold text-cove-ink mb-1">
+                                                                        {pattern.pattern}
+                                                                    </div>
+                                                                    <div className="text-sm font-semibold text-cove-muted mb-2">
+                                                                        Based on{' '}
+                                                                        {pattern.sampleSize} task
+                                                                        {pattern.sampleSize !== 1
+                                                                            ? 's'
+                                                                            : ''}
+                                                                    </div>
+                                                                    <div className="text-sm font-semibold text-cove-streak-text bg-white/70 px-3 py-2 rounded-[10px]">
+                                                                        💡{' '}
+                                                                        <strong>
+                                                                            Recommendation:
+                                                                        </strong>{' '}
+                                                                        {pattern.recommendation}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
-                            </>
+                            </div>
                         )}
                     </div>
-                )}
-            </div>
+                </>
+            )}
 
             <ReflectionSettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
         </div>

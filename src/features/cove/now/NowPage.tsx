@@ -215,6 +215,7 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
                     dateKey={dateKey}
                     picks={visiblePicks}
                     onClose={() => setCloseOpen(false)}
+                    onNavigate={onNavigate}
                 />
             ) : null}
         </div>
