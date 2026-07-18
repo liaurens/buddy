@@ -2,13 +2,15 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { addDays, format } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
+import type { AppRoute } from '../../../constants/routes';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { closeDay, getCloseStreak } from '../../planning/services/closeDay.service';
 import { saveReflectionItems } from '../../planning/services/reflectionCapture';
+import { saveJournalEntry } from '../../../services/supabase';
 import { markRoutineDone } from '../../day/services/routine-progress';
 import { useToast } from '../../../components/ui/Toast';
 import type { Task } from '../../tasks/types';
-import { Whale, Confetti, MoodRow, EnergyRow, Fold } from '../components';
+import { Whale, Confetti, MoodRow, EnergyRow } from '../components';
 import type { EnergyIndex, MoodIndex } from '../components';
 import { usePrefersReducedMotion } from '../hooks/useCelebration';
 import { saveMoodEnergy } from '../services/moodEnergy.service';
@@ -29,6 +31,8 @@ interface CloseDayOverlayProps {
     /** Today's visible picks (survival slice applied by the caller). */
     picks: Task[];
     onClose: () => void;
+    /** Navigate to another tab — used by "Extend" to open the journal page. */
+    onNavigate: (tab: AppRoute, params?: Record<string, unknown>) => void;
 }
 
 const inputClass =
@@ -40,7 +44,12 @@ const overlayLabel = 'mb-2 text-[11.5px] font-extrabold uppercase tracking-[0.06
  * Full-screen close-day flow: leftover resolution (nothing carries over
  * silently) → light reflection → celebration with the streak.
  */
-const CloseDayOverlay: React.FC<CloseDayOverlayProps> = ({ dateKey, picks, onClose }) => {
+const CloseDayOverlay: React.FC<CloseDayOverlayProps> = ({
+    dateKey,
+    picks,
+    onClose,
+    onNavigate,
+}) => {
     const { user } = useAuth();
     const toast = useToast();
     const queryClient = useQueryClient();
@@ -65,9 +74,6 @@ const CloseDayOverlay: React.FC<CloseDayOverlayProps> = ({ dateKey, picks, onClo
     const [mood, setMood] = useState<MoodIndex | null>(null);
     const [energy, setEnergy] = useState<EnergyIndex | null>(null);
     const [journalLine, setJournalLine] = useState('');
-    const [workedLine, setWorkedLine] = useState('');
-    const [hardLine, setHardLine] = useState('');
-    const [easierLine, setEasierLine] = useState('');
     const [streakAfterClose, setStreakAfterClose] = useState<number | null>(null);
 
     // Leftovers resolve one by one; when the list drains, move on to reflection.
@@ -119,23 +125,60 @@ const CloseDayOverlay: React.FC<CloseDayOverlayProps> = ({ dateKey, picks, onClo
         }
     };
 
+    /**
+     * Shared save + close used by both "Close the day" and "Extend". Persists
+     * the one-liner as the day's core memory (so quick closes show up in the
+     * journal feed), closes the day, and refreshes the streak. Returns the
+     * streak after close, or null if the save failed.
+     */
+    const saveAndClose = async (): Promise<number | null> => {
+        if (!user?.id) return null;
+        const line = journalLine.trim();
+        await saveReflectionItems(user.id, dateKey, [{ subtype: 'reflection_memory', text: line }]);
+        // Mirror the one-liner into the durable journal as today's core memory,
+        // matching what the reflection page writes — otherwise a quick close
+        // never reaches the Journal feed.
+        if (line) {
+            await saveJournalEntry({
+                date: dateKey,
+                prompts: [
+                    { promptId: 'core_memory', question: "Today's core memory", answer: line },
+                ],
+                wins: [],
+            });
+        }
+        await closeDay(user.id, dateKey);
+        markRoutineDone('night', dateKey);
+        const streak = await getCloseStreak(user.id);
+        void queryClient.invalidateQueries({ queryKey: ['closeStreak', user.id] });
+        void queryClient.invalidateQueries({ queryKey: ['closedDatesThisWeek', user.id] });
+        return streak;
+    };
+
     const finishClose = async () => {
         if (!user?.id || busy) return;
         setBusy(true);
         try {
-            await saveReflectionItems(user.id, dateKey, [
-                { subtype: 'reflection_memory', text: journalLine },
-                { subtype: 'reflection_win', text: workedLine },
-                { subtype: 'reflection_challenge', text: hardLine },
-                { subtype: 'reflection_priority', text: easierLine },
-            ]);
-            await closeDay(user.id, dateKey);
-            markRoutineDone('night', dateKey);
-            const streak = await getCloseStreak(user.id);
+            const streak = await saveAndClose();
             setStreakAfterClose(streak);
-            void queryClient.invalidateQueries({ queryKey: ['closeStreak', user.id] });
-            void queryClient.invalidateQueries({ queryKey: ['closedDatesThisWeek', user.id] });
             setPhase('celebrate');
+        } catch (err) {
+            console.error('Failed to close the day:', err);
+            toast.error('Could not close the day — try again.');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    // Extend: save and close (streak locked in, no celebration), then hand off
+    // to the journal page to keep writing.
+    const extendToJournal = async () => {
+        if (!user?.id || busy) return;
+        setBusy(true);
+        try {
+            await saveAndClose();
+            onClose();
+            onNavigate('reflection');
         } catch (err) {
             console.error('Failed to close the day:', err);
             toast.error('Could not close the day — try again.');
@@ -334,40 +377,6 @@ const CloseDayOverlay: React.FC<CloseDayOverlayProps> = ({ dateKey, picks, onClo
                                 placeholder="what stuck with you…"
                                 className={inputClass}
                             />
-                            <Fold
-                                label="More reflection — the full questions"
-                                openLabel="Less reflection"
-                                className="mt-1"
-                            >
-                                <div className="mt-1.5 flex flex-col gap-2.5">
-                                    <div>
-                                        <div className={overlayLabel}>What went well?</div>
-                                        <input
-                                            value={workedLine}
-                                            onChange={(e) => setWorkedLine(e.target.value)}
-                                            className={inputClass}
-                                        />
-                                    </div>
-                                    <div>
-                                        <div className={overlayLabel}>What was hard?</div>
-                                        <input
-                                            value={hardLine}
-                                            onChange={(e) => setHardLine(e.target.value)}
-                                            className={inputClass}
-                                        />
-                                    </div>
-                                    <div>
-                                        <div className={overlayLabel}>
-                                            What would make tomorrow easier?
-                                        </div>
-                                        <input
-                                            value={easierLine}
-                                            onChange={(e) => setEasierLine(e.target.value)}
-                                            className={inputClass}
-                                        />
-                                    </div>
-                                </div>
-                            </Fold>
                         </div>
 
                         <button
@@ -377,6 +386,14 @@ const CloseDayOverlay: React.FC<CloseDayOverlayProps> = ({ dateKey, picks, onClo
                             className="mt-1 rounded-2xl bg-white px-[34px] py-[15px] text-[15px] font-extrabold text-cove-ink disabled:opacity-60"
                         >
                             Close the day ✓
+                        </button>
+                        <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void extendToJournal()}
+                            className="rounded-2xl border-2 border-white/25 px-[26px] py-3 text-[13.5px] font-extrabold text-white disabled:opacity-60"
+                        >
+                            Extend in the journal →
                         </button>
                         <button
                             type="button"
