@@ -13,7 +13,7 @@ export default defineConfig({
             filename: 'sw.js',
             registerType: 'autoUpdate',
             injectRegister: 'auto',
-            includeAssets: ['icons/*.png'],
+            includeAssets: ['icons/*.png', 'favicon.png'],
             manifest: false, // Use public/manifest.json
             injectManifest: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
