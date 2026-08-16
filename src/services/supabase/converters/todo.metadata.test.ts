@@ -25,12 +25,12 @@ describe('todo converter — metadata columns', () => {
             recurrence_config: null,
             hardness: 'fixed',
             auto_triaged: true,
-            triage_destination: 'school',
+            flag: 'school',
         } as DbTodo;
         const task = dbToTodo(db);
         expect(task.hardness).toBe('fixed');
         expect(task.autoTriaged).toBe(true);
-        expect(task.triageDestination).toBe('school');
+        expect(task.flag).toBe('school');
     });
 
     it('defaults autoTriaged to false and round-trips back to db', () => {
@@ -59,12 +59,12 @@ describe('todo converter — metadata columns', () => {
         expect(task.hardness).toBeUndefined();
 
         const back = todoToDb(
-            { ...task, hardness: 'flexible', autoTriaged: true, triageDestination: 'today' },
+            { ...task, hardness: 'flexible', autoTriaged: true, flag: 'today' },
             'u',
         );
         expect(back.hardness).toBe('flexible');
         expect(back.auto_triaged).toBe(true);
-        expect(back.triage_destination).toBe('today');
+        expect(back.flag).toBe('today');
     });
 
     it('maps staleness columns both ways with safe defaults', () => {

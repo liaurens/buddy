@@ -10,7 +10,6 @@
 
 import type { Task } from '../types';
 import { routeTaskPatch, type TriageDestination, type TriageDetail } from '../utils/triageRouting';
-import { kindSignalPatch } from '../utils/taskKind';
 import { persistTaskUpdate } from './taskWrites';
 
 export interface TriageOpts {
@@ -51,13 +50,13 @@ export function applyTriagePatch(
 
     // Profile fields: drop uninferrred keys (spread would clobber existing
     // values with undefined) and keep the task's own values over inferred ones.
-    // Routing fields (dueDate/dueTime/kind) stay untouched — their explicit
-    // undefined is a deliberate clear (e.g. urgent drops the do-date).
+    // Routing fields (flag/dueDate/dueTime) stay untouched — their explicit
+    // undefined is a deliberate clear (e.g. someday drops the do-date).
     for (const field of PROFILE_FIELDS) {
         if (patch[field] === undefined || task[field] != null) delete patch[field];
     }
 
-    const merged: Task = {
+    return {
         ...task,
         ...patch,
         autoTriaged: opts.autoTriaged ?? false,
@@ -65,7 +64,6 @@ export function applyTriagePatch(
         triageConfidence: opts.confidence,
         triageReason: opts.reason,
     };
-    return patch.kind ? { ...merged, ...kindSignalPatch(patch.kind) } : merged;
 }
 
 /** Route + persist (columns, reminders, Google) in one call. */

@@ -22,7 +22,6 @@ export interface DbTodo {
     planned_for?: string | null;
     due_time: string | null;
     location: string | null;
-    labels: string[] | null;
     created_at: string;
     priority: string | null;
     estimated_time: number | null;
@@ -30,7 +29,6 @@ export interface DbTodo {
     actual_minutes: number | null;
     started_at: string | null;
     completed_at: string | null;
-    historical_minutes: number[] | null;
     recurrence: 'none' | 'daily' | 'weekly' | 'monthly' | 'weekdays';
     recurrence_config: { daysOfWeek?: number[]; interval?: number } | null;
     reminder_enabled?: boolean;
@@ -44,13 +42,11 @@ export interface DbTodo {
     context?: TaskContext | null;
     routine_id?: string | null;
     routine_order?: number | null;
-    kind?: 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard' | 'waiting' | null;
     parent_todo_id?: string | null;
     notes?: string | null;
     triaged_at?: string | null;
     hardness?: 'fixed' | 'flexible' | null;
     auto_triaged?: boolean | null;
-    triage_destination?: string | null;
     google_event_id?: string | null;
     google_calendar_id?: string | null;
     google_synced_at?: string | null;
@@ -58,7 +54,8 @@ export interface DbTodo {
     last_touched_at?: string | null;
     waiting_on?: string | null;
     start_date?: string | null;
-    flag?: DbTaskFlag | null;
+    /** NOT NULL in the DB since the 2026-08 collapse; optional here for insert payloads. */
+    flag?: DbTaskFlag;
     triage_source?: 'explicit' | 'parser' | 'ai' | 'manual' | null;
     triage_confidence?: number | null;
     triage_reason?: string | null;

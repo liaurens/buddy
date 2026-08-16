@@ -279,22 +279,6 @@ async function handleSplit(
     return { success: true, action_taken: 'Generated task breakdown', data };
 }
 
-async function handleOrganize(
-    params: Record<string, unknown>,
-    context: AgentContext,
-): Promise<ToolResult> {
-    const tasks = asRecordArray(params.tasks);
-    const taskTypes = asRecordArray(params.taskTypes);
-    const todayIso =
-        typeof params.todayIso === 'string'
-            ? params.todayIso
-            : new Date().toISOString().slice(0, 10);
-    const systemPrompt = `Organize tasks. Return JSON only. kind: urgent|deadline|standard|routine|backlog; priority: urgent|high|medium|low; taskTypeId must be a supplied id or null; dueDate is YYYY-MM-DD or null. Today is ${todayIso}.`;
-    const userPrompt = `Task types: ${JSON.stringify(taskTypes)}\nTasks: ${JSON.stringify(tasks)}\nReturn {"suggestions":[{"id":"...","taskTypeId":null,"kind":"standard","priority":"medium","dueDate":null,"reason":"short reason"}]}.`;
-    const data = await generateJSON(context, 'task_organize', systemPrompt, userPrompt);
-    return { success: true, action_taken: 'Generated task organization suggestions', data };
-}
-
 async function handleTriage(
     params: Record<string, unknown>,
     context: AgentContext,
@@ -353,7 +337,6 @@ export const taskAITool: ToolDefinition = {
             handler: handleAccountSecretsClear,
         },
         { action: 'task.ai.split', description: 'Break down a task', handler: handleSplit },
-        { action: 'task.ai.organize', description: 'Organize tasks', handler: handleOrganize },
         { action: 'task.ai.triage', description: 'Triage captured tasks', handler: handleTriage },
     ],
     commands: [],

@@ -10,7 +10,6 @@ import type {
     Task,
     TaskType,
     TaskEnergy,
-    TaskKind,
     TaskFlag,
     RecurrencePattern,
     TriageSource,
@@ -24,7 +23,6 @@ export interface ParsedDraft {
     dueTime?: string; // HH:MM
     priority?: Task['priority'];
     energy?: TaskEnergy;
-    kind?: TaskKind; // explicit kind detected from text (e.g. "!!!" → urgent, "someday" → backlog)
     waitingOn?: string;
     startDate?: string;
     notes?: string;
@@ -241,7 +239,6 @@ export function parseQuickCapture(
     let plannedFor: string | undefined;
     let dueTime: string | undefined;
     let taskTypeId: string | undefined;
-    let kind: TaskKind | undefined;
     let flag: TaskFlag | undefined;
     let recurrence: RecurrencePattern | undefined;
     let waitingOn: string | undefined;
@@ -262,24 +259,22 @@ export function parseQuickCapture(
         errors.push(`Choose one task flag: ${uniqueFlags.join(', ')}.`);
     }
 
-    // Priority: leading !!! (urgent kind), !! (urgent), or ! (high)
+    // Priority: leading !!! (urgent), !! (urgent), or ! (high)
     const prMatch = text.match(/^(!!!|!!|!)\s+/);
     if (prMatch) {
         if (prMatch[1] === '!!!') {
             priority = 'urgent';
-            kind = 'urgent';
             if (!flag) flag = 'urgent';
         } else if (prMatch[1] === '!!') priority = 'urgent';
         else priority = 'high';
         text = text.slice(prMatch[0].length);
     }
 
-    // Kind keyword: "someday"/"backlog" → backlog (no-pressure list)
-    const kindMatch = text.match(/\b(someday|backlog)\b[:\s]*/i);
-    if (kindMatch) {
-        kind = 'backlog';
+    // Keyword: "someday"/"backlog" → the someday flag (no scheduling pressure)
+    const somedayMatch = text.match(/\b(someday|backlog)\b[:\s]*/i);
+    if (somedayMatch) {
         if (!flag) flag = 'someday';
-        text = text.replace(kindMatch[0], ' ');
+        text = text.replace(somedayMatch[0], ' ');
     }
 
     // Obvious recurrence phrases. A typed routine without a cadence remains
@@ -418,7 +413,6 @@ export function parseQuickCapture(
         dueTime,
         priority,
         energy,
-        kind,
         flag,
         recurrence,
         waitingOn,

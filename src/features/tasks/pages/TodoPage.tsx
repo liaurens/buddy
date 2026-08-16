@@ -14,12 +14,11 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useTasks } from '../hooks/useTasks';
 import { useTaskTypes } from '../hooks/useTaskTypes';
 import { useTaskRecommendation } from '../hooks/useTaskRecommendation';
-import type { Task, TaskKind } from '../types';
-import { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from '../utils/taskKind';
+import type { Task, TaskFlag } from '../types';
 import { countInbox } from '../utils/inbox';
 import { sortTasksCanonical, isQuickWin } from '../utils/taskOrdering';
 import { pickSomedayReview } from '../utils/taskContracts';
-import { deriveTaskFlag } from '../utils/taskFlags';
+import { TASK_FLAG_META, TASK_FLAG_ORDER, deriveTaskFlag } from '../utils/taskFlags';
 import { UpcomingDeadlinesBanner } from '../../school/components/UpcomingDeadlinesBanner';
 import type { AppRoute } from '../../../constants/routes';
 
@@ -42,7 +41,7 @@ interface TodoPageProps {
     topSlot?: React.ReactNode;
 }
 
-type ViewMode = 'type' | 'schedule' | 'kind';
+type ViewMode = 'type' | 'schedule' | 'flag';
 type BucketId = 'overdue' | 'today' | 'week' | 'later';
 
 const BUCKET_META: Record<BucketId, { label: string; tone: string; dot: string }> = {
@@ -69,8 +68,8 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
     const { ranked } = useTaskRecommendation();
 
     const deepLinkUrgent = initialParams?.view === 'urgent';
-    const [view, setView] = useState<ViewMode>(deepLinkUrgent ? 'kind' : 'type');
-    const [onlyKind, setOnlyKind] = useState<TaskKind | null>(deepLinkUrgent ? 'urgent' : null);
+    const [view, setView] = useState<ViewMode>(deepLinkUrgent ? 'flag' : 'type');
+    const [onlyFlag, setOnlyFlag] = useState<TaskFlag | null>(deepLinkUrgent ? 'urgent' : null);
     // Mobile "Done" chip: force the completed footer open.
     const [showDone, setShowDone] = useState(false);
     // Mobile "Quick wins" chip: only tasks doable in a spare quarter hour.
@@ -197,16 +196,16 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
         return buckets;
     }, [workingTasks, scoreById]);
 
-    // Group by behavioral kind for the Kind view.
-    const byKind = useMemo(() => {
-        const groups = new Map<TaskKind, Task[]>();
+    // Group by flag for the Flag view.
+    const byFlag = useMemo(() => {
+        const groups = new Map<TaskFlag, Task[]>();
         for (const t of workingTasks) {
-            const k = deriveTaskKind(t);
-            const arr = groups.get(k) || [];
+            const f = deriveTaskFlag(t);
+            const arr = groups.get(f) || [];
             arr.push(t);
-            groups.set(k, arr);
+            groups.set(f, arr);
         }
-        const sorted = new Map<TaskKind, Task[]>();
+        const sorted = new Map<TaskFlag, Task[]>();
         groups.forEach((arr, key) => sorted.set(key, sortTasksCanonical(arr, scoreById)));
         return sorted;
     }, [workingTasks, scoreById]);
@@ -239,7 +238,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                         view={view}
                         onChange={(v) => {
                             setView(v);
-                            setOnlyKind(null);
+                            setOnlyFlag(null);
                         }}
                     />
                     <IconButton title="Run a routine" onClick={() => setShowRoutines(true)}>
@@ -309,17 +308,15 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             dueTime: draft.dueTime,
                             priority: draft.priority || 'medium',
                             energy: draft.energy,
-                            kind: draft.kind,
                             flag: draft.flag,
                             recurrence: draft.recurrence,
                             waitingOn: draft.waitingOn,
                             notes: draft.notes,
                             triageSource: draft.triageSource,
-                            // An explicit kind means the user already sorted it — skip the
+                            // An explicit flag means the user already sorted it — skip the
                             // triage inbox and record where it went, like routed tasks do.
                             // A bare capture stays untriaged for the morning router.
                             triagedAt: draft.flag ? new Date().toISOString() : undefined,
-                            triageDestination: draft.flag,
                         });
                     }}
                 />
@@ -340,7 +337,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                                     !quickWinsOnly,
                                 onClick: () => {
                                     setFilter({ typeId: 'all', energy: 'all' });
-                                    setOnlyKind(null);
+                                    setOnlyFlag(null);
                                     setShowDone(false);
                                     setQuickWinsOnly(false);
                                     setView('type');
@@ -348,29 +345,29 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             },
                             {
                                 label: 'Urgent',
-                                active: view === 'kind' && onlyKind === 'urgent',
+                                active: view === 'flag' && onlyFlag === 'urgent',
                                 onClick: () => {
-                                    setOnlyKind('urgent');
+                                    setOnlyFlag('urgent');
                                     setShowDone(false);
-                                    setView('kind');
+                                    setView('flag');
                                 },
                             },
                             {
                                 label: 'Today',
                                 active: view === 'schedule',
                                 onClick: () => {
-                                    setOnlyKind(null);
+                                    setOnlyFlag(null);
                                     setShowDone(false);
                                     setView('schedule');
                                 },
                             },
                             {
                                 label: 'Someday',
-                                active: view === 'kind' && onlyKind === 'backlog',
+                                active: view === 'flag' && onlyFlag === 'someday',
                                 onClick: () => {
-                                    setOnlyKind('backlog');
+                                    setOnlyFlag('someday');
                                     setShowDone(false);
-                                    setView('kind');
+                                    setView('flag');
                                 },
                             },
                             {
@@ -385,7 +382,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                                 label: 'Done',
                                 active: showDone,
                                 onClick: () => {
-                                    setOnlyKind(null);
+                                    setOnlyFlag(null);
                                     setView('type');
                                     setShowDone(true);
                                 },
@@ -418,7 +415,7 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
             {waitingTasks.length > 0 && (
                 <details className="border-y border-slate-200 bg-slate-50/70 lg:max-w-4xl">
                     <summary className="cursor-pointer px-3 py-2.5 text-sm font-medium text-slate-700">
-                        {TASK_KIND_META.waiting.emoji} Waiting ({waitingTasks.length})
+                        {TASK_FLAG_META.waiting.emoji} Waiting ({waitingTasks.length})
                     </summary>
                     <div className="border-t border-slate-200">
                         {sortTasksCanonical(waitingTasks, scoreById).map((task) => (
@@ -491,14 +488,14 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                         />
                     )}
                 </div>
-            ) : view === 'kind' ? (
+            ) : view === 'flag' ? (
                 <div className="space-y-4 lg:max-w-4xl">
-                    {TASK_KIND_ORDER.filter((k) => !onlyKind || k === onlyKind).map((kind) => {
-                        const tasks = byKind.get(kind) || [];
+                    {TASK_FLAG_ORDER.filter((f) => !onlyFlag || f === onlyFlag).map((flag) => {
+                        const tasks = byFlag.get(flag) || [];
                         if (tasks.length === 0) return null;
-                        const meta = TASK_KIND_META[kind];
+                        const meta = TASK_FLAG_META[flag];
                         return (
-                            <section key={kind} className="space-y-1.5">
+                            <section key={flag} className="space-y-1.5">
                                 <div className="flex items-center gap-2 pl-1">
                                     <span>{meta.emoji}</span>
                                     <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -534,12 +531,12 @@ const TodoPage: React.FC<TodoPageProps> = ({ initialParams, onNavigate, topSlot 
                             </section>
                         );
                     })}
-                    {onlyKind && (
+                    {onlyFlag && (
                         <button
-                            onClick={() => setOnlyKind(null)}
+                            onClick={() => setOnlyFlag(null)}
                             className="pl-1 text-xs font-medium text-indigo-600 hover:underline"
                         >
-                            Show all kinds
+                            Show all flags
                         </button>
                     )}
                 </div>
@@ -682,9 +679,9 @@ const ViewToggle: React.FC<{ view: ViewMode; onChange: (v: ViewMode) => void }> 
 }) => (
     <div className="mr-1 flex rounded-lg border border-slate-200 bg-slate-100/80 p-0.5">
         <button
-            onClick={() => onChange('kind')}
-            title="Group by kind"
-            className={`rounded p-1.5 ${view === 'kind' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            onClick={() => onChange('flag')}
+            title="Group by flag"
+            className={`rounded p-1.5 ${view === 'flag' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
         >
             <Flame size={16} />
         </button>

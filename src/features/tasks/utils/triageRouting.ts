@@ -24,70 +24,13 @@ import type {
 } from '../types';
 import { applyTaskFlag } from './taskFlags';
 
+/**
+ * A triage destination IS a flag — routing a task just means setting its flag
+ * and letting `applyTaskFlag` write the field contract that flag implies.
+ * For labels, emoji, colours and display order use TASK_FLAG_META /
+ * TASK_FLAG_ORDER from `taskFlags.ts`.
+ */
 export type TriageDestination = TaskFlag;
-
-export interface TriageDestinationMeta {
-    label: string;
-    emoji: string;
-    /** Tailwind palette name used for chips (matches existing kind chips). */
-    color: 'rose' | 'indigo' | 'amber' | 'violet' | 'slate';
-    description: string;
-    /** Whether the destination needs extra input before it can be applied. */
-    needs?: 'assignment' | 'cadence';
-}
-
-export const TRIAGE_DESTINATION_META: Record<TriageDestination, TriageDestinationMeta> = {
-    urgent: {
-        label: 'Urgent',
-        emoji: '🔥',
-        color: 'rose',
-        description: 'Schedule it on your calendar',
-    },
-    today: { label: 'Today', emoji: '📅', color: 'indigo', description: "Onto today's plan" },
-    school: {
-        label: 'School',
-        emoji: '🎓',
-        color: 'amber',
-        description: 'Link to a class',
-        needs: 'assignment',
-    },
-    routine: {
-        label: 'Routine',
-        emoji: '🔁',
-        color: 'violet',
-        description: 'Repeats on a schedule',
-        needs: 'cadence',
-    },
-    deadline: {
-        label: 'Deadline',
-        emoji: '🎯',
-        color: 'amber',
-        description: 'Track a real due date',
-    },
-    waiting: {
-        label: 'Waiting',
-        emoji: '⏳',
-        color: 'slate',
-        description: 'Follow up later',
-    },
-    someday: {
-        label: 'Someday',
-        emoji: '🗂️',
-        color: 'slate',
-        description: 'No pressure — stays until you pick it',
-    },
-};
-
-/** Chip display order (most pressing first). */
-export const TRIAGE_DESTINATION_ORDER: TriageDestination[] = [
-    'urgent',
-    'today',
-    'deadline',
-    'waiting',
-    'school',
-    'routine',
-    'someday',
-];
 
 /** Extra input a destination may need to be actionable. */
 export interface TriageDetail {
@@ -125,14 +68,9 @@ function cadenceForHardness(hardness?: Hardness): Task['reminderCadence'] | unde
 }
 
 /** Fields every destination writes from the inferred profile. */
-function profilePatch(
-    destination: TriageDestination,
-    detail: TriageDetail,
-    triagedAt: string,
-): Partial<Task> {
+function profilePatch(detail: TriageDetail, triagedAt: string): Partial<Task> {
     return {
         triagedAt,
-        triageDestination: destination,
         autoTriaged: false,
         hardness: detail.hardness,
         location: detail.location,
@@ -150,48 +88,32 @@ export function routeTaskPatch(
     detail: TriageDetail,
     opts: { nowIso: string; todayIso: string },
 ): Partial<Task> {
-    const base = profilePatch(destination, detail, opts.nowIso);
+    const base = profilePatch(detail, opts.nowIso);
 
     let routing: Partial<Task>;
     switch (destination) {
         case 'urgent':
-            routing = {
-                flag: 'urgent',
-                kind: 'urgent',
-                plannedFor: detail.plannedFor,
-                dueTime: detail.time,
-            };
+            routing = { flag: 'urgent', plannedFor: detail.plannedFor, dueTime: detail.time };
             break;
         case 'today':
             routing = {
                 flag: 'today',
                 plannedFor: detail.plannedFor ?? opts.todayIso,
                 dueTime: detail.time,
-                kind: 'standard',
             };
             break;
         case 'someday':
-            routing = {
-                flag: 'someday',
-                kind: 'backlog',
-                plannedFor: undefined,
-                dueTime: undefined,
-            };
+            routing = { flag: 'someday', plannedFor: undefined, dueTime: undefined };
             break;
         case 'school':
             routing = { flag: 'school', assignmentId: detail.assignmentId };
             break;
         case 'routine':
-            routing = {
-                flag: 'routine',
-                kind: 'routine',
-                recurrence: detail.recurrence ?? 'daily',
-            };
+            routing = { flag: 'routine', recurrence: detail.recurrence ?? 'daily' };
             break;
         case 'deadline':
             routing = {
                 flag: 'deadline',
-                kind: 'deadline',
                 dueDate: detail.dueDate,
                 plannedFor: detail.plannedFor,
             };
@@ -199,7 +121,6 @@ export function routeTaskPatch(
         case 'waiting':
             routing = {
                 flag: 'waiting',
-                kind: 'waiting',
                 waitingOn: detail.waitingOn,
                 plannedFor: detail.plannedFor,
             };
@@ -248,28 +169,4 @@ export function isDestinationReady(destination: TriageDestination, detail: Triag
 /** A task is locked (planner must not auto-move it) when it is fixed AND has a date. */
 export function isLocked(task: Pick<Task, 'hardness' | 'dueDate'>): boolean {
     return task.hardness === 'fixed' && !!task.dueDate;
-}
-
-/**
- * The destination an explicit capture kind implies, so kind-stamped captures
- * carry a truthful `triageDestination` like routed ones do. The dated kinds
- * (standard/deadline) map to the dated destination.
- */
-export function kindToDestination(kind: NonNullable<Task['kind']>): TriageDestination {
-    switch (kind) {
-        case 'urgent':
-            return 'urgent';
-        case 'backlog':
-        case 'waiting':
-            return 'someday';
-        case 'routine':
-            return 'routine';
-        case 'school':
-            // Not pickable at capture (derived-only kind), but total for safety.
-            return 'school';
-        case 'deadline':
-            return 'deadline';
-        case 'standard':
-            return 'today';
-    }
 }

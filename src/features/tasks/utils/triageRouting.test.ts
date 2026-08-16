@@ -1,34 +1,27 @@
 import { describe, it, expect } from 'vitest';
-import {
-    routeTaskPatch,
-    isDestinationReady,
-    isLocked,
-    kindToDestination,
-    type TriageDetail,
-} from './triageRouting';
+import { routeTaskPatch, isDestinationReady, isLocked, type TriageDetail } from './triageRouting';
 
 const opts = { nowIso: '2026-06-21T08:00:00.000Z', todayIso: '2026-06-21' };
 
 describe('routeTaskPatch', () => {
     it('urgent flags the task and leaves it unscheduled for the Urgent inbox', () => {
         const patch = routeTaskPatch('urgent', {}, opts);
-        expect(patch.kind).toBe('urgent');
+        expect(patch.flag).toBe('urgent');
         expect(patch.dueDate).toBeUndefined();
         expect(patch.triagedAt).toBe(opts.nowIso);
-        expect(patch.triageDestination).toBe('urgent');
     });
 
     it('today sets the due date to today and keeps the optional time', () => {
         const patch = routeTaskPatch('today', { time: '13:00' }, opts);
         expect(patch.plannedFor).toBe('2026-06-21');
         expect(patch.dueTime).toBe('13:00');
-        expect(patch.kind).toBe('standard');
+        expect(patch.flag).toBe('today');
     });
 
-    it('someday makes it a no-pressure backlog item with no date', () => {
+    it('someday makes it a no-pressure item with no date', () => {
         const patch = routeTaskPatch('someday', {}, opts);
-        expect(patch.kind).toBe('backlog');
-        expect(patch.dueDate).toBeUndefined();
+        expect(patch.flag).toBe('someday');
+        expect(patch.plannedFor).toBeUndefined();
     });
 
     it('school links the chosen assignment', () => {
@@ -40,7 +33,7 @@ describe('routeTaskPatch', () => {
     it('routine sets a cadence, defaulting to daily', () => {
         expect(routeTaskPatch('routine', {}, opts).recurrence).toBe('daily');
         expect(routeTaskPatch('routine', { recurrence: 'weekly' }, opts).recurrence).toBe('weekly');
-        expect(routeTaskPatch('routine', {}, opts).kind).toBe('routine');
+        expect(routeTaskPatch('routine', {}, opts).flag).toBe('routine');
     });
 
     it('always stamps triagedAt so the task leaves the inbox', () => {
@@ -68,7 +61,7 @@ describe('routeTaskPatch — metadata', () => {
         expect(patch.context).toBe('computer');
         expect(patch.energy).toBe('high');
         expect(patch.estimatedTime).toBe(45);
-        expect(patch.triageDestination).toBe('today');
+        expect(patch.flag).toBe('today');
         expect(patch.triagedAt).toBe(opts.nowIso);
     });
 
@@ -79,9 +72,9 @@ describe('routeTaskPatch — metadata', () => {
         );
     });
 
-    it('keeps the loose-school destination even without an assignment', () => {
+    it('keeps the loose-school flag even without an assignment', () => {
         const patch = routeTaskPatch('school', {}, opts);
-        expect(patch.triageDestination).toBe('school');
+        expect(patch.flag).toBe('school');
         expect(patch.assignmentId).toBeUndefined();
     });
 });
@@ -106,15 +99,5 @@ describe('isLocked', () => {
     });
     it('is false for a flexible task', () => {
         expect(isLocked({ hardness: 'flexible', dueDate: '2026-06-22' })).toBe(false);
-    });
-});
-
-describe('kindToDestination', () => {
-    it('maps each explicit capture kind to its destination', () => {
-        expect(kindToDestination('urgent')).toBe('urgent');
-        expect(kindToDestination('backlog')).toBe('someday');
-        expect(kindToDestination('routine')).toBe('routine');
-        expect(kindToDestination('deadline')).toBe('deadline');
-        expect(kindToDestination('standard')).toBe('today');
     });
 });

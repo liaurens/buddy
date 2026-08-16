@@ -14,12 +14,11 @@ import { Loader2, AlertCircle, Check, SkipForward, ChevronDown, Sparkles } from 
 import { useTaskTriage, type TriageDecision } from '../hooks/useTaskTriage';
 import type { TaskTriageSuggestion } from '../../assistant/services/ai-actions.service';
 import {
-    TRIAGE_DESTINATION_META,
-    TRIAGE_DESTINATION_ORDER,
     isDestinationReady,
     type TriageDestination,
     type TriageDetail,
 } from '../utils/triageRouting';
+import { TASK_FLAG_META, TASK_FLAG_ORDER, deriveTaskFlag } from '../utils/taskFlags';
 import type { RecurrencePattern } from '../types';
 import { suggestionToDetail } from '../utils/triageConfidence';
 
@@ -36,6 +35,7 @@ const CHIP_ACTIVE: Record<string, string> = {
     amber: 'border-amber-500 bg-amber-500 text-white',
     violet: 'border-violet-600 bg-violet-600 text-white',
     slate: 'border-slate-500 bg-slate-500 text-white',
+    emerald: 'border-emerald-600 bg-emerald-600 text-white',
 };
 
 const CADENCES: { value: RecurrencePattern; label: string }[] = [
@@ -200,8 +200,7 @@ const TriageInbox: React.FC<TriageInboxProps> = ({ onDone, variant = 'page' }) =
                     </summary>
                     <ul className="mt-2 space-y-1.5">
                         {autoSortedToday.map((t) => {
-                            const dest = (t.triageDestination as TriageDestination) ?? 'today';
-                            const m = TRIAGE_DESTINATION_META[dest];
+                            const m = TASK_FLAG_META[deriveTaskFlag(t)];
                             return (
                                 <li
                                     key={t.id}
@@ -218,7 +217,7 @@ const TriageInbox: React.FC<TriageInboxProps> = ({ onDone, variant = 'page' }) =
                                                     taskId: t.id,
                                                     destination: 'someday',
                                                     detail: {},
-                                                    aiDestination: dest,
+                                                    aiDestination: deriveTaskFlag(t),
                                                     wasAuto: true,
                                                 },
                                             ])
@@ -256,7 +255,7 @@ const TriageInbox: React.FC<TriageInboxProps> = ({ onDone, variant = 'page' }) =
 
             <ul className="space-y-2">
                 {rows.map((row) => {
-                    const meta = TRIAGE_DESTINATION_META[row.destination];
+                    const meta = TASK_FLAG_META[row.destination];
                     const isOpen = expanded === row.task.id;
                     return (
                         <li
@@ -308,8 +307,8 @@ const TriageInbox: React.FC<TriageInboxProps> = ({ onDone, variant = 'page' }) =
                                     )}
 
                                     <div className="flex flex-wrap gap-1.5">
-                                        {TRIAGE_DESTINATION_ORDER.map((d) => {
-                                            const m = TRIAGE_DESTINATION_META[d];
+                                        {TASK_FLAG_ORDER.map((d) => {
+                                            const m = TASK_FLAG_META[d];
                                             const active = row.destination === d;
                                             return (
                                                 <button

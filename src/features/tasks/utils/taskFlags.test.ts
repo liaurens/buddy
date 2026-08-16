@@ -45,11 +45,7 @@ describe('applyTaskFlag', () => {
                 { waitingOn: 'Alex' },
                 { plannedFor: '2026-07-17', waitingOn: 'Alex', reminderCadence: 'single' },
             ],
-            [
-                'school',
-                { dueDate: '2026-07-20' },
-                { triageDestination: 'school', reminderEnabled: true },
-            ],
+            ['school', { dueDate: '2026-07-20' }, { reminderEnabled: true }],
             ['routine', { recurrence: 'weekly' }, { recurrence: 'weekly', reminderEnabled: true }],
             [
                 'someday',
@@ -71,10 +67,18 @@ describe('applyTaskFlag', () => {
         expect(applyTaskFlag(task(), 'routine', { now: NOW }).errors).not.toHaveLength(0);
     });
 
-    it('derives flags for legacy rows', () => {
-        expect(deriveTaskFlag(task({ kind: 'urgent' }))).toBe('urgent');
+    it('derives a flag for in-memory drafts that do not carry one', () => {
+        expect(deriveTaskFlag(task({ priority: 'urgent' }))).toBe('urgent');
         expect(deriveTaskFlag(task({ assignmentId: 'a1' }))).toBe('school');
-        expect(deriveTaskFlag(task({ kind: 'backlog' }))).toBe('someday');
+        expect(deriveTaskFlag(task({ waitingOn: 'Alex' }))).toBe('waiting');
+        expect(deriveTaskFlag(task({ recurrence: 'daily' }))).toBe('routine');
+        expect(deriveTaskFlag(task({ plannedFor: '2026-07-14' }))).toBe('today');
+        expect(deriveTaskFlag(task({ dueDate: '2026-07-20' }))).toBe('deadline');
+        expect(deriveTaskFlag(task())).toBe('someday');
+    });
+
+    it('lets an explicit flag win over every derived signal', () => {
+        expect(deriveTaskFlag(task({ flag: 'someday', priority: 'urgent' }))).toBe('someday');
     });
 });
 

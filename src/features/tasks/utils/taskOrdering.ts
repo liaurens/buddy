@@ -8,17 +8,9 @@
  */
 
 import type { Task } from '../types';
+import { flagRank } from './taskFlags';
 
 const UNDATED = '9999-99-99';
-const FLAG_ORDER: Record<NonNullable<Task['flag']>, number> = {
-    urgent: 0,
-    today: 1,
-    deadline: 2,
-    school: 3,
-    routine: 4,
-    waiting: 5,
-    someday: 6,
-};
 
 /** Canonical comparator. `scoreById` comes from getRankedTasks. */
 export function compareTasks(a: Task, b: Task, scoreById: Map<string, number>): number {
@@ -27,7 +19,7 @@ export function compareTasks(a: Task, b: Task, scoreById: Map<string, number>): 
     const aPlan = a.plannedFor ?? UNDATED;
     const bPlan = b.plannedFor ?? UNDATED;
     if (aPlan !== bPlan) return aPlan.localeCompare(bPlan);
-    const flagDiff = (a.flag ? FLAG_ORDER[a.flag] : 99) - (b.flag ? FLAG_ORDER[b.flag] : 99);
+    const flagDiff = flagRank(a.flag) - flagRank(b.flag);
     if (flagDiff !== 0) return flagDiff;
     const aDue = a.dueDate ?? UNDATED;
     const bDue = b.dueDate ?? UNDATED;

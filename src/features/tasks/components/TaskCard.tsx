@@ -319,16 +319,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                     <MapPin size={11} /> {task.location}
                                 </span>
                             )}
-                            {task.labels &&
-                                task.labels.length > 0 &&
-                                task.labels.map((label) => (
-                                    <span
-                                        key={label}
-                                        className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-medium"
-                                    >
-                                        <Tag size={9} /> {label}
-                                    </span>
-                                ))}
                             {hasSubtasks && (
                                 <span className="flex items-center gap-1 font-medium text-slate-500">
                                     <Layers size={9} /> {subtaskDone}/{subtaskCount}
@@ -369,7 +359,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        onUpdate({ ...task, recurrence: 'none', kind: 'standard' });
+                                        onUpdate({ ...task, recurrence: 'none', flag: 'today' });
                                         setRoutineDecisionOpen(false);
                                     }}
                                     className="flex items-center gap-1 rounded bg-white px-2 py-1 font-medium text-slate-700 hover:bg-slate-100"

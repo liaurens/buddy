@@ -44,11 +44,11 @@ const VAGUE_PENALTY = 5;
 
 /** Routines schedule themselves — never suggest them as picks. */
 function isRoutine(task: Task): boolean {
-    return task.kind === 'routine' || (!!task.recurrence && task.recurrence !== 'none');
+    return task.flag === 'routine' || (!!task.recurrence && task.recurrence !== 'none');
 }
 
 function isSchool(task: Task): boolean {
-    return !!task.assignmentId || task.triageDestination === 'school';
+    return !!task.assignmentId || task.flag === 'school';
 }
 
 /**

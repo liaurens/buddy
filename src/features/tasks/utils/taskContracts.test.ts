@@ -26,8 +26,8 @@ function task(overrides: Partial<Task> = {}): Task {
 
 describe('task contracts', () => {
     it('parks waiting tasks until their chase date', () => {
-        expect(isWaitingParked(task({ kind: 'waiting', dueDate: '2026-07-15' }), now)).toBe(true);
-        expect(isWaitingParked(task({ kind: 'waiting', dueDate: '2026-07-14' }), now)).toBe(false);
+        expect(isWaitingParked(task({ flag: 'waiting', dueDate: '2026-07-15' }), now)).toBe(true);
+        expect(isWaitingParked(task({ flag: 'waiting', dueDate: '2026-07-14' }), now)).toBe(false);
     });
 
     it('suggests three days before a deadline but never before today', () => {
@@ -36,7 +36,7 @@ describe('task contracts', () => {
     });
 
     it('parks a deadline before start and detects an untouched slipped start', () => {
-        const deadline = task({ kind: 'deadline', startDate: '2026-07-15' });
+        const deadline = task({ flag: 'deadline', startDate: '2026-07-15' });
         expect(isDeadlineParked(deadline, now)).toBe(true);
         expect(isDeadlineStartSlipped({ ...deadline, startDate: '2026-07-13' }, now)).toBe(true);
         expect(
@@ -48,8 +48,8 @@ describe('task contracts', () => {
     });
 
     it('reviews only old someday tasks and picks the oldest', () => {
-        const older = task({ id: 'old', kind: 'backlog', createdAt: '2026-05-01T12:00:00Z' });
-        const newer = task({ id: 'new', kind: 'backlog', createdAt: '2026-06-20T12:00:00Z' });
+        const older = task({ id: 'old', flag: 'someday', createdAt: '2026-05-01T12:00:00Z' });
+        const newer = task({ id: 'new', flag: 'someday', createdAt: '2026-06-20T12:00:00Z' });
         expect(isSomedayReviewEligible(older, now)).toBe(true);
         expect(isSomedayReviewEligible(newer, now)).toBe(false);
         expect(pickSomedayReview([newer, older], now)?.id).toBe('old');

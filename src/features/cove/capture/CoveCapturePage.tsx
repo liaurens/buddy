@@ -52,7 +52,6 @@ const CoveCapturePage: React.FC = () => {
                 dueTime: draft.dueTime,
                 priority: draft.priority || 'medium',
                 energy: draft.energy,
-                kind: draft.kind,
                 flag: draft.flag,
                 recurrence: draft.recurrence,
                 waitingOn: draft.waitingOn,
@@ -61,7 +60,6 @@ const CoveCapturePage: React.FC = () => {
                 // An explicit flag means the user already sorted it; a bare
                 // capture stays untriaged for Buddy to sort.
                 triagedAt: draft.flag ? new Date().toISOString() : undefined,
-                triageDestination: draft.flag,
             });
             setText('');
         } catch (err) {

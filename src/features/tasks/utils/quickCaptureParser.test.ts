@@ -150,22 +150,22 @@ describe('parseQuickCapture', () => {
         expect(r.taskTypeId).toBeUndefined();
     });
 
-    it('parses "!!!" → urgent priority and urgent kind', () => {
+    it('parses "!!!" → urgent priority and the urgent flag', () => {
         const r = parseQuickCapture('!!! call the dentist', TYPES, NOW);
         expect(r.priority).toBe('urgent');
-        expect(r.kind).toBe('urgent');
+        expect(r.flag).toBe('urgent');
         expect(r.title).toBe('call the dentist');
     });
 
-    it('does not set a kind for plain "!!"', () => {
+    it('does not set a flag for plain "!!"', () => {
         const r = parseQuickCapture('!! reply to professor', TYPES, NOW);
         expect(r.priority).toBe('urgent');
-        expect(r.kind).toBeUndefined();
+        expect(r.flag).toBeUndefined();
     });
 
-    it('parses "someday" → backlog kind and strips the keyword', () => {
+    it('parses "someday" → the someday flag and strips the keyword', () => {
         const r = parseQuickCapture('learn guitar someday', TYPES, NOW);
-        expect(r.kind).toBe('backlog');
+        expect(r.flag).toBe('someday');
         expect(r.title.toLowerCase()).toContain('learn guitar');
         expect(r.title.toLowerCase()).not.toContain('someday');
     });

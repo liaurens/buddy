@@ -14,7 +14,6 @@ function fullDbTodo(): DbTodo {
         planned_for: '2026-06-20',
         due_time: '09:30',
         location: 'desk',
-        labels: ['focus', 'school'],
         created_at: '2026-06-21T08:00:00.000Z',
         priority: 'high',
         estimated_time: 45,
@@ -22,7 +21,6 @@ function fullDbTodo(): DbTodo {
         actual_minutes: 50,
         started_at: '2026-06-21T09:00:00.000Z',
         completed_at: '2026-06-21T09:50:00.000Z',
-        historical_minutes: [40, 55],
         recurrence: 'weekly',
         recurrence_config: { daysOfWeek: [1, 3], interval: 1 },
         reminder_enabled: true,
@@ -36,7 +34,6 @@ function fullDbTodo(): DbTodo {
         context: 'computer',
         routine_id: 'routine-1',
         routine_order: 2,
-        kind: 'deadline',
         flag: 'school',
         triage_source: 'ai',
         triage_confidence: 0.91,
@@ -61,7 +58,6 @@ describe('dbToTodo', () => {
             plannedFor: '2026-06-20',
             dueTime: '09:30',
             location: 'desk',
-            labels: ['focus', 'school'],
             createdAt: '2026-06-21T08:00:00.000Z',
             priority: 'high',
             estimatedTime: 45,
@@ -77,7 +73,6 @@ describe('dbToTodo', () => {
             context: 'computer',
             routineId: 'routine-1',
             routineOrder: 2,
-            kind: 'deadline',
             flag: 'school',
             triageSource: 'ai',
             triageConfidence: 0.91,
@@ -94,19 +89,15 @@ describe('dbToTodo', () => {
             due_date: null,
             due_time: null,
             location: null,
-            labels: null,
             estimated_time: null,
             task_type_id: null,
-            kind: null,
         };
         const task = dbToTodo(db);
         expect(task.dueDate).toBeUndefined();
         expect(task.dueTime).toBeUndefined();
         expect(task.location).toBeUndefined();
-        expect(task.labels).toBeUndefined();
         expect(task.estimatedTime).toBeUndefined();
         expect(task.taskTypeId).toBeUndefined();
-        expect(task.kind).toBeUndefined();
     });
 
     it('defaults a missing recurrence to "none" and subtasks to []', () => {
@@ -155,10 +146,10 @@ describe('todoToDb', () => {
         };
         const db = todoToDb(task, 'user-1');
         expect(db.due_date).toBeNull();
-        expect(db.labels).toBeNull();
         expect(db.task_type_id).toBeNull();
-        expect(db.kind).toBeNull();
         expect(db.priority).toBeNull();
+        // Every written row carries a flag — derived when the caller did not set one.
+        expect(db.flag).toBe('someday');
         expect(db.reminder_enabled).toBe(false);
     });
 
@@ -177,8 +168,7 @@ describe('todoToDb', () => {
         expect(db.title).toBe(original.title);
         expect(db.due_date).toBe(original.due_date);
         expect(db.subtasks).toEqual(original.subtasks);
-        expect(db.historical_minutes).toEqual(original.historical_minutes);
-        expect(db.kind).toBe(original.kind);
+        expect(db.flag).toBe(original.flag);
         expect(db.google_event_id).toBe(original.google_event_id);
     });
 });

@@ -11,18 +11,87 @@ export const TASK_FLAGS: TaskFlag[] = [
     'someday',
 ];
 
-export const TASK_FLAG_META: Record<
-    TaskFlag,
-    { label: string; emoji: string; description: string }
-> = {
-    urgent: { label: 'Urgent', emoji: '🔥', description: 'Plan now, with smart reminders' },
-    today: { label: 'Today', emoji: '📅', description: "Put it on today's plan" },
-    deadline: { label: 'Deadline', emoji: '🎯', description: 'Track a real due date' },
-    waiting: { label: 'Waiting', emoji: '⏳', description: 'Park until follow-up' },
-    school: { label: 'School', emoji: '🎓', description: 'Connect to school work' },
-    routine: { label: 'Routine', emoji: '🔁', description: 'Repeat on a cadence' },
-    someday: { label: 'Someday', emoji: '🗂️', description: 'Keep without scheduling pressure' },
+export interface TaskFlagMeta {
+    label: string;
+    emoji: string;
+    description: string;
+    /** Tailwind palette name for chips and section headers. */
+    color: 'rose' | 'indigo' | 'amber' | 'violet' | 'slate' | 'emerald';
+    /** Extra input the flag needs before it can be applied. */
+    needs?: 'dueDate' | 'waitingOn' | 'cadence';
+}
+
+/**
+ * The ONE table of labels, emoji, colours and descriptions for the seven flags.
+ *
+ * Until the 2026-08 collapse there were three of these (TASK_FLAG_META,
+ * TASK_KIND_META, TRIAGE_DESTINATION_META) with three sets of descriptions and
+ * two different colours for `school`. If you need flag presentation anywhere,
+ * read it from here.
+ */
+export const TASK_FLAG_META: Record<TaskFlag, TaskFlagMeta> = {
+    urgent: {
+        label: 'Urgent',
+        emoji: '🔥',
+        color: 'rose',
+        description: 'Plan now, with smart reminders',
+    },
+    today: { label: 'Today', emoji: '📅', color: 'indigo', description: "Put it on today's plan" },
+    deadline: {
+        label: 'Deadline',
+        emoji: '🎯',
+        color: 'amber',
+        description: 'Track a real due date',
+        needs: 'dueDate',
+    },
+    waiting: {
+        label: 'Waiting',
+        emoji: '⏳',
+        color: 'slate',
+        description: 'Park until follow-up',
+        needs: 'waitingOn',
+    },
+    school: {
+        label: 'School',
+        emoji: '🎓',
+        color: 'emerald',
+        description: 'Connect to school work',
+    },
+    routine: {
+        label: 'Routine',
+        emoji: '🔁',
+        color: 'violet',
+        description: 'Repeat on a cadence',
+        needs: 'cadence',
+    },
+    someday: {
+        label: 'Someday',
+        emoji: '🗂️',
+        color: 'slate',
+        description: 'Keep without scheduling pressure',
+    },
 };
+
+/**
+ * The ONE ordering, most pressing first. Used for display grouping AND as the
+ * tie-break in `compareTasks` — before the collapse these were three separate
+ * lists that put `waiting` at position 2, 4 and 6 respectively.
+ */
+export const TASK_FLAG_ORDER: TaskFlag[] = [
+    'urgent',
+    'today',
+    'deadline',
+    'school',
+    'routine',
+    'waiting',
+    'someday',
+];
+
+/** Position of a flag in TASK_FLAG_ORDER; unknown/unset sorts last. */
+export function flagRank(flag: TaskFlag | undefined): number {
+    const i = flag ? TASK_FLAG_ORDER.indexOf(flag) : -1;
+    return i === -1 ? TASK_FLAG_ORDER.length : i;
+}
 
 export interface UrgentPlanningContext {
     now: Date;
@@ -203,7 +272,6 @@ export function applyTaskFlag(
         case 'school':
             task = {
                 ...task,
-                triageDestination: 'school',
                 reminderEnabled: Boolean(task.dueDate),
                 reminderCadence: task.dueDate ? 'smart' : task.reminderCadence,
             };
@@ -232,45 +300,26 @@ export function applyTaskFlag(
     return { task, errors };
 }
 
-/** Compatibility mapping for rows written before flags existed. */
+/**
+ * Fill in a flag for a task that doesn't carry one yet.
+ *
+ * Every stored row has a flag (the column is NOT NULL since the 2026-08
+ * collapse migration), so this only fires for task objects built in memory
+ * before their first write — quick-capture drafts, the close-day follow-up,
+ * the assignment mirror. An explicit flag always wins.
+ */
 export function deriveTaskFlag(
     task: Pick<
         Task,
-        | 'flag'
-        | 'kind'
-        | 'priority'
-        | 'recurrence'
-        | 'assignmentId'
-        | 'triageDestination'
-        | 'plannedFor'
-        | 'dueDate'
-        | 'waitingOn'
+        'flag' | 'priority' | 'recurrence' | 'assignmentId' | 'plannedFor' | 'dueDate' | 'waitingOn'
     >,
 ): TaskFlag {
     if (task.flag) return task.flag;
-    if (task.assignmentId || task.triageDestination === 'school' || task.kind === 'school')
-        return 'school';
-    if (task.waitingOn || task.kind === 'waiting') return 'waiting';
-    if ((task.recurrence && task.recurrence !== 'none') || task.kind === 'routine')
-        return 'routine';
-    if (task.priority === 'urgent' || task.kind === 'urgent') return 'urgent';
-    if (task.kind === 'deadline') return 'deadline';
-    if (task.plannedFor || task.kind === 'standard' || task.triageDestination === 'today')
-        return 'today';
+    if (task.assignmentId) return 'school';
+    if (task.waitingOn) return 'waiting';
+    if (task.recurrence && task.recurrence !== 'none') return 'routine';
+    if (task.priority === 'urgent') return 'urgent';
+    if (task.plannedFor) return 'today';
     if (task.dueDate) return 'deadline';
     return 'someday';
-}
-
-/** Legacy kind mirror. Reads may still rely on this during the rollout. */
-export function flagToLegacyKind(flag: TaskFlag): Task['kind'] | undefined {
-    switch (flag) {
-        case 'today':
-            return 'standard';
-        case 'someday':
-            return 'backlog';
-        case 'school':
-            return undefined;
-        default:
-            return flag;
-    }
 }

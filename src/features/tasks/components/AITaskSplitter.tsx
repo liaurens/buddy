@@ -98,7 +98,7 @@ Task: ${task.title}
 Priority: ${task.priority || 'medium'}
 ${task.dueDate ? `Due date: ${task.dueDate}` : ''}
 ${task.estimatedTime ? `Estimated total time: ${task.estimatedTime} minutes` : ''}
-${task.labels?.length ? `Labels: ${task.labels.join(', ')}` : ''}`;
+${task.taskTypeId ? `Type: ${task.taskTypeId}` : ''}`;
 
     return { system, user };
 }

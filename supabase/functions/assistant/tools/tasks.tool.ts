@@ -8,6 +8,20 @@ import type {
 
 // ─── Action Handlers ────────────────────────────────────────────────────────
 
+/**
+ * Capture a task from the assistant or the iPhone Shortcut.
+ *
+ * This is a CAPTURE endpoint, not a classifier. It records the title, a date if
+ * the text obviously carries one, and an explicit #flag if the user typed one —
+ * then stops. Anything without an explicit flag lands in the capture inbox
+ * untriaged, so Buddy's AI triage sorts it on next app open and the correction
+ * feeds the learning doc, exactly like a task captured in the app.
+ *
+ * Until 2026-08 this function inferred flags, recurrence, reminder cadence and
+ * priority with its own rules. That was a fourth, divergent copy of the flag
+ * contract (the real one lives in src/features/tasks/utils/taskFlags.ts) and it
+ * pre-stamped `triaged_at`, so every Shortcut capture skipped triage entirely.
+ */
 export async function createTask(
     title: string,
     userId: string,
@@ -16,6 +30,7 @@ export async function createTask(
 ): Promise<ToolResult> {
     const aliases: Record<string, string> = {
         urgent: 'urgent',
+        dringend: 'urgent',
         today: 'today',
         vandaag: 'today',
         deadline: 'deadline',
@@ -42,59 +57,33 @@ export async function createTask(
         };
     }
 
+    // An explicit flag means the user already sorted it — mirror the app's
+    // capture rule and skip the inbox. No flag: leave it for triage.
+    const flag = uniqueFlags[0] ?? null;
     const parsedDate = parseDateExpression(captureTitle);
     const deadlineLanguage = /\b(?:due|deadline|uiterlijk|vervalt)\b/i.test(captureTitle);
-    let flag = uniqueFlags[0];
-    const dueDate =
-        options.dueDate || (deadlineLanguage || flag === 'deadline' ? parsedDate : null);
-    let plannedFor = !options.dueDate && parsedDate && !dueDate ? parsedDate : null;
-    flag ||= dueDate ? 'deadline' : plannedFor ? 'today' : 'someday';
-    if (flag === 'today' && !plannedFor) plannedFor = new Date().toISOString().slice(0, 10);
-    if (flag === 'urgent' && !plannedFor) plannedFor = new Date().toISOString().slice(0, 10);
-    if (flag === 'someday') plannedFor = null;
+    const wantsDueDate = deadlineLanguage || flag === 'deadline';
+    const dueDate = options.dueDate || (wantsDueDate ? parsedDate : null);
+    const plannedFor = !options.dueDate && parsedDate && !dueDate ? parsedDate : null;
 
-    const waitingMatch = captureTitle.match(/\b(?:waiting (?:on|for)|wacht(?:en)? op)\s+(.+)$/i);
-    const waitingOn = waitingMatch?.[1]?.trim() || null;
-    const recurrenceMatch = captureTitle.match(
-        /\b(daily|weekly|monthly|weekdays|dagelijks|wekelijks|maandelijks)\b/i,
-    );
-    const recurrence = recurrenceMatch
-        ? ({ dagelijks: 'daily', wekelijks: 'weekly', maandelijks: 'monthly' }[
-              recurrenceMatch[1].toLowerCase()
-          ] ?? recurrenceMatch[1].toLowerCase())
-        : flag === 'routine'
-          ? 'daily'
-          : 'none';
     if (flag === 'deadline' && !dueDate) {
         return { success: false, action_taken: 'A deadline task needs a due date.', data: {} };
     }
-    if (flag === 'waiting' && !waitingOn) {
-        return { success: false, action_taken: 'Say who or what you are waiting on.', data: {} };
-    }
 
-    const cleanTitle = dueDate
-        ? captureTitle
-              .replace(/\b(morgen|tomorrow|overmorgen|volgende week|next week)\b/gi, '')
-              .replace(
-                  /\b(monday|maandag|tuesday|dinsdag|wednesday|woensdag|thursday|donderdag|friday|vrijdag|saturday|zaterdag|sunday|zondag)\b/gi,
-                  '',
-              )
-              .replace(/\b(om|at)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?\b/gi, '')
-              .replace(/\b(?:due|deadline|uiterlijk|vervalt)\b/gi, '')
-              .trim()
-        : captureTitle
-              .replace(
-                  /\b(morgen|tomorrow|overmorgen|volgende week|next week|vandaag|today)\b/gi,
-                  '',
-              )
-              .replace(
-                  /\b(monday|maandag|tuesday|dinsdag|wednesday|woensdag|thursday|donderdag|friday|vrijdag|saturday|zaterdag|sunday|zondag)\b/gi,
-                  '',
-              )
-              .replace(/\b(daily|weekly|monthly|weekdays|dagelijks|wekelijks|maandelijks)\b/gi, '')
-              .replace(waitingMatch?.[0] ?? /$^/, '')
-              .replace(/\s+/g, ' ')
-              .trim();
+    const cleanTitle = captureTitle
+        .replace(/\b(morgen|tomorrow|overmorgen|volgende week|next week|vandaag|today)\b/gi, '')
+        .replace(
+            /\b(monday|maandag|tuesday|dinsdag|wednesday|woensdag|thursday|donderdag|friday|vrijdag|saturday|zaterdag|sunday|zondag)\b/gi,
+            '',
+        )
+        .replace(/\b(om|at)\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?\b/gi, '')
+        .replace(/\b(?:due|deadline|uiterlijk|vervalt)\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!cleanTitle) {
+        return { success: false, action_taken: 'That capture had no title.', data: {} };
+    }
 
     const { data: task, error } = await supabase
         .from('todos')
@@ -104,20 +93,10 @@ export async function createTask(
             completed: false,
             due_date: dueDate,
             planned_for: plannedFor,
-            flag,
-            waiting_on: waitingOn,
-            recurrence,
-            priority: flag === 'urgent' ? 'urgent' : options.priority || null,
-            reminder_enabled: flag !== 'someday' && flag !== 'school',
-            reminder_cadence:
-                flag === 'urgent' || flag === 'deadline'
-                    ? 'smart'
-                    : flag === 'waiting'
-                      ? 'single'
-                      : null,
-            triaged_at: new Date().toISOString(),
+            priority: options.priority || null,
             triage_source: 'parser',
-            triage_destination: flag,
+            // Flagged captures are already sorted; bare ones wait for triage.
+            ...(flag ? { flag, triaged_at: new Date().toISOString() } : {}),
             created_at: new Date().toISOString(),
         })
         .select()
@@ -132,9 +111,10 @@ export async function createTask(
     }
 
     const dueDateStr = dueDate ? ` (due ${dueDate})` : '';
+    const sortedStr = flag ? '' : ' — Buddy will sort it';
     return {
         success: true,
-        action_taken: `Task created: "${cleanTitle}"${dueDateStr}`,
+        action_taken: `Task captured: "${cleanTitle}"${dueDateStr}${sortedStr}`,
         data: {
             task_id: task.id,
             title: cleanTitle,

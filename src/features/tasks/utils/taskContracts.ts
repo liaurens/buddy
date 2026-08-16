@@ -11,11 +11,11 @@ function todayIso(now: Date): string {
 }
 
 export function isWaitingParked(
-    task: Pick<Task, 'flag' | 'kind' | 'plannedFor' | 'dueDate'>,
+    task: Pick<Task, 'flag' | 'plannedFor' | 'dueDate'>,
     now: Date,
 ): boolean {
     return (
-        (task.flag === 'waiting' || task.kind === 'waiting') &&
+        task.flag === 'waiting' &&
         Boolean(
             (task.plannedFor ?? task.dueDate) && (task.plannedFor ?? task.dueDate)! > todayIso(now),
         )
@@ -23,18 +23,15 @@ export function isWaitingParked(
 }
 
 export function isDeadlineParked(
-    task: Pick<Task, 'flag' | 'kind' | 'plannedFor' | 'dueDate' | 'startDate'>,
+    task: Pick<Task, 'flag' | 'plannedFor' | 'dueDate' | 'startDate'>,
     now: Date,
 ): boolean {
     const start = task.plannedFor ?? task.startDate;
-    return (
-        (task.flag === 'deadline' || task.kind === 'deadline') &&
-        Boolean(start && start > todayIso(now))
-    );
+    return task.flag === 'deadline' && Boolean(start && start > todayIso(now));
 }
 
 export function isTaskParked(
-    task: Pick<Task, 'flag' | 'kind' | 'plannedFor' | 'dueDate' | 'startDate'>,
+    task: Pick<Task, 'flag' | 'plannedFor' | 'dueDate' | 'startDate'>,
     now: Date,
 ): boolean {
     return isWaitingParked(task, now) || isDeadlineParked(task, now);
@@ -49,23 +46,22 @@ export function suggestedDeadlineStart(dueDate: string, now: Date): string {
 export function isDeadlineStartSlipped(
     task: Pick<
         Task,
-        'flag' | 'kind' | 'plannedFor' | 'startDate' | 'lastTouchedAt' | 'createdAt' | 'completed'
+        'flag' | 'plannedFor' | 'startDate' | 'lastTouchedAt' | 'createdAt' | 'completed'
     >,
     now: Date,
 ): boolean {
     const start = task.plannedFor ?? task.startDate;
-    if (task.completed || (task.flag !== 'deadline' && task.kind !== 'deadline') || !start)
-        return false;
+    if (task.completed || task.flag !== 'deadline' || !start) return false;
     if (start >= todayIso(now)) return false;
     const touched = (task.lastTouchedAt ?? task.createdAt).slice(0, 10);
     return touched < start;
 }
 
 export function isSomedayReviewEligible(
-    task: Pick<Task, 'flag' | 'kind' | 'lastTouchedAt' | 'createdAt' | 'completed'>,
+    task: Pick<Task, 'flag' | 'lastTouchedAt' | 'createdAt' | 'completed'>,
     now: Date,
 ): boolean {
-    if (task.completed || (task.flag !== 'someday' && task.kind !== 'backlog')) return false;
+    if (task.completed || task.flag !== 'someday') return false;
     const touched = new Date(task.lastTouchedAt ?? task.createdAt);
     return differenceInCalendarDays(now, touched) >= SOMEDAY_REVIEW_DAYS;
 }

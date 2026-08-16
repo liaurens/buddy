@@ -17,8 +17,7 @@ export interface TagInfo {
     tone: ChipTone;
 }
 
-const isSchoolTask = (task: Task): boolean =>
-    Boolean(task.assignmentId) || task.flag === 'school' || task.triageDestination === 'school';
+const isSchoolTask = (task: Task): boolean => Boolean(task.assignmentId) || task.flag === 'school';
 
 /** Pick-card tag per the prototype: school (blue) > tiny (green) > quick win (amber). */
 export function taskTagFor(task: Task): TagInfo | null {

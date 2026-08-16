@@ -65,7 +65,7 @@ describe('rankMorningCandidates', () => {
         const ranked = rank([
             task({ id: 'done', completed: true }),
             task({ id: 'routine', recurrence: 'daily' }),
-            task({ id: 'routine-kind', kind: 'routine' }),
+            task({ id: 'routine-flag', flag: 'routine' }),
             task({ id: 'today', dueDate: TODAY }),
             task({ id: 'ok' }),
         ]);
@@ -105,7 +105,7 @@ describe('suggestMorningPicks', () => {
     it('caps school candidates at 2 for diversity', () => {
         const ranked = rank([
             task({ id: 's1', assignmentId: 'x', priority: 'urgent' }),
-            task({ id: 's2', triageDestination: 'school', priority: 'urgent' }),
+            task({ id: 's2', flag: 'school', priority: 'urgent' }),
             task({ id: 's3', assignmentId: 'y', priority: 'urgent' }),
             task({ id: 'other', priority: 'low' }),
         ]);

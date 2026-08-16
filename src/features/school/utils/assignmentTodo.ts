@@ -31,11 +31,9 @@ export function buildAssignmentTodo(a: AssignmentTodoSource, now: Date): Omit<Ta
         dueDate,
         plannedFor: suggestDeadlineWorkday(dueDate, a.estimatedMinutes ?? 30, now),
         flag: 'school',
-        kind: 'deadline',
         priority: 'medium',
         estimatedTime: a.estimatedMinutes ?? undefined,
         assignmentId: a.id,
-        triageDestination: 'school',
         // Skip the capture inbox — this task is already routed.
         triagedAt: now.toISOString(),
         // Deliberately NOT hardness:'fixed' — a locked task can never be pulled

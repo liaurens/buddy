@@ -12,7 +12,7 @@ import { isLocked } from '../utils/triageRouting';
 import { eagerTriageTask } from '../services/eagerTriage';
 import { removeTaskFromGoogle } from '../../planning/services/google-calendar.service';
 import {
-    applyKindWriteThrough,
+    applyFlagContract,
     persistTaskUpdate,
     syncTaskReminders,
     syncTaskToGoogle,
@@ -102,7 +102,7 @@ export const useTasks = (): TaskState => {
         async (partial: Partial<Task> & { title: string }) => {
             if (!userId) throw new Error('Not authenticated');
 
-            const newTask: Task = applyKindWriteThrough({
+            const newTask: Task = applyFlagContract({
                 id: uuidv4(),
                 completed: false,
                 createdAt: new Date().toISOString(),
@@ -276,10 +276,6 @@ export const useTasks = (): TaskState => {
             const task = tasks.find((t) => t.id === id);
             if (!task) return;
 
-            // Add to historical minutes (keep last 10)
-            const historicalMinutes = task.historicalMinutes || [];
-            const updatedHistory = [...historicalMinutes, actualMinutes].slice(-10);
-
             const { error } = await supabase
                 .from('todos')
                 .update({
@@ -287,7 +283,6 @@ export const useTasks = (): TaskState => {
                     actual_minutes: actualMinutes,
                     completed_at: new Date().toISOString(),
                     last_touched_at: new Date().toISOString(),
-                    historical_minutes: updatedHistory,
                 })
                 .eq('id', id)
                 .eq('user_id', userId);

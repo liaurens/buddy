@@ -25,7 +25,6 @@ export type Intent =
     | 'task.reminder.cancel'
     | 'task.reminder.list'
     | 'task.ai.split'
-    | 'task.ai.organize'
     | 'task.ai.triage'
     | 'ai.config.status'
     | 'ai.config.save'

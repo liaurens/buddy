@@ -6,15 +6,18 @@
  * staleness (keeps slipping), and backlog age (waiting for weeks).
  * If a task has subtasks, surfaces the first incomplete subtask.
  *
- * Priority is the single urgency signal: kind='urgent' write-through
- * guarantees priority='urgent', and its weight puts a dateless urgent task
- * above a plain due-today one (overdue still tops everything).
+ * The FLAG is the single urgency signal. `urgent` outweighs a plain due-today
+ * task (overdue still tops everything); `priority` only grades high/medium/low
+ * *within* a flag. Before the 2026-08 collapse both columns claimed urgency and
+ * could disagree — a stale `priority: 'urgent'` on a parked task used to jump
+ * the queue.
  */
 
 import type { Task, Subtask } from '../types';
 import { daysUntilDue as daysUntilDueHelper } from './dueDates';
 import { isStale } from './staleness';
 import { isTaskParked, taskFitsHomeDay } from './taskContracts';
+import { deriveTaskFlag } from './taskFlags';
 
 export interface TaskRecommendation {
     /** The recommended task */
@@ -33,13 +36,31 @@ export interface TaskRankingContext {
     context?: Task['context'];
 }
 
+/** The urgent flag must outrank a plain medium due-today task (20 + 80 = 100). */
+const URGENT_FLAG_WEIGHT = 120;
+
+/** Grades a task *within* its flag. `urgent` here reads as `high` — only the flag makes a task urgent. */
 const PRIORITY_WEIGHTS: Record<string, number> = {
-    // Urgent must outrank a plain medium due-today task (20 + 80 = 100).
-    urgent: 120,
+    urgent: 40,
     high: 40,
     medium: 20,
     low: 10,
 };
+
+/**
+ * The base weight for a task: the urgent flag, or the priority grade.
+ * Exported for the README's worked example and so tests can assert the split.
+ */
+export function urgencyWeight(
+    task: Pick<
+        Task,
+        'flag' | 'priority' | 'recurrence' | 'assignmentId' | 'plannedFor' | 'dueDate' | 'waitingOn'
+    >,
+): { weight: number; reason: string } {
+    if (deriveTaskFlag(task) === 'urgent') return { weight: URGENT_FLAG_WEIGHT, reason: 'urgent' };
+    const priority = task.priority || 'medium';
+    return { weight: PRIORITY_WEIGHTS[priority] ?? 20, reason: `${priority} priority` };
+}
 
 /** Bonus for tasks that keep slipping — resurface instead of letting them rot. */
 const STALE_BONUS = 15;
@@ -59,7 +80,10 @@ export function scoreTask(
     if (isTaskParked(task, today))
         return {
             score: 0,
-            reason: task.kind === 'waiting' ? 'waiting to follow up' : `starts ${task.startDate}`,
+            reason:
+                deriveTaskFlag(task) === 'waiting'
+                    ? 'waiting to follow up'
+                    : `starts ${task.startDate}`,
         };
     let score = 0;
     const reasons: string[] = [];
@@ -79,19 +103,19 @@ export function scoreTask(
         }
     }
 
-    // Priority score
-    const priorityScore = PRIORITY_WEIGHTS[task.priority || 'medium'] || 20;
-    score += priorityScore;
+    // Urgency: the flag, or the priority grade beneath it.
+    const urgency = urgencyWeight(task);
+    score += urgency.weight;
 
     if (!task.dueDate) {
-        // No due date — priority plus slow aging so old captures resurface.
+        // No due date — urgency plus slow aging so old captures resurface.
         const daysSinceCreated = Math.max(
             0,
             Math.floor((today.getTime() - new Date(task.createdAt).getTime()) / 86_400_000),
         );
         const ageWeeks = Math.min(Math.floor(daysSinceCreated / 7), BACKLOG_AGE_CAP);
         score += ageWeeks;
-        reasons.push(`${task.priority || 'medium'} priority`);
+        reasons.push(urgency.reason);
         if (ageWeeks > 0) reasons.push(`waiting ${ageWeeks} week${ageWeeks === 1 ? '' : 's'}`);
     } else {
         const daysUntilDue = daysUntilDueHelper(task.dueDate, today);
@@ -116,8 +140,8 @@ export function scoreTask(
             reasons.push(`due in ${daysUntilDue} days`);
         }
 
-        if (task.priority === 'urgent' || task.priority === 'high') {
-            reasons.unshift(`${task.priority} priority`);
+        if (urgency.weight >= PRIORITY_WEIGHTS.high) {
+            reasons.unshift(urgency.reason);
         }
     }
 

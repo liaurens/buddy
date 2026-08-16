@@ -18,10 +18,9 @@ describe('buildAssignmentTodo', () => {
             title: 'Essay draft',
             completed: false,
             dueDate: '2026-07-10',
-            kind: 'deadline',
+            flag: 'school',
             estimatedTime: 90,
             assignmentId: 'a1',
-            triageDestination: 'school',
             triagedAt: NOW.toISOString(),
         });
         expect(todo.hardness).toBeUndefined();

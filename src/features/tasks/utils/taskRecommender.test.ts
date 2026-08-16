@@ -28,8 +28,8 @@ describe('getRecommendedTask', () => {
     it('does not recommend tasks parked behind a follow-up or start date', () => {
         const future = format(addDays(today, 3), 'yyyy-MM-dd');
         const tasks = [
-            makeTask({ id: 'waiting', kind: 'waiting', dueDate: future, waitingOn: 'Alex' }),
-            makeTask({ id: 'deadline', kind: 'deadline', dueDate: future, startDate: future }),
+            makeTask({ id: 'waiting', flag: 'waiting', dueDate: future, waitingOn: 'Alex' }),
+            makeTask({ id: 'deadline', flag: 'deadline', dueDate: future, startDate: future }),
         ];
 
         expect(getRecommendedTask(tasks, today)).toBeNull();
@@ -165,6 +165,59 @@ describe('getRecommendedTask', () => {
         const result = getRecommendedTask(tasks, today);
         expect(result!.reason).toContain('due today');
         expect(result!.reason).toContain('high priority');
+    });
+});
+
+describe('urgency comes from the flag, not the priority column', () => {
+    it('scores an urgent-flagged task above a high-priority one', () => {
+        const ranked = getRankedTasks(
+            [
+                makeTask({ id: 'high', title: 'High priority', priority: 'high' }),
+                makeTask({ id: 'urgent', title: 'Urgent flag', flag: 'urgent' }),
+            ],
+            today,
+        );
+        expect(ranked[0].task.id).toBe('urgent');
+    });
+
+    it('does not treat priority:urgent as urgent when the flag says otherwise', () => {
+        // Before the 2026-08 collapse, `priority` was a second urgency source
+        // that could disagree with the flag. The flag now decides; priority
+        // only grades within it, so a parked-away task cannot jump the queue
+        // by carrying a stale priority.
+        const ranked = getRankedTasks(
+            [
+                makeTask({ id: 'someday', title: 'Someday', flag: 'someday', priority: 'urgent' }),
+                makeTask({ id: 'urgent', title: 'Urgent', flag: 'urgent', priority: 'medium' }),
+            ],
+            today,
+        );
+        expect(ranked[0].task.id).toBe('urgent');
+        expect(ranked[0].score).toBeGreaterThan(ranked[1].score);
+    });
+
+    it('still grades high/medium/low within the same flag', () => {
+        const ranked = getRankedTasks(
+            [
+                makeTask({ id: 'low', title: 'Low', flag: 'someday', priority: 'low' }),
+                makeTask({ id: 'high', title: 'High', flag: 'someday', priority: 'high' }),
+                makeTask({ id: 'med', title: 'Medium', flag: 'someday', priority: 'medium' }),
+            ],
+            today,
+        );
+        expect(ranked.map((r) => r.task.id)).toEqual(['high', 'med', 'low']);
+    });
+
+    it('derives the urgent weight for a flagless task carrying priority urgent', () => {
+        // Drafts built in memory before their first write have no flag yet.
+        const ranked = getRankedTasks(
+            [
+                makeTask({ id: 'plain', title: 'Plain' }),
+                makeTask({ id: 'draft', title: 'Draft', priority: 'urgent' }),
+            ],
+            today,
+        );
+        expect(ranked[0].task.id).toBe('draft');
     });
 });
 

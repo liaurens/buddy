@@ -15,8 +15,7 @@ import {
     cancelTaskReminders,
 } from '../../../services/notifications/scheduler.service';
 import { getCategorySettings } from '../../../services/settings';
-import { kindSignalPatch } from '../utils/taskKind';
-import { applyTaskFlag, deriveTaskFlag, flagToLegacyKind } from '../utils/taskFlags';
+import { applyTaskFlag, deriveTaskFlag } from '../utils/taskFlags';
 import {
     pushTaskToGoogle,
     updateTaskOnGoogle,
@@ -69,16 +68,20 @@ export async function syncTaskReminders(userId: string, task: Task): Promise<voi
     }
 }
 
-/** Hybrid write-through: seed the canonical signal for an explicit kind so the two never drift. */
-export function applyKindWriteThrough(task: Task): Task {
-    const withKind = task.kind ? { ...task, ...kindSignalPatch(task.kind) } : task;
-    const flag = deriveTaskFlag(withKind);
-    const { task: flagged } = applyTaskFlag(withKind, flag, {
-        source: withKind.triageSource,
+/**
+ * Settle a task onto its flag's field contract before it hits the database.
+ *
+ * Resolve the flag (explicit wins, otherwise derived), then let `applyTaskFlag`
+ * write everything that flag implies — planned day, reminder cadence, priority,
+ * recurrence. Every insert and every update runs through this, so a task's
+ * stored fields can never contradict its flag.
+ */
+export function applyFlagContract(task: Task): Task {
+    return applyTaskFlag(task, deriveTaskFlag(task), {
+        source: task.triageSource,
         manuallyConfirmed: true,
-        explicitPlannedFor: withKind.plannedFor,
-    });
-    return { ...flagged, kind: flagToLegacyKind(flag) };
+        explicitPlannedFor: task.plannedFor,
+    }).task;
 }
 
 /**
@@ -112,7 +115,7 @@ export async function syncTaskToGoogle(task: Task): Promise<void> {
  * Throws on DB error; reminder/Google failures are non-fatal.
  */
 export async function persistTaskUpdate(userId: string, task: Task): Promise<Task> {
-    const finalTask = applyKindWriteThrough(task);
+    const finalTask = applyFlagContract(task);
     const {
         id: _id,
         user_id: _userId,

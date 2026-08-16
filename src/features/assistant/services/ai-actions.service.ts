@@ -8,22 +8,6 @@ export interface AIConfigStatus {
     model: string | null;
 }
 
-export interface TaskOrganizationInput {
-    id: string;
-    title: string;
-    priority?: string;
-    dueDate?: string;
-}
-
-export interface TaskOrganizationSuggestion {
-    id: string;
-    taskTypeId: string | null;
-    kind: 'urgent' | 'backlog' | 'deadline' | 'routine' | 'standard';
-    priority: 'urgent' | 'high' | 'medium' | 'low';
-    dueDate: string | null;
-    reason: string;
-}
-
 export interface TaskTriageInput {
     id: string;
     title: string;
@@ -110,14 +94,6 @@ export function splitTask(params: {
     userPrompt?: string;
 }): Promise<{ subtasks: Array<{ title: string; estimatedMinutes: number }> }> {
     return invokeAIAction('task.ai.split', params);
-}
-
-export function organizeTasks(params: {
-    tasks: TaskOrganizationInput[];
-    taskTypes: Array<{ id: string; name: string }>;
-    todayIso: string;
-}): Promise<{ suggestions: TaskOrganizationSuggestion[] }> {
-    return invokeAIAction('task.ai.organize', params);
 }
 
 export function triageTasks(params: {

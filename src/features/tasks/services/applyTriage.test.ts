@@ -21,14 +21,14 @@ function task(p: Partial<Task> = {}): Task {
 }
 
 describe('applyTriagePatch', () => {
-    it('urgent sets BOTH kind and priority (write-through, unlike the old eager path)', () => {
+    it('urgent sets the flag and writes priority through', () => {
         const out = applyTriagePatch(task(), 'urgent', {}, OPTS);
-        expect(out.kind).toBe('urgent');
+        expect(out.flag).toBe('urgent');
         expect(out.priority).toBe('urgent');
         expect(out.dueDate).toBeUndefined();
     });
 
-    it('stamps triagedAt AND triageDestination for every destination', () => {
+    it('stamps triagedAt AND the flag for every destination', () => {
         const destinations: TriageDestination[] = [
             'urgent',
             'today',
@@ -39,7 +39,7 @@ describe('applyTriagePatch', () => {
         for (const destination of destinations) {
             const out = applyTriagePatch(task(), destination, {}, OPTS);
             expect(out.triagedAt).toBe(NOW_ISO);
-            expect(out.triageDestination).toBe(destination);
+            expect(out.flag).toBe(destination);
         }
     });
 

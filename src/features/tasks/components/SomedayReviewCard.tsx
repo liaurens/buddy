@@ -61,7 +61,6 @@ const SomedayReviewCard: React.FC<SomedayReviewCardProps> = ({
                                 onUpdate({
                                     ...task,
                                     flag: 'today',
-                                    kind: 'standard',
                                     plannedFor: scheduleDate,
                                 }),
                             )

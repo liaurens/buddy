@@ -16,20 +16,6 @@ export type TaskFlag =
 
 export type TriageSource = 'explicit' | 'parser' | 'ai' | 'manual';
 
-// Task Kind — behavioral classification that drives capture, scheduling, and surfacing.
-// Hybrid model: when `kind` is unset it is derived from existing signals
-// (priority/recurrence/dueDate/reminder) via deriveTaskKind(); an explicit value overrides.
-// 'school' is DERIVED-ONLY (assignmentId / triage destination) — it is never
-// written to the todos.kind column and kind pickers must not offer it.
-export type TaskKind =
-    | 'urgent'
-    | 'backlog'
-    | 'deadline'
-    | 'routine'
-    | 'standard'
-    | 'waiting'
-    | 'school';
-
 // Hardness — can the planner move this task?
 //   fixed    = tied to a real-world moment (appointment, exam, hard deadline); planner locks it.
 //   flexible = has a target but can slide; planner may reschedule it.
@@ -59,7 +45,6 @@ export interface Task {
     plannedFor?: string;
     dueTime?: string; // HH:MM format for specific time
     location?: string; // Location for the task
-    labels?: string[]; // Custom labels/tags for grouping
     createdAt: string;
     priority?: 'urgent' | 'high' | 'medium' | 'low';
     estimatedTime?: number; // in minutes
@@ -69,7 +54,6 @@ export interface Task {
     actualMinutes?: number; // Actual time spent when completed
     startedAt?: string; // ISO timestamp when task was started
     completedAt?: string; // ISO timestamp when task was completed
-    historicalMinutes?: number[]; // Previous durations for similar tasks (learning data)
 
     // Recurrence
     recurrence?: RecurrencePattern;
@@ -90,9 +74,6 @@ export interface Task {
     routineId?: string;
     routineOrder?: number;
 
-    // Behavioral kind (explicit override; usually derived via deriveTaskKind)
-    kind?: TaskKind;
-
     // Urgent flow: prep tasks worked on earlier days roll up to a parent task
     parentTodoId?: string;
     // Free-form "important info" captured during the urgent scheduling flow
@@ -106,8 +87,6 @@ export interface Task {
     hardness?: Hardness;
     // AI routed this without confirmation; shown in the "I sorted these" review, cleared on confirm/correct.
     autoTriaged?: boolean;
-    // Destination triage routed the task to ('urgent'/'today'/'someday'/'school'/'routine').
-    triageDestination?: string;
 
     // Google Calendar write sync (Phase 1)
     googleEventId?: string;
@@ -123,7 +102,12 @@ export interface Task {
     /** First day a deadline task should compete for attention (YYYY-MM-DD). */
     startDate?: string;
 
-    /** Canonical workflow classification. Optional only while legacy rows are migrated. */
+    /**
+     * The task's classification — the single source of truth for what kind of
+     * thing this is. Every stored row has one (`todos.flag` is NOT NULL);
+     * optional here only for task objects built in memory before their first
+     * write, where `deriveTaskFlag` fills it in.
+     */
     flag?: TaskFlag;
     triageSource?: TriageSource;
     triageConfidence?: number;

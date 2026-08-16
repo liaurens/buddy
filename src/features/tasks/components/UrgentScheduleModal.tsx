@@ -62,7 +62,6 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
             // Schedule the urgent task itself.
             await updateTask({
                 ...task,
-                kind: 'urgent',
                 flag: 'urgent',
                 plannedFor: date,
                 dueTime: time || undefined,
