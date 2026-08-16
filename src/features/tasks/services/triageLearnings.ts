@@ -21,6 +21,12 @@ export interface TriageCorrection {
     correctDestination: string;
     /** True when the AI had auto-applied this (high confidence) and the user corrected it. */
     wasAuto?: boolean;
+    /**
+     * Why the user disagreed — a reason chip or a typed note. Optional, but it
+     * is what turns "you got this one wrong" into a rule the model can apply to
+     * the next task. Blank strings are ignored.
+     */
+    reason?: string;
 }
 
 /** Load the raw correction doc (empty string if the user has none yet). */
@@ -35,10 +41,11 @@ export async function loadTriageLearnings(userId: string): Promise<string> {
 
 function formatEntry(c: TriageCorrection, nowIso: string): string {
     const day = nowIso.slice(0, 10);
+    const reason = c.reason?.trim() ? `; because: ${c.reason.trim()}` : '';
     const confidence = c.wasAuto
         ? ' [you had auto-applied this confidently — be more careful]'
         : '';
-    return `- ${day}: "${c.title}" → ${c.correctDestination} (you changed it from ${c.aiDestination})${confidence}`;
+    return `- ${day}: "${c.title}" → ${c.correctDestination} (you changed it from ${c.aiDestination}${reason})${confidence}`;
 }
 
 /**

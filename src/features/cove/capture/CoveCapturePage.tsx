@@ -5,6 +5,7 @@ import { useTaskTypes } from '../../tasks/hooks/useTaskTypes';
 import { parseQuickCapture } from '../../tasks/utils/quickCaptureParser';
 import { CAPTURE_DRAFT_KEY } from '../../assistant/constants';
 import { TagChip, captureTagFor } from '../components';
+import { useAutoSortReview } from '../tasks/useAutoSortReview';
 
 /**
  * Capture — dump it here, Buddy sorts it. The AI categorization runs
@@ -14,6 +15,7 @@ import { TagChip, captureTagFor } from '../components';
 const CoveCapturePage: React.FC = () => {
     const { tasks, addTaskFull } = useTasks();
     const { taskTypes } = useTaskTypes();
+    const autoSort = useAutoSortReview();
     const [text, setText] = useState<string>(() => {
         try {
             const draft = sessionStorage.getItem(CAPTURE_DRAFT_KEY) ?? '';
@@ -102,9 +104,16 @@ const CoveCapturePage: React.FC = () => {
                 </div>
             </div>
 
+            {autoSort.count > 0 ? (
+                <>
+                    <div className="app-label px-1 pb-2.5 pt-5">Sorted by Buddy — tap to fix</div>
+                    <div className="flex flex-col gap-2">{autoSort.rows}</div>
+                </>
+            ) : null}
+
             {capturedToday.length > 0 ? (
                 <>
-                    <div className="app-label px-1 pb-2.5 pt-5">Sorted by Buddy</div>
+                    <div className="app-label px-1 pb-2.5 pt-5">Captured today</div>
                     <div className="flex flex-col gap-2">
                         {capturedToday.map((task) => (
                             <div
@@ -120,6 +129,8 @@ const CoveCapturePage: React.FC = () => {
                     </div>
                 </>
             ) : null}
+
+            {autoSort.sheet}
         </div>
     );
 };

@@ -35,6 +35,35 @@ describe('triageLearnings', () => {
         expect(doc).toBe('- 2026-06-21: "Email prof" → someday (you changed it from today)');
     });
 
+    it('records the reason the user gave, so the AI learns why and not just what', async () => {
+        await recordTriageCorrections(
+            USER,
+            [{ ...correction('Call the dentist'), reason: 'not urgent' }],
+            NOW,
+        );
+        expect(await loadTriageLearnings(USER)).toBe(
+            '- 2026-06-21: "Call the dentist" → someday (you changed it from today; because: not urgent)',
+        );
+    });
+
+    it('warns the AI harder when it had auto-applied the wrong answer confidently', async () => {
+        await recordTriageCorrections(
+            USER,
+            [{ ...correction('Book flights'), reason: 'wrong day', wasAuto: true }],
+            NOW,
+        );
+        const doc = await loadTriageLearnings(USER);
+        expect(doc).toContain('because: wrong day');
+        expect(doc).toContain('be more careful');
+    });
+
+    it('ignores a blank reason rather than writing an empty clause', async () => {
+        await recordTriageCorrections(USER, [{ ...correction('Tidy'), reason: '   ' }], NOW);
+        expect(await loadTriageLearnings(USER)).toBe(
+            '- 2026-06-21: "Tidy" → someday (you changed it from today)',
+        );
+    });
+
     it('appends to existing corrections rather than overwriting', async () => {
         await recordTriageCorrections(USER, [correction('first')], NOW);
         await recordTriageCorrections(USER, [correction('second')], NOW);

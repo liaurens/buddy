@@ -13,6 +13,7 @@ import TaskRow from './TaskRow';
 import TriageCard from './TriageCard';
 import TaskDetailSheet from './TaskDetailSheet';
 import RoutinePicker from '../../tasks/components/RoutinePicker';
+import { useAutoSortReview } from './useAutoSortReview';
 import type { Task } from '../../tasks/types';
 
 /**
@@ -33,6 +34,7 @@ const CoveTasksPage: React.FC = () => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showRoutines, setShowRoutines] = useState(false);
     const { routines } = useRoutines();
+    const autoSort = useAutoSortReview();
 
     const current = reviewInbox[0];
     const currentSuggestion = useMemo(
@@ -94,6 +96,16 @@ const CoveTasksPage: React.FC = () => {
                     Inbox empty — everything is sorted ✓
                 </div>
             )}
+
+            {autoSort.count > 0 ? (
+                <Fold
+                    label={`✨ Buddy sorted ${autoSort.count} today — tap to fix`}
+                    openLabel={`✨ Buddy sorted ${autoSort.count} today`}
+                    className="mb-2"
+                >
+                    <div className="flex flex-col gap-2 pb-2">{autoSort.rows}</div>
+                </Fold>
+            ) : null}
 
             <div className="app-label px-1 pb-2.5 pt-1.5">Needs you now</div>
             <div className="flex flex-col gap-2.5">
@@ -190,6 +202,8 @@ const CoveTasksPage: React.FC = () => {
                     toast.success(`Added ${count} ${count === 1 ? 'task' : 'tasks'} for today`)
                 }
             />
+
+            {autoSort.sheet}
 
             {editing ? (
                 <TaskDetailSheet

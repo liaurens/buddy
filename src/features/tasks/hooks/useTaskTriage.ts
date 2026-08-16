@@ -53,6 +53,8 @@ export interface TriageDecision {
     aiDestination: TriageDestination;
     /** True when correcting a task the AI had auto-applied. */
     wasAuto?: boolean;
+    /** Why the user overrode the AI — a reason chip or typed note. */
+    reason?: string;
 }
 
 export interface UseTaskTriageReturn {
@@ -323,26 +325,37 @@ export function useTaskTriage(): UseTaskTriageReturn {
                     });
                 }
                 snapshots.set(task.id, task);
-                // A human confirmed/corrected this — it is no longer an unreviewed auto-apply.
+                // A human confirmed/corrected this — it is no longer an unreviewed
+                // auto-apply. Keep whatever the AI recorded about its own call:
+                // passing no confidence/reason here used to wipe both columns the
+                // moment a human touched the task.
+                const agreed = d.destination === d.aiDestination;
                 await updateTask(
                     applyTriagePatch(task, d.destination, detail, {
                         nowIso,
                         todayIso,
                         autoTriaged: false,
+                        confidence: agreed ? task.triageConfidence : undefined,
+                        reason: agreed ? task.triageReason : undefined,
                     }),
                 );
                 applied += 1;
-                if (d.destination !== d.aiDestination) {
+                if (!agreed) {
                     void logAppEvent('task_sort_corrected', {
                         taskId: task.id,
                         from: d.aiDestination,
                         to: d.destination,
+                        reason: d.reason,
                     });
                     corrections.push({
                         title: task.title,
                         aiDestination: d.aiDestination,
                         correctDestination: d.destination,
-                        wasAuto: d.wasAuto,
+                        // The AI having applied this itself is the strongest
+                        // signal to be more careful — read it off the task, not
+                        // just off what the caller remembered to pass.
+                        wasAuto: d.wasAuto ?? task.autoTriaged,
+                        reason: d.reason,
                     });
                 }
             }
