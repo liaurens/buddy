@@ -111,9 +111,6 @@ export const taskSettingsSchema = z.object({
     enableNotifications: z.boolean().default(false),
     notificationTiming: z.enum(['atDue', '15min', '1hour', '1day']).default('15min'),
     autoArchiveAfterDays: z.number().int().min(7).max(365).default(30),
-    customLabels: z.array(z.string()).default(['Work', 'Personal', 'Shopping']),
-    groupByLabel: z.boolean().default(false),
-    keepHighPrioritySeparate: z.boolean().default(true),
 });
 
 // ============================================================================

@@ -175,7 +175,7 @@ const App: React.FC = () => {
             case 'toolbox':
                 return <ToolboxPage />;
             case 'tasks':
-                return <CoveTasksPage onNavigate={handleNavigate} />;
+                return <CoveTasksPage />;
             case 'capture':
                 return <CoveCapturePage />;
             case 'calendar':

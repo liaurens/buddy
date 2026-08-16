@@ -7,7 +7,8 @@ import {
     type TaskSettings,
 } from '../../../services/settings';
 import Modal from '../../../components/ui/Modal';
-import { Plus, X } from 'lucide-react';
+import TaskTypeManager from './TaskTypeManager';
+import RoutineEditor from './RoutineEditor';
 
 interface TaskSettingsModalProps {
     isOpen: boolean;
@@ -19,7 +20,6 @@ const TaskSettingsModal: React.FC<TaskSettingsModalProps> = ({ isOpen, onClose }
     const [settings, setSettings] = useState<TaskSettings | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [newLabel, setNewLabel] = useState('');
 
     // Load settings when modal opens
     useEffect(() => {
@@ -72,22 +72,6 @@ const TaskSettingsModal: React.FC<TaskSettingsModalProps> = ({ isOpen, onClose }
         if (settings) {
             setSettings({ ...settings, [key]: value });
         }
-    };
-
-    const addLabel = () => {
-        if (!newLabel.trim() || !settings) return;
-        const labels = settings.customLabels || [];
-        if (labels.includes(newLabel.trim())) return; // Prevent duplicates
-        updateSetting('customLabels', [...labels, newLabel.trim()]);
-        setNewLabel('');
-    };
-
-    const removeLabel = (label: string) => {
-        if (!settings) return;
-        updateSetting(
-            'customLabels',
-            settings.customLabels.filter((l) => l !== label),
-        );
     };
 
     const footer = (
@@ -288,96 +272,19 @@ const TaskSettingsModal: React.FC<TaskSettingsModalProps> = ({ isOpen, onClose }
                     </div>
                 </div>
 
-                {/* Custom Labels */}
+                {/* Types & routines — harvested from the desktop-only tools page so
+                    they are reachable on a phone (Me -> Tasks). */}
                 <div>
-                    <h3 className="text-lg font-medium text-slate-900 mb-4">Custom Labels</h3>
-                    <div className="space-y-4">
-                        {/* Add Label */}
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                value={newLabel}
-                                onChange={(e) => setNewLabel(e.target.value)}
-                                onKeyDown={(e) =>
-                                    e.key === 'Enter' && (e.preventDefault(), addLabel())
-                                }
-                                placeholder="Add new label (e.g., Work, Personal)"
-                                className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            <button
-                                onClick={addLabel}
-                                disabled={!newLabel.trim()}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
-                            >
-                                <Plus size={16} />
-                                Add
-                            </button>
-                        </div>
+                    <h3 className="mb-4 text-lg font-medium text-slate-900">Task types</h3>
+                    <TaskTypeManager />
+                </div>
 
-                        {/* Label List */}
-                        <div className="flex flex-wrap gap-2">
-                            {settings.customLabels.map((label) => (
-                                <span
-                                    key={label}
-                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-sm font-medium"
-                                >
-                                    {label}
-                                    <button
-                                        onClick={() => removeLabel(label)}
-                                        className="hover:text-purple-900 transition-colors"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
-
-                        {settings.customLabels.length === 0 && (
-                            <p className="text-sm text-slate-500 italic">
-                                No custom labels yet. Add some to organize your tasks!
-                            </p>
-                        )}
-
-                        {/* Group By Label */}
-                        <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                            <div>
-                                <label className="text-sm font-medium text-slate-700">
-                                    Group Tasks by Label
-                                </label>
-                                <p className="text-xs text-slate-500">
-                                    Organize tasks into sections by their labels
-                                </p>
-                            </div>
-                            <input
-                                type="checkbox"
-                                checked={settings.groupByLabel}
-                                onChange={(e) => updateSetting('groupByLabel', e.target.checked)}
-                                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                            />
-                        </div>
-
-                        {/* Keep High Priority Separate */}
-                        {settings.groupByLabel && (
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <label className="text-sm font-medium text-slate-700">
-                                        Keep High Priority Tasks Separate
-                                    </label>
-                                    <p className="text-xs text-slate-500">
-                                        Show high priority tasks at the top, regardless of label
-                                    </p>
-                                </div>
-                                <input
-                                    type="checkbox"
-                                    checked={settings.keepHighPrioritySeparate}
-                                    onChange={(e) =>
-                                        updateSetting('keepHighPrioritySeparate', e.target.checked)
-                                    }
-                                    className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                                />
-                            </div>
-                        )}
-                    </div>
+                <div>
+                    <h3 className="mb-4 text-lg font-medium text-slate-900">Routines</h3>
+                    <p className="mb-3 text-sm text-slate-500">
+                        A routine is a batch of tasks you add to a day in one tap.
+                    </p>
+                    <RoutineEditor />
                 </div>
             </div>
         </Modal>

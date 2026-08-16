@@ -1,8 +1,8 @@
-import React, { lazy, Suspense, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import type { AppRoute } from '../../../constants/routes';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { useTaskTriage } from '../../tasks/hooks/useTaskTriage';
+import { useRoutines } from '../../tasks/hooks/useRoutines';
 import { getRankedTasks } from '../../tasks/utils/taskRecommender';
 import { buildTaskBoard } from '../../tasks/utils/taskBoard';
 import { TASK_FLAG_META } from '../../tasks/utils/taskFlags';
@@ -11,12 +11,9 @@ import { useToast } from '../../../components/ui/Toast';
 import { Fold } from '../components';
 import TaskRow from './TaskRow';
 import TriageCard from './TriageCard';
-
-const LegacyTodoPage = lazy(() => import('../../tasks/pages/TodoPage'));
-
-interface CoveTasksPageProps {
-    onNavigate: (tab: AppRoute, params?: Record<string, unknown>) => void;
-}
+import TaskDetailSheet from './TaskDetailSheet';
+import RoutinePicker from '../../tasks/components/RoutinePicker';
+import type { Task } from '../../tasks/types';
 
 /**
  * Tasks — two tiers.
@@ -26,14 +23,16 @@ interface CoveTasksPageProps {
  * visible so the overview stays complete without being a wall of text.
  * Both come from `buildTaskBoard`, so this file stays presentational.
  */
-const CoveTasksPage: React.FC<CoveTasksPageProps> = ({ onNavigate }) => {
+const CoveTasksPage: React.FC = () => {
     const toast = useToast();
     const today = format(new Date(), 'yyyy-MM-dd');
-    const { tasks, toggleTask } = useTasks();
+    const { tasks, toggleTask, updateTask, deleteTask } = useTasks();
     const { reviewInbox, suggestions, applyRoutes, isFetching } = useTaskTriage();
     const [routing, setRouting] = useState(false);
     const [showOverflow, setShowOverflow] = useState(false);
-    const [showTools, setShowTools] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [showRoutines, setShowRoutines] = useState(false);
+    const { routines } = useRoutines();
 
     const current = reviewInbox[0];
     const currentSuggestion = useMemo(
@@ -67,9 +66,12 @@ const CoveTasksPage: React.FC<CoveTasksPageProps> = ({ onNavigate }) => {
         }
     };
 
-    // Opening a task is Phase 5a (TaskDetailSheet); until then the legacy tools
-    // page owns editing, so point there rather than doing nothing on tap.
-    const openTask = () => setShowTools(true);
+    // Read the task back out of the live list so the sheet reflects saves.
+    const editing = useMemo(
+        () => (editingId ? (tasks.find((t) => t.id === editingId) ?? null) : null),
+        [editingId, tasks],
+    );
+    const openTask = (task: Task) => setEditingId(task.id);
 
     return (
         <div className="cove-fadeslide flex flex-col">
@@ -171,25 +173,34 @@ const CoveTasksPage: React.FC<CoveTasksPageProps> = ({ onNavigate }) => {
                 })}
             </div>
 
-            <button
-                type="button"
-                onClick={() => setShowTools((v) => !v)}
-                className="mt-5 bg-transparent p-1.5 text-center text-[13px] font-extrabold text-cove-faint transition-colors hover:text-cove-muted"
-            >
-                {showTools ? 'Hide tools ⌃' : '⋯ tools — the full task manager'}
-            </button>
-            {showTools ? (
-                <div className="cove-fadeslide mt-2">
-                    <Suspense
-                        fallback={
-                            <div className="p-4 text-center text-sm font-bold text-cove-faint">
-                                Loading tools…
-                            </div>
-                        }
-                    >
-                        <LegacyTodoPage onNavigate={onNavigate} />
-                    </Suspense>
-                </div>
+            {routines.length > 0 ? (
+                <button
+                    type="button"
+                    onClick={() => setShowRoutines(true)}
+                    className="mt-4 rounded-card bg-white px-4 py-3 text-left text-[13.5px] font-extrabold text-cove-ink shadow-cove"
+                >
+                    ▶ Run a routine
+                </button>
+            ) : null}
+
+            <RoutinePicker
+                isOpen={showRoutines}
+                onClose={() => setShowRoutines(false)}
+                onRan={(count) =>
+                    toast.success(`Added ${count} ${count === 1 ? 'task' : 'tasks'} for today`)
+                }
+            />
+
+            {editing ? (
+                <TaskDetailSheet
+                    task={editing}
+                    onSave={(t) => updateTask(t)}
+                    onDelete={(id) => {
+                        void deleteTask(id);
+                        setEditingId(null);
+                    }}
+                    onClose={() => setEditingId(null)}
+                />
             ) : null}
         </div>
     );

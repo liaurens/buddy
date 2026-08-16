@@ -109,9 +109,6 @@ export interface TaskSettings {
     enableNotifications: boolean;
     notificationTiming: 'atDue' | '15min' | '1hour' | '1day';
     autoArchiveAfterDays: number;
-    customLabels: string[]; // Custom labels for tasks
-    groupByLabel: boolean; // Group tasks by label
-    keepHighPrioritySeparate: boolean; // Show high priority tasks separately
 }
 
 // ============================================================================

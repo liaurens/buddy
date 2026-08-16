@@ -6,10 +6,10 @@ import type { Routine, RoutineItem, Task } from '../types';
 import {
     supabase,
     dbToRoutine,
-    todoToDb,
     type DbTaskRoutine,
     type DbTaskRoutineItem,
 } from '../../../services/supabase';
+import { insertTasks } from '../services/taskWrites';
 
 export interface RoutinesState {
     routines: Routine[];
@@ -144,33 +144,33 @@ export const useRoutines = (): RoutinesState => {
             if (!routine || routine.items.length === 0) return 0;
 
             const targetDate = dueDate || new Date().toISOString().slice(0, 10);
-            const rows = routine.items
+            const tasks: Task[] = routine.items
                 .slice()
                 .sort((a, b) => a.sortOrder - b.sortOrder)
-                .map((item, idx) => {
-                    const task: Task = {
-                        id: uuidv4(),
-                        title: item.title,
-                        completed: false,
-                        createdAt: new Date().toISOString(),
-                        priority: 'medium',
-                        subtasks: [],
-                        recurrence: 'none',
-                        plannedFor: targetDate,
-                        flag: 'today',
-                        estimatedTime: item.estimatedTime,
-                        taskTypeId: item.taskTypeId,
-                        energy: item.energy,
-                        routineId: routine.id,
-                        routineOrder: idx,
-                    };
-                    return todoToDb(task, userId);
-                });
+                .map((item, idx) => ({
+                    id: uuidv4(),
+                    title: item.title,
+                    completed: false,
+                    createdAt: new Date().toISOString(),
+                    priority: 'medium',
+                    subtasks: [],
+                    recurrence: 'none',
+                    plannedFor: targetDate,
+                    flag: 'today',
+                    // Already routed by the user running the routine — skip the inbox.
+                    triagedAt: new Date().toISOString(),
+                    triageSource: 'manual',
+                    estimatedTime: item.estimatedTime,
+                    taskTypeId: item.taskTypeId,
+                    energy: item.energy,
+                    routineId: routine.id,
+                    routineOrder: idx,
+                }));
 
-            const { error } = await supabase.from('todos').insert(rows);
-            if (error) throw error;
+            // insertTasks so routine tasks get reminders like any other task.
+            await insertTasks(userId, tasks);
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-            return rows.length;
+            return tasks.length;
         },
         [userId, routines, queryClient],
     );

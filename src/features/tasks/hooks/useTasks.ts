@@ -6,15 +6,15 @@ import { useAuth } from '../../../hooks/useAuth';
 import type { Task, TaskState, RecurrencePattern, RecurrenceConfig } from '../types';
 import { calculateNextDueDate } from '../utils/recurrence';
 import { nextSnoozeCount } from '../utils/staleness';
-import { supabase, dbToTodo, todoToDb, type DbTodo } from '../../../services/supabase';
+import { supabase, dbToTodo, type DbTodo } from '../../../services/supabase';
 import { cancelTaskReminders } from '../../../services/notifications/scheduler.service';
 import { isLocked } from '../utils/triageRouting';
 import { eagerTriageTask } from '../services/eagerTriage';
 import { removeTaskFromGoogle } from '../../planning/services/google-calendar.service';
 import {
-    applyFlagContract,
+    insertTask,
+    insertTasks,
     persistTaskUpdate,
-    syncTaskReminders,
     syncTaskToGoogle,
 } from '../services/taskWrites';
 import { logAppEvent } from '../../../services/app-events';
@@ -59,7 +59,10 @@ export const useTasks = (): TaskState => {
         ) => {
             if (!userId) throw new Error('Not authenticated');
 
-            const newTask: Task = {
+            // No flag: deriveTaskFlag inside insertTask settles it from the
+            // signals below, so the rules live in exactly one place.
+            // Captures land in the inbox (triagedAt unset); eager triage may sort them.
+            const newTask = await insertTask(userId, {
                 id: uuidv4(),
                 title,
                 completed: false,
@@ -71,20 +74,7 @@ export const useTasks = (): TaskState => {
                 subtasks: [],
                 recurrence: recurrence || 'none',
                 recurrenceConfig,
-                flag:
-                    recurrence && recurrence !== 'none'
-                        ? 'routine'
-                        : plannedFor
-                          ? 'today'
-                          : 'someday',
-                // Captures land in the inbox (triagedAt unset); eager triage may sort them below.
-            };
-
-            const dbTask = todoToDb(newTask, userId);
-            const { error } = await supabase.from('todos').insert(dbTask);
-
-            if (error) throw error;
-            await syncTaskReminders(userId, newTask);
+            });
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
 
             // Eager on-capture sort — non-fatal, skipped offline / when no AI key is set.
@@ -102,7 +92,7 @@ export const useTasks = (): TaskState => {
         async (partial: Partial<Task> & { title: string }) => {
             if (!userId) throw new Error('Not authenticated');
 
-            const newTask: Task = applyFlagContract({
+            const newTask = await insertTask(userId, {
                 id: uuidv4(),
                 completed: false,
                 createdAt: new Date().toISOString(),
@@ -111,13 +101,6 @@ export const useTasks = (): TaskState => {
                 recurrence: 'none',
                 ...partial,
             });
-
-            const dbTask = todoToDb(newTask, userId);
-            const { error } = await supabase.from('todos').insert(dbTask);
-
-            if (error) throw error;
-            await syncTaskReminders(userId, newTask);
-            void syncTaskToGoogle(newTask);
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
 
             // Eager on-capture sort for bare captures; an explicit triagedAt
@@ -176,15 +159,17 @@ export const useTasks = (): TaskState => {
                 queryClient.invalidateQueries({ queryKey: ['assignments', userId] });
             }
 
-            // Spawn next occurrence for recurring tasks
+            // Spawn next occurrence for recurring tasks. Goes through insertTask
+            // so the new occurrence gets its reminder scheduled — a raw insert
+            // here is why every occurrence after the first used to be silent.
             if (nowCompleting && task.recurrence && task.recurrence !== 'none') {
                 const nextDue = calculateNextDueDate(
                     task.plannedFor,
                     task.recurrence,
                     task.recurrenceConfig,
                 );
-                const nextTask = todoToDb(
-                    {
+                try {
+                    await insertTask(userId, {
                         ...task,
                         id: uuidv4(),
                         completed: false,
@@ -193,14 +178,14 @@ export const useTasks = (): TaskState => {
                         completedAt: undefined,
                         startedAt: undefined,
                         actualMinutes: undefined,
-                    },
-                    userId,
-                );
-                const { error: insertError } = await supabase.from('todos').insert({
-                    ...nextTask,
-                    created_at: new Date().toISOString(),
-                });
-                if (insertError) console.error('Failed to create next recurrence:', insertError);
+                        lastRemindedAt: undefined,
+                        googleEventId: undefined,
+                        googleCalendarId: undefined,
+                        googleSyncedAt: undefined,
+                    });
+                } catch (insertError) {
+                    console.error('Failed to create next recurrence:', insertError);
+                }
             }
 
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
@@ -361,9 +346,10 @@ export const useTasks = (): TaskState => {
                 (t) => ids.includes(t.id) && t.recurrence && t.recurrence !== 'none',
             );
             if (completed.length > 0) {
-                const rows = completed.map((task) => ({
-                    ...todoToDb(
-                        {
+                try {
+                    await insertTasks(
+                        userId,
+                        completed.map((task) => ({
                             ...task,
                             id: uuidv4(),
                             completed: false,
@@ -377,13 +363,15 @@ export const useTasks = (): TaskState => {
                             completedAt: undefined,
                             startedAt: undefined,
                             actualMinutes: undefined,
-                        },
-                        userId,
-                    ),
-                    created_at: new Date().toISOString(),
-                }));
-                const { error: insertError } = await supabase.from('todos').insert(rows);
-                if (insertError) console.error('Failed to create next recurrences:', insertError);
+                            lastRemindedAt: undefined,
+                            googleEventId: undefined,
+                            googleCalendarId: undefined,
+                            googleSyncedAt: undefined,
+                        })),
+                    );
+                } catch (insertError) {
+                    console.error('Failed to create next recurrences:', insertError);
+                }
             }
 
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });

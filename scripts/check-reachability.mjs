@@ -37,10 +37,15 @@ const ALLOWED = [
     /^src\/features\/[^/]+\/index\.ts$/,
     // Ambient type declarations have no runtime import.
     /^src\/vite-env\.d\.ts$/,
-    // Preserved deliberately — the only implementation of the urgent scheduling
-    // flow (parent_todo_id / notes / Google Calendar columns). Pending redesign;
-    // see src/features/tasks/README.md.
+    // Two components kept on purpose for features the user wants but that are
+    // not designed yet. Both are the ONLY implementation of their flow, so
+    // deleting them would mean rewriting from scratch. See the "Deferred by
+    // design" section of src/features/tasks/README.md — if that section ever
+    // goes away, these entries must go with it.
+    //   UrgentScheduleModal — writes parent_todo_id / notes / the Google Calendar columns
+    //   AITaskSplitter      — writes subtasks
     /^src\/features\/tasks\/components\/UrgentScheduleModal\.tsx$/,
+    /^src\/features\/tasks\/components\/AITaskSplitter\.tsx$/,
 ];
 
 const norm = (p) => path.relative(ROOT, p).split(path.sep).join('/');

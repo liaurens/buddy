@@ -110,7 +110,43 @@ export async function syncTaskToGoogle(task: Task): Promise<void> {
 }
 
 /**
- * Persist a full task update: kind write-through → one converter-driven column
+ * Insert a new task: flag contract → converter-driven column write → reminder
+ * sync → Google mirror. The insert twin of persistTaskUpdate, and the only way
+ * a row should ever enter `todos` from the app.
+ *
+ * Before this existed, four call sites hand-rolled their own insert. The
+ * recurrence spawn was the expensive one: completing a repeating task inserted
+ * the next occurrence with a raw converter call and never scheduled a reminder,
+ * so occurrence #2 onward was silent forever.
+ *
+ * Throws on DB error; reminder/Google failures are non-fatal.
+ */
+export async function insertTask(userId: string, task: Task): Promise<Task> {
+    const finalTask = applyFlagContract(task);
+    const { error } = await supabase.from('todos').insert(todoToDb(finalTask, userId));
+    if (error) throw error;
+
+    await syncTaskReminders(userId, finalTask);
+    void syncTaskToGoogle(finalTask);
+    return finalTask;
+}
+
+/** Insert several tasks, then schedule their reminders. Used by routines. */
+export async function insertTasks(userId: string, tasks: Task[]): Promise<Task[]> {
+    if (tasks.length === 0) return [];
+    const finalTasks = tasks.map(applyFlagContract);
+    const { error } = await supabase
+        .from('todos')
+        .insert(finalTasks.map((t) => todoToDb(t, userId)));
+    if (error) throw error;
+
+    await Promise.all(finalTasks.map((t) => syncTaskReminders(userId, t)));
+    finalTasks.forEach((t) => void syncTaskToGoogle(t));
+    return finalTasks;
+}
+
+/**
+ * Persist a full task update: flag contract → one converter-driven column
  * write → reminder sync → Google mirror. Returns the task as written.
  * Throws on DB error; reminder/Google failures are non-fatal.
  */
