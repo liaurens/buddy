@@ -13,6 +13,8 @@ export const TASK_FLAGS: TaskFlag[] = [
 
 export interface TaskFlagMeta {
     label: string;
+    /** Section heading form, e.g. "Deadlines (4)". Not always label + "s". */
+    plural: string;
     emoji: string;
     description: string;
     /** Tailwind palette name for chips and section headers. */
@@ -32,13 +34,21 @@ export interface TaskFlagMeta {
 export const TASK_FLAG_META: Record<TaskFlag, TaskFlagMeta> = {
     urgent: {
         label: 'Urgent',
+        plural: 'Urgent',
         emoji: '🔥',
         color: 'rose',
         description: 'Plan now, with smart reminders',
     },
-    today: { label: 'Today', emoji: '📅', color: 'indigo', description: "Put it on today's plan" },
+    today: {
+        label: 'Today',
+        plural: 'Today',
+        emoji: '📅',
+        color: 'indigo',
+        description: "Put it on today's plan",
+    },
     deadline: {
         label: 'Deadline',
+        plural: 'Deadlines',
         emoji: '🎯',
         color: 'amber',
         description: 'Track a real due date',
@@ -46,6 +56,7 @@ export const TASK_FLAG_META: Record<TaskFlag, TaskFlagMeta> = {
     },
     waiting: {
         label: 'Waiting',
+        plural: 'Waiting on someone',
         emoji: '⏳',
         color: 'slate',
         description: 'Park until follow-up',
@@ -53,12 +64,14 @@ export const TASK_FLAG_META: Record<TaskFlag, TaskFlagMeta> = {
     },
     school: {
         label: 'School',
+        plural: 'School',
         emoji: '🎓',
         color: 'emerald',
         description: 'Connect to school work',
     },
     routine: {
         label: 'Routine',
+        plural: 'Routines',
         emoji: '🔁',
         color: 'violet',
         description: 'Repeat on a cadence',
@@ -66,6 +79,7 @@ export const TASK_FLAG_META: Record<TaskFlag, TaskFlagMeta> = {
     },
     someday: {
         label: 'Someday',
+        plural: 'Someday',
         emoji: '🗂️',
         color: 'slate',
         description: 'Keep without scheduling pressure',
