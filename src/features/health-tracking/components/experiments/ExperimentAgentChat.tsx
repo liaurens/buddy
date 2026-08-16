@@ -96,13 +96,13 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
     return (
         <div className="flex flex-col h-[500px]">
             {/* Header */}
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-2 pb-3 border-b border-cove-border">
+                <div className="w-8 h-8 bg-cove-accent rounded-xl flex items-center justify-center">
                     <Sparkles size={16} className="text-white" />
                 </div>
                 <div>
-                    <div className="text-sm font-semibold text-slate-800">Experiment Agent</div>
-                    <div className="text-xs text-slate-500">Ask about "{experiment.name}"</div>
+                    <div className="text-sm font-semibold text-cove-ink">Experiment Agent</div>
+                    <div className="text-xs text-cove-soft">Ask about "{experiment.name}"</div>
                 </div>
             </div>
 
@@ -110,14 +110,14 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
             <div className="flex-1 overflow-y-auto py-3 space-y-3">
                 {messages.length === 0 ? (
                     <div className="text-center py-8 space-y-4">
-                        <div className="w-14 h-14 bg-indigo-50 rounded-full flex items-center justify-center mx-auto">
-                            <Bot size={28} className="text-indigo-500" />
+                        <div className="w-14 h-14 bg-cove-tint-blue rounded-full flex items-center justify-center mx-auto">
+                            <Bot size={28} className="text-cove-accent" />
                         </div>
                         <div>
-                            <p className="text-sm text-slate-600 font-medium">
+                            <p className="text-sm text-cove-muted font-bold">
                                 How can I help with your experiment?
                             </p>
-                            <p className="text-xs text-slate-400 mt-1">
+                            <p className="text-xs text-cove-faint mt-1">
                                 I can suggest metrics, analyze your data, recommend phase changes,
                                 and more.
                             </p>
@@ -128,7 +128,7 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
                                     key={prompt}
                                     onClick={() => send(prompt)}
                                     disabled={sending}
-                                    className="px-3 py-1.5 text-xs bg-slate-50 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 rounded-full transition-colors"
+                                    className="px-3 py-1.5 text-xs bg-[color:var(--buddy-surface-soft)] hover:bg-cove-tint-blue text-cove-muted hover:text-cove-ink rounded-full transition-colors"
                                 >
                                     {prompt}
                                 </button>
@@ -143,13 +143,11 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
                         >
                             <div
                                 className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                    msg.role === 'user'
-                                        ? 'bg-slate-200'
-                                        : 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                                    msg.role === 'user' ? 'bg-cove-track' : 'bg-cove-accent'
                                 }`}
                             >
                                 {msg.role === 'user' ? (
-                                    <User size={14} className="text-slate-600" />
+                                    <User size={14} className="text-cove-muted" />
                                 ) : (
                                     <Bot size={14} className="text-white" />
                                 )}
@@ -157,8 +155,8 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
                             <div
                                 className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
                                     msg.role === 'user'
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'bg-slate-100 text-slate-800'
+                                        ? 'bg-cove-accent text-white'
+                                        : 'bg-[color:var(--buddy-surface-soft)] text-cove-ink'
                                 }`}
                             >
                                 <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -168,11 +166,11 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
                 )}
                 {sending && (
                     <div className="flex gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-cove-accent flex items-center justify-center flex-shrink-0">
                             <Bot size={14} className="text-white" />
                         </div>
-                        <div className="px-3 py-2 bg-slate-100 rounded-2xl">
-                            <Loader2 size={14} className="animate-spin text-slate-500" />
+                        <div className="px-3 py-2 bg-[color:var(--buddy-surface-soft)] rounded-2xl">
+                            <Loader2 size={14} className="animate-spin text-cove-soft" />
                         </div>
                     </div>
                 )}
@@ -180,7 +178,7 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
             </div>
 
             {/* Input */}
-            <div className="pt-3 border-t border-slate-100 flex gap-2">
+            <div className="pt-3 border-t border-cove-border flex gap-2">
                 <input
                     type="text"
                     value={input}
@@ -193,12 +191,12 @@ const ExperimentAgentChat: React.FC<ExperimentAgentChatProps> = ({ experimentId,
                     }}
                     placeholder="Ask about your experiment..."
                     disabled={sending}
-                    className="flex-1 p-2.5 border border-slate-200 rounded-xl text-sm disabled:bg-slate-50"
+                    className="flex-1 p-2.5 border border-cove-border rounded-xl text-sm disabled:bg-[color:var(--buddy-surface-soft)]"
                 />
                 <button
                     onClick={() => send(input)}
                     disabled={!input.trim() || sending}
-                    className="px-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 bg-cove-accent text-white rounded-xl hover:bg-[#3a8dc7] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Send size={16} />
                 </button>

@@ -34,26 +34,19 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             size="sm"
             footer={
                 <>
-                    <button
-                        onClick={onCancel}
-                        className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-                    >
+                    <button onClick={onCancel} className="app-secondary-button py-2.5">
                         {cancelLabel}
                     </button>
                     <button
                         onClick={onConfirm}
-                        className={`rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors ${
-                            destructive
-                                ? 'bg-rose-600 hover:bg-rose-700'
-                                : 'bg-indigo-700 hover:bg-indigo-800'
-                        }`}
+                        className={`${destructive ? 'app-danger-button' : 'app-primary-button'} py-2.5`}
                     >
                         {confirmLabel}
                     </button>
                 </>
             }
         >
-            <p className="text-sm text-slate-600">{message}</p>
+            <p className="text-sm font-semibold leading-relaxed text-cove-muted">{message}</p>
         </Modal>
     );
 };

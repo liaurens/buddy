@@ -43,11 +43,11 @@ export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFo
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-4 dev-portal-ui">
             <div className="w-full max-w-2xl bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
-                    <h2 className="text-xl font-semibold text-gray-800">Add Feedback or Note</h2>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-cove-border bg-[color:var(--buddy-surface-soft)]">
+                    <h2 className="text-xl font-semibold text-cove-ink">Add Feedback or Note</h2>
                     <button
                         onClick={onClose}
-                        className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200 transition-colors"
+                        className="p-1 text-cove-faint hover:text-cove-muted rounded-full hover:bg-cove-track transition-colors"
                     >
                         <X size={20} />
                     </button>
@@ -57,7 +57,7 @@ export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFo
                     <div className="p-6 overflow-y-auto space-y-6">
                         {/* Type Selection */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Category
                             </label>
                             <div className="flex gap-4">
@@ -66,27 +66,27 @@ export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFo
                                         type="radio"
                                         checked={type === 'bug'}
                                         onChange={() => setType('bug')}
-                                        className="text-blue-600 focus:ring-blue-500"
+                                        className="text-cove-accent focus:ring-cove-accent"
                                     />
-                                    <span className="text-sm text-gray-700">Bug</span>
+                                    <span className="text-sm text-cove-muted">Bug</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="radio"
                                         checked={type === 'feature'}
                                         onChange={() => setType('feature')}
-                                        className="text-blue-600 focus:ring-blue-500"
+                                        className="text-cove-accent focus:ring-cove-accent"
                                     />
-                                    <span className="text-sm text-gray-700">Change Request</span>
+                                    <span className="text-sm text-cove-muted">Change Request</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="radio"
                                         checked={type === 'note'}
                                         onChange={() => setType('note')}
-                                        className="text-blue-600 focus:ring-blue-500"
+                                        className="text-cove-accent focus:ring-cove-accent"
                                     />
-                                    <span className="text-sm text-gray-700">
+                                    <span className="text-sm text-cove-muted">
                                         Spatial Sticky Note
                                     </span>
                                 </label>
@@ -95,7 +95,7 @@ export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFo
 
                         {/* Description */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Details / Note Content
                             </label>
                             <textarea
@@ -107,7 +107,7 @@ export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFo
                                         : 'What needs to be fixed or changed here?'
                                 }
                                 rows={4}
-                                className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-3 border resize-none outline-none focus:ring-2"
+                                className="w-full rounded-xl border-cove-border shadow-cove focus:border-cove-accent focus:ring-cove-accent p-3 border resize-none outline-none focus:ring-2"
                                 required
                                 autoFocus
                             />
@@ -115,16 +115,16 @@ export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFo
 
                         {/* Code Snippet Preview */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Selected Element
                             </label>
                             {selector && (
-                                <div className="mb-2 text-xs font-mono bg-blue-50 text-blue-800 p-2 rounded border border-blue-100">
+                                <div className="mb-2 text-xs font-mono bg-cove-tint-blue text-cove-ink p-2 rounded border border-cove-accent-pale">
                                     Selector: {selector}
                                 </div>
                             )}
-                            <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                                <pre className="text-xs text-gray-300 font-mono">
+                            <div className="bg-cove-ink rounded-xl p-4 overflow-x-auto">
+                                <pre className="text-xs text-cove-faint font-mono">
                                     <code>{html}</code>
                                 </pre>
                             </div>
@@ -132,11 +132,11 @@ export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFo
                     </div>
 
                     {/* Footer */}
-                    <div className="border-t border-gray-100 px-6 py-4 bg-gray-50 flex justify-end gap-3 mt-auto">
+                    <div className="border-t border-cove-border px-6 py-4 bg-[color:var(--buddy-surface-soft)] flex justify-end gap-3 mt-auto">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            className="px-4 py-2 text-sm font-bold text-cove-muted bg-white border border-cove-border rounded-xl shadow-cove hover:bg-[color:var(--buddy-surface-soft)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cove-accent"
                         >
                             Cancel
                         </button>
@@ -147,7 +147,7 @@ export function ReportFormModal({ html, selector, onClose, onSuccess }: ReportFo
                                 status === 'success' ||
                                 !description.trim()
                             }
-                            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium text-white border border-transparent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${type === 'note' ? 'bg-amber-500 hover:bg-amber-600 focus:ring-amber-500' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'}`}
+                            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold text-white border border-transparent rounded-xl shadow-cove focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${type === 'note' ? 'bg-cove-streak hover:bg-cove-streak-deep focus:ring-cove-streak' : 'bg-cove-accent hover:bg-[#3a8dc7] focus:ring-cove-accent'}`}
                         >
                             {status === 'submitting' ? (
                                 'Saving...'

@@ -131,12 +131,12 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-indigo-600">
+                <div className="p-4 border-b border-cove-border flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-cove-accent">
                         <FlaskConical size={24} />
                         <h2 className="font-bold text-lg">New Experiment</h2>
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+                    <button onClick={onClose} className="text-cove-faint hover:text-cove-muted">
                         <X size={24} />
                     </button>
                 </div>
@@ -146,7 +146,7 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                     {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
                         <div
                             key={s}
-                            className={`h-1 flex-1 rounded-full ${s <= step ? 'bg-indigo-600' : 'bg-slate-200'}`}
+                            className={`h-1 flex-1 rounded-full ${s <= step ? 'bg-cove-accent' : 'bg-cove-track'}`}
                         />
                     ))}
                 </div>
@@ -157,12 +157,12 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                     {step === 1 && (
                         <div className="space-y-5">
                             <div className="text-center mb-4">
-                                <h3 className="text-xl font-semibold text-slate-800">The Basics</h3>
-                                <p className="text-slate-500 text-sm">What are you testing?</p>
+                                <h3 className="text-xl font-semibold text-cove-ink">The Basics</h3>
+                                <p className="text-cove-soft text-sm">What are you testing?</p>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Name
                                 </label>
                                 <input
@@ -170,53 +170,53 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="e.g. Starting Ritalin 10mg"
-                                    className="w-full p-3 border border-slate-200 rounded-xl"
+                                    className="w-full p-3 border border-cove-border rounded-xl"
                                     autoFocus
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Hypothesis
                                 </label>
                                 <textarea
                                     value={hypothesis}
                                     onChange={(e) => setHypothesis(e.target.value)}
                                     placeholder="e.g. Ritalin will improve my focus and reduce mid-afternoon energy crashes"
-                                    className="w-full p-3 border border-slate-200 rounded-xl resize-none"
+                                    className="w-full p-3 border border-cove-border rounded-xl resize-none"
                                     rows={3}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Description (optional)
                                 </label>
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     placeholder="Any additional context..."
-                                    className="w-full p-3 border border-slate-200 rounded-xl resize-none"
+                                    className="w-full p-3 border border-cove-border rounded-xl resize-none"
                                     rows={2}
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Tags
                                 </label>
                                 <div className="flex gap-2 mb-2 flex-wrap">
                                     {tags.map((tag) => (
                                         <span
                                             key={tag}
-                                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs"
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-cove-tint-blue text-cove-ink rounded-full text-xs"
                                         >
                                             {tag}
                                             <button
                                                 onClick={() =>
                                                     setTags(tags.filter((t) => t !== tag))
                                                 }
-                                                className="hover:text-indigo-900"
+                                                className="hover:text-cove-ink"
                                             >
                                                 <X size={12} />
                                             </button>
@@ -235,11 +235,11 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                             }
                                         }}
                                         placeholder="Add a tag..."
-                                        className="flex-1 p-2 border border-slate-200 rounded-lg text-sm"
+                                        className="flex-1 p-2 border border-cove-border rounded-xl text-sm"
                                     />
                                     <button
                                         onClick={addTag}
-                                        className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200"
+                                        className="p-2 bg-[color:var(--buddy-surface-soft)] text-cove-muted rounded-xl hover:bg-cove-track"
                                     >
                                         <Plus size={16} />
                                     </button>
@@ -252,26 +252,26 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                     {step === 2 && (
                         <div className="space-y-5">
                             <div className="text-center mb-4">
-                                <h3 className="text-xl font-semibold text-slate-800">
+                                <h3 className="text-xl font-semibold text-cove-ink">
                                     Link Trackers (Optional)
                                 </h3>
-                                <p className="text-slate-500 text-sm">
+                                <p className="text-cove-soft text-sm">
                                     Link to existing trackers for correlation analysis
                                 </p>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                <label className="block text-sm font-bold text-cove-muted mb-2">
                                     Independent Variable(s) — The Cause
                                 </label>
-                                <div className="border border-slate-200 rounded-xl bg-slate-50 max-h-48 overflow-y-auto p-2 space-y-1">
-                                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 py-1">
+                                <div className="border border-cove-border rounded-xl bg-[color:var(--buddy-surface-soft)] max-h-48 overflow-y-auto p-2 space-y-1">
+                                    <div className="text-xs font-semibold text-cove-faint uppercase tracking-wider px-2 py-1">
                                         Trackers
                                     </div>
                                     {trackers.map((t) => (
                                         <label
                                             key={t.id}
-                                            className="flex items-center gap-2 p-2 hover:bg-white rounded-lg cursor-pointer"
+                                            className="flex items-center gap-2 p-2 hover:bg-white rounded-xl cursor-pointer"
                                         >
                                             <input
                                                 type="checkbox"
@@ -287,14 +287,14 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                                             prev.filter((id) => id !== t.id),
                                                         );
                                                 }}
-                                                className="w-4 h-4 text-indigo-600 rounded"
+                                                className="w-4 h-4 text-cove-accent rounded"
                                             />
                                             <span className="text-sm">
                                                 {t.emoji} {t.name}
                                             </span>
                                         </label>
                                     ))}
-                                    <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-2 py-1 mt-2">
+                                    <div className="text-xs font-semibold text-cove-faint uppercase tracking-wider px-2 py-1 mt-2">
                                         Protocols
                                     </div>
                                     {protocols
@@ -302,7 +302,7 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                         .map((p) => (
                                             <label
                                                 key={p.id}
-                                                className="flex items-center gap-2 p-2 hover:bg-white rounded-lg cursor-pointer"
+                                                className="flex items-center gap-2 p-2 hover:bg-white rounded-xl cursor-pointer"
                                             >
                                                 <input
                                                     type="checkbox"
@@ -318,7 +318,7 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                                                 prev.filter((id) => id !== p.id),
                                                             );
                                                     }}
-                                                    className="w-4 h-4 text-indigo-600 rounded"
+                                                    className="w-4 h-4 text-cove-accent rounded"
                                                 />
                                                 <span className="text-sm">💊 {p.name}</span>
                                             </label>
@@ -327,13 +327,13 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Dependent Variable — The Effect
                                 </label>
                                 <select
                                     value={tracker2Id}
                                     onChange={(e) => setTracker2Id(e.target.value)}
-                                    className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50"
+                                    className="w-full p-3 border border-cove-border rounded-xl bg-[color:var(--buddy-surface-soft)]"
                                 >
                                     <option value="">None (use custom metrics only)</option>
                                     {trackers.map((t) => (
@@ -344,7 +344,7 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                 </select>
                             </div>
 
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-cove-soft">
                                 You can skip this step and rely entirely on custom metrics in the
                                 next step.
                             </p>
@@ -355,10 +355,10 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                     {step === 3 && (
                         <div className="space-y-4">
                             <div className="text-center mb-2">
-                                <h3 className="text-xl font-semibold text-slate-800">
+                                <h3 className="text-xl font-semibold text-cove-ink">
                                     Custom Check-in Metrics
                                 </h3>
-                                <p className="text-slate-500 text-sm">
+                                <p className="text-cove-soft text-sm">
                                     What will you measure daily?
                                 </p>
                             </div>
@@ -373,28 +373,28 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                     {step === 4 && (
                         <div className="space-y-5">
                             <div className="text-center mb-2">
-                                <h3 className="text-xl font-semibold text-slate-800">
+                                <h3 className="text-xl font-semibold text-cove-ink">
                                     Phases & Schedule
                                 </h3>
-                                <p className="text-slate-500 text-sm">
+                                <p className="text-cove-soft text-sm">
                                     Structure your experiment timeline
                                 </p>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Start Date
                                 </label>
                                 <input
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full p-3 border border-slate-200 rounded-xl"
+                                    className="w-full p-3 border border-cove-border rounded-xl"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Check-in Frequency
                                 </label>
                                 <select
@@ -402,7 +402,7 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                     onChange={(e) =>
                                         setCheckinSchedule(e.target.value as typeof checkinSchedule)
                                     }
-                                    className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50"
+                                    className="w-full p-3 border border-cove-border rounded-xl bg-[color:var(--buddy-surface-soft)]"
                                 >
                                     <option value="daily">Daily</option>
                                     <option value="twice_daily">Twice daily</option>
@@ -412,17 +412,17 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
 
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="text-sm font-medium text-slate-700">
+                                    <label className="text-sm font-bold text-cove-muted">
                                         Phases (optional)
                                     </label>
                                     <button
                                         onClick={addPhase}
-                                        className="text-xs px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100"
+                                        className="text-xs px-2 py-1 bg-cove-tint-blue text-cove-ink rounded-xl hover:bg-cove-accent-pale"
                                     >
                                         <Plus size={12} className="inline mr-1" /> Add Phase
                                     </button>
                                 </div>
-                                <p className="text-xs text-slate-500 mb-3">
+                                <p className="text-xs text-cove-soft mb-3">
                                     e.g. Baseline week → 10mg week → 20mg week
                                 </p>
 
@@ -430,10 +430,10 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                     {phases.map((phase, i) => (
                                         <div
                                             key={phase.id}
-                                            className="border border-slate-200 rounded-xl p-3 space-y-2"
+                                            className="border border-cove-border rounded-xl p-3 space-y-2"
                                         >
                                             <div className="flex items-center gap-2">
-                                                <span className="text-xs font-semibold text-slate-400 w-4">
+                                                <span className="text-xs font-semibold text-cove-faint w-4">
                                                     {i + 1}
                                                 </span>
                                                 <input
@@ -444,12 +444,12 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                                             name: e.target.value,
                                                         })
                                                     }
-                                                    className="flex-1 p-1.5 border border-slate-200 rounded-lg text-sm"
+                                                    className="flex-1 p-1.5 border border-cove-border rounded-xl text-sm"
                                                     placeholder="Phase name"
                                                 />
                                                 <button
                                                     onClick={() => removePhase(phase.id)}
-                                                    className="text-slate-400 hover:text-red-500"
+                                                    className="text-cove-faint hover:text-cove-danger"
                                                 >
                                                     <Trash2 size={14} />
                                                 </button>
@@ -463,9 +463,9 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                                             startDate: e.target.value,
                                                         })
                                                     }
-                                                    className="flex-1 p-1.5 border border-slate-200 rounded-lg text-xs"
+                                                    className="flex-1 p-1.5 border border-cove-border rounded-xl text-xs"
                                                 />
-                                                <span className="text-slate-400 self-center text-xs">
+                                                <span className="text-cove-faint self-center text-xs">
                                                     to
                                                 </span>
                                                 <input
@@ -476,16 +476,16 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                                                             endDate: e.target.value || undefined,
                                                         })
                                                     }
-                                                    className="flex-1 p-1.5 border border-slate-200 rounded-lg text-xs"
+                                                    className="flex-1 p-1.5 border border-cove-border rounded-xl text-xs"
                                                 />
                                             </div>
-                                            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
+                                            <label className="flex items-center gap-2 text-xs text-cove-muted cursor-pointer">
                                                 <input
                                                     type="radio"
                                                     name="baseline-phase"
                                                     checked={!!phase.isBaseline}
                                                     onChange={() => setBaselinePhase(phase.id)}
-                                                    className="accent-indigo-600"
+                                                    className="accent-cove-accent"
                                                 />
                                                 <span>
                                                     Baseline phase (used as comparison in analysis)
@@ -502,48 +502,48 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                     {step === 5 && (
                         <div className="space-y-4">
                             <div className="text-center">
-                                <div className="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <div className="w-14 h-14 bg-cove-tint-blue text-cove-accent rounded-full flex items-center justify-center mx-auto mb-3">
                                     <FlaskConical size={28} />
                                 </div>
-                                <h3 className="text-xl font-semibold text-slate-800">
+                                <h3 className="text-xl font-semibold text-cove-ink">
                                     Ready to Start?
                                 </h3>
                             </div>
 
-                            <div className="bg-slate-50 p-4 rounded-xl space-y-2 text-sm">
+                            <div className="bg-[color:var(--buddy-surface-soft)] p-4 rounded-xl space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Name</span>
-                                    <span className="font-medium text-slate-800 truncate ml-2">
+                                    <span className="text-cove-soft">Name</span>
+                                    <span className="font-bold text-cove-ink truncate ml-2">
                                         {name}
                                     </span>
                                 </div>
                                 {hypothesis && (
                                     <div>
-                                        <div className="text-slate-500 mb-1">Hypothesis</div>
-                                        <div className="text-slate-700 text-xs">{hypothesis}</div>
+                                        <div className="text-cove-soft mb-1">Hypothesis</div>
+                                        <div className="text-cove-muted text-xs">{hypothesis}</div>
                                     </div>
                                 )}
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Custom Metrics</span>
-                                    <span className="font-medium text-slate-800">
+                                    <span className="text-cove-soft">Custom Metrics</span>
+                                    <span className="font-bold text-cove-ink">
                                         {customMetrics.length}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Phases</span>
-                                    <span className="font-medium text-slate-800">
+                                    <span className="text-cove-soft">Phases</span>
+                                    <span className="font-bold text-cove-ink">
                                         {phases.length || 'Single phase'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Start Date</span>
-                                    <span className="font-medium text-slate-800">
+                                    <span className="text-cove-soft">Start Date</span>
+                                    <span className="font-bold text-cove-ink">
                                         {format(new Date(startDate), 'MMM d, yyyy')}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-500">Check-ins</span>
-                                    <span className="font-medium text-slate-800 capitalize">
+                                    <span className="text-cove-soft">Check-ins</span>
+                                    <span className="font-bold text-cove-ink capitalize">
                                         {checkinSchedule.replace('_', ' ')}
                                     </span>
                                 </div>
@@ -553,11 +553,11 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-slate-100 flex justify-between">
+                <div className="p-4 border-t border-cove-border flex justify-between">
                     <button
                         onClick={handleBack}
                         disabled={step === 1}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium ${step === 1 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-50'}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold ${step === 1 ? 'text-cove-faint cursor-not-allowed' : 'text-cove-muted hover:bg-[color:var(--buddy-surface-soft)]'}`}
                     >
                         <ArrowLeft size={18} /> Back
                     </button>
@@ -566,14 +566,14 @@ const ExperimentWizard: React.FC<ExperimentWizardProps> = ({ onClose }) => {
                         <button
                             onClick={handleNext}
                             disabled={!canProceed()}
-                            className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium text-white ${!canProceed() ? 'bg-indigo-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                            className={`flex items-center gap-2 px-6 py-2 rounded-xl font-bold text-white ${!canProceed() ? 'bg-cove-accent-pale cursor-not-allowed' : 'bg-cove-accent hover:bg-[#3a8dc7]'}`}
                         >
                             Next <ArrowRight size={18} />
                         </button>
                     ) : (
                         <button
                             onClick={handleSubmit}
-                            className="flex items-center gap-2 px-6 py-2 rounded-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200"
+                            className="flex items-center gap-2 px-6 py-2 rounded-xl font-bold text-white bg-cove-accent hover:bg-[#3a8dc7] shadow-cove"
                         >
                             <CheckCircle size={18} /> Start Experiment
                         </button>

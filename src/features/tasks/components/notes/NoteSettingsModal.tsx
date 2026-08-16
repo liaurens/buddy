@@ -76,21 +76,21 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
         <>
             <button
                 onClick={handleReset}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                className="px-4 py-2 text-sm font-bold text-cove-muted hover:text-cove-ink transition-colors"
                 disabled={saving}
             >
                 Reset to Defaults
             </button>
             <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                className="px-4 py-2 text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded-xl transition-colors"
                 disabled={saving}
             >
                 Cancel
             </button>
             <button
                 onClick={handleSave}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-bold text-white bg-cove-accent hover:bg-[#3a8dc7] rounded-xl transition-colors disabled:opacity-50"
                 disabled={saving || loading}
             >
                 {saving ? 'Saving...' : 'Save Changes'}
@@ -102,7 +102,7 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
         return (
             <Modal isOpen={isOpen} onClose={onClose} title="Notes Settings">
                 <div className="flex items-center justify-center py-8">
-                    <div className="text-slate-500">Loading settings...</div>
+                    <div className="text-cove-soft">Loading settings...</div>
                 </div>
             </Modal>
         );
@@ -115,15 +115,15 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
             <div className="space-y-6">
                 {/* Organization Settings */}
                 <div>
-                    <h3 className="text-lg font-medium text-slate-900 mb-4">Organization</h3>
+                    <h3 className="text-lg font-bold text-cove-ink mb-4">Organization</h3>
                     <div className="space-y-4">
                         {/* Auto-Categorization */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <label className="text-sm font-medium text-slate-700">
+                                <label className="text-sm font-bold text-cove-muted">
                                     Auto-Categorization
                                 </label>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-cove-soft">
                                     Automatically categorize notes based on content
                                 </p>
                             </div>
@@ -133,13 +133,13 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
                                 onChange={(e) =>
                                     updateSetting('autoCategorizationEnabled', e.target.checked)
                                 }
-                                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                className="h-4 w-4 text-cove-accent rounded border-cove-border focus:ring-cove-accent"
                             />
                         </div>
 
                         {/* Default Category */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Default Category
                             </label>
                             <input
@@ -149,14 +149,14 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
                                     updateSetting('defaultCategoryId', e.target.value || null)
                                 }
                                 placeholder="Leave empty for uncategorized"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                className="app-input"
                             />
-                            <p className="text-xs text-slate-500 mt-1">Category ID for new notes</p>
+                            <p className="text-xs text-cove-soft mt-1">Category ID for new notes</p>
                         </div>
 
                         {/* Sort Order */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Sort Order
                             </label>
                             <select
@@ -167,7 +167,7 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
                                         e.target.value as 'newest' | 'oldest' | 'alpha',
                                     )
                                 }
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="app-input"
                             >
                                 <option value="newest">Newest First</option>
                                 <option value="oldest">Oldest First</option>
@@ -179,15 +179,15 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
 
                 {/* Display Settings */}
                 <div>
-                    <h3 className="text-lg font-medium text-slate-900 mb-4">Display</h3>
+                    <h3 className="text-lg font-bold text-cove-ink mb-4">Display</h3>
                     <div className="space-y-4">
                         {/* Show Category Badges */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <label className="text-sm font-medium text-slate-700">
+                                <label className="text-sm font-bold text-cove-muted">
                                     Show Category Badges
                                 </label>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-cove-soft">
                                     Display category badges on note cards
                                 </p>
                             </div>
@@ -197,7 +197,7 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
                                 onChange={(e) =>
                                     updateSetting('showCategoryBadges', e.target.checked)
                                 }
-                                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                className="h-4 w-4 text-cove-accent rounded border-cove-border focus:ring-cove-accent"
                             />
                         </div>
                     </div>
@@ -205,15 +205,15 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
 
                 {/* Intelligence Settings */}
                 <div>
-                    <h3 className="text-lg font-medium text-slate-900 mb-4">Intelligence</h3>
+                    <h3 className="text-lg font-bold text-cove-ink mb-4">Intelligence</h3>
                     <div className="space-y-4">
                         {/* Smart Suggestions */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <label className="text-sm font-medium text-slate-700">
+                                <label className="text-sm font-bold text-cove-muted">
                                     Enable Smart Suggestions
                                 </label>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-cove-soft">
                                     Get AI-powered suggestions for note organization
                                 </p>
                             </div>
@@ -223,7 +223,7 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
                                 onChange={(e) =>
                                     updateSetting('enableSmartSuggestions', e.target.checked)
                                 }
-                                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                className="h-4 w-4 text-cove-accent rounded border-cove-border focus:ring-cove-accent"
                             />
                         </div>
                     </div>
@@ -231,11 +231,11 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
 
                 {/* Maintenance Settings */}
                 <div>
-                    <h3 className="text-lg font-medium text-slate-900 mb-4">Maintenance</h3>
+                    <h3 className="text-lg font-bold text-cove-ink mb-4">Maintenance</h3>
                     <div className="space-y-4">
                         {/* Archive After Days */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Auto-Archive After (Days)
                             </label>
                             <input
@@ -247,9 +247,9 @@ const NoteSettingsModal: React.FC<NoteSettingsModalProps> = ({ isOpen, onClose }
                                 onChange={(e) =>
                                     updateSetting('archiveAfterDays', parseInt(e.target.value))
                                 }
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="app-input"
                             />
-                            <p className="text-xs text-slate-500 mt-1">
+                            <p className="text-xs text-cove-soft mt-1">
                                 Automatically archive old notes (0 to disable)
                             </p>
                         </div>

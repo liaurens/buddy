@@ -24,12 +24,12 @@ const CATEGORY_LABELS: Partial<Record<ToolCategory, string>> = {
 };
 
 const CATEGORY_STYLES: Partial<Record<ToolCategory, string>> = {
-    routine_morning: 'bg-amber-50 text-amber-700',
-    routine_midday: 'bg-sky-50 text-sky-700',
-    routine_night: 'bg-indigo-50 text-indigo-700',
-    tasks: 'bg-emerald-50 text-emerald-700',
-    calendar: 'bg-rose-50 text-rose-700',
-    off_track: 'bg-orange-50 text-orange-700',
+    routine_morning: 'bg-cove-tint-amber text-cove-streak-text',
+    routine_midday: 'bg-cove-tint-blue text-cove-ink',
+    routine_night: 'bg-cove-tint-blue text-cove-ink',
+    tasks: 'bg-cove-tint-green text-cove-success-deep',
+    calendar: 'bg-cove-tint-danger text-cove-danger-deep',
+    off_track: 'bg-cove-tint-amber text-cove-streak-text',
 };
 
 /**
@@ -107,14 +107,14 @@ const NotificationQueueCard: React.FC = () => {
         <section className="app-surface p-5 space-y-3">
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                    <CalendarClock size={18} className="text-slate-500" />
-                    <h2 className="font-semibold text-slate-900">Upcoming notifications</h2>
+                    <CalendarClock size={18} className="text-cove-soft" />
+                    <h2 className="font-semibold text-cove-ink">Upcoming notifications</h2>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => void refresh()}
                         disabled={loading || busy}
-                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-40"
+                        className="p-1.5 text-cove-faint hover:text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded-xl transition-colors disabled:opacity-40"
                         aria-label="Refresh queue"
                     >
                         <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
@@ -123,7 +123,7 @@ const NotificationQueueCard: React.FC = () => {
                         <button
                             onClick={() => void cancelAll()}
                             disabled={busy}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-cove-danger-deep border border-cove-danger rounded-xl hover:bg-cove-tint-danger transition-colors disabled:opacity-40"
                         >
                             <Trash2 size={13} /> Cancel all
                         </button>
@@ -131,42 +131,42 @@ const NotificationQueueCard: React.FC = () => {
                 </div>
             </div>
 
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-cove-soft">
                 Everything queued to be pushed to your devices. Cancel anything you don't want.
             </p>
 
             {error && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <p className="text-sm text-cove-danger-deep bg-cove-tint-danger border border-cove-danger rounded-xl px-3 py-2">
                     {error}
                 </p>
             )}
 
             {loading ? (
-                <p className="text-sm text-slate-400 py-2">Loading queue…</p>
+                <p className="text-sm text-cove-faint py-2">Loading queue…</p>
             ) : pending.length === 0 ? (
-                <p className="text-sm text-slate-400 py-2">Nothing queued right now.</p>
+                <p className="text-sm text-cove-faint py-2">Nothing queued right now.</p>
             ) : (
-                <ul className="divide-y divide-slate-100">
+                <ul className="divide-y divide-cove-border">
                     {pending.map((n) => (
                         <li key={n.id} className="flex items-center gap-3 py-2.5">
                             <span
-                                className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium ${CATEGORY_STYLES[n.toolCategory] ?? 'bg-slate-100 text-slate-600'}`}
+                                className={`shrink-0 rounded-xl px-2 py-0.5 text-[11px] font-bold ${CATEGORY_STYLES[n.toolCategory] ?? 'bg-[color:var(--buddy-surface-soft)] text-cove-muted'}`}
                             >
                                 {CATEGORY_LABELS[n.toolCategory] ?? n.toolCategory}
                             </span>
                             <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-slate-800">
+                                <p className="truncate text-sm font-bold text-cove-ink">
                                     {n.title}
                                 </p>
-                                <p className="truncate text-xs text-slate-500">{n.body}</p>
+                                <p className="truncate text-xs text-cove-soft">{n.body}</p>
                             </div>
-                            <span className="shrink-0 text-xs text-slate-500">
+                            <span className="shrink-0 text-xs text-cove-soft">
                                 {format(new Date(n.scheduledFor), 'EEE MMM d, HH:mm')}
                             </span>
                             <button
                                 onClick={() => void cancelOne(n.id)}
                                 disabled={busy}
-                                className="shrink-0 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors disabled:opacity-40"
+                                className="shrink-0 p-1.5 text-cove-faint hover:text-cove-danger hover:bg-cove-tint-danger rounded-full transition-colors disabled:opacity-40"
                                 aria-label={`Cancel "${n.title}"`}
                             >
                                 <X size={14} />

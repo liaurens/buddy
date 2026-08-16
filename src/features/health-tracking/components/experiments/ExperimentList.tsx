@@ -15,23 +15,23 @@ interface ExperimentListProps {
 const STATUS_PILLS: Record<ExperimentStatus, { label: string; pill: string; strip: string }> = {
     active: {
         label: 'Active',
-        pill: 'bg-green-50 text-green-700 border-green-100',
-        strip: 'bg-indigo-500',
+        pill: 'bg-cove-tint-green text-cove-success-deep border-cove-success',
+        strip: 'bg-cove-accent',
     },
     paused: {
         label: 'Paused',
-        pill: 'bg-amber-50 text-amber-700 border-amber-100',
-        strip: 'bg-amber-400',
+        pill: 'bg-cove-tint-amber text-cove-streak-text border-cove-streak',
+        strip: 'bg-cove-streak',
     },
     completed: {
         label: 'Completed',
-        pill: 'bg-indigo-50 text-indigo-700 border-indigo-100',
-        strip: 'bg-indigo-300',
+        pill: 'bg-cove-tint-blue text-cove-ink border-cove-accent-pale',
+        strip: 'bg-cove-accent-pale',
     },
     archived: {
         label: 'Archived',
-        pill: 'bg-slate-50 text-slate-600 border-slate-100',
-        strip: 'bg-slate-300',
+        pill: 'bg-[color:var(--buddy-surface-soft)] text-cove-muted border-cove-border',
+        strip: 'bg-cove-track',
     },
 };
 
@@ -60,17 +60,17 @@ const ExperimentList: React.FC<ExperimentListProps> = ({
     if (experiments.length === 0) {
         return (
             <div className="text-center py-16 px-4">
-                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FlaskConical size={32} className="text-indigo-600" />
+                <div className="w-16 h-16 bg-cove-tint-blue rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FlaskConical size={32} className="text-cove-accent" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-2">No experiments yet</h3>
-                <p className="text-slate-500 mb-6">
+                <h3 className="text-lg font-bold text-cove-ink mb-2">No experiments yet</h3>
+                <p className="text-cove-soft mb-6">
                     Test hypotheses and discover what affects your health and performance
                 </p>
                 {onCreateNew && (
                     <button
                         onClick={onCreateNew}
-                        className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors inline-flex items-center gap-2"
+                        className="bg-cove-accent text-white px-6 py-3 rounded-xl font-bold hover:bg-[#3a8dc7] transition-colors inline-flex items-center gap-2"
                     >
                         <FlaskConical size={20} />
                         Start Your First Experiment
@@ -90,8 +90,8 @@ const ExperimentList: React.FC<ExperimentListProps> = ({
                         onClick={() => setFilter(s)}
                         className={`px-3 py-1.5 text-sm rounded-full whitespace-nowrap transition-colors ${
                             filter === s
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                ? 'bg-cove-accent text-white'
+                                : 'bg-[color:var(--buddy-surface-soft)] text-cove-muted hover:bg-cove-track'
                         }`}
                     >
                         {s === 'all' ? 'All' : STATUS_PILLS[s].label}
@@ -105,7 +105,7 @@ const ExperimentList: React.FC<ExperimentListProps> = ({
             </div>
 
             {filtered.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-sm">
+                <div className="text-center py-8 text-cove-faint text-sm">
                     No experiments in this category.
                 </div>
             ) : (
@@ -125,7 +125,7 @@ const ExperimentList: React.FC<ExperimentListProps> = ({
                     return (
                         <div
                             key={ex.id}
-                            className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
+                            className="bg-white p-5 rounded-xl border border-cove-border shadow-cove hover:shadow-cove transition-shadow relative overflow-hidden"
                         >
                             <div
                                 className={`absolute top-0 left-0 w-1 h-full ${statusInfo.strip}`}
@@ -133,16 +133,16 @@ const ExperimentList: React.FC<ExperimentListProps> = ({
 
                             <div className="flex justify-between items-start mb-3 pl-2">
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                                        <FlaskConical size={20} className="text-indigo-600" />
+                                    <h3 className="font-bold text-lg text-cove-ink flex items-center gap-2">
+                                        <FlaskConical size={20} className="text-cove-accent" />
                                         <span className="truncate">{ex.name}</span>
                                     </h3>
                                     {ex.hypothesis && (
-                                        <p className="text-sm text-slate-600 mt-0.5 line-clamp-1">
+                                        <p className="text-sm text-cove-muted mt-0.5 line-clamp-1">
                                             {ex.hypothesis}
                                         </p>
                                     )}
-                                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-1.5 flex-wrap">
+                                    <div className="flex items-center gap-2 text-xs text-cove-soft mt-1.5 flex-wrap">
                                         <span
                                             className={`px-2 py-0.5 rounded-full border ${statusInfo.pill}`}
                                         >
@@ -178,7 +178,7 @@ const ExperimentList: React.FC<ExperimentListProps> = ({
                                             deleteExperiment(ex.id);
                                         }
                                     }}
-                                    className="text-slate-300 hover:text-rose-500 p-2 transition-colors"
+                                    className="text-cove-faint hover:text-cove-danger p-2 transition-colors"
                                     title="Delete experiment"
                                 >
                                     <Trash2 size={18} />
@@ -191,7 +191,7 @@ const ExperimentList: React.FC<ExperimentListProps> = ({
                                     {ex.tags.map((tag) => (
                                         <span
                                             key={tag}
-                                            className="text-xs px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full"
+                                            className="text-xs px-2 py-0.5 bg-[color:var(--buddy-surface-soft)] text-cove-muted rounded-full"
                                         >
                                             {tag}
                                         </span>
@@ -205,38 +205,38 @@ const ExperimentList: React.FC<ExperimentListProps> = ({
                                     className="flex items-center gap-3 mb-4 px-2 cursor-pointer"
                                     onClick={() => onViewDetails(ex)}
                                 >
-                                    <div className="flex-1 bg-slate-50 p-2.5 rounded-lg text-center border border-slate-100 flex flex-col items-center justify-center gap-1">
+                                    <div className="flex-1 bg-[color:var(--buddy-surface-soft)] p-2.5 rounded-xl text-center border border-cove-border flex flex-col items-center justify-center gap-1">
                                         {independentVars.slice(0, 3).map((v, i) => (
                                             <div
                                                 key={i}
                                                 className="flex items-center gap-1.5 w-full justify-center"
                                             >
                                                 <span className="text-base">{v.emoji}</span>
-                                                <span className="text-xs font-medium text-slate-700 truncate max-w-[100px]">
+                                                <span className="text-xs font-bold text-cove-muted truncate max-w-[100px]">
                                                     {v.name}
                                                 </span>
                                                 {i < independentVars.length - 1 && i < 2 && (
-                                                    <span className="text-slate-300">+</span>
+                                                    <span className="text-cove-faint">+</span>
                                                 )}
                                             </div>
                                         ))}
                                     </div>
-                                    <ArrowRight size={18} className="text-slate-300 shrink-0" />
-                                    <div className="flex-1 bg-slate-50 p-2.5 rounded-lg text-center border border-slate-100">
+                                    <ArrowRight size={18} className="text-cove-faint shrink-0" />
+                                    <div className="flex-1 bg-[color:var(--buddy-surface-soft)] p-2.5 rounded-xl text-center border border-cove-border">
                                         <span className="text-base block">
                                             {dependentVar.emoji}
                                         </span>
-                                        <span className="text-xs font-medium text-slate-700 truncate block">
+                                        <span className="text-xs font-bold text-cove-muted truncate block">
                                             {dependentVar.name}
                                         </span>
                                     </div>
                                 </div>
                             )}
 
-                            <div className="flex gap-2 pt-3 border-t border-slate-50 pl-2">
+                            <div className="flex gap-2 pt-3 border-t border-cove-border pl-2">
                                 <button
                                     onClick={() => onViewDetails(ex)}
-                                    className="flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-700 transition-all"
+                                    className="flex items-center gap-1.5 text-sm font-bold text-white bg-cove-accent px-4 py-2 rounded-xl hover:bg-[#3a8dc7] transition-all"
                                 >
                                     <CheckSquare size={16} />
                                     Check in
@@ -244,7 +244,7 @@ const ExperimentList: React.FC<ExperimentListProps> = ({
                                 {hasVariables && (
                                     <button
                                         onClick={() => onRunAnalysis(ex)}
-                                        className="flex items-center gap-1.5 text-sm font-medium text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-100 transition-all border border-slate-200"
+                                        className="flex items-center gap-1.5 text-sm font-bold text-cove-muted px-4 py-2 rounded-xl hover:bg-[color:var(--buddy-surface-soft)] transition-all border border-cove-border"
                                     >
                                         <TrendingUp size={16} />
                                         Analyze

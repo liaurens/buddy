@@ -188,25 +188,29 @@ const CaptureInput: React.FC<CaptureInputProps> = ({
 
     const isCompact = variant === 'compact';
     const isBare = variant === 'bare';
+    // `bare` sits inside a surface that already draws the border (the capture page),
+    // so it stays transparent; the other two draw their own Cove field.
     const textareaClasses = isBare
-        ? 'flex-1 min-w-0 bg-transparent px-1 py-3 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none disabled:opacity-50 resize-none leading-snug'
+        ? 'flex-1 min-w-0 resize-none bg-transparent px-1 py-3 text-base font-bold leading-snug text-cove-ink placeholder:font-semibold placeholder:text-cove-faint focus:outline-none disabled:opacity-50'
         : isCompact
-          ? 'flex-1 min-w-0 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 disabled:opacity-50 shadow-[0_8px_24px_rgba(15,23,42,0.05)] resize-none leading-snug'
-          : 'flex-1 min-w-0 bg-slate-50/80 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 disabled:opacity-50 transition-shadow resize-none leading-snug';
+          ? 'app-textarea flex-1 min-w-0 py-2.5 text-sm shadow-cove'
+          : 'app-textarea flex-1 min-w-0 bg-[color:var(--buddy-surface-soft)] py-3 text-sm';
+    const sendBase =
+        'flex flex-shrink-0 items-center justify-center bg-cove-ink text-white transition-colors hover:opacity-90 disabled:bg-cove-track disabled:text-cove-faint';
     const buttonClasses = isBare
-        ? 'flex-shrink-0 w-11 h-11 flex items-center justify-center bg-indigo-950 hover:bg-indigo-900 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-lg transition-colors shadow-[0_10px_24px_rgba(30,41,99,0.2)] active:scale-95'
+        ? `${sendBase} h-11 w-11 rounded-xl shadow-[0_10px_24px_rgba(29,58,77,0.22)] active:scale-95`
         : isCompact
-          ? 'flex-shrink-0 w-10 h-10 flex items-center justify-center bg-indigo-700 hover:bg-indigo-800 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl transition-colors shadow-sm'
-          : 'flex-shrink-0 w-11 h-11 flex items-center justify-center bg-indigo-700 hover:bg-indigo-800 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-xl transition-all shadow-sm active:scale-95';
+          ? `${sendBase} h-10 w-10 rounded-xl shadow-cove`
+          : `${sendBase} h-11 w-11 rounded-xl shadow-cove active:scale-95`;
 
     const showPreviewChip = !!routePreview && !showHints && !isLoading;
 
     return (
         <form onSubmit={handleSubmit} className="relative w-full">
             {showPreviewChip && routePreview && (
-                <div className="absolute -top-7 right-0 flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-white border border-slate-200 rounded-full px-2 py-0.5 shadow-sm">
-                    <ArrowRight size={10} className="text-indigo-500" />
-                    <span className="text-slate-700">{routePreview.label}</span>
+                <div className="absolute -top-7 right-0 flex items-center gap-1 rounded-full border-0 bg-white px-2.5 py-1 text-[11px] font-extrabold text-cove-muted shadow-cove">
+                    <ArrowRight size={10} className="text-cove-accent" />
+                    <span className="text-cove-ink">{routePreview.label}</span>
                 </div>
             )}
             <div className="flex gap-2 items-end">
@@ -242,7 +246,7 @@ const CaptureInput: React.FC<CaptureInputProps> = ({
                 <div
                     className={`absolute left-0 right-12 ${
                         hintsPosition === 'above' ? 'bottom-full mb-2' : 'top-full mt-1'
-                    } bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-50`}
+                    } z-50 overflow-hidden rounded-card border-0 bg-white shadow-[0_10px_30px_rgba(40,90,130,0.18)]`}
                 >
                     {visibleHints.map((cmd, i) => (
                         <button
@@ -252,14 +256,18 @@ const CaptureInput: React.FC<CaptureInputProps> = ({
                                 e.preventDefault();
                                 handleSelectCommand(cmd.command);
                             }}
-                            className={`w-full text-left px-3 py-2 flex items-center gap-3 text-sm transition-colors ${
-                                i === selectedHint ? 'bg-indigo-50' : 'hover:bg-slate-50'
+                            className={`flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors ${
+                                i === selectedHint
+                                    ? 'bg-cove-tint-blue'
+                                    : 'hover:bg-[color:var(--buddy-surface-soft)]'
                             }`}
                         >
-                            <span className="font-mono text-indigo-600 font-medium w-20 flex-shrink-0">
+                            <span className="w-20 flex-shrink-0 font-mono text-[13px] font-extrabold text-cove-accent">
                                 {cmd.command}
                             </span>
-                            <span className="text-slate-500 truncate">{cmd.description}</span>
+                            <span className="truncate font-semibold text-cove-muted">
+                                {cmd.description}
+                            </span>
                         </button>
                     ))}
                     {richHints &&
@@ -272,7 +280,7 @@ const CaptureInput: React.FC<CaptureInputProps> = ({
                                     e.preventDefault();
                                     setShowAllHints(true);
                                 }}
-                                className="w-full text-left px-3 py-2 text-xs text-indigo-600 hover:bg-slate-50 border-t border-slate-100"
+                                className="w-full border-t border-cove-border px-3 py-2 text-left text-xs font-extrabold text-cove-accent hover:bg-[color:var(--buddy-surface-soft)]"
                             >
                                 Show all commands…
                             </button>

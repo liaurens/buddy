@@ -91,24 +91,24 @@ export function DevPortal() {
             {/* Small, faded dev cluster, tucked bottom-left clear of the Capture FAB. */}
             <div className="fixed bottom-4 left-4 z-[9999] flex flex-col items-start gap-2 pointer-events-none">
                 {isActive && (
-                    <div className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded-full shadow-lg font-mono pointer-events-auto shadow-blue-500/20 border border-blue-500 animate-pulse">
+                    <div className="bg-cove-accent text-white text-xs px-3 py-1.5 rounded-full shadow-cove font-mono pointer-events-auto border border-cove-accent animate-pulse">
                         Inspector Mode — click an element to report
                     </div>
                 )}
                 <div className="flex gap-2 pointer-events-auto">
                     <button
                         onClick={() => setIsListOpen(true)}
-                        className="p-2 rounded-full shadow-lg text-white bg-slate-700/80 hover:bg-slate-800 opacity-60 hover:opacity-100 transition-all"
+                        className="p-2 rounded-full shadow-cove text-white bg-cove-ink/80 hover:bg-cove-ink opacity-60 hover:opacity-100 transition-all"
                         title="View reported feedback"
                     >
                         <List size={18} />
                     </button>
                     <button
                         onClick={() => setIsActive(!isActive)}
-                        className={`p-2 rounded-full shadow-lg text-white transition-all ${
+                        className={`p-2 rounded-full shadow-cove text-white transition-all ${
                             isActive
-                                ? 'bg-red-500 hover:bg-red-600 opacity-100'
-                                : 'bg-blue-600/80 hover:bg-blue-700 opacity-60 hover:opacity-100'
+                                ? 'bg-cove-danger hover:bg-cove-danger-deep opacity-100'
+                                : 'bg-cove-accent/80 hover:bg-cove-accent opacity-60 hover:opacity-100'
                         }`}
                         title="Toggle inspect & report mode"
                     >
@@ -132,14 +132,14 @@ export function DevPortal() {
                             style={{ top: pos.top, left: pos.left }}
                         >
                             {/* The Sticky Note Icon */}
-                            <div className="bg-yellow-300 w-8 h-8 rounded-bl-xl shadow-md rotate-3 flex items-center justify-center cursor-pointer hover:rotate-0 transition-transform">
-                                <FileText size={16} className="text-yellow-800" />
+                            <div className="bg-cove-streak w-8 h-8 rounded-bl-xl shadow-cove rotate-3 flex items-center justify-center cursor-pointer hover:rotate-0 transition-transform">
+                                <FileText size={16} className="text-cove-streak-text" />
                             </div>
 
                             {/* The Note Hover Content */}
-                            <div className="absolute top-full right-0 mt-2 w-64 p-3 bg-yellow-100 border border-yellow-200 shadow-xl rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto origin-top-right scale-95 group-hover:scale-100 text-slate-800 text-sm">
-                                <p className="font-medium">{item.description}</p>
-                                <div className="text-[10px] text-yellow-600 mt-2 flex justify-between">
+                            <div className="absolute top-full right-0 mt-2 w-64 p-3 bg-cove-tint-amber border border-cove-streak shadow-xl rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto origin-top-right scale-95 group-hover:scale-100 text-cove-ink text-sm">
+                                <p className="font-bold">{item.description}</p>
+                                <div className="text-[10px] text-cove-streak-deep mt-2 flex justify-between">
                                     <span>{new Date(item.created_at!).toLocaleString()}</span>
                                 </div>
                             </div>

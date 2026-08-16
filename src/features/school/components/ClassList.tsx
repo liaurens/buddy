@@ -193,13 +193,13 @@ export const ClassList: React.FC<ClassListProps> = ({
                                                         <button
                                                             type="button"
                                                             onClick={() => onCompleteAssignment(a)}
-                                                            className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border-2 border-cove-border transition-colors hover:border-cove-success hover:bg-cove-tint-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cove-success-deep"
+                                                            className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border-2 border-cove-border transition-colors hover:border-cove-success hover:bg-cove-tint-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cove-success-deep"
                                                             title="Mark submitted"
                                                             aria-label={`Mark ${a.title} submitted`}
                                                         />
                                                     )}
                                                     {isDone && (
-                                                        <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border-2 border-cove-success bg-cove-tint-green">
+                                                        <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border-2 border-cove-success bg-cove-tint-green">
                                                             <Check
                                                                 size={15}
                                                                 className="text-cove-success-deep"

@@ -100,9 +100,10 @@ const ProjectDocView: React.FC = () => {
 
     if (!category) {
         return (
-            <div className="py-12 text-center text-sm text-slate-500">
+            <div className="py-12 text-center text-sm text-cove-soft">
                 No “Project” category found. Create one in note settings (flag{' '}
-                <code className="rounded bg-slate-100 px-1">-project</code>) to start a project doc.
+                <code className="rounded bg-[color:var(--buddy-surface-soft)] px-1">-project</code>)
+                to start a project doc.
             </div>
         );
     }
@@ -110,20 +111,20 @@ const ProjectDocView: React.FC = () => {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between gap-2">
-                <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-cove-ink">
                     <FileText className="h-5 w-5" style={{ color: category.color || '#ec4899' }} />
                     {title}
-                    <span className="text-sm font-normal text-slate-500">
+                    <span className="text-sm font-semibold text-cove-soft">
                         ({projectNotes.length})
                     </span>
                 </h2>
                 {projectNotes.length > 0 && (
                     <button
                         onClick={handleCopy}
-                        className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                        className="flex items-center gap-1.5 rounded-xl border border-cove-border px-3 py-1.5 text-sm font-bold text-cove-muted transition-colors hover:bg-[color:var(--buddy-surface-soft)]"
                     >
                         {copied ? (
-                            <Check size={15} className="text-emerald-600" />
+                            <Check size={15} className="text-cove-success-deep" />
                         ) : (
                             <Copy size={15} />
                         )}
@@ -134,51 +135,53 @@ const ProjectDocView: React.FC = () => {
 
             <form
                 onSubmit={handleAdd}
-                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100"
+                className="flex items-center gap-2 rounded-xl border border-cove-border bg-white p-2 shadow-cove focus-within:border-cove-accent focus-within:ring-2 focus-within:ring-cove-accent-pale"
             >
                 <input
                     type="text"
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     placeholder="Add a project note…"
-                    className="ml-2 flex-1 bg-transparent text-sm text-slate-800 placeholder-slate-400 outline-none"
+                    className="ml-2 flex-1 bg-transparent text-sm text-cove-ink placeholder:text-cove-faint outline-none"
                     disabled={submitting}
                 />
                 <button
                     type="submit"
                     disabled={!draft.trim() || submitting}
-                    className="rounded-lg bg-indigo-600 p-2 text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl bg-cove-accent p-2 text-white transition-colors hover:bg-[#3a8dc7] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <Send className="h-4 w-4" />
                 </button>
             </form>
 
             {groups.length === 0 ? (
-                <div className="py-10 text-center text-sm text-slate-500">
+                <div className="py-10 text-center text-sm text-cove-soft">
                     No project notes yet. Add one above, or capture with{' '}
-                    <code className="rounded bg-slate-100 px-1">-project</code> from the iPhone
-                    shortcut.
+                    <code className="rounded bg-[color:var(--buddy-surface-soft)] px-1">
+                        -project
+                    </code>{' '}
+                    from the iPhone shortcut.
                 </div>
             ) : (
                 <div className="space-y-5">
                     {groups.map((group) => (
                         <section key={group.key}>
-                            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+                            <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-cove-soft">
                                 {group.label}
                             </h3>
                             <ul className="space-y-1.5">
                                 {group.notes.map((note) => (
                                     <li
                                         key={note.id}
-                                        className="group flex items-start gap-2 rounded-lg border border-slate-100 bg-white px-3 py-2"
+                                        className="group flex items-start gap-2 rounded-xl border border-cove-border bg-white px-3 py-2"
                                     >
-                                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-300" />
-                                        <p className="flex-1 whitespace-pre-wrap text-sm text-slate-700">
+                                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-cove-track" />
+                                        <p className="flex-1 whitespace-pre-wrap text-sm text-cove-muted">
                                             {note.content}
                                         </p>
                                         <button
                                             onClick={() => deleteNote(note.id)}
-                                            className="shrink-0 text-slate-300 opacity-0 transition-opacity hover:text-rose-500 group-hover:opacity-100"
+                                            className="shrink-0 text-cove-faint opacity-0 transition-opacity hover:text-cove-danger group-hover:opacity-100"
                                             aria-label="Delete note"
                                         >
                                             <Trash2 size={15} />

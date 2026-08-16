@@ -27,8 +27,14 @@ const CheckinModal: React.FC<CheckinModalProps> = ({
     const targetDate = date || new Date();
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
-            <div className="min-h-screen p-3 flex flex-col max-w-xl mx-auto">
+        <div className="fixed inset-0 z-50 bg-cove-ink/95 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+            <div
+                className="min-h-dvh p-3 flex flex-col max-w-xl mx-auto"
+                style={{
+                    paddingTop: 'calc(0.75rem + env(safe-area-inset-top))',
+                    paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))',
+                }}
+            >
                 <div className="flex justify-between items-center text-white mb-4 mt-1">
                     <h2 className="text-xl font-bold">Daily Check-in</h2>
                     <button

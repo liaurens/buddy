@@ -18,20 +18,20 @@ interface SectionProps {
 const Section: React.FC<SectionProps> = ({ title, icon, defaultOpen = false, children }) => {
     const [open, setOpen] = useState(defaultOpen);
     return (
-        <div className="border border-slate-100 rounded-lg overflow-hidden">
+        <div className="border border-cove-border rounded-xl overflow-hidden">
             <button
                 onClick={() => setOpen(!open)}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] transition-colors"
             >
                 {open ? (
-                    <ChevronDown size={14} className="text-slate-400" />
+                    <ChevronDown size={14} className="text-cove-faint" />
                 ) : (
-                    <ChevronRight size={14} className="text-slate-400" />
+                    <ChevronRight size={14} className="text-cove-faint" />
                 )}
                 {icon}
                 {title}
             </button>
-            {open && <div className="px-3 pb-3 text-xs text-slate-600 space-y-2">{children}</div>}
+            {open && <div className="px-3 pb-3 text-xs text-cove-muted space-y-2">{children}</div>}
         </div>
     );
 };
@@ -40,13 +40,13 @@ function CommandRow({ cmd, desc, example }: { cmd: string; desc: string; example
     return (
         <div className="flex flex-col gap-0.5 py-1">
             <div className="flex items-center gap-2">
-                <code className="font-mono text-indigo-600 font-medium text-[11px] bg-indigo-50 px-1.5 py-0.5 rounded">
+                <code className="font-mono text-cove-accent font-bold text-[11px] bg-cove-tint-blue px-1.5 py-0.5 rounded">
                     {cmd}
                 </code>
-                <span className="text-slate-500">{desc}</span>
+                <span className="text-cove-soft">{desc}</span>
             </div>
             {example && (
-                <span className="text-[11px] text-slate-400 ml-1">
+                <span className="text-[11px] text-cove-faint ml-1">
                     e.g. <code className="font-mono">{example}</code>
                 </span>
             )}
@@ -58,8 +58,8 @@ const AssistantGuide: React.FC = () => {
     return (
         <div className="space-y-2 px-1">
             <div className="text-center mb-3">
-                <p className="text-sm font-semibold text-slate-700">Buddy Assistant Guide</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">
+                <p className="text-sm font-semibold text-cove-muted">Buddy Assistant Guide</p>
+                <p className="text-[11px] text-cove-faint mt-0.5">
                     Everything you need to get started
                 </p>
             </div>
@@ -67,16 +67,16 @@ const AssistantGuide: React.FC = () => {
             {/* Setup Section */}
             <Section
                 title="Setup — Configure AI"
-                icon={<Settings size={14} className="text-amber-500" />}
+                icon={<Settings size={14} className="text-cove-streak-deep" />}
                 defaultOpen
             >
                 <p>
                     To enable AI-powered responses, you need an API key from one of these providers:
                 </p>
                 <div className="space-y-1 mt-1.5">
-                    <div className="bg-slate-50 rounded-md p-2">
-                        <p className="font-medium text-slate-700">1. Get an API key</p>
-                        <ul className="mt-1 space-y-0.5 text-[11px] text-slate-500">
+                    <div className="bg-[color:var(--buddy-surface-soft)] rounded-xl p-2">
+                        <p className="font-bold text-cove-muted">1. Get an API key</p>
+                        <ul className="mt-1 space-y-0.5 text-[11px] text-cove-soft">
                             <li>
                                 <strong>OpenAI:</strong> platform.openai.com/api-keys
                             </li>
@@ -88,36 +88,36 @@ const AssistantGuide: React.FC = () => {
                             </li>
                         </ul>
                     </div>
-                    <div className="bg-slate-50 rounded-md p-2">
-                        <p className="font-medium text-slate-700">2. Add it in the app</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
+                    <div className="bg-[color:var(--buddy-surface-soft)] rounded-xl p-2">
+                        <p className="font-bold text-cove-muted">2. Add it in the app</p>
+                        <p className="text-[11px] text-cove-soft mt-0.5">
                             Go to <strong>Account</strong> (profile icon) &rarr; find the{' '}
                             <strong>AI Provider</strong> section &rarr; select your provider, paste
                             your API key, and hit Save.
                         </p>
                     </div>
-                    <div className="bg-slate-50 rounded-md p-2">
-                        <p className="font-medium text-slate-700">3. Start chatting</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
+                    <div className="bg-[color:var(--buddy-surface-soft)] rounded-xl p-2">
+                        <p className="font-bold text-cove-muted">3. Start chatting</p>
+                        <p className="text-[11px] text-cove-soft mt-0.5">
                             Once configured, you can ask questions and get AI-powered answers right
                             here in the chat.
                         </p>
                     </div>
                 </div>
-                <p className="text-[11px] text-amber-600 mt-2">
+                <p className="text-[11px] text-cove-streak-deep mt-2">
                     Without an API key, the assistant can still handle slash commands and
                     pattern-based actions — just not open questions.
                 </p>
             </Section>
 
             {/* Commands Section */}
-            <Section title="Commands" icon={<Terminal size={14} className="text-indigo-500" />}>
+            <Section title="Commands" icon={<Terminal size={14} className="text-cove-accent" />}>
                 <p className="mb-2">
-                    Type <code className="font-mono text-indigo-600">/</code> to see suggestions.
+                    Type <code className="font-mono text-cove-accent">/</code> to see suggestions.
                     Available commands:
                 </p>
 
-                <p className="font-medium text-slate-700 mt-2 mb-1">Planning</p>
+                <p className="font-bold text-cove-muted mt-2 mb-1">Planning</p>
                 <div className="space-y-0.5">
                     <CommandRow
                         cmd="/task"
@@ -134,7 +134,7 @@ const AssistantGuide: React.FC = () => {
                     />
                 </div>
 
-                <p className="font-medium text-slate-700 mt-3 mb-1">Notes &amp; Content</p>
+                <p className="font-bold text-cove-muted mt-3 mb-1">Notes &amp; Content</p>
                 <div className="space-y-0.5">
                     <CommandRow
                         cmd="/note"
@@ -149,7 +149,7 @@ const AssistantGuide: React.FC = () => {
                     <CommandRow cmd="/find" desc="Search notes" example="/find machine learning" />
                 </div>
 
-                <p className="font-medium text-slate-700 mt-3 mb-1">Health &amp; Calendar</p>
+                <p className="font-bold text-cove-muted mt-3 mb-1">Health &amp; Calendar</p>
                 <div className="space-y-0.5">
                     <CommandRow
                         cmd="/checkin"
@@ -164,7 +164,7 @@ const AssistantGuide: React.FC = () => {
                     <CommandRow cmd="/agenda" desc="Show today's events" />
                 </div>
 
-                <p className="font-medium text-slate-700 mt-3 mb-1">System</p>
+                <p className="font-bold text-cove-muted mt-3 mb-1">System</p>
                 <div className="space-y-0.5">
                     <CommandRow cmd="/help" desc="Show all commands in chat" />
                     <CommandRow
@@ -178,37 +178,37 @@ const AssistantGuide: React.FC = () => {
             {/* Natural Language Section */}
             <Section
                 title="Natural Language"
-                icon={<MessageSquare size={14} className="text-emerald-500" />}
+                icon={<MessageSquare size={14} className="text-cove-success" />}
             >
                 <p className="mb-2">
                     You don't always need slash commands. Buddy understands natural language too:
                 </p>
 
                 <div className="space-y-1.5">
-                    <div className="bg-emerald-50 rounded-md p-2">
-                        <p className="font-medium text-emerald-700">Shopping</p>
-                        <p className="text-[11px] text-emerald-600">
+                    <div className="bg-cove-tint-green rounded-xl p-2">
+                        <p className="font-bold text-cove-success-deep">Shopping</p>
+                        <p className="text-[11px] text-cove-success-deep">
                             "Koop melk" &rarr; saved to shopping list
                         </p>
-                        <p className="text-[11px] text-emerald-600">
+                        <p className="text-[11px] text-cove-success-deep">
                             "Buy bread and eggs" &rarr; shopping note
                         </p>
                     </div>
-                    <div className="bg-blue-50 rounded-md p-2">
-                        <p className="font-medium text-blue-700">Tasks</p>
-                        <p className="text-[11px] text-blue-600">
+                    <div className="bg-cove-tint-blue rounded-xl p-2">
+                        <p className="font-bold text-cove-ink">Tasks</p>
+                        <p className="text-[11px] text-cove-accent">
                             "Remind me to call the dentist" &rarr; creates reminder
                         </p>
-                        <p className="text-[11px] text-blue-600">
+                        <p className="text-[11px] text-cove-accent">
                             "Wat moet ik vandaag doen?" &rarr; shows today's tasks
                         </p>
                     </div>
-                    <div className="bg-purple-50 rounded-md p-2">
-                        <p className="font-medium text-purple-700">Questions (requires AI)</p>
-                        <p className="text-[11px] text-purple-600">
+                    <div className="bg-cove-tint-purple rounded-xl p-2">
+                        <p className="font-bold text-cove-purple">Questions (requires AI)</p>
+                        <p className="text-[11px] text-cove-purple">
                             "How can I study more effectively?" &rarr; AI response
                         </p>
-                        <p className="text-[11px] text-purple-600">
+                        <p className="text-[11px] text-cove-purple">
                             "What's the Pomodoro technique?" &rarr; AI response
                         </p>
                     </div>
@@ -218,27 +218,27 @@ const AssistantGuide: React.FC = () => {
             {/* Response Types Section */}
             <Section
                 title="Response Types"
-                icon={<AlertTriangle size={14} className="text-cyan-500" />}
+                icon={<AlertTriangle size={14} className="text-cove-accent" />}
             >
                 <div className="space-y-1.5">
-                    <div className="bg-slate-50 rounded-md p-2">
-                        <p className="font-medium text-slate-700">Action Cards</p>
-                        <p className="text-[11px] text-slate-500">
+                    <div className="bg-[color:var(--buddy-surface-soft)] rounded-xl p-2">
+                        <p className="font-bold text-cove-muted">Action Cards</p>
+                        <p className="text-[11px] text-cove-soft">
                             When the assistant creates a task, saves a note, or logs health data,
                             you'll see a card with a checkmark and a link to navigate to the
                             relevant section.
                         </p>
                     </div>
-                    <div className="bg-slate-50 rounded-md p-2">
-                        <p className="font-medium text-slate-700">Chat Responses</p>
-                        <p className="text-[11px] text-slate-500">
+                    <div className="bg-[color:var(--buddy-surface-soft)] rounded-xl p-2">
+                        <p className="font-bold text-cove-muted">Chat Responses</p>
+                        <p className="text-[11px] text-cove-soft">
                             For general questions, the AI responds with a text message — just like
                             chatting with a friend. Requires an AI provider to be configured.
                         </p>
                     </div>
-                    <div className="bg-slate-50 rounded-md p-2">
-                        <p className="font-medium text-slate-700">Error Messages</p>
-                        <p className="text-[11px] text-slate-500">
+                    <div className="bg-[color:var(--buddy-surface-soft)] rounded-xl p-2">
+                        <p className="font-bold text-cove-muted">Error Messages</p>
+                        <p className="text-[11px] text-cove-soft">
                             If something goes wrong (e.g. invalid API key, network issue), you'll
                             see a red error card. Check your API key in Settings if you see
                             authentication errors.

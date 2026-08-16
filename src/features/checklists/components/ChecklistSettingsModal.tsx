@@ -29,14 +29,14 @@ const ChecklistSettingsModal: React.FC<ChecklistSettingsModalProps> = ({ isOpen,
         <>
             <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                className="px-4 py-2 text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded-xl transition-colors"
                 disabled={saving}
             >
                 Cancel
             </button>
             <button
                 onClick={handleSave}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-bold text-white bg-cove-accent hover:bg-[#3a8dc7] rounded-xl transition-colors disabled:opacity-50"
                 disabled={saving}
             >
                 {saving ? 'Saving...' : 'Save Changes'}
@@ -48,14 +48,14 @@ const ChecklistSettingsModal: React.FC<ChecklistSettingsModalProps> = ({ isOpen,
         <Modal isOpen={isOpen} onClose={onClose} title="Checklist Settings" footer={footer}>
             <div className="space-y-6">
                 <div>
-                    <h3 className="text-lg font-medium text-slate-900 mb-4">General</h3>
+                    <h3 className="text-lg font-bold text-cove-ink mb-4">General</h3>
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <label className="text-sm font-medium text-slate-700">
+                                <label className="text-sm font-bold text-cove-muted">
                                     Confirm Reset
                                 </label>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-cove-soft">
                                     Ask for confirmation before resetting a checklist
                                 </p>
                             </div>
@@ -65,16 +65,16 @@ const ChecklistSettingsModal: React.FC<ChecklistSettingsModalProps> = ({ isOpen,
                                 onChange={(e) =>
                                     setSettings({ ...settings, confirmReset: e.target.checked })
                                 }
-                                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                className="h-4 w-4 text-cove-accent rounded border-cove-border focus:ring-cove-accent"
                             />
                         </div>
 
                         <div className="flex items-center justify-between">
                             <div>
-                                <label className="text-sm font-medium text-slate-700">
+                                <label className="text-sm font-bold text-cove-muted">
                                     Hide Completed Items
                                 </label>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-cove-soft">
                                     Automatically hide items when checked
                                 </p>
                             </div>
@@ -84,18 +84,22 @@ const ChecklistSettingsModal: React.FC<ChecklistSettingsModalProps> = ({ isOpen,
                                 onChange={(e) =>
                                     setSettings({ ...settings, hideCompleted: e.target.checked })
                                 }
-                                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                className="h-4 w-4 text-cove-accent rounded border-cove-border focus:ring-cove-accent"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-200">
-                    <h3 className="text-lg font-medium text-slate-900 mb-4">Data</h3>
-                    <div className="p-4 bg-red-50 rounded-lg border border-red-100">
-                        <h4 className="text-sm font-medium text-red-800 mb-1">Danger Zone</h4>
-                        <p className="text-xs text-red-600 mb-3">These actions cannot be undone.</p>
-                        <button className="text-xs bg-white border border-red-200 text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 font-medium transition-colors">
+                <div className="pt-4 border-t border-cove-border">
+                    <h3 className="text-lg font-bold text-cove-ink mb-4">Data</h3>
+                    <div className="p-4 bg-cove-tint-danger rounded-xl border border-cove-danger">
+                        <h4 className="text-sm font-bold text-cove-danger-deep mb-1">
+                            Danger Zone
+                        </h4>
+                        <p className="text-xs text-cove-danger-deep mb-3">
+                            These actions cannot be undone.
+                        </p>
+                        <button className="text-xs bg-white border border-cove-danger text-cove-danger-deep px-3 py-2 rounded-xl hover:bg-cove-tint-danger font-bold transition-colors">
                             Delete All Checklists
                         </button>
                     </div>

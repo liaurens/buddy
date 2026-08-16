@@ -47,7 +47,7 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
             <div className="flex items-center justify-end lg:justify-between">
                 <div className="hidden lg:block">
                     <h1 className="app-title flex items-center gap-2">
-                        <FlaskConical className="text-indigo-600" />
+                        <FlaskConical className="text-cove-accent" />
                         Experiments
                     </h1>
                     <p className="app-subtitle">

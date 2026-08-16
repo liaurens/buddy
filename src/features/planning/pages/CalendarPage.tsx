@@ -292,7 +292,7 @@ const CalendarPage: React.FC = () => {
                                             return (
                                                 <div
                                                     key={s.id}
-                                                    className="flex items-start gap-3 p-3 rounded-lg border"
+                                                    className="flex items-start gap-3 p-3 rounded-xl border"
                                                     style={{
                                                         backgroundColor: cls
                                                             ? cls.color + '11'
@@ -337,7 +337,7 @@ const CalendarPage: React.FC = () => {
                                             return (
                                                 <div
                                                     key={a.id}
-                                                    className={`flex items-start gap-3 p-3 rounded-lg ${isDone ? 'bg-[#eef6fa]' : 'bg-cove-tint-pink'}`}
+                                                    className={`flex items-start gap-3 p-3 rounded-xl ${isDone ? 'bg-[#eef6fa]' : 'bg-cove-tint-pink'}`}
                                                 >
                                                     <Clock
                                                         size={16}
@@ -378,7 +378,7 @@ const CalendarPage: React.FC = () => {
                                         {getCalendarEventsForDay(selectedDay).map((event) => (
                                             <div
                                                 key={event.id}
-                                                className="flex items-start gap-3 p-3 bg-cove-tint-purple rounded-lg"
+                                                className="flex items-start gap-3 p-3 bg-cove-tint-purple rounded-xl"
                                             >
                                                 <CalendarIcon
                                                     size={16}

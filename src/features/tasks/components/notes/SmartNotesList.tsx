@@ -61,7 +61,7 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
 
     if (filteredNotes.length === 0) {
         return (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-8 text-cove-soft">
                 <Inbox className="w-12 h-12 mx-auto mb-2 opacity-50" />
                 <p>No notes here</p>
             </div>
@@ -78,8 +78,8 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                 return (
                     <div
                         key={note.id}
-                        className={`bg-white rounded-lg p-3 border shadow-sm transition-colors ${
-                            note.processed ? 'border-slate-200 opacity-60' : 'border-slate-200'
+                        className={`bg-white rounded-xl p-3 border shadow-cove transition-colors ${
+                            note.processed ? 'border-cove-border opacity-60' : 'border-cove-border'
                         }`}
                     >
                         {isEditing ? (
@@ -88,7 +88,7 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                                     type="text"
                                     value={editContent}
                                     onChange={(e) => setEditContent(e.target.value)}
-                                    className="flex-1 bg-white border border-slate-200 text-slate-800 rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="flex-1 bg-white border border-cove-border text-cove-ink rounded px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-cove-accent"
                                     autoFocus
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') handleSaveEdit(note);
@@ -97,13 +97,13 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                                 />
                                 <button
                                     onClick={() => handleSaveEdit(note)}
-                                    className="p-1.5 text-green-600 hover:bg-green-50 rounded"
+                                    className="p-1.5 text-cove-success-deep hover:bg-cove-tint-green rounded"
                                 >
                                     <Save className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={handleCancelEdit}
-                                    className="p-1.5 text-slate-600 hover:bg-slate-100 rounded"
+                                    className="p-1.5 text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
@@ -112,7 +112,7 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                             <>
                                 <div className="flex items-start justify-between gap-2">
                                     <p
-                                        className={`text-sm flex-1 ${note.processed ? 'line-through text-slate-400' : 'text-slate-800'}`}
+                                        className={`text-sm flex-1 ${note.processed ? 'line-through text-cove-faint' : 'text-cove-ink'}`}
                                     >
                                         {note.content}
                                     </p>
@@ -122,7 +122,7 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                                             note.categoryId === todoCategory.id && (
                                                 <button
                                                     onClick={() => convertNoteToTask(note)}
-                                                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                                                    className="p-1.5 text-cove-accent hover:bg-cove-tint-blue rounded"
                                                     title="Convert to Task"
                                                 >
                                                     <ListChecks className="w-4 h-4" />
@@ -131,7 +131,7 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                                         {!note.processed && (
                                             <button
                                                 onClick={() => markProcessed(note.id)}
-                                                className="p-1.5 text-green-600 hover:bg-green-50 rounded"
+                                                className="p-1.5 text-cove-success-deep hover:bg-cove-tint-green rounded"
                                                 title="Mark as done"
                                             >
                                                 <Check className="w-4 h-4" />
@@ -139,21 +139,21 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                                         )}
                                         <button
                                             onClick={() => handleEdit(note)}
-                                            className="p-1.5 text-slate-600 hover:bg-slate-100 rounded"
+                                            className="p-1.5 text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded"
                                             title="Edit"
                                         >
                                             <Edit2 className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => setMovingId(isMoving ? null : note.id)}
-                                            className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded"
+                                            className="p-1.5 text-cove-accent hover:bg-cove-tint-blue rounded"
                                             title="Move to category"
                                         >
                                             <MoveRight className="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => deleteNote(note.id)}
-                                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded"
+                                            className="p-1.5 text-cove-danger-deep hover:bg-cove-tint-danger rounded"
                                             title="Delete"
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -162,7 +162,7 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                                 </div>
 
                                 {/* Category badge and timestamp */}
-                                <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+                                <div className="flex items-center gap-2 mt-2 text-xs text-cove-soft">
                                     {showCategoryBadge && category && (
                                         <span
                                             className="px-2 py-0.5 rounded-full text-white"
@@ -172,7 +172,7 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
                                         </span>
                                     )}
                                     {showCategoryBadge && !category && (
-                                        <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
+                                        <span className="px-2 py-0.5 rounded-full bg-cove-track text-cove-muted">
                                             Inbox
                                         </span>
                                     )}
@@ -181,15 +181,15 @@ export const SmartNotesList: React.FC<SmartNotesListProps> = ({
 
                                 {/* Move dropdown */}
                                 {isMoving && (
-                                    <div className="mt-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
-                                        <p className="text-xs text-slate-600 mb-2">Move to:</p>
+                                    <div className="mt-2 p-2 bg-[color:var(--buddy-surface-soft)] rounded-xl border border-cove-border">
+                                        <p className="text-xs text-cove-muted mb-2">Move to:</p>
                                         <div className="flex flex-wrap gap-1">
                                             <button
                                                 onClick={() => handleMoveToCategory(note.id, null)}
                                                 className={`px-2 py-1 rounded text-xs ${
                                                     !note.categoryId
-                                                        ? 'bg-indigo-600 text-white'
-                                                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                                                        ? 'bg-cove-accent text-white'
+                                                        : 'bg-cove-track text-cove-muted hover:bg-cove-accent-pale'
                                                 }`}
                                             >
                                                 Inbox

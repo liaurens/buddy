@@ -163,7 +163,7 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
 
     if (trackers.length < 2) {
         return (
-            <div className="p-6 text-center text-slate-500">
+            <div className="p-6 text-center text-cove-soft">
                 Need at least 2 trackers for analysis.
             </div>
         );
@@ -175,9 +175,12 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
         <div className="space-y-6">
             {/* Data Quality Warnings */}
             {dataWarnings.length > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div className="bg-cove-tint-amber border border-cove-streak rounded-xl p-4">
                     {dataWarnings.map((warning, i) => (
-                        <p key={i} className="text-amber-800 text-sm flex items-center gap-2">
+                        <p
+                            key={i}
+                            className="text-cove-streak-text text-sm flex items-center gap-2"
+                        >
                             <AlertTriangle size={16} />
                             {warning}
                         </p>
@@ -186,21 +189,21 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
             )}
 
             {/* Controls */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <div className="bg-white p-4 rounded-xl shadow-cove border border-cove-border">
+                <h2 className="font-semibold text-cove-ink mb-4 flex items-center gap-2">
                     <TrendingUp size={20} />
                     Correlation Analysis
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">
+                        <label className="block text-xs font-bold text-cove-soft mb-1">
                             Input (Cause?) - X Axis
                         </label>
                         <select
                             value={xTrackerId}
                             onChange={(e) => setXTrackerId(e.target.value)}
-                            className="w-full p-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500"
+                            className="w-full p-2 rounded-xl border border-cove-border text-sm focus:ring-2 focus:ring-cove-accent"
                         >
                             <optgroup label="Trackers">
                                 {trackers.map((t) => (
@@ -219,13 +222,13 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">
+                        <label className="block text-xs font-bold text-cove-soft mb-1">
                             Output (Effect?) - Y Axis
                         </label>
                         <select
                             value={yTrackerId}
                             onChange={(e) => setYTrackerId(e.target.value)}
-                            className="w-full p-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500"
+                            className="w-full p-2 rounded-xl border border-cove-border text-sm focus:ring-2 focus:ring-cove-accent"
                         >
                             <optgroup label="Trackers">
                                 {trackers.map((t) => (
@@ -246,9 +249,9 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                 </div>
 
                 {/* Time Lag Controls */}
-                <div className="bg-slate-50 rounded-lg p-4">
+                <div className="bg-[color:var(--buddy-surface-soft)] rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        <label className="flex items-center gap-2 text-sm font-bold text-cove-muted">
                             <Clock size={16} />
                             Time Lag (days)
                         </label>
@@ -257,8 +260,8 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                                 onClick={() => setShowOptimalLag(!showOptimalLag)}
                                 className={`text-xs px-3 py-1 rounded-full transition-colors ${
                                     showOptimalLag
-                                        ? 'bg-indigo-100 text-indigo-700'
-                                        : 'bg-slate-200 text-slate-600'
+                                        ? 'bg-cove-tint-blue text-cove-ink'
+                                        : 'bg-cove-track text-cove-muted'
                                 }`}
                             >
                                 <Zap size={12} className="inline mr-1" />
@@ -275,16 +278,16 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                                 max="7"
                                 value={manualLag}
                                 onChange={(e) => setManualLag(parseInt(e.target.value))}
-                                className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                className="flex-1 h-2 bg-cove-track rounded-xl appearance-none cursor-pointer accent-cove-accent"
                             />
-                            <span className="text-sm font-medium text-slate-700 w-16 text-right">
+                            <span className="text-sm font-bold text-cove-muted w-16 text-right">
                                 {manualLag} day{manualLag !== 1 ? 's' : ''}
                             </span>
                         </div>
                     )}
 
                     {showOptimalLag && optimalLag && (
-                        <p className="text-sm text-indigo-600 mt-2">
+                        <p className="text-sm text-cove-accent mt-2">
                             Optimal lag detected:{' '}
                             <strong>
                                 {optimalLag.lag} day{optimalLag.lag !== 1 ? 's' : ''}
@@ -297,8 +300,8 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
 
             {/* Main Result Card */}
             {xVar && yVar && (
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl shadow-sm border border-indigo-100">
-                    <h2 className="text-lg font-semibold mb-4 text-slate-800">Analysis Result</h2>
+                <div className="bg-cove-tint-blue p-6 rounded-card-lg shadow-cove border-0">
+                    <h2 className="text-lg font-semibold mb-4 text-cove-ink">Analysis Result</h2>
 
                     {currentCorrelation !== null ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -310,10 +313,10 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                                 >
                                     {currentCorrelation.toFixed(3)}
                                 </p>
-                                <p className="text-sm font-medium text-slate-600">
+                                <p className="text-sm font-bold text-cove-muted">
                                     {interpretCorrelation(currentCorrelation)}
                                 </p>
-                                <p className="text-xs text-slate-400 mt-1">
+                                <p className="text-xs text-cove-faint mt-1">
                                     {xVar.name} → {yVar.name}
                                     {effectiveLag > 0 && ` (${effectiveLag}d lag)`}
                                 </p>
@@ -322,37 +325,39 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                             {/* Statistical Significance */}
                             <div className="text-center">
                                 <p
-                                    className={`text-lg font-semibold ${pValueInterpretation.significant ? 'text-emerald-600' : 'text-slate-500'}`}
+                                    className={`text-lg font-semibold ${pValueInterpretation.significant ? 'text-cove-success-deep' : 'text-cove-soft'}`}
                                 >
                                     {pValue !== null ? `p = ${pValue.toFixed(4)}` : 'N/A'}
                                 </p>
-                                <p className="text-sm text-slate-600">
+                                <p className="text-sm text-cove-muted">
                                     {pValueInterpretation.text}
                                 </p>
-                                <p className="text-xs text-slate-400 mt-1">n = {sampleSize} days</p>
+                                <p className="text-xs text-cove-faint mt-1">
+                                    n = {sampleSize} days
+                                </p>
                             </div>
 
                             {/* Confidence Interval */}
                             <div className="text-center">
                                 {confidenceInterval ? (
                                     <>
-                                        <p className="text-lg font-semibold text-slate-700">
+                                        <p className="text-lg font-semibold text-cove-muted">
                                             [{confidenceInterval.low.toFixed(2)},{' '}
                                             {confidenceInterval.high.toFixed(2)}]
                                         </p>
-                                        <p className="text-sm text-slate-600">
+                                        <p className="text-sm text-cove-muted">
                                             95% Confidence Interval
                                         </p>
                                     </>
                                 ) : (
-                                    <p className="text-sm text-slate-500">
+                                    <p className="text-sm text-cove-soft">
                                         Insufficient data for CI
                                     </p>
                                 )}
                             </div>
                         </div>
                     ) : (
-                        <p className="text-slate-500 text-center">
+                        <p className="text-cove-soft text-center">
                             Not enough data to calculate correlation.
                         </p>
                     )}
@@ -361,11 +366,11 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
 
             {/* TLCC Chart - Correlation at Different Lags */}
             {tlccResults.length > 0 && (
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h2 className="text-xl font-semibold mb-4 text-slate-800">
+                <div className="bg-white p-6 rounded-xl shadow-cove border border-cove-border">
+                    <h2 className="text-xl font-semibold mb-4 text-cove-ink">
                         Time-Lagged Correlation
                     </h2>
-                    <p className="text-sm text-slate-500 mb-4">
+                    <p className="text-sm text-cove-soft mb-4">
                         How does the correlation change if {yVar?.name.toLowerCase()} is measured
                         1-7 days after {xVar?.name.toLowerCase()}?
                     </p>
@@ -412,8 +417,8 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
 
             {/* Trends Over Time */}
             {xVar && yVar && data.length > 0 && (
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h2 className="text-xl font-semibold mb-4 text-slate-800">Trends Over Time</h2>
+                <div className="bg-white p-6 rounded-xl shadow-cove border border-cove-border">
+                    <h2 className="text-xl font-semibold mb-4 text-cove-ink">Trends Over Time</h2>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data}>
@@ -443,8 +448,8 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
 
             {/* Scatter Plot */}
             {xVar && yVar && data.length > 0 && (
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h2 className="text-xl font-semibold mb-4 text-slate-800">
+                <div className="bg-white p-6 rounded-xl shadow-cove border border-cove-border">
+                    <h2 className="text-xl font-semibold mb-4 text-cove-ink">
                         Correlation Scatter
                     </h2>
                     <div className="h-[300px] w-full">

@@ -79,21 +79,21 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
         <>
             <button
                 onClick={handleReset}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                className="px-4 py-2 text-sm font-bold text-cove-muted hover:text-cove-ink transition-colors"
                 disabled={saving}
             >
                 Reset to Defaults
             </button>
             <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                className="px-4 py-2 text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded-xl transition-colors"
                 disabled={saving}
             >
                 Cancel
             </button>
             <button
                 onClick={handleSave}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-bold text-white bg-cove-accent hover:bg-[#3a8dc7] rounded-xl transition-colors disabled:opacity-50"
                 disabled={saving || loading}
             >
                 {saving ? 'Saving...' : 'Save Changes'}
@@ -105,7 +105,7 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
         return (
             <Modal isOpen={isOpen} onClose={onClose} title="Protocol Settings">
                 <div className="flex items-center justify-center py-8">
-                    <div className="text-slate-500">Loading settings...</div>
+                    <div className="text-cove-soft">Loading settings...</div>
                 </div>
             </Modal>
         );
@@ -124,28 +124,28 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
             <div className="space-y-6">
                 {/* Reminder Settings */}
                 <div>
-                    <h3 className="text-lg font-medium text-slate-900 mb-4">Reminders</h3>
+                    <h3 className="text-lg font-bold text-cove-ink mb-4">Reminders</h3>
                     <div className="space-y-4">
                         {/* Default Dose Time */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Default Dose Time
                             </label>
                             <input
                                 type="time"
                                 value={settings.defaultDoseTime}
                                 onChange={(e) => updateSetting('defaultDoseTime', e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="app-input"
                             />
                         </div>
 
                         {/* Enable Dose Reminders */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <label className="text-sm font-medium text-slate-700">
+                                <label className="text-sm font-bold text-cove-muted">
                                     Enable Dose Reminders
                                 </label>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-cove-soft">
                                     Send notifications for scheduled doses
                                 </p>
                             </div>
@@ -155,13 +155,13 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
                                 onChange={(e) =>
                                     updateSetting('enableDoseReminders', e.target.checked)
                                 }
-                                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                className="h-4 w-4 text-cove-accent rounded border-cove-border focus:ring-cove-accent"
                             />
                         </div>
 
                         {/* Reminder Advance Minutes */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Reminder Advance (minutes)
                             </label>
                             <input
@@ -175,9 +175,9 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
                                 }
                                 min="0"
                                 max="180"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="app-input"
                             />
-                            <p className="text-xs text-slate-500 mt-1">
+                            <p className="text-xs text-cove-soft mt-1">
                                 Minutes before dose to send reminder
                             </p>
                         </div>
@@ -185,10 +185,10 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
                         {/* Reminder Sound */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <label className="text-sm font-medium text-slate-700">
+                                <label className="text-sm font-bold text-cove-muted">
                                     Reminder Sound
                                 </label>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-cove-soft">
                                     Play sound when reminder triggers
                                 </p>
                             </div>
@@ -196,7 +196,7 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
                                 type="checkbox"
                                 checked={settings.reminderSound}
                                 onChange={(e) => updateSetting('reminderSound', e.target.checked)}
-                                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                className="h-4 w-4 text-cove-accent rounded border-cove-border focus:ring-cove-accent"
                             />
                         </div>
                     </div>
@@ -204,11 +204,11 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
 
                 {/* Display Settings */}
                 <div>
-                    <h3 className="text-lg font-medium text-slate-900 mb-4">Display</h3>
+                    <h3 className="text-lg font-bold text-cove-ink mb-4">Display</h3>
                     <div className="space-y-4">
                         {/* Show Upcoming Count */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Show Upcoming Count
                             </label>
                             <input
@@ -222,9 +222,9 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
                                 }
                                 min="1"
                                 max="30"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="app-input"
                             />
-                            <p className="text-xs text-slate-500 mt-1">
+                            <p className="text-xs text-cove-soft mt-1">
                                 Number of upcoming doses to display
                             </p>
                         </div>
@@ -232,10 +232,10 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
                         {/* Skip Weekends */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <label className="text-sm font-medium text-slate-700">
+                                <label className="text-sm font-bold text-cove-muted">
                                     Skip Weekends
                                 </label>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-cove-soft">
                                     Don't show reminders on weekends
                                 </p>
                             </div>
@@ -243,7 +243,7 @@ const ProtocolSettingsModal: React.FC<ProtocolSettingsModalProps> = ({ isOpen, o
                                 type="checkbox"
                                 checked={settings.skipWeekends}
                                 onChange={(e) => updateSetting('skipWeekends', e.target.checked)}
-                                className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                className="h-4 w-4 text-cove-accent rounded border-cove-border focus:ring-cove-accent"
                             />
                         </div>
                     </div>

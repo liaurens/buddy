@@ -55,58 +55,58 @@ export const ClassForm: React.FC<ClassFormProps> = ({ initial, onClose, onSubmit
                 className="w-full max-w-md bg-white rounded-2xl p-5 space-y-4 shadow-xl"
             >
                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-slate-900">
+                    <h2 className="text-lg font-semibold text-cove-ink">
                         {initial ? 'Edit class' : 'New class'}
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-slate-400 hover:text-slate-600"
+                        className="text-cove-faint hover:text-cove-muted"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 <label className="block">
-                    <span className="text-xs font-medium text-slate-600">Name</span>
+                    <span className="text-xs font-bold text-cove-muted">Name</span>
                     <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
                         autoFocus
-                        className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                        className="app-input mt-1"
                     />
                 </label>
 
                 <div className="grid grid-cols-2 gap-3">
                     <label className="block">
-                        <span className="text-xs font-medium text-slate-600">Instructor</span>
+                        <span className="text-xs font-bold text-cove-muted">Instructor</span>
                         <input
                             value={instructor}
                             onChange={(e) => setInstructor(e.target.value)}
-                            className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                            className="app-input mt-1"
                         />
                     </label>
                     <label className="block">
-                        <span className="text-xs font-medium text-slate-600">Term</span>
+                        <span className="text-xs font-bold text-cove-muted">Term</span>
                         <input
                             value={term}
                             onChange={(e) => setTerm(e.target.value)}
                             placeholder="Spring 2026"
-                            className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                            className="app-input mt-1"
                         />
                     </label>
                 </div>
 
                 <div>
-                    <span className="text-xs font-medium text-slate-600">Color</span>
+                    <span className="text-xs font-bold text-cove-muted">Color</span>
                     <div className="mt-1 flex gap-2 flex-wrap">
                         {COLOR_OPTIONS.map((c) => (
                             <button
                                 key={c}
                                 type="button"
                                 onClick={() => setColor(c)}
-                                className={`w-8 h-8 rounded-full border-2 ${color === c ? 'border-slate-900' : 'border-transparent'}`}
+                                className={`w-8 h-8 rounded-full border-2 ${color === c ? 'border-cove-border' : 'border-transparent'}`}
                                 style={{ backgroundColor: c }}
                             />
                         ))}
@@ -117,14 +117,14 @@ export const ClassForm: React.FC<ClassFormProps> = ({ initial, onClose, onSubmit
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
+                        className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)]"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={busy || !name.trim()}
-                        className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                        className="flex-1 px-4 py-2 rounded-xl text-sm font-bold bg-cove-accent text-white hover:bg-[#3a8dc7] disabled:opacity-50"
                     >
                         {initial ? 'Save' : 'Create'}
                     </button>

@@ -40,21 +40,21 @@ interface CategoryFormProps {
 }
 
 const CategoryForm: React.FC<CategoryFormProps> = ({ formData, setFormData, onSave, onCancel }) => (
-    <div className="bg-slate-50 rounded-lg p-4 space-y-3 border border-slate-200">
+    <div className="bg-[color:var(--buddy-surface-soft)] rounded-xl p-4 space-y-3 border border-cove-border">
         <div className="grid grid-cols-2 gap-3">
             <div>
-                <label className="block text-xs text-slate-600 mb-1">Name</label>
+                <label className="block text-xs text-cove-muted mb-1">Name</label>
                 <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
                     placeholder="Groceries"
-                    className="w-full bg-white border border-slate-200 text-slate-800 rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="app-input"
                     autoFocus
                 />
             </div>
             <div>
-                <label className="block text-xs text-slate-600 mb-1">Flag (trigger word)</label>
+                <label className="block text-xs text-cove-muted mb-1">Flag (trigger word)</label>
                 <input
                     type="text"
                     value={formData.flag}
@@ -62,13 +62,13 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ formData, setFormData, onSa
                         setFormData((f) => ({ ...f, flag: e.target.value.toLowerCase() }))
                     }
                     placeholder="boodschap"
-                    className="w-full bg-white border border-slate-200 text-slate-800 rounded px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="app-input"
                 />
             </div>
         </div>
 
         <div>
-            <label className="block text-xs text-slate-600 mb-1">Emoji</label>
+            <label className="block text-xs text-cove-muted mb-1">Emoji</label>
             <div className="flex flex-wrap gap-1">
                 {PRESET_EMOJIS.map((emoji) => (
                     <button
@@ -77,8 +77,8 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ formData, setFormData, onSa
                         onClick={() => setFormData((f) => ({ ...f, emoji }))}
                         className={`w-8 h-8 rounded flex items-center justify-center text-lg ${
                             formData.emoji === emoji
-                                ? 'bg-indigo-600 ring-2 ring-indigo-400'
-                                : 'bg-white border border-slate-200 hover:bg-slate-100'
+                                ? 'bg-cove-accent ring-2 ring-cove-accent'
+                                : 'bg-white border border-cove-border hover:bg-[color:var(--buddy-surface-soft)]'
                         }`}
                     >
                         {emoji}
@@ -88,7 +88,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ formData, setFormData, onSa
         </div>
 
         <div>
-            <label className="block text-xs text-slate-600 mb-1">Color</label>
+            <label className="block text-xs text-cove-muted mb-1">Color</label>
             <div className="flex flex-wrap gap-1">
                 {PRESET_COLORS.map((color) => (
                     <button
@@ -96,7 +96,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ formData, setFormData, onSa
                         type="button"
                         onClick={() => setFormData((f) => ({ ...f, color }))}
                         className={`w-8 h-8 rounded ${
-                            formData.color === color ? 'ring-2 ring-slate-800' : ''
+                            formData.color === color ? 'ring-2 ring-cove-border' : ''
                         }`}
                         style={{ backgroundColor: color }}
                     />
@@ -107,14 +107,14 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ formData, setFormData, onSa
         <div className="flex justify-end gap-2 pt-2">
             <button
                 onClick={onCancel}
-                className="px-3 py-1.5 text-slate-600 hover:text-slate-800 text-sm"
+                className="px-3 py-1.5 text-cove-muted hover:text-cove-ink text-sm"
             >
                 Cancel
             </button>
             <button
                 onClick={onSave}
                 disabled={!formData.name.trim() || !formData.flag.trim()}
-                className="px-3 py-1.5 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:opacity-50"
+                className="px-3 py-1.5 bg-cove-accent text-white rounded text-sm hover:bg-[#3a8dc7] disabled:opacity-50"
             >
                 Save
             </button>
@@ -182,14 +182,14 @@ export const CategoryManager: React.FC = () => {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-cove-ink flex items-center gap-2">
                     <Tag className="w-5 h-5" />
                     Categories
                 </h3>
                 {!isAdding && !editingId && (
                     <button
                         onClick={() => setIsAdding(true)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+                        className="flex items-center gap-1 px-3 py-1.5 bg-cove-accent text-white rounded-xl text-sm hover:bg-[#3a8dc7]"
                     >
                         <Plus className="w-4 h-4" />
                         Add
@@ -217,19 +217,17 @@ export const CategoryManager: React.FC = () => {
                                 onCancel={resetForm}
                             />
                         ) : (
-                            <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-slate-200 shadow-sm">
+                            <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-cove-border shadow-cove">
                                 <div className="flex items-center gap-3">
                                     <span
-                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                                        className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
                                         style={{ backgroundColor: category.color || '#6366f1' }}
                                     >
                                         {category.emoji}
                                     </span>
                                     <div>
-                                        <p className="text-slate-800 font-medium">
-                                            {category.name}
-                                        </p>
-                                        <p className="text-xs text-slate-500">
+                                        <p className="text-cove-ink font-bold">{category.name}</p>
+                                        <p className="text-xs text-cove-soft">
                                             -{category.flag} | {getNotesCount(category.id)} notes
                                         </p>
                                     </div>
@@ -237,13 +235,13 @@ export const CategoryManager: React.FC = () => {
                                 <div className="flex items-center gap-1">
                                     <button
                                         onClick={() => handleEdit(category)}
-                                        className="p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded"
+                                        className="p-2 text-cove-muted hover:text-cove-ink hover:bg-[color:var(--buddy-surface-soft)] rounded"
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => deleteCategory(category.id)}
-                                        className="p-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded"
+                                        className="p-2 text-cove-danger-deep hover:text-cove-danger-deep hover:bg-cove-tint-danger rounded"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
@@ -255,7 +253,7 @@ export const CategoryManager: React.FC = () => {
             </div>
 
             {categories.length === 0 && !isAdding && (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-cove-soft">
                     <Tag className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>No categories yet</p>
                     <p className="text-sm">Add categories to auto-sort your notes</p>

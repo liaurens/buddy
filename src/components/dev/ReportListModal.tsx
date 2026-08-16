@@ -90,11 +90,11 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
     const getIcon = (type: string) => {
         switch (type) {
             case 'bug':
-                return <Bug size={16} className="text-red-500" />;
+                return <Bug size={16} className="text-cove-danger" />;
             case 'feature':
-                return <MessageSquare size={16} className="text-blue-500" />;
+                return <MessageSquare size={16} className="text-cove-accent" />;
             case 'note':
-                return <StickyNote size={16} className="text-amber-500" />;
+                return <StickyNote size={16} className="text-cove-streak-deep" />;
             default:
                 return null;
         }
@@ -183,15 +183,15 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
     return (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-4 dev-portal-ui">
             <div className="w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50 flex-shrink-0">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-cove-border bg-[color:var(--buddy-surface-soft)] flex-shrink-0">
                     <div className="flex items-center gap-4">
-                        <h2 className="text-xl font-semibold text-gray-800">
+                        <h2 className="text-xl font-semibold text-cove-ink">
                             {exportedMarkdown ? 'Exported Report Text' : 'Site Feedback & Reports'}
                         </h2>
                         {!exportedMarkdown && selectedIds.size > 0 && (
                             <button
                                 onClick={generateMarkdown}
-                                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                                className="flex items-center gap-2 bg-cove-accent hover:bg-[#3a8dc7] text-white px-3 py-1.5 rounded-xl text-sm font-bold transition-colors shadow-cove"
                             >
                                 <Download size={16} />
                                 Generate MD for {selectedIds.size}{' '}
@@ -202,7 +202,7 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                             <button
                                 onClick={handleDeleteSelected}
                                 disabled={clearing}
-                                className="flex items-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 border border-cove-danger text-cove-danger-deep hover:bg-cove-tint-danger px-3 py-1.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
                             >
                                 <Trash2 size={16} />
                                 Delete selected
@@ -213,7 +213,7 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                                 <button
                                     onClick={() => handleDeleteOlderThan(7)}
                                     disabled={clearing}
-                                    className="flex items-center gap-2 border border-gray-300 text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                                    className="flex items-center gap-2 border border-cove-border text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] px-3 py-1.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
                                     title="Delete reports older than 7 days"
                                 >
                                     <Trash2 size={16} />
@@ -222,7 +222,7 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                                 <button
                                     onClick={() => handleDeleteOlderThan(30)}
                                     disabled={clearing}
-                                    className="flex items-center gap-2 border border-gray-300 text-gray-600 hover:bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                                    className="flex items-center gap-2 border border-cove-border text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] px-3 py-1.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
                                     title="Delete reports older than 30 days"
                                 >
                                     <Trash2 size={16} />
@@ -234,7 +234,7 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                             <button
                                 onClick={handleClearAll}
                                 disabled={clearing}
-                                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50"
+                                className="flex items-center gap-2 bg-cove-danger hover:bg-cove-danger-deep text-white px-3 py-1.5 rounded-xl text-sm font-bold transition-colors shadow-cove disabled:opacity-50"
                             >
                                 <Eraser size={16} />
                                 {clearing ? 'Clearing…' : 'Clear all'}
@@ -243,28 +243,28 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-200 transition-colors"
+                        className="p-1 text-cove-faint hover:text-cove-muted rounded-full hover:bg-cove-track transition-colors"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {exportedMarkdown ? (
-                    <div className="flex-1 flex flex-col min-h-0 bg-gray-50 p-6 overflow-hidden">
+                    <div className="flex-1 flex flex-col min-h-0 bg-[color:var(--buddy-surface-soft)] p-6 overflow-hidden">
                         <div className="flex items-center justify-between mb-4">
-                            <span className="text-sm text-gray-500 border border-gray-300 bg-gray-100 px-3 py-1 rounded inline-block">
+                            <span className="text-sm text-cove-soft border border-cove-border bg-[color:var(--buddy-surface-soft)] px-3 py-1 rounded inline-block">
                                 Markdown Viewer
                             </span>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setExportedMarkdown(null)}
-                                    className="px-4 py-2 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 font-medium text-sm text-gray-700 flex items-center gap-2 transition-colors"
+                                    className="px-4 py-2 bg-white border border-cove-border rounded shadow-cove hover:bg-[color:var(--buddy-surface-soft)] font-bold text-sm text-cove-muted flex items-center gap-2 transition-colors"
                                 >
                                     Back to List
                                 </button>
                                 <button
                                     onClick={copyToClipboard}
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded shadow-sm hover:bg-indigo-700 font-medium text-sm flex items-center gap-2 transition-colors"
+                                    className="px-4 py-2 bg-cove-accent text-white rounded shadow-cove hover:bg-[#3a8dc7] font-bold text-sm flex items-center gap-2 transition-colors"
                                 >
                                     <Copy size={16} />
                                     Copy to Clipboard
@@ -273,26 +273,26 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                         </div>
                         <textarea
                             readOnly
-                            className="flex-1 w-full p-4 font-mono text-sm border border-gray-200 rounded-lg shadow-inner focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none bg-white whitespace-pre-wrap break-words"
+                            className="flex-1 w-full p-4 font-mono text-sm border border-cove-border rounded-xl shadow-inner focus:ring-2 focus:ring-cove-accent focus:outline-none resize-none bg-white whitespace-pre-wrap break-words"
                             value={exportedMarkdown}
                         />
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-auto p-0 border-t border-gray-200 bg-white">
+                    <div className="flex-1 overflow-auto p-0 border-t border-cove-border bg-white">
                         {reports.length === 0 ? (
-                            <div className="p-12 text-center text-gray-500">
+                            <div className="p-12 text-center text-cove-soft">
                                 <MessageSquare className="mx-auto mb-3 opacity-20" size={48} />
                                 <p>No feedback reported yet.</p>
                             </div>
                         ) : (
                             <div className="min-w-full inline-block align-middle">
-                                <table className="min-w-full divide-y divide-gray-200 text-sm text-left text-gray-600 custom-table-layout">
-                                    <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                                <table className="min-w-full divide-y divide-cove-border text-sm text-left text-cove-muted custom-table-layout">
+                                    <thead className="bg-[color:var(--buddy-surface-soft)] sticky top-0 z-10 shadow-cove">
                                         <tr>
                                             <th scope="col" className="px-6 py-3 w-12 text-center">
                                                 <input
                                                     type="checkbox"
-                                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                    className="rounded border-cove-border text-cove-accent focus:ring-cove-accent cursor-pointer"
                                                     checked={
                                                         reports.length > 0 &&
                                                         selectedIds.size === reports.length
@@ -303,42 +303,42 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider"
+                                                className="px-6 py-3 font-bold text-cove-soft uppercase tracking-wider"
                                             >
                                                 Type
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider w-1/3"
+                                                className="px-6 py-3 font-bold text-cove-soft uppercase tracking-wider w-1/3"
                                             >
                                                 Description
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider"
+                                                className="px-6 py-3 font-bold text-cove-soft uppercase tracking-wider"
                                             >
                                                 Date
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider"
+                                                className="px-6 py-3 font-bold text-cove-soft uppercase tracking-wider"
                                             >
                                                 Element Selector
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider text-right"
+                                                className="px-6 py-3 font-bold text-cove-soft uppercase tracking-wider text-right"
                                             >
                                                 Actions
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white divide-y divide-cove-border">
                                         {reports.map((report) => (
                                             <tr
                                                 key={report.id}
                                                 onClick={() => handleSelectOne(report.id!)}
-                                                className="hover:bg-indigo-50/50 transition-colors cursor-pointer"
+                                                className="hover:bg-cove-tint-blue/50 transition-colors cursor-pointer"
                                             >
                                                 <td
                                                     className="px-6 py-4 whitespace-nowrap w-12 text-center"
@@ -346,12 +346,12 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                                                 >
                                                     <input
                                                         type="checkbox"
-                                                        className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                        className="rounded border-cove-border text-cove-accent focus:ring-cove-accent cursor-pointer"
                                                         checked={selectedIds.has(report.id!)}
                                                         onChange={() => handleSelectOne(report.id!)}
                                                     />
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap flex items-center gap-2 font-medium capitalize">
+                                                <td className="px-6 py-4 whitespace-nowrap flex items-center gap-2 font-bold capitalize">
                                                     {getIcon(report.type)}
                                                     {report.type === 'feature'
                                                         ? 'Change Req'
@@ -365,19 +365,19 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                                                         {report.description}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-400">
+                                                <td className="px-6 py-4 whitespace-nowrap text-xs text-cove-faint">
                                                     {new Date(report.created_at!).toLocaleString()}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {report.selector ? (
                                                         <div
-                                                            className="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-1 rounded max-w-[150px] truncate"
+                                                            className="text-xs font-mono bg-[color:var(--buddy-surface-soft)] text-cove-muted px-2 py-1 rounded max-w-[150px] truncate"
                                                             title={report.selector}
                                                         >
                                                             {report.selector}
                                                         </div>
                                                     ) : (
-                                                        <span className="text-gray-300 italic text-xs">
+                                                        <span className="text-cove-faint italic text-xs">
                                                             No element attached
                                                         </span>
                                                     )}
@@ -388,7 +388,7 @@ export function ReportListModal({ reports, onClose, onRefresh }: ReportListModal
                                                 >
                                                     <button
                                                         onClick={(e) => handleDelete(report.id!, e)}
-                                                        className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50"
+                                                        className="text-cove-faint hover:text-cove-danger transition-colors p-2 rounded-full hover:bg-cove-tint-danger"
                                                         title="Delete Report"
                                                     >
                                                         <Trash2 size={16} />

@@ -132,29 +132,31 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
         }
     };
 
+    // Cove tints instead of the default palette: each toast reads as a coloured
+    // panel in the same family as the rest of the app, never as a browser alert.
     const getStyles = () => {
         switch (toast.type) {
             case 'success':
-                return 'bg-green-50 border-green-200 text-green-800';
+                return 'bg-cove-tint-green text-cove-success-deep';
             case 'error':
-                return 'bg-red-50 border-red-200 text-red-800';
+                return 'bg-cove-tint-danger text-cove-danger-deep';
             case 'warning':
-                return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+                return 'bg-cove-tint-amber text-cove-streak-text';
             case 'info':
-                return 'bg-blue-50 border-blue-200 text-blue-800';
+                return 'bg-cove-tint-blue text-cove-ink';
         }
     };
 
     const getIconColor = () => {
         switch (toast.type) {
             case 'success':
-                return 'text-green-600';
+                return 'text-cove-success';
             case 'error':
-                return 'text-red-600';
+                return 'text-cove-danger';
             case 'warning':
-                return 'text-yellow-600';
+                return 'text-cove-streak-deep';
             case 'info':
-                return 'text-blue-600';
+                return 'text-cove-accent';
         }
     };
 
@@ -164,8 +166,8 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
             aria-live="polite"
             className={`
                 pointer-events-auto
-                flex items-start gap-3 p-4 rounded-lg border shadow-lg
-                w-full max-w-[480px] sm:w-auto sm:min-w-[320px]
+                flex w-full max-w-[480px] items-start gap-3 rounded-card-lg
+                border-0 p-4 shadow-[0_10px_30px_rgba(40,90,130,0.18)] sm:w-auto sm:min-w-[320px]
                 ${getStyles()}
                 ${
                     isExiting
@@ -175,10 +177,10 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
             `}
         >
             <div className={getIconColor()}>{getIcon()}</div>
-            <p className="flex-1 text-sm font-medium">{toast.message}</p>
+            <p className="flex-1 text-[13.5px] font-extrabold leading-snug">{toast.message}</p>
             <button
                 onClick={handleClose}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
+                className="text-current opacity-50 transition-opacity hover:opacity-100"
                 aria-label="Close notification"
             >
                 <X size={16} />

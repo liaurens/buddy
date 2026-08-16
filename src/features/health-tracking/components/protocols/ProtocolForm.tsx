@@ -49,33 +49,31 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-                <div className="flex items-center justify-between p-4 border-b border-slate-100">
-                    <h2 className="font-semibold text-slate-800">
+                <div className="flex items-center justify-between p-4 border-b border-cove-border">
+                    <h2 className="font-semibold text-cove-ink">
                         {editingProtocol ? 'Edit Protocol' : 'New Protocol'}
                     </h2>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+                    <button onClick={onClose} className="text-cove-faint hover:text-cove-muted">
                         <X size={20} />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-4 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Name
-                        </label>
+                        <label className="block text-sm font-bold text-cove-muted mb-1">Name</label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="e.g. Magnesium Glycinate"
-                            className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            className="w-full p-2 border border-cove-border rounded-xl focus:ring-2 focus:ring-cove-accent"
                             required
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-bold text-cove-muted mb-1">
                                 Category
                             </label>
                             <select
@@ -83,7 +81,7 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
                                 onChange={(e) =>
                                     setCategory(e.target.value as Protocol['category'])
                                 }
-                                className="w-full p-2 border border-slate-200 rounded-lg"
+                                className="w-full p-2 border border-cove-border rounded-xl"
                             >
                                 <option value="supplement">Supplement</option>
                                 <option value="pharmaceutical">Pharmaceutical</option>
@@ -93,13 +91,13 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-bold text-cove-muted mb-1">
                                 Frequency
                             </label>
                             <select
                                 value={frequency}
                                 onChange={(e) => setFrequency(e.target.value)}
-                                className="w-full p-2 border border-slate-200 rounded-lg"
+                                className="w-full p-2 border border-cove-border rounded-xl"
                             >
                                 <option value="daily">Daily</option>
                                 <option value="BID">Twice Daily</option>
@@ -113,7 +111,7 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
                     {!isPractice && (
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Dose Amount
                                 </label>
                                 <input
@@ -122,11 +120,11 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
                                     value={doseAmount}
                                     onChange={(e) => setDoseAmount(e.target.value)}
                                     placeholder="200"
-                                    className="w-full p-2 border border-slate-200 rounded-lg"
+                                    className="w-full p-2 border border-cove-border rounded-xl"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Unit
                                 </label>
                                 <input
@@ -134,14 +132,14 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
                                     value={doseUnit}
                                     onChange={(e) => setDoseUnit(e.target.value)}
                                     placeholder="mg"
-                                    className="w-full p-2 border border-slate-200 rounded-lg"
+                                    className="w-full p-2 border border-cove-border rounded-xl"
                                 />
                             </div>
                         </div>
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-bold text-cove-muted mb-1">
                             Effect Timing
                         </label>
                         <select
@@ -151,7 +149,7 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
                                     (e.target.value as Protocol['effectTiming']) || undefined,
                                 )
                             }
-                            className="w-full p-2 border border-slate-200 rounded-lg"
+                            className="w-full p-2 border border-cove-border rounded-xl"
                         >
                             <option value="">Not specified</option>
                             <option value="immediate">Immediate (e.g., Adderall, caffeine)</option>
@@ -167,14 +165,14 @@ const ProtocolForm: React.FC<ProtocolFormProps> = ({ onClose, editingProtocol })
                             type="checkbox"
                             checked={active}
                             onChange={(e) => setActive(e.target.checked)}
-                            className="w-4 h-4 text-indigo-600 rounded"
+                            className="w-4 h-4 text-cove-accent rounded"
                         />
-                        <label className="text-sm text-slate-700">Active (Currently taking)</label>
+                        <label className="text-sm text-cove-muted">Active (Currently taking)</label>
                     </div>
 
                     <button
                         type="submit"
-                        className="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium hover:bg-indigo-700 flex items-center justify-center gap-2"
+                        className="w-full bg-cove-accent text-white py-2.5 rounded-xl font-bold hover:bg-[#3a8dc7] flex items-center justify-center gap-2"
                     >
                         <Save size={18} />
                         Save Protocol

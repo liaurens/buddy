@@ -50,21 +50,21 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({
 
     return (
         <form onSubmit={handleSubmit} className="relative">
-            <div className="flex items-center gap-2 bg-white rounded-xl p-2 border border-slate-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all shadow-sm">
-                <Zap className="w-5 h-5 text-indigo-600 ml-2 flex-shrink-0" />
+            <div className="flex items-center gap-2 bg-white rounded-xl p-2 border border-cove-border focus-within:border-cove-accent focus-within:ring-2 focus-within:ring-cove-accent-pale transition-all shadow-cove">
+                <Zap className="w-5 h-5 text-cove-accent ml-2 flex-shrink-0" />
                 <input
                     ref={inputRef}
                     type="text"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="Quick note... (use -flag to sort)"
-                    className="flex-1 bg-transparent text-slate-800 placeholder-slate-400 outline-none text-sm"
+                    className="flex-1 bg-transparent text-cove-ink placeholder:text-cove-faint outline-none text-sm"
                     disabled={isSubmitting}
                 />
                 <button
                     type="submit"
                     disabled={!content.trim() || isSubmitting}
-                    className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="p-2 bg-cove-accent text-white rounded-xl hover:bg-[#3a8dc7] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                     <Send className="w-4 h-4" />
                 </button>
@@ -72,16 +72,16 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({
 
             {/* Flag detection indicator */}
             {isTaskFlag && (
-                <div className="absolute -bottom-6 left-0 text-xs text-blue-600 flex items-center gap-1">
+                <div className="absolute -bottom-6 left-0 text-xs text-cove-accent flex items-center gap-1">
                     <span>Will instantly create a</span>
-                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+                    <span className="px-2 py-0.5 rounded-full bg-cove-tint-blue text-cove-ink font-bold">
                         Task
                     </span>
                 </div>
             )}
 
             {!isTaskFlag && matchingCategory && (
-                <div className="absolute -bottom-6 left-0 text-xs text-slate-600 flex items-center gap-1">
+                <div className="absolute -bottom-6 left-0 text-xs text-cove-muted flex items-center gap-1">
                     <span>Will sort to:</span>
                     <span
                         className="px-2 py-0.5 rounded-full text-white text-xs"
@@ -93,7 +93,7 @@ export const QuickNoteInput: React.FC<QuickNoteInputProps> = ({
             )}
 
             {detectedFlag && !isTaskFlag && !matchingCategory && (
-                <div className="absolute -bottom-6 left-0 text-xs text-amber-600">
+                <div className="absolute -bottom-6 left-0 text-xs text-cove-streak-deep">
                     Unknown flag "-{detectedFlag}" - will go to Inbox
                 </div>
             )}

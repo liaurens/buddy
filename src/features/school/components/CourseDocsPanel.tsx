@@ -218,11 +218,11 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
     };
 
     return (
-        <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white p-4">
+        <div className="space-y-4 rounded-2xl border border-cove-border/80 bg-white p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-slate-950">Course documents</h3>
-                    <p className="mt-1 text-sm leading-5 text-slate-500">
+                    <h3 className="text-sm font-semibold text-cove-ink">Course documents</h3>
+                    <p className="mt-1 text-sm leading-5 text-cove-soft">
                         Upload PDFs and import deadlines, checkpoints, and sessions.
                     </p>
                 </div>
@@ -232,7 +232,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                             type="button"
                             onClick={removeAllDocuments}
                             disabled={deletingAll}
-                            className="flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
+                            className="flex min-h-10 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-cove-danger-deep transition-colors hover:bg-cove-tint-danger disabled:opacity-50"
                             title="Delete all uploaded PDFs"
                         >
                             {deletingAll ? (
@@ -246,7 +246,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                     <button
                         type="button"
                         onClick={() => setShowUpload(true)}
-                        className="flex min-h-10 items-center gap-2 rounded-xl bg-indigo-700 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-800"
+                        className="flex min-h-10 items-center gap-2 rounded-xl bg-cove-accent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#3a8dc7]"
                     >
                         <Upload size={15} /> Upload
                     </button>
@@ -254,18 +254,18 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
             </div>
 
             {latestSummary && (
-                <section className="space-y-2 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
+                <section className="space-y-2 rounded-xl border border-cove-accent-pale bg-cove-tint-blue/60 p-3">
                     <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0">
-                            <Sparkles size={16} className="flex-shrink-0 text-indigo-700" />
-                            <p className="text-sm font-semibold text-slate-900">General summary</p>
+                            <Sparkles size={16} className="flex-shrink-0 text-cove-ink" />
+                            <p className="text-sm font-semibold text-cove-ink">General summary</p>
                         </div>
-                        <div className="flex flex-shrink-0 items-center gap-2 text-xs font-medium text-slate-600">
+                        <div className="flex flex-shrink-0 items-center gap-2 text-xs font-bold text-cove-muted">
                             <span>{extractedAssignmentCount} assignments</span>
                             <span>{extractedSessionCount} sessions</span>
                         </div>
                     </div>
-                    <p className="text-sm leading-6 text-slate-700">{latestSummary}</p>
+                    <p className="text-sm leading-6 text-cove-muted">{latestSummary}</p>
                 </section>
             )}
 
@@ -274,19 +274,19 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                     <label className="relative block">
                         <Search
                             size={15}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-cove-faint"
                         />
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder="Search documents"
-                            className="min-h-11 w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                            className="min-h-11 w-full rounded-xl border border-cove-border py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
                         />
                     </label>
                     <select
                         value={folderFilter}
                         onChange={(e) => setFolderFilter(e.target.value)}
-                        className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                        className="min-h-11 rounded-xl border border-cove-border bg-white px-3 py-2 text-sm text-cove-muted"
                     >
                         <option value="all">All folders</option>
                         {folders.map((folder) => (
@@ -298,7 +298,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                     <select
                         value={kindFilter}
                         onChange={(e) => setKindFilter(e.target.value)}
-                        className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                        className="min-h-11 rounded-xl border border-cove-border bg-white px-3 py-2 text-sm text-cove-muted"
                     >
                         <option value="all">All types</option>
                         {Object.entries(KIND_LABELS).map(([value, label]) => (
@@ -311,15 +311,15 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
             )}
 
             {isLoading ? (
-                <div className="flex items-center gap-2 text-sm text-slate-500">
+                <div className="flex items-center gap-2 text-sm text-cove-soft">
                     <Loader2 size={16} className="animate-spin" /> Loading documents
                 </div>
             ) : documents.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-3 py-4 text-sm text-slate-500">
+                <p className="rounded-xl border border-dashed border-cove-border bg-[color:var(--buddy-surface-soft)]/70 px-3 py-4 text-sm text-cove-soft">
                     No course PDFs uploaded yet.
                 </p>
             ) : filteredDocuments.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-3 py-4 text-sm text-slate-500">
+                <p className="rounded-xl border border-dashed border-cove-border bg-[color:var(--buddy-surface-soft)]/70 px-3 py-4 text-sm text-cove-soft">
                     No documents match those filters.
                 </p>
             ) : (
@@ -330,7 +330,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                         return (
                             <li
                                 key={document.id}
-                                className="rounded-xl border border-slate-200/80 px-3 py-3"
+                                className="rounded-xl border border-cove-border/80 px-3 py-3"
                             >
                                 {editing ? (
                                     <div className="space-y-2">
@@ -342,7 +342,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                                     name: e.target.value,
                                                 }))
                                             }
-                                            className="min-h-10 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium"
+                                            className="min-h-10 w-full rounded-xl border border-cove-border px-3 py-2 text-sm font-bold"
                                         />
                                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                                             <select
@@ -353,7 +353,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                                         kind: e.target.value,
                                                     }))
                                                 }
-                                                className="min-h-10 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                                className="min-h-10 rounded-xl border border-cove-border bg-white px-3 py-2 text-sm"
                                             >
                                                 {Object.entries(KIND_LABELS).map(
                                                     ([value, label]) => (
@@ -372,7 +372,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                                     }))
                                                 }
                                                 placeholder="Folder"
-                                                className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                                                className="min-h-10 rounded-xl border border-cove-border px-3 py-2 text-sm"
                                             />
                                             <input
                                                 value={editDraft.tags}
@@ -383,7 +383,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                                     }))
                                                 }
                                                 placeholder="Tags"
-                                                className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                                                className="min-h-10 rounded-xl border border-cove-border px-3 py-2 text-sm"
                                             />
                                         </div>
                                         <textarea
@@ -396,13 +396,13 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                             }
                                             rows={2}
                                             placeholder="Notes"
-                                            className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                                            className="w-full resize-none rounded-xl border border-cove-border px-3 py-2 text-sm"
                                         />
                                         <div className="flex justify-end gap-1">
                                             <button
                                                 type="button"
                                                 onClick={cancelEdit}
-                                                className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                                className="flex h-10 w-10 items-center justify-center rounded-xl text-cove-soft hover:bg-[color:var(--buddy-surface-soft)] hover:text-cove-ink"
                                                 title="Cancel"
                                             >
                                                 <X size={16} />
@@ -410,7 +410,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                             <button
                                                 type="button"
                                                 onClick={() => saveEdit(document)}
-                                                className="flex h-10 w-10 items-center justify-center rounded-xl text-emerald-700 hover:bg-emerald-50"
+                                                className="flex h-10 w-10 items-center justify-center rounded-xl text-cove-success-deep hover:bg-cove-tint-green"
                                                 title="Save"
                                             >
                                                 <Check size={16} />
@@ -421,13 +421,13 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                                         <FileText
                                             size={18}
-                                            className="flex-shrink-0 text-indigo-600"
+                                            className="flex-shrink-0 text-cove-accent"
                                         />
                                         <div className="flex-1 min-w-0">
-                                            <p className="truncate text-sm font-semibold text-slate-900">
+                                            <p className="truncate text-sm font-semibold text-cove-ink">
                                                 {document.name}
                                             </p>
-                                            <p className="mt-0.5 truncate text-sm text-slate-500">
+                                            <p className="mt-0.5 truncate text-sm text-cove-soft">
                                                 {document.folder || 'General'} ·{' '}
                                                 {KIND_LABELS[document.kind]} ·{' '}
                                                 {Math.max(1, Math.round(document.sizeBytes / 1024))}{' '}
@@ -436,7 +436,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                                     ` · ${document.tags.join(', ')}`}
                                             </p>
                                             {document.notes && (
-                                                <p className="mt-0.5 truncate text-sm text-slate-600">
+                                                <p className="mt-0.5 truncate text-sm text-cove-muted">
                                                     {document.notes}
                                                 </p>
                                             )}
@@ -452,7 +452,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                                             extraInstructions: '',
                                                         })
                                                     }
-                                                    className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-indigo-50 hover:text-indigo-700"
+                                                    className="flex h-10 w-10 items-center justify-center rounded-xl text-cove-soft hover:bg-cove-tint-blue hover:text-cove-ink"
                                                     title="Open preview"
                                                 >
                                                     <Sparkles size={16} />
@@ -462,7 +462,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                                     type="button"
                                                     onClick={() => analyzeDocument(document)}
                                                     disabled={busyDocId === document.id}
-                                                    className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 disabled:opacity-50"
+                                                    className="flex h-10 w-10 items-center justify-center rounded-xl text-cove-soft hover:bg-cove-tint-blue hover:text-cove-ink disabled:opacity-50"
                                                     title="Analyze"
                                                 >
                                                     {busyDocId === document.id ? (
@@ -478,7 +478,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                             <button
                                                 type="button"
                                                 onClick={() => startEdit(document)}
-                                                className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-indigo-50 hover:text-indigo-700"
+                                                className="flex h-10 w-10 items-center justify-center rounded-xl text-cove-soft hover:bg-cove-tint-blue hover:text-cove-ink"
                                                 title="Edit metadata"
                                             >
                                                 <Pencil size={16} />
@@ -486,7 +486,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                             <button
                                                 type="button"
                                                 onClick={() => openDocument(document)}
-                                                className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                                className="flex h-10 w-10 items-center justify-center rounded-xl text-cove-soft hover:bg-[color:var(--buddy-surface-soft)] hover:text-cove-ink"
                                                 title="Open PDF"
                                             >
                                                 <ExternalLink size={16} />
@@ -494,7 +494,7 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                                             <button
                                                 type="button"
                                                 onClick={() => removeDocument(document)}
-                                                className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-700"
+                                                className="flex h-10 w-10 items-center justify-center rounded-xl text-cove-soft hover:bg-cove-tint-danger hover:text-cove-danger-deep"
                                                 title="Delete PDF"
                                             >
                                                 <Trash2 size={16} />
@@ -508,8 +508,8 @@ export const CourseDocsPanel: React.FC<CourseDocsPanelProps> = ({ classId }) => 
                 </ul>
             )}
 
-            {message && <p className="text-sm font-medium text-emerald-700">{message}</p>}
-            {error && <p className="text-sm font-medium text-red-700">{error}</p>}
+            {message && <p className="text-sm font-bold text-cove-success-deep">{message}</p>}
+            {error && <p className="text-sm font-bold text-cove-danger-deep">{error}</p>}
 
             {showUpload && (
                 <UploadDocsDialog

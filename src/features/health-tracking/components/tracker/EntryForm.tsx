@@ -17,7 +17,7 @@ const EntryForm: React.FC<EntryFormProps> = ({ onManageTrackers }) => {
     }, [entries, selectedDate]);
 
     return (
-        <div className="bg-slate-50/50 -mx-4 -mt-2 p-4 min-h-[60vh] sm:rounded-xl sm:mx-0 sm:mt-0 sm:border border-slate-100">
+        <div className="bg-[color:var(--buddy-surface-soft)]/50 -mx-4 -mt-2 p-4 min-h-[60vh] sm:rounded-xl sm:mx-0 sm:mt-0 sm:border border-cove-border">
             <div className="max-w-lg mx-auto">
                 <CheckinForm
                     date={selectedDate}

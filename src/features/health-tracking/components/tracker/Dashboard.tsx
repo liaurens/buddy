@@ -108,12 +108,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
         <div className="space-y-6">
             <TrackerTrends onEditTracker={onEditTracker} />
 
-            <h2 className="text-xl font-bold text-slate-800 px-1">History & Trends</h2>
+            <h2 className="text-xl font-bold text-cove-ink px-1">History & Trends</h2>
 
             {historyItems.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-xl border border-slate-100 border-dashed">
-                    <p className="text-slate-500 mb-2">No data recorded yet.</p>
-                    <p className="text-sm text-slate-400">
+                <div className="text-center py-12 bg-white rounded-xl border border-cove-border border-dashed">
+                    <p className="text-cove-soft mb-2">No data recorded yet.</p>
+                    <p className="text-sm text-cove-faint">
                         Use the Daily Check-in to start tracking!
                     </p>
                 </div>
@@ -135,10 +135,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                 key={date}
                                 className="animate-in fade-in slide-in-from-bottom-2 duration-500"
                             >
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 px-1 sticky top-0 bg-slate-50/80 backdrop-blur-sm py-2 z-10 w-fit rounded-lg">
+                                <h3 className="text-xs font-bold text-cove-faint uppercase tracking-widest mb-3 px-1 sticky top-0 bg-[color:var(--buddy-surface-soft)]/80 backdrop-blur-sm py-2 z-10 w-fit rounded-xl">
                                     {displayDate}
                                 </h3>
-                                <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-50">
+                                <div className="bg-white rounded-xl shadow-cove border border-cove-border overflow-hidden divide-y divide-cove-border">
                                     {dayItems.map((item) => {
                                         // ------------------ TRACKER ENTRY ------------------
                                         if (item.type === 'entry') {
@@ -156,7 +156,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                             return (
                                                 <div
                                                     key={entry.id}
-                                                    className="group p-4 hover:bg-slate-50 transition-all relative"
+                                                    className="group p-4 hover:bg-[color:var(--buddy-surface-soft)] transition-all relative"
                                                 >
                                                     <div className="flex items-start gap-4">
                                                         <div className="text-2xl mt-0.5">
@@ -164,7 +164,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 mb-1">
-                                                                <span className="font-semibold text-slate-700 truncate">
+                                                                <span className="font-semibold text-cove-muted truncate">
                                                                     {tracker.name}
                                                                 </span>
                                                                 {goalMet !== null && (
@@ -176,14 +176,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                                                         }
                                                                         className={
                                                                             goalMet
-                                                                                ? 'text-amber-500'
-                                                                                : 'text-slate-300'
+                                                                                ? 'text-cove-streak-deep'
+                                                                                : 'text-cove-faint'
                                                                         }
                                                                     >
                                                                         <Trophy size={14} />
                                                                     </span>
                                                                 )}
-                                                                <span className="text-[10px] text-slate-300 font-mono ml-auto">
+                                                                <span className="text-[10px] text-cove-faint font-mono ml-auto">
                                                                     {format(
                                                                         new Date(entry.timestamp),
                                                                         'h:mm a',
@@ -201,7 +201,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                                                                 e.target.value,
                                                                             )
                                                                         }
-                                                                        className="w-24 px-2 py-1.5 text-sm border border-slate-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                                        className="w-24 px-2 py-1.5 text-sm border border-cove-border rounded-xl shadow-cove focus:ring-2 focus:ring-cove-accent outline-none"
                                                                         autoFocus
                                                                     />
                                                                     <input
@@ -212,7 +212,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                                                                 e.target.value,
                                                                             )
                                                                         }
-                                                                        className="flex-1 px-2 py-1.5 text-sm border border-slate-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                                        className="flex-1 px-2 py-1.5 text-sm border border-cove-border rounded-xl shadow-cove focus:ring-2 focus:ring-cove-accent outline-none"
                                                                         placeholder="Add notes..."
                                                                     />
                                                                     <div className="flex gap-1 ml-2">
@@ -220,13 +220,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                                                             onClick={() =>
                                                                                 saveEdit(entry)
                                                                             }
-                                                                            className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors"
+                                                                            className="p-1.5 bg-cove-tint-green text-cove-success-deep rounded-xl hover:bg-cove-success transition-colors"
                                                                         >
                                                                             <Check size={14} />
                                                                         </button>
                                                                         <button
                                                                             onClick={cancelEditing}
-                                                                            className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200 transition-colors"
+                                                                            className="p-1.5 bg-[color:var(--buddy-surface-soft)] text-cove-soft rounded-xl hover:bg-cove-track transition-colors"
                                                                         >
                                                                             <X size={14} />
                                                                         </button>
@@ -235,7 +235,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                                             ) : (
                                                                 <div className="flex justify-between items-end">
                                                                     <div>
-                                                                        <p className="text-base font-medium text-slate-800">
+                                                                        <p className="text-base font-bold text-cove-ink">
                                                                             {tracker.type ===
                                                                             'boolean' ? (
                                                                                 entry.value ===
@@ -247,7 +247,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                                                             ) : (
                                                                                 <>
                                                                                     {entry.value}{' '}
-                                                                                    <span className="text-xs text-slate-400 font-normal">
+                                                                                    <span className="text-xs text-cove-faint font-semibold">
                                                                                         {
                                                                                             tracker.unit
                                                                                         }
@@ -256,18 +256,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                                                             )}
                                                                         </p>
                                                                         {entry.notes && (
-                                                                            <p className="text-xs text-slate-500 mt-1 italic">
+                                                                            <p className="text-xs text-cove-soft mt-1 italic">
                                                                                 "{entry.notes}"
                                                                             </p>
                                                                         )}
                                                                     </div>
 
-                                                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 bg-white/50 backdrop-blur-sm rounded-lg p-1">
+                                                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 bg-white/50 backdrop-blur-sm rounded-xl p-1">
                                                                         <button
                                                                             onClick={() =>
                                                                                 startEditing(entry)
                                                                             }
-                                                                            className="text-slate-400 hover:text-indigo-600 transition-colors"
+                                                                            className="text-cove-faint hover:text-cove-accent transition-colors"
                                                                             title="Edit"
                                                                         >
                                                                             <Edit2 size={14} />
@@ -278,7 +278,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                                                                     entry.id,
                                                                                 )
                                                                             }
-                                                                            className="text-slate-400 hover:text-rose-500 transition-colors"
+                                                                            className="text-cove-faint hover:text-cove-danger transition-colors"
                                                                             title="Delete"
                                                                         >
                                                                             <Trash2 size={14} />
@@ -298,21 +298,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                             return (
                                                 <div
                                                     key={dose.id}
-                                                    className="group p-4 hover:bg-slate-50 transition-all relative"
+                                                    className="group p-4 hover:bg-[color:var(--buddy-surface-soft)] transition-all relative"
                                                 >
                                                     <div className="flex items-start gap-4">
-                                                        <div className="text-2xl mt-0.5 text-indigo-500">
+                                                        <div className="text-2xl mt-0.5 text-cove-accent">
                                                             <Pill size={24} />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 mb-1">
-                                                                <span className="font-semibold text-slate-700 truncate">
+                                                                <span className="font-semibold text-cove-muted truncate">
                                                                     {item.protocolName}
                                                                 </span>
-                                                                <span className="text-[10px] text-indigo-200 bg-indigo-50 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
+                                                                <span className="text-[10px] text-cove-accent bg-cove-tint-blue px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
                                                                     Protocol
                                                                 </span>
-                                                                <span className="text-[10px] text-slate-300 font-mono ml-auto">
+                                                                <span className="text-[10px] text-cove-faint font-mono ml-auto">
                                                                     {format(
                                                                         item.timestamp,
                                                                         'h:mm a',
@@ -322,13 +322,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
 
                                                             <div className="flex justify-between items-end">
                                                                 <div>
-                                                                    <p className="text-base font-medium text-slate-800">
+                                                                    <p className="text-base font-bold text-cove-ink">
                                                                         {item.doseInfo}
                                                                     </p>
                                                                     {/* Notes for doses not widely used yet, can add later */}
                                                                 </div>
 
-                                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 bg-white/50 backdrop-blur-sm rounded-lg p-1">
+                                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 bg-white/50 backdrop-blur-sm rounded-xl p-1">
                                                                     <button
                                                                         onClick={async () => {
                                                                             if (
@@ -341,7 +341,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                                                                                 );
                                                                             }
                                                                         }}
-                                                                        className="text-slate-400 hover:text-rose-500 transition-colors"
+                                                                        className="text-cove-faint hover:text-cove-danger transition-colors"
                                                                         title="Delete Dose"
                                                                     >
                                                                         <Trash2 size={14} />

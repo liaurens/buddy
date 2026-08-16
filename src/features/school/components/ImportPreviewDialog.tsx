@@ -207,24 +207,24 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
     return (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4">
             <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl flex flex-col max-h-[92vh]">
-                <div className="flex items-start justify-between gap-3 p-5 border-b border-slate-100">
+                <div className="flex items-start justify-between gap-3 p-5 border-b border-cove-border">
                     <div>
-                        <h2 className="text-lg font-semibold text-slate-900">Import preview</h2>
-                        <p className="text-xs text-slate-500">
+                        <h2 className="text-lg font-semibold text-cove-ink">Import preview</h2>
+                        <p className="text-xs text-cove-soft">
                             Review and edit before writing to school.
                         </p>
                     </div>
                     <div className="flex items-center gap-1">
                         <button
                             onClick={clearPreview}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-red-600 hover:bg-red-50"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold text-cove-danger-deep hover:bg-cove-tint-danger"
                             title="Clear full import preview"
                         >
                             <Trash2 size={14} /> Clear all
                         </button>
                         <button
                             onClick={onClose}
-                            className="p-1.5 text-slate-400 hover:text-slate-600"
+                            className="p-1.5 text-cove-faint hover:text-cove-muted"
                             title="Close"
                         >
                             <X size={20} />
@@ -233,40 +233,40 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                 </div>
 
                 <div className="overflow-y-auto flex-1 p-5 space-y-5">
-                    <section className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-3">
+                    <section className="rounded-xl border border-cove-accent-pale bg-cove-tint-blue/40 p-4 space-y-3">
                         <div className="flex items-start justify-between gap-3">
                             <div className="flex items-start gap-2 min-w-0">
                                 <Sparkles
                                     size={18}
-                                    className="mt-0.5 text-indigo-600 flex-shrink-0"
+                                    className="mt-0.5 text-cove-accent flex-shrink-0"
                                 />
                                 <div className="min-w-0">
-                                    <h3 className="text-sm font-semibold text-slate-900">
+                                    <h3 className="text-sm font-semibold text-cove-ink">
                                         General summary
                                     </h3>
-                                    <p className="text-xs text-slate-500">
+                                    <p className="text-xs text-cove-soft">
                                         The AI's course-level read before the extracted items below.
                                     </p>
                                 </div>
                             </div>
                             <div className="grid grid-cols-3 gap-1.5 text-center">
-                                <div className="rounded-lg bg-white px-2 py-1 border border-indigo-100">
-                                    <p className="text-sm font-semibold text-slate-900">
+                                <div className="rounded-xl bg-white px-2 py-1 border border-cove-accent-pale">
+                                    <p className="text-sm font-semibold text-cove-ink">
                                         {includedAssignments}
                                     </p>
-                                    <p className="text-[10px] text-slate-500">assignments</p>
+                                    <p className="text-[10px] text-cove-soft">assignments</p>
                                 </div>
-                                <div className="rounded-lg bg-white px-2 py-1 border border-indigo-100">
-                                    <p className="text-sm font-semibold text-slate-900">
+                                <div className="rounded-xl bg-white px-2 py-1 border border-cove-accent-pale">
+                                    <p className="text-sm font-semibold text-cove-ink">
                                         {checkpointCount}
                                     </p>
-                                    <p className="text-[10px] text-slate-500">steps</p>
+                                    <p className="text-[10px] text-cove-soft">steps</p>
                                 </div>
-                                <div className="rounded-lg bg-white px-2 py-1 border border-indigo-100">
-                                    <p className="text-sm font-semibold text-slate-900">
+                                <div className="rounded-xl bg-white px-2 py-1 border border-cove-accent-pale">
+                                    <p className="text-sm font-semibold text-cove-ink">
                                         {includedSessions}
                                     </p>
-                                    <p className="text-[10px] text-slate-500">sessions</p>
+                                    <p className="text-[10px] text-cove-soft">sessions</p>
                                 </div>
                             </div>
                         </div>
@@ -277,19 +277,19 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                             }
                             rows={4}
                             placeholder="No summary returned yet."
-                            className="w-full px-3 py-2 border border-indigo-100 rounded-lg text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                            className="w-full px-3 py-2 border border-cove-accent-pale rounded-xl text-sm resize-none bg-white focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
                         />
                     </section>
 
                     <section className="space-y-2">
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                                <CheckSquare size={16} className="text-indigo-600" />
+                                <CheckSquare size={16} className="text-cove-accent" />
                                 <div>
-                                    <h3 className="text-sm font-semibold text-slate-900">
+                                    <h3 className="text-sm font-semibold text-cove-ink">
                                         Assignments
                                     </h3>
-                                    <p className="text-xs text-slate-500">
+                                    <p className="text-xs text-cove-soft">
                                         {includedAssignments} included, {payload.assignments.length}{' '}
                                         found
                                     </p>
@@ -298,18 +298,18 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                             <button
                                 onClick={clearAssignments}
                                 disabled={payload.assignments.length === 0}
-                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-red-600 disabled:opacity-40"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold text-cove-soft hover:bg-[color:var(--buddy-surface-soft)] hover:text-cove-danger-deep disabled:opacity-40"
                             >
                                 <Trash2 size={13} /> Delete all
                             </button>
                         </div>
                         {payload.assignments.length === 0 ? (
-                            <p className="text-sm text-slate-400">No assignments found.</p>
+                            <p className="text-sm text-cove-faint">No assignments found.</p>
                         ) : (
                             payload.assignments.map((assignment, index) => (
                                 <div
                                     key={index}
-                                    className={`rounded-xl border p-3 space-y-3 ${assignment.include === false ? 'border-slate-200 bg-slate-50 opacity-75' : 'border-slate-200 bg-white'}`}
+                                    className={`rounded-xl border p-3 space-y-3 ${assignment.include === false ? 'border-cove-border bg-[color:var(--buddy-surface-soft)] opacity-75' : 'border-cove-border bg-white'}`}
                                 >
                                     <div className="flex items-start gap-2">
                                         <label className="mt-2 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center">
@@ -321,7 +321,7 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                                         include: e.target.checked,
                                                     })
                                                 }
-                                                className="h-4 w-4 rounded border-slate-300 text-indigo-600"
+                                                className="h-4 w-4 rounded border-cove-border text-cove-accent"
                                                 title="Include assignment"
                                             />
                                         </label>
@@ -330,18 +330,18 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                             onChange={(e) =>
                                                 updateAssignment(index, { title: e.target.value })
                                             }
-                                            className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium"
+                                            className="flex-1 px-3 py-2 border border-cove-border rounded-xl text-sm font-bold"
                                         />
                                         <button
                                             onClick={() => removeAssignment(index)}
-                                            className="p-2 text-slate-400 hover:text-red-600"
+                                            className="p-2 text-cove-faint hover:text-cove-danger-deep"
                                         >
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                         <label className="block sm:col-span-2">
-                                            <span className="text-xs font-medium text-slate-600">
+                                            <span className="text-xs font-bold text-cove-muted">
                                                 Deadline
                                             </span>
                                             <input
@@ -352,11 +352,11 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                                         deadline: fromLocalInput(e.target.value),
                                                     })
                                                 }
-                                                className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                                className="app-input mt-1"
                                             />
                                         </label>
                                         <label className="block">
-                                            <span className="text-xs font-medium text-slate-600">
+                                            <span className="text-xs font-bold text-cove-muted">
                                                 Est. minutes
                                             </span>
                                             <input
@@ -370,12 +370,12 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                                             : undefined,
                                                     })
                                                 }
-                                                className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                                className="app-input mt-1"
                                             />
                                         </label>
                                     </div>
                                     <label className="block">
-                                        <span className="text-xs font-medium text-slate-600">
+                                        <span className="text-xs font-bold text-cove-muted">
                                             Notes
                                         </span>
                                         <textarea
@@ -386,26 +386,26 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                                 })
                                             }
                                             rows={2}
-                                            className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none"
+                                            className="app-textarea mt-1 resize-none"
                                         />
                                     </label>
-                                    <div className="rounded-lg border border-slate-100 bg-slate-50/70 p-2.5 space-y-2">
+                                    <div className="rounded-xl border border-cove-border bg-[color:var(--buddy-surface-soft)]/70 p-2.5 space-y-2">
                                         <div className="flex items-center justify-between">
-                                            <p className="text-xs font-medium text-slate-700">
+                                            <p className="text-xs font-bold text-cove-muted">
                                                 Checkpoints{' '}
-                                                <span className="text-slate-400">
+                                                <span className="text-cove-faint">
                                                     ({assignment.checkpoints?.length ?? 0})
                                                 </span>
                                             </p>
                                             <button
                                                 onClick={() => addCheckpoint(index)}
-                                                className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                                                className="flex items-center gap-1 text-xs font-bold text-cove-accent hover:text-cove-ink"
                                             >
                                                 <Plus size={12} /> Add
                                             </button>
                                         </div>
                                         {(assignment.checkpoints ?? []).length === 0 && (
-                                            <p className="text-xs text-slate-400">
+                                            <p className="text-xs text-cove-faint">
                                                 No checkpoints for this assignment.
                                             </p>
                                         )}
@@ -413,7 +413,7 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                             (checkpoint, checkpointIndex) => (
                                                 <div
                                                     key={checkpointIndex}
-                                                    className="grid grid-cols-[56px_1fr_auto] gap-2 items-start rounded-lg bg-white border border-slate-100 p-2"
+                                                    className="grid grid-cols-[56px_1fr_auto] gap-2 items-start rounded-xl bg-white border border-cove-border p-2"
                                                 >
                                                     <input
                                                         value={checkpoint.number}
@@ -424,7 +424,7 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                                                 { number: e.target.value },
                                                             )
                                                         }
-                                                        className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
+                                                        className="px-2 py-1.5 border border-cove-border rounded-xl text-xs"
                                                     />
                                                     <div className="space-y-1">
                                                         <input
@@ -436,7 +436,7 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                                                     { title: e.target.value },
                                                                 )
                                                             }
-                                                            className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
+                                                            className="w-full px-2 py-1.5 border border-cove-border rounded-xl text-xs"
                                                         />
                                                         <input
                                                             value={(checkpoint.subitems ?? []).join(
@@ -455,14 +455,14 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                                                 )
                                                             }
                                                             placeholder="Subitems, comma separated"
-                                                            className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
+                                                            className="w-full px-2 py-1.5 border border-cove-border rounded-xl text-xs"
                                                         />
                                                     </div>
                                                     <button
                                                         onClick={() =>
                                                             removeCheckpoint(index, checkpointIndex)
                                                         }
-                                                        className="p-1.5 text-slate-400 hover:text-red-600"
+                                                        className="p-1.5 text-cove-faint hover:text-cove-danger-deep"
                                                     >
                                                         <Trash2 size={14} />
                                                     </button>
@@ -478,12 +478,12 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                     <section className="space-y-2">
                         <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                                <CalendarDays size={16} className="text-indigo-600" />
+                                <CalendarDays size={16} className="text-cove-accent" />
                                 <div>
-                                    <h3 className="text-sm font-semibold text-slate-900">
+                                    <h3 className="text-sm font-semibold text-cove-ink">
                                         Weekly sessions
                                     </h3>
-                                    <p className="text-xs text-slate-500">
+                                    <p className="text-xs text-cove-soft">
                                         {includedSessions} included, {payload.sessions.length} found
                                     </p>
                                 </div>
@@ -491,20 +491,20 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                             <button
                                 onClick={clearSessions}
                                 disabled={payload.sessions.length === 0}
-                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-red-600 disabled:opacity-40"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold text-cove-soft hover:bg-[color:var(--buddy-surface-soft)] hover:text-cove-danger-deep disabled:opacity-40"
                             >
                                 <Trash2 size={13} /> Delete all
                             </button>
                         </div>
                         {payload.sessions.length === 0 ? (
-                            <p className="text-sm text-slate-400">No weekly sessions found.</p>
+                            <p className="text-sm text-cove-faint">No weekly sessions found.</p>
                         ) : (
                             payload.sessions.map((session, index) => (
                                 <div
                                     key={index}
-                                    className={`grid grid-cols-2 sm:grid-cols-[auto_90px_90px_1fr_auto] gap-2 items-center rounded-xl border p-3 ${session.include === false ? 'border-slate-200 bg-slate-50 opacity-75' : 'border-slate-200 bg-white'}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-[auto_90px_90px_1fr_auto] gap-2 items-center rounded-xl border p-3 ${session.include === false ? 'border-cove-border bg-[color:var(--buddy-surface-soft)] opacity-75' : 'border-cove-border bg-white'}`}
                                 >
-                                    <label className="flex items-center gap-2 text-xs text-slate-600">
+                                    <label className="flex items-center gap-2 text-xs text-cove-muted">
                                         <input
                                             type="checkbox"
                                             checked={session.include !== false}
@@ -519,7 +519,7 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                                     dayOfWeek: Number(e.target.value),
                                                 })
                                             }
-                                            className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs bg-white"
+                                            className="px-2 py-1.5 border border-cove-border rounded-xl text-xs bg-white"
                                         >
                                             {DAYS.map((day, dayIndex) => (
                                                 <option key={day} value={dayIndex}>
@@ -534,7 +534,7 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                         onChange={(e) =>
                                             updateSession(index, { startTime: e.target.value })
                                         }
-                                        className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
+                                        className="px-2 py-1.5 border border-cove-border rounded-xl text-xs"
                                     />
                                     <input
                                         type="time"
@@ -542,7 +542,7 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                         onChange={(e) =>
                                             updateSession(index, { endTime: e.target.value })
                                         }
-                                        className="px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
+                                        className="px-2 py-1.5 border border-cove-border rounded-xl text-xs"
                                     />
                                     <input
                                         value={session.location ?? ''}
@@ -550,11 +550,11 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                             updateSession(index, { location: e.target.value })
                                         }
                                         placeholder="Location"
-                                        className="col-span-2 sm:col-span-1 px-2 py-1.5 border border-slate-200 rounded-lg text-xs"
+                                        className="col-span-2 sm:col-span-1 px-2 py-1.5 border border-cove-border rounded-xl text-xs"
                                     />
                                     <button
                                         onClick={() => removeSession(index)}
-                                        className="p-1.5 text-slate-400 hover:text-red-600"
+                                        className="p-1.5 text-cove-faint hover:text-cove-danger-deep"
                                     >
                                         <Trash2 size={14} />
                                     </button>
@@ -563,33 +563,33 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                         )}
                     </section>
 
-                    <label className="block rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                        <span className="flex items-center gap-2 text-xs font-medium text-slate-700">
-                            <FileText size={14} className="text-slate-500" />
+                    <label className="block rounded-xl border border-cove-border bg-[color:var(--buddy-surface-soft)]/70 p-3">
+                        <span className="flex items-center gap-2 text-xs font-bold text-cove-muted">
+                            <FileText size={14} className="text-cove-soft" />
                             Extra context for re-analyze
                         </span>
                         <textarea
                             value={extraInstructions}
                             onChange={(e) => setExtraInstructions(e.target.value)}
                             rows={2}
-                            className="mt-2 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none bg-white"
+                            className="mt-2 w-full px-3 py-2 border border-cove-border rounded-xl text-sm resize-none bg-white"
                         />
                     </label>
 
-                    {error && <p className="text-sm text-red-600">{error}</p>}
+                    {error && <p className="text-sm text-cove-danger-deep">{error}</p>}
                 </div>
 
-                <div className="flex gap-2 p-4 border-t border-slate-100">
+                <div className="flex gap-2 p-4 border-t border-cove-border">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
+                        className="px-4 py-2 rounded-xl text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)]"
                     >
                         Close
                     </button>
                     <button
                         onClick={reAnalyze}
                         disabled={busy !== null || documentIds.length === 0}
-                        className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-indigo-600 hover:bg-indigo-50 disabled:opacity-50"
+                        className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-cove-accent hover:bg-cove-tint-blue disabled:opacity-50"
                     >
                         {busy === 'analyze' && <Loader2 size={16} className="animate-spin" />}
                         Re-analyze
@@ -597,7 +597,7 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                     <button
                         onClick={accept}
                         disabled={busy !== null}
-                        className="ml-auto flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                        className="ml-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-cove-accent text-white hover:bg-[#3a8dc7] disabled:opacity-50"
                     >
                         {busy === 'commit' && <Loader2 size={16} className="animate-spin" />}
                         Accept

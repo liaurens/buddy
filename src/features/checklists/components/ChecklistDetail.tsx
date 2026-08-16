@@ -45,7 +45,7 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
         <div className="app-page-readable animate-in fade-in">
             <button
                 onClick={onBack}
-                className="flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
+                className="flex items-center text-sm font-bold text-cove-soft transition-colors hover:text-cove-ink"
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -75,18 +75,18 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                                     onChange={(e) => setEditName(e.target.value)}
                                     onBlur={handleUpdateTitle}
                                     onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle()}
-                                    className="w-full border-b-2 border-indigo-500 bg-transparent text-2xl font-semibold text-slate-900 focus:outline-none"
+                                    className="w-full border-b-2 border-cove-accent bg-transparent text-2xl font-semibold text-cove-ink focus:outline-none"
                                 />
                             ) : (
                                 <h1
-                                    className="cursor-pointer text-2xl font-semibold text-slate-900 transition-colors hover:text-indigo-700"
+                                    className="cursor-pointer text-2xl font-semibold text-cove-ink transition-colors hover:text-cove-ink"
                                     onClick={() => setIsEditingTitle(true)}
                                     title="Click to edit name"
                                 >
                                     {checklist.name}
                                 </h1>
                             )}
-                            <p className="text-slate-500">{checklist.items.length} items</p>
+                            <p className="text-cove-soft">{checklist.items.length} items</p>
                         </div>
                     </div>
 
@@ -120,7 +120,7 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                                     onBack();
                                 }
                             }}
-                            className="rounded-lg p-2 text-rose-500 transition-colors hover:bg-rose-50"
+                            className="rounded-xl p-2 text-cove-danger transition-colors hover:bg-cove-tint-danger"
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -139,11 +139,11 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                 </div>
 
                 {/* Trigger keyword — surfaces this checklist in the day view on matching calendar days */}
-                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <label className="text-sm font-medium text-slate-700">
+                <div className="mb-6 rounded-xl border border-cove-border bg-[color:var(--buddy-surface-soft)] p-4">
+                    <label className="text-sm font-bold text-cove-muted">
                         Show on calendar match
                     </label>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-xs text-cove-soft mt-0.5">
                         When a calendar event today contains this word (e.g. “work”), this checklist
                         pops up in your day view. Leave empty to disable.
                     </p>
@@ -154,7 +154,7 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                         onBlur={() => void handleSaveTrigger()}
                         onKeyDown={(e) => e.key === 'Enter' && void handleSaveTrigger()}
                         placeholder="e.g. work"
-                        className="mt-2 w-full max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition-all focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                        className="mt-2 w-full max-w-xs rounded-xl border border-cove-border bg-white px-3 py-2 text-sm outline-none transition-all focus:border-cove-accent focus:ring-2 focus:ring-cove-accent-pale"
                     />
                 </div>
 
@@ -169,7 +169,7 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                     ))}
 
                     {checklist.items.length === 0 && (
-                        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 py-10 text-center text-slate-500">
+                        <div className="rounded-xl border border-dashed border-cove-border bg-[color:var(--buddy-surface-soft)] py-10 text-center text-cove-soft">
                             <p>No items yet. Add one below!</p>
                         </div>
                     )}
@@ -181,12 +181,12 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
                         placeholder="Add a new item..."
                         value={newItemText}
                         onChange={(e) => setNewItemText(e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-4 pr-12 outline-none transition-all focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                        className="w-full rounded-xl border border-cove-border bg-[color:var(--buddy-surface-soft)] py-3 pl-4 pr-12 outline-none transition-all focus:border-cove-accent focus:ring-2 focus:ring-cove-accent-pale"
                     />
                     <button
                         type="submit"
                         disabled={!newItemText.trim()}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-indigo-700 p-1.5 text-white transition-colors hover:bg-indigo-800 disabled:opacity-50"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-cove-accent p-1.5 text-white transition-colors hover:bg-[#3a8dc7] disabled:opacity-50"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"

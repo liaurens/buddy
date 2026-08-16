@@ -44,12 +44,12 @@ const MorningProtocolsCard: React.FC = () => {
     };
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+        <div className="bg-white rounded-2xl border border-cove-border shadow-cove p-5 space-y-3">
             <div>
-                <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-                    <Pill size={16} className="text-emerald-600" /> Protocols
+                <h2 className="font-semibold text-cove-ink flex items-center gap-2">
+                    <Pill size={16} className="text-cove-success-deep" /> Protocols
                 </h2>
-                <p className="text-sm text-slate-500 mt-0.5">
+                <p className="text-sm text-cove-soft mt-0.5">
                     Your active supplements, meds, and practices.
                 </p>
             </div>
@@ -63,34 +63,32 @@ const MorningProtocolsCard: React.FC = () => {
                             key={p.id}
                             className={`flex items-center gap-3 p-3 rounded-xl border ${
                                 done
-                                    ? 'bg-emerald-50 border-emerald-200'
+                                    ? 'bg-cove-tint-green border-cove-success'
                                     : skipped
-                                      ? 'bg-slate-50 border-slate-200'
-                                      : 'border-slate-200'
+                                      ? 'bg-[color:var(--buddy-surface-soft)] border-cove-border'
+                                      : 'border-cove-border'
                             }`}
                         >
                             <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-slate-800 truncate">
-                                    {p.name}
-                                </p>
-                                <p className="text-xs text-slate-400">
+                                <p className="text-sm font-bold text-cove-ink truncate">{p.name}</p>
+                                <p className="text-xs text-cove-faint">
                                     {[doseLabel(p), p.timingNotes].filter(Boolean).join(' · ') ||
                                         p.frequency}
                                 </p>
                             </div>
                             {done ? (
-                                <span className="text-xs font-medium text-emerald-700 flex items-center gap-1">
+                                <span className="text-xs font-bold text-cove-success-deep flex items-center gap-1">
                                     <Check size={13} /> Taken
                                 </span>
                             ) : skipped ? (
-                                <span className="text-xs font-medium text-slate-500">Skipped</span>
+                                <span className="text-xs font-bold text-cove-soft">Skipped</span>
                             ) : (
                                 <div className="flex gap-1.5">
                                     <button
                                         type="button"
                                         onClick={() => void handle(p, 'take')}
                                         disabled={busyId === p.id}
-                                        className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50"
+                                        className="px-3 py-1.5 text-xs font-bold text-white bg-cove-success hover:bg-cove-success-deep rounded-xl transition-colors disabled:opacity-50"
                                     >
                                         Taken
                                     </button>
@@ -99,7 +97,7 @@ const MorningProtocolsCard: React.FC = () => {
                                         onClick={() => void handle(p, 'skip')}
                                         disabled={busyId === p.id}
                                         aria-label={`Skip ${p.name}`}
-                                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+                                        className="p-1.5 text-cove-faint hover:text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded-xl transition-colors disabled:opacity-50"
                                     >
                                         <X size={15} />
                                     </button>

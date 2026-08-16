@@ -36,10 +36,10 @@ interface ExperimentDetailsProps {
 type Tab = 'checkin' | 'notes' | 'analysis' | 'agent' | 'settings';
 
 const STATUS_CONFIG: Record<ExperimentStatus, { label: string; color: string }> = {
-    active: { label: 'Active', color: 'bg-emerald-100 text-emerald-700' },
-    paused: { label: 'Paused', color: 'bg-amber-100 text-amber-700' },
-    completed: { label: 'Completed', color: 'bg-indigo-100 text-indigo-700' },
-    archived: { label: 'Archived', color: 'bg-slate-100 text-slate-600' },
+    active: { label: 'Active', color: 'bg-cove-tint-green text-cove-success-deep' },
+    paused: { label: 'Paused', color: 'bg-cove-tint-amber text-cove-streak-text' },
+    completed: { label: 'Completed', color: 'bg-cove-tint-blue text-cove-ink' },
+    archived: { label: 'Archived', color: 'bg-[color:var(--buddy-surface-soft)] text-cove-muted' },
 };
 
 const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
@@ -125,23 +125,23 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
             <div className="flex items-start gap-3">
                 <button
                     onClick={onBack}
-                    className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors"
+                    className="p-2 hover:bg-[color:var(--buddy-surface-soft)] rounded-xl text-cove-soft transition-colors"
                 >
                     <ArrowLeft size={20} />
                 </button>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <h2 className="text-2xl font-bold text-slate-800">{experiment.name}</h2>
+                        <h2 className="text-2xl font-bold text-cove-ink">{experiment.name}</h2>
                         <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusInfo.color}`}
+                            className={`text-xs px-2 py-0.5 rounded-full font-bold ${statusInfo.color}`}
                         >
                             {statusInfo.label}
                         </span>
                     </div>
                     {experiment.hypothesis && (
-                        <p className="text-slate-500 text-sm mt-1">{experiment.hypothesis}</p>
+                        <p className="text-cove-soft text-sm mt-1">{experiment.hypothesis}</p>
                     )}
-                    <div className="flex items-center gap-3 text-xs text-slate-400 mt-1">
+                    <div className="flex items-center gap-3 text-xs text-cove-faint mt-1">
                         <span>Day {daysActive}</span>
                         <span>·</span>
                         <span>{checkins.length} check-ins</span>
@@ -153,7 +153,7 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
 
             {/* Phase Timeline */}
             {experiment.phases.length > 0 && (
-                <div className="bg-white rounded-xl border border-slate-200 p-4">
+                <div className="bg-white rounded-xl border border-cove-border p-4">
                     <ExperimentPhaseTimeline
                         phases={experiment.phases}
                         startDate={experiment.startDate}
@@ -162,15 +162,15 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
             )}
 
             {/* Tabs */}
-            <div className="flex gap-1 border-b border-slate-200 overflow-x-auto">
+            <div className="flex gap-1 border-b border-cove-border overflow-x-auto">
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                        className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${
                             activeTab === tab.id
-                                ? 'border-indigo-600 text-indigo-600'
-                                : 'border-transparent text-slate-500 hover:text-slate-700'
+                                ? 'border-cove-accent text-cove-accent'
+                                : 'border-transparent text-cove-soft hover:text-cove-muted'
                         }`}
                     >
                         {tab.icon}
@@ -180,16 +180,16 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
             </div>
 
             {/* Tab Content */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="bg-white rounded-xl border border-cove-border p-5">
                 {activeTab === 'checkin' && (
                     <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                            <label className="text-sm text-slate-600">Date:</label>
+                            <label className="text-sm text-cove-muted">Date:</label>
                             <input
                                 type="date"
                                 value={checkinDate}
                                 onChange={(e) => setCheckinDate(e.target.value)}
-                                className="p-1.5 border border-slate-200 rounded-lg text-sm"
+                                className="p-1.5 border border-cove-border rounded-xl text-sm"
                             />
                         </div>
                         <ExperimentCheckinForm
@@ -203,8 +203,8 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
 
                         {/* Recent check-ins */}
                         {checkins.length > 0 && (
-                            <div className="pt-4 mt-4 border-t border-slate-100">
-                                <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            <div className="pt-4 mt-4 border-t border-cove-border">
+                                <h4 className="text-xs font-semibold text-cove-soft uppercase tracking-wider mb-2">
                                     Recent Check-ins
                                 </h4>
                                 <div className="space-y-1">
@@ -216,12 +216,12 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
                                                 <button
                                                     key={date}
                                                     onClick={() => setCheckinDate(date)}
-                                                    className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 rounded-lg text-sm"
+                                                    className="w-full flex items-center justify-between px-3 py-2 hover:bg-[color:var(--buddy-surface-soft)] rounded-xl text-sm"
                                                 >
-                                                    <span className="text-slate-700">
+                                                    <span className="text-cove-muted">
                                                         {format(new Date(date), 'EEE, MMM d')}
                                                     </span>
-                                                    <span className="text-xs text-slate-400">
+                                                    <span className="text-xs text-cove-faint">
                                                         {entries.length} metrics
                                                     </span>
                                                 </button>
@@ -236,26 +236,26 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
                 {activeTab === 'notes' && (
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                                <CalendarIcon size={18} className="text-indigo-600" />
+                            <h3 className="font-semibold text-cove-ink flex items-center gap-2">
+                                <CalendarIcon size={18} className="text-cove-accent" />
                                 Daily Notes
                             </h3>
                             <button
                                 onClick={() => setIsAddingNote(true)}
-                                className="text-sm bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:border-indigo-300 hover:text-indigo-600 flex items-center gap-1.5"
+                                className="text-sm bg-white border border-cove-border text-cove-muted px-3 py-1.5 rounded-xl hover:border-cove-accent hover:text-cove-accent flex items-center gap-1.5"
                             >
                                 <Plus size={16} /> Add Note
                             </button>
                         </div>
 
                         {isAddingNote && (
-                            <div className="p-4 border border-indigo-200 rounded-xl bg-indigo-50/30 space-y-3">
+                            <div className="p-4 border border-cove-accent-pale rounded-xl bg-cove-tint-blue/30 space-y-3">
                                 <div className="flex gap-3">
                                     <input
                                         type="date"
                                         value={noteDate}
                                         onChange={(e) => setNoteDate(e.target.value)}
-                                        className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
+                                        className="border border-cove-border rounded-xl px-3 py-2 text-sm bg-white"
                                     />
                                     <select
                                         value={moodRating || ''}
@@ -264,7 +264,7 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
                                                 e.target.value ? Number(e.target.value) : undefined,
                                             )
                                         }
-                                        className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white"
+                                        className="border border-cove-border rounded-xl px-3 py-2 text-sm bg-white"
                                     >
                                         <option value="">Mood (optional)</option>
                                         {[1, 2, 3, 4, 5].map((r) => (
@@ -279,20 +279,20 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
                                     value={noteContent}
                                     onChange={(e) => setNoteContent(e.target.value)}
                                     placeholder="What did you notice today? Any observations?"
-                                    className="w-full border border-slate-200 rounded-lg p-3 text-sm resize-none"
+                                    className="w-full border border-cove-border rounded-xl p-3 text-sm resize-none"
                                     rows={3}
                                 />
                                 <div className="flex justify-end gap-2">
                                     <button
                                         onClick={() => setIsAddingNote(false)}
-                                        className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700"
+                                        className="px-3 py-1.5 text-sm text-cove-soft hover:text-cove-muted"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         onClick={() => addLogMutation.mutate()}
                                         disabled={!noteContent.trim() || addLogMutation.isPending}
-                                        className="px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+                                        className="px-4 py-1.5 text-sm bg-cove-accent text-white rounded-xl hover:bg-[#3a8dc7] disabled:opacity-50 flex items-center gap-2"
                                     >
                                         {addLogMutation.isPending ? (
                                             'Saving...'
@@ -306,35 +306,35 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
                             </div>
                         )}
 
-                        <div className="divide-y divide-slate-100">
+                        <div className="divide-y divide-cove-border">
                             {logsLoading ? (
-                                <div className="p-8 text-center text-slate-400">Loading...</div>
+                                <div className="p-8 text-center text-cove-faint">Loading...</div>
                             ) : logs.length === 0 ? (
-                                <div className="p-8 text-center text-slate-400 italic">
+                                <div className="p-8 text-center text-cove-faint italic">
                                     No notes yet.
                                 </div>
                             ) : (
                                 logs.map((log) => (
                                     <div key={log.id} className="py-3">
                                         <div className="flex justify-between items-start mb-1">
-                                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                            <span className="text-xs font-semibold text-cove-soft uppercase tracking-wider">
                                                 {format(new Date(log.date), 'EEE, MMM d')}
                                             </span>
                                             {log.moodRating && (
                                                 <span
                                                     className={`text-xs px-2 py-0.5 rounded-full ${
                                                         log.moodRating >= 4
-                                                            ? 'bg-green-100 text-green-700'
+                                                            ? 'bg-cove-tint-green text-cove-success-deep'
                                                             : log.moodRating <= 2
-                                                              ? 'bg-red-100 text-red-700'
-                                                              : 'bg-yellow-100 text-yellow-700'
+                                                              ? 'bg-cove-tint-danger text-cove-danger-deep'
+                                                              : 'bg-cove-tint-amber text-cove-streak-text'
                                                     }`}
                                                 >
                                                     Mood: {log.moodRating}/5
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="text-slate-700 whitespace-pre-wrap text-sm">
+                                        <p className="text-cove-muted whitespace-pre-wrap text-sm">
                                             {log.content}
                                         </p>
                                     </div>
@@ -360,7 +360,7 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
                 {activeTab === 'settings' && (
                     <div className="space-y-5">
                         <div>
-                            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            <h4 className="text-xs font-semibold text-cove-soft uppercase tracking-wider mb-2">
                                 Status
                             </h4>
                             <div className="flex gap-2 flex-wrap">
@@ -387,10 +387,10 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
                                         <button
                                             key={s}
                                             onClick={() => handleStatusChange(s)}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold transition-colors ${
                                                 isCurrent
                                                     ? STATUS_CONFIG[s].color
-                                                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                                    : 'bg-[color:var(--buddy-surface-soft)] text-cove-muted hover:bg-cove-track'
                                             }`}
                                         >
                                             {icon}
@@ -402,7 +402,7 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
                         </div>
 
                         <div>
-                            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            <h4 className="text-xs font-semibold text-cove-soft uppercase tracking-wider mb-2">
                                 Custom Metrics
                             </h4>
                             <ExperimentMetricBuilder
@@ -414,21 +414,21 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
                         </div>
 
                         <div>
-                            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            <h4 className="text-xs font-semibold text-cove-soft uppercase tracking-wider mb-2">
                                 Linked Trackers
                             </h4>
                             <div className="space-y-2">
                                 <div className="text-sm">
-                                    <span className="text-slate-500">Independent: </span>
-                                    <span className="text-slate-800">
+                                    <span className="text-cove-soft">Independent: </span>
+                                    <span className="text-cove-ink">
                                         {(experiment.independentIds || [])
                                             .map(getVariableName)
                                             .join(', ') || 'None'}
                                     </span>
                                 </div>
                                 <div className="text-sm">
-                                    <span className="text-slate-500">Dependent: </span>
-                                    <span className="text-slate-800">
+                                    <span className="text-cove-soft">Dependent: </span>
+                                    <span className="text-cove-ink">
                                         {experiment.tracker2Id
                                             ? getVariableName(experiment.tracker2Id)
                                             : 'None'}
@@ -438,10 +438,10 @@ const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({
                         </div>
 
                         <div>
-                            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                            <h4 className="text-xs font-semibold text-cove-soft uppercase tracking-wider mb-2">
                                 Start Date
                             </h4>
-                            <span className="text-slate-700 text-sm">
+                            <span className="text-cove-muted text-sm">
                                 {format(new Date(experiment.startDate), 'MMMM d, yyyy')}
                             </span>
                         </div>

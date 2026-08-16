@@ -29,7 +29,7 @@ const PendingSyncBadge: React.FC = () => {
         <button
             type="button"
             onClick={handleRetry}
-            className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 transition-colors hover:bg-amber-100"
+            className="inline-flex items-center gap-1.5 rounded-full border-0 bg-cove-tint-amber px-2.5 py-1 text-[11px] font-extrabold text-cove-streak-text transition-opacity hover:opacity-80"
             aria-label={`${count} captures waiting to sync — tap to retry`}
         >
             {syncing ? <RefreshCw size={12} className="animate-spin" /> : <CloudOff size={12} />}

@@ -134,7 +134,7 @@ export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
             {hoverRect && (
                 <div
                     id="dev-inspector-overlay"
-                    className="fixed z-[9998] pointer-events-none bg-blue-500/20 border-2 border-blue-500 transition-all duration-75 ease-out"
+                    className="fixed z-[9998] pointer-events-none bg-cove-accent/20 border-2 border-cove-accent transition-all duration-75 ease-out"
                     style={{
                         left: hoverRect.left,
                         top: hoverRect.top,
@@ -149,7 +149,7 @@ export function InspectorOverlay({ onSelect }: InspectorOverlayProps) {
                     <button
                         type="button"
                         onClick={handleReportSelected}
-                        className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-full font-medium shadow-xl flex items-center gap-2 transform transition-all animate-in slide-in-from-bottom-2"
+                        className="bg-cove-success hover:bg-cove-success-deep text-white px-5 py-3 rounded-full font-bold shadow-xl flex items-center gap-2 transform transition-all animate-in slide-in-from-bottom-2"
                     >
                         Review {selectedElements.length}{' '}
                         {selectedElements.length === 1 ? 'Item' : 'Items'}

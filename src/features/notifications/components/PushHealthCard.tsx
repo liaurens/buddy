@@ -105,28 +105,28 @@ const PushHealthCard: React.FC = () => {
     return (
         <section className="app-surface p-5 space-y-3">
             <div className="flex items-center gap-2">
-                <Activity size={18} className="text-slate-500" />
-                <h2 className="font-semibold text-slate-900">Push health check</h2>
+                <Activity size={18} className="text-cove-soft" />
+                <h2 className="font-semibold text-cove-ink">Push health check</h2>
                 <button
                     onClick={check}
-                    className="ml-auto p-1.5 text-slate-400 hover:text-slate-600 rounded-lg transition-colors"
+                    className="ml-auto p-1.5 text-cove-faint hover:text-cove-muted rounded-xl transition-colors"
                     aria-label="Re-run health check"
                 >
                     <RefreshCw size={14} />
                 </button>
             </div>
 
-            {health.status === 'checking' && <p className="text-sm text-slate-500">Checking…</p>}
+            {health.status === 'checking' && <p className="text-sm text-cove-soft">Checking…</p>}
 
             {health.status === 'unsupported' && (
-                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <p className="text-sm text-cove-streak-text bg-cove-tint-amber border border-cove-streak rounded-xl px-3 py-2">
                     Push is not supported here. On iPhone, install the app to your home screen
                     first.
                 </p>
             )}
 
             {health.status === 'permission_denied' && (
-                <p className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 flex items-start gap-2">
+                <p className="text-sm text-cove-danger-deep bg-cove-tint-danger border border-cove-danger rounded-xl px-3 py-2 flex items-start gap-2">
                     <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
                     Notification permission is blocked for this app. Re-enable it in your device
                     settings, then re-run this check.
@@ -134,7 +134,7 @@ const PushHealthCard: React.FC = () => {
             )}
 
             {health.status === 'not_subscribed' && (
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-cove-muted">
                     This device is not subscribed to push.
                     {health.deviceCount > 0 &&
                         ` ${health.deviceCount} other device${health.deviceCount === 1 ? ' is' : 's are'} subscribed.`}
@@ -143,7 +143,7 @@ const PushHealthCard: React.FC = () => {
 
             {health.status === 'dead' && (
                 <div className="space-y-2">
-                    <p className="text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 flex items-start gap-2">
+                    <p className="text-sm text-cove-danger-deep bg-cove-tint-danger border border-cove-danger rounded-xl px-3 py-2 flex items-start gap-2">
                         <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
                         This device thinks it's subscribed, but the server doesn't know about it —
                         notifications are silently going nowhere.
@@ -159,7 +159,7 @@ const PushHealthCard: React.FC = () => {
             )}
 
             {health.status === 'healthy' && (
-                <p className="text-sm text-emerald-700 flex items-center gap-2">
+                <p className="text-sm text-cove-success-deep flex items-center gap-2">
                     <Check size={16} />
                     Push is healthy on this device
                     {health.lastUsedAt &&
@@ -168,7 +168,7 @@ const PushHealthCard: React.FC = () => {
                 </p>
             )}
 
-            {error && <p className="text-xs text-rose-600">{error}</p>}
+            {error && <p className="text-xs text-cove-danger-deep">{error}</p>}
         </section>
     );
 };

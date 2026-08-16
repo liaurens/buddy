@@ -93,7 +93,7 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
 
     if (metrics.length === 0) {
         return (
-            <div className="text-center py-8 text-slate-400">
+            <div className="text-center py-8 text-cove-faint">
                 <p>No custom metrics defined yet.</p>
                 <p className="text-sm mt-1">Add metrics in the Settings tab.</p>
             </div>
@@ -103,12 +103,12 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-slate-500">
+                <div className="flex items-center gap-2 text-sm text-cove-soft">
                     <Calendar size={14} />
                     <span>{format(new Date(date), 'EEEE, MMM d')}</span>
                 </div>
                 {currentPhase && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-violet-50 text-violet-700 rounded-lg text-xs font-medium">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-cove-tint-blue text-cove-ink rounded-xl text-xs font-bold">
                         <Tag size={11} />
                         <span>{currentPhase.name}</span>
                     </div>
@@ -118,15 +118,15 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
             <div className="space-y-4">
                 {metrics.map((metric) => (
                     <div key={metric.id} className="space-y-1.5">
-                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        <label className="flex items-center gap-2 text-sm font-bold text-cove-muted">
                             <span>{metric.emoji}</span>
                             <span>{metric.name}</span>
                             {metric.required && (
-                                <span className="w-1.5 h-1.5 bg-red-400 rounded-full" />
+                                <span className="w-1.5 h-1.5 bg-cove-danger rounded-full" />
                             )}
                         </label>
                         {metric.description && (
-                            <p className="text-xs text-slate-400">{metric.description}</p>
+                            <p className="text-xs text-cove-faint">{metric.description}</p>
                         )}
                         {renderInput(metric, values[metric.id], (val) => setValue(metric.id, val))}
                     </div>
@@ -134,10 +134,10 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
             </div>
 
             <div className="space-y-1.5">
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                <label className="flex items-center gap-2 text-sm font-bold text-cove-muted">
                     <span>📝</span>
                     <span>Notes for today</span>
-                    <span className="text-xs font-normal text-slate-400">(optional)</span>
+                    <span className="text-xs font-semibold text-cove-faint">(optional)</span>
                 </label>
                 <textarea
                     value={notes}
@@ -147,7 +147,7 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
                     }}
                     placeholder="How did it go? Any observations or context..."
                     rows={2}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full p-2.5 border border-cove-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cove-accent"
                 />
             </div>
 
@@ -167,7 +167,7 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
                             }
                         }}
                         disabled={saving}
-                        className="px-4 py-3 rounded-xl font-medium transition-all bg-rose-50 text-rose-600 hover:bg-rose-100 disabled:opacity-50 flex items-center justify-center"
+                        className="px-4 py-3 rounded-xl font-bold transition-all bg-cove-tint-danger text-cove-danger-deep hover:bg-cove-pink-accent disabled:opacity-50 flex items-center justify-center"
                         title="Delete check-in for this date"
                     >
                         <Trash2 size={18} />
@@ -176,10 +176,10 @@ const ExperimentCheckinForm: React.FC<ExperimentCheckinFormProps> = ({
                 <button
                     onClick={handleSave}
                     disabled={saving || !requiredFilled}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-all ${
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${
                         saved
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50'
+                            ? 'bg-cove-tint-green text-cove-success-deep'
+                            : 'bg-cove-accent text-white hover:bg-[#3a8dc7] disabled:opacity-50'
                     }`}
                 >
                     {saved ? (
@@ -219,10 +219,10 @@ function renderInput(
                             <button
                                 key={val}
                                 onClick={() => onChange(val)}
-                                className={`py-2 rounded-lg text-sm font-medium transition-all ${
+                                className={`py-2 rounded-xl text-sm font-bold transition-all ${
                                     isSelected
-                                        ? 'bg-indigo-600 text-white shadow-sm'
-                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        ? 'bg-cove-accent text-white shadow-cove'
+                                        : 'bg-[color:var(--buddy-surface-soft)] text-cove-muted hover:bg-cove-track'
                                 }`}
                             >
                                 {val}
@@ -237,20 +237,20 @@ function renderInput(
                 <div className="grid grid-cols-2 gap-2">
                     <button
                         onClick={() => onChange(1)}
-                        className={`py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        className={`py-2.5 rounded-xl text-sm font-bold transition-all ${
                             value === 1
-                                ? 'bg-emerald-100 text-emerald-700 ring-2 ring-emerald-400'
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                ? 'bg-cove-tint-green text-cove-success-deep ring-2 ring-cove-success'
+                                : 'bg-[color:var(--buddy-surface-soft)] text-cove-muted hover:bg-cove-track'
                         }`}
                     >
                         Yes
                     </button>
                     <button
                         onClick={() => onChange(0)}
-                        className={`py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        className={`py-2.5 rounded-xl text-sm font-bold transition-all ${
                             value === 0
-                                ? 'bg-rose-100 text-rose-700 ring-2 ring-rose-400'
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                ? 'bg-cove-tint-danger text-cove-danger-deep ring-2 ring-cove-danger'
+                                : 'bg-[color:var(--buddy-surface-soft)] text-cove-muted hover:bg-cove-track'
                         }`}
                     >
                         No
@@ -268,10 +268,10 @@ function renderInput(
                             const v = parseFloat(e.target.value);
                             onChange(isNaN(v) ? '' : v);
                         }}
-                        className="flex-1 p-2.5 border border-slate-200 rounded-lg text-sm"
+                        className="flex-1 p-2.5 border border-cove-border rounded-xl text-sm"
                         placeholder="Enter value"
                     />
-                    {metric.unit && <span className="text-sm text-slate-500">{metric.unit}</span>}
+                    {metric.unit && <span className="text-sm text-cove-soft">{metric.unit}</span>}
                 </div>
             );
         case 'text':
@@ -279,7 +279,7 @@ function renderInput(
                 <textarea
                     value={value ?? ''}
                     onChange={(e) => onChange(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-lg text-sm resize-none"
+                    className="w-full p-2.5 border border-cove-border rounded-xl text-sm resize-none"
                     rows={2}
                     placeholder="Enter notes..."
                 />

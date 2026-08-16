@@ -67,23 +67,23 @@ export const SessionForm: React.FC<SessionFormProps> = ({
                 className="w-full max-w-md bg-white rounded-2xl p-5 space-y-4 shadow-xl"
             >
                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-slate-900">New class time</h2>
+                    <h2 className="text-lg font-semibold text-cove-ink">New class time</h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-slate-400 hover:text-slate-600"
+                        className="text-cove-faint hover:text-cove-muted"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 <label className="block">
-                    <span className="text-xs font-medium text-slate-600">Class</span>
+                    <span className="text-xs font-bold text-cove-muted">Class</span>
                     <select
                         value={classId}
                         onChange={(e) => setClassId(e.target.value)}
                         required
-                        className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+                        className="app-input mt-1"
                     >
                         {classes.map((c) => (
                             <option key={c.id} value={c.id}>
@@ -94,17 +94,17 @@ export const SessionForm: React.FC<SessionFormProps> = ({
                 </label>
 
                 <div>
-                    <span className="text-xs font-medium text-slate-600">Days</span>
+                    <span className="text-xs font-bold text-cove-muted">Days</span>
                     <div className="mt-1 grid grid-cols-7 gap-1">
                         {DAYS.map((d, i) => (
                             <button
                                 key={d}
                                 type="button"
                                 onClick={() => toggleDay(i)}
-                                className={`py-2 rounded-lg text-xs font-medium transition-colors ${
+                                className={`py-2 rounded-xl text-xs font-bold transition-colors ${
                                     selectedDays.has(i)
-                                        ? 'bg-indigo-600 text-white'
-                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        ? 'bg-cove-accent text-white'
+                                        : 'bg-[color:var(--buddy-surface-soft)] text-cove-muted hover:bg-cove-track'
                                 }`}
                             >
                                 {d}
@@ -115,34 +115,34 @@ export const SessionForm: React.FC<SessionFormProps> = ({
 
                 <div className="grid grid-cols-2 gap-3">
                     <label className="block">
-                        <span className="text-xs font-medium text-slate-600">Start</span>
+                        <span className="text-xs font-bold text-cove-muted">Start</span>
                         <input
                             type="time"
                             value={startTime}
                             onChange={(e) => setStartTime(e.target.value)}
                             required
-                            className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                            className="app-input mt-1"
                         />
                     </label>
                     <label className="block">
-                        <span className="text-xs font-medium text-slate-600">End</span>
+                        <span className="text-xs font-bold text-cove-muted">End</span>
                         <input
                             type="time"
                             value={endTime}
                             onChange={(e) => setEndTime(e.target.value)}
                             required
-                            className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                            className="app-input mt-1"
                         />
                     </label>
                 </div>
 
                 <label className="block">
-                    <span className="text-xs font-medium text-slate-600">Location</span>
+                    <span className="text-xs font-bold text-cove-muted">Location</span>
                     <input
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
                         placeholder="Room 204"
-                        className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                        className="app-input mt-1"
                     />
                 </label>
 
@@ -150,14 +150,14 @@ export const SessionForm: React.FC<SessionFormProps> = ({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
+                        className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)]"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={busy || !classId}
-                        className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                        className="flex-1 px-4 py-2 rounded-xl text-sm font-bold bg-cove-accent text-white hover:bg-[#3a8dc7] disabled:opacity-50"
                     >
                         Add
                     </button>

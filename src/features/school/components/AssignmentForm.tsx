@@ -73,25 +73,25 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({
                 className="w-full max-w-md bg-white rounded-2xl p-5 space-y-4 shadow-xl"
             >
                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-slate-900">
+                    <h2 className="text-lg font-semibold text-cove-ink">
                         {initial ? 'Edit assignment' : 'New assignment'}
                     </h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-slate-400 hover:text-slate-600"
+                        className="text-cove-faint hover:text-cove-muted"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 <label className="block">
-                    <span className="text-xs font-medium text-slate-600">Class</span>
+                    <span className="text-xs font-bold text-cove-muted">Class</span>
                     <select
                         value={classId}
                         onChange={(e) => setClassId(e.target.value)}
                         required
-                        className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+                        className="app-input mt-1"
                     >
                         {classes.map((c) => (
                             <option key={c.id} value={c.id}>
@@ -102,45 +102,45 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({
                 </label>
 
                 <label className="block">
-                    <span className="text-xs font-medium text-slate-600">Title</span>
+                    <span className="text-xs font-bold text-cove-muted">Title</span>
                     <input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         required
                         autoFocus
-                        className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                        className="app-input mt-1"
                     />
                 </label>
 
                 <label className="block">
-                    <span className="text-xs font-medium text-slate-600">Deadline</span>
+                    <span className="text-xs font-bold text-cove-muted">Deadline</span>
                     <input
                         type="datetime-local"
                         value={deadlineLocal}
                         onChange={(e) => setDeadlineLocal(e.target.value)}
                         required
-                        className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                        className="app-input mt-1"
                     />
                 </label>
 
                 <div className="grid grid-cols-2 gap-3">
                     <label className="block">
-                        <span className="text-xs font-medium text-slate-600">Est. minutes</span>
+                        <span className="text-xs font-bold text-cove-muted">Est. minutes</span>
                         <input
                             type="number"
                             min={0}
                             value={estimated}
                             onChange={(e) => setEstimated(e.target.value)}
-                            className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                            className="app-input mt-1"
                         />
                     </label>
                     {initial && (
                         <label className="block">
-                            <span className="text-xs font-medium text-slate-600">Status</span>
+                            <span className="text-xs font-bold text-cove-muted">Status</span>
                             <select
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value as AssignmentStatus)}
-                                className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+                                className="app-input mt-1"
                             >
                                 <option value="pending">Pending</option>
                                 <option value="in_progress">In progress</option>
@@ -152,12 +152,12 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({
                 </div>
 
                 <label className="block">
-                    <span className="text-xs font-medium text-slate-600">Notes</span>
+                    <span className="text-xs font-bold text-cove-muted">Notes</span>
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         rows={3}
-                        className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                        className="app-input mt-1"
                     />
                 </label>
 
@@ -165,14 +165,14 @@ export const AssignmentForm: React.FC<AssignmentFormProps> = ({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
+                        className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)]"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={busy || !classId || !title.trim() || !deadlineLocal}
-                        className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                        className="flex-1 px-4 py-2 rounded-xl text-sm font-bold bg-cove-accent text-white hover:bg-[#3a8dc7] disabled:opacity-50"
                     >
                         {initial ? 'Save' : 'Create'}
                     </button>

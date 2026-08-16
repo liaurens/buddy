@@ -61,15 +61,15 @@ const GoogleOAuthCallbackPage: React.FC = () => {
     const Icon = phase === 'done' ? CheckCircle2 : phase === 'error' ? AlertTriangle : Loader2;
     const tone =
         phase === 'done'
-            ? 'text-emerald-600'
+            ? 'text-cove-success-deep'
             : phase === 'error'
-              ? 'text-rose-600'
-              : 'text-indigo-600';
+              ? 'text-cove-danger-deep'
+              : 'text-cove-accent';
 
     return (
         <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#f7f8fb] p-6 text-center">
             <Icon size={40} className={`${tone} ${phase === 'working' ? 'animate-spin' : ''}`} />
-            <p className="max-w-sm text-sm font-medium text-slate-600">{message}</p>
+            <p className="max-w-sm text-sm font-bold text-cove-muted">{message}</p>
         </div>
     );
 };

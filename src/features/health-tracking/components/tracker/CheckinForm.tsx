@@ -34,11 +34,11 @@ function ratingTone(value: number, scale: TrackerScale): string {
     const t = (value - min) / Math.max(1, max - min); // 0..1
     const goodness = direction === 'higher_better' ? t : direction === 'lower_better' ? 1 - t : 0.5;
 
-    if (direction === 'neutral') return 'bg-indigo-600 text-white border-indigo-700';
-    if (goodness >= 0.75) return 'bg-emerald-500 text-white border-emerald-600';
-    if (goodness >= 0.5) return 'bg-lime-500 text-white border-lime-600';
-    if (goodness >= 0.25) return 'bg-amber-500 text-white border-amber-600';
-    return 'bg-rose-500 text-white border-rose-600';
+    if (direction === 'neutral') return 'bg-cove-accent text-white border-cove-accent';
+    if (goodness >= 0.75) return 'bg-cove-success text-white border-cove-success';
+    if (goodness >= 0.5) return 'bg-cove-success text-white border-cove-success';
+    if (goodness >= 0.25) return 'bg-cove-streak text-white border-cove-streak';
+    return 'bg-cove-danger text-white border-cove-danger';
 }
 
 function captionForDirection(value: number, scale: TrackerScale): string {
@@ -72,11 +72,11 @@ const RatingScale: React.FC<RatingScaleProps> = ({ scale, value, onChange }) => 
     return (
         <div className="space-y-2">
             <div className="flex items-end justify-between text-xs">
-                <span className="font-medium text-slate-500">{scale.lowLabel}</span>
+                <span className="font-bold text-cove-soft">{scale.lowLabel}</span>
                 {scale.direction !== 'neutral' && (
-                    <span className="text-slate-400">{directionHint[scale.direction]}</span>
+                    <span className="text-cove-faint">{directionHint[scale.direction]}</span>
                 )}
-                <span className="font-medium text-slate-500 text-right">{scale.highLabel}</span>
+                <span className="font-bold text-cove-soft text-right">{scale.highLabel}</span>
             </div>
             <div className="flex gap-1">
                 {buttons.map((n) => {
@@ -86,10 +86,10 @@ const RatingScale: React.FC<RatingScaleProps> = ({ scale, value, onChange }) => 
                             key={n}
                             type="button"
                             onClick={() => onChange(n)}
-                            className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all border ${
+                            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all border ${
                                 selected
-                                    ? `${ratingTone(n, scale)} shadow-md scale-105 z-10`
-                                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                                    ? `${ratingTone(n, scale)} shadow-cove scale-105 z-10`
+                                    : 'bg-white text-cove-soft border-cove-border hover:border-cove-border'
                             }`}
                         >
                             {n}
@@ -98,7 +98,7 @@ const RatingScale: React.FC<RatingScaleProps> = ({ scale, value, onChange }) => 
                 })}
             </div>
             {value !== undefined && (
-                <p className="text-xs text-slate-500 pt-1">
+                <p className="text-xs text-cove-soft pt-1">
                     {captionForDirection(Number(value), scale)}
                 </p>
             )}
@@ -283,13 +283,13 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
             <div
                 key={tracker.id}
                 className={`bg-white rounded-2xl p-5 border transition-colors ${
-                    isRequired && !hasValue ? 'border-rose-200' : 'border-slate-100'
+                    isRequired && !hasValue ? 'border-cove-danger' : 'border-cove-border'
                 }`}
             >
-                <h2 className="text-base font-semibold text-slate-800 flex items-center gap-2 mb-3">
+                <h2 className="text-base font-semibold text-cove-ink flex items-center gap-2 mb-3">
                     <span className="text-xl">{tracker.emoji}</span>
                     <span>{tracker.name}</span>
-                    {isRequired && <span className="text-rose-500 text-sm">*</span>}
+                    {isRequired && <span className="text-cove-danger text-sm">*</span>}
                 </h2>
 
                 {tracker.type === 'rating' && (
@@ -307,8 +307,8 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                             onClick={() => handleTrackerChange(tracker.id, 1)}
                             className={`flex-1 py-3 rounded-xl text-base font-bold transition-all border ${
                                 value === 1
-                                    ? 'bg-emerald-500 text-white border-emerald-600 shadow-md'
-                                    : 'bg-slate-50 text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 border-slate-200'
+                                    ? 'bg-cove-success text-white border-cove-success shadow-cove'
+                                    : 'bg-[color:var(--buddy-surface-soft)] text-cove-muted hover:bg-cove-tint-green hover:text-cove-success-deep border-cove-border'
                             }`}
                         >
                             ✓ Yes
@@ -318,8 +318,8 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                             onClick={() => handleTrackerChange(tracker.id, 0)}
                             className={`flex-1 py-3 rounded-xl text-base font-bold transition-all border ${
                                 value === 0
-                                    ? 'bg-slate-500 text-white border-slate-600 shadow-md'
-                                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200'
+                                    ? 'bg-cove-ink text-white border-cove-border shadow-cove'
+                                    : 'bg-[color:var(--buddy-surface-soft)] text-cove-muted hover:bg-cove-track border-cove-border'
                             }`}
                         >
                             ✕ No
@@ -345,16 +345,16 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                                 placeholder={
                                     tracker.unit ? `e.g. 5 ${tracker.unit}` : 'Enter value...'
                                 }
-                                className="w-full px-4 py-3 text-base border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-slate-50"
+                                className="w-full px-4 py-3 text-base border border-cove-border rounded-xl focus:ring-2 focus:ring-cove-accent focus:border-transparent outline-none bg-[color:var(--buddy-surface-soft)]"
                             />
                             {tracker.unit && (
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium pointer-events-none">
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-cove-faint font-bold pointer-events-none">
                                     {tracker.unit}
                                 </span>
                             )}
                         </div>
                         {tracker.scale && tracker.scale.direction !== 'neutral' && (
-                            <p className="text-xs text-slate-400 mt-2">
+                            <p className="text-xs text-cove-faint mt-2">
                                 {tracker.scale.lowLabel} ({tracker.scale.min}) —{' '}
                                 {tracker.scale.highLabel} ({tracker.scale.max}) ·{' '}
                                 {tracker.scale.direction === 'higher_better'
@@ -371,7 +371,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                         onChange={(e) => handleTrackerChange(tracker.id, e.target.value)}
                         placeholder="Write a note..."
                         rows={3}
-                        className="w-full px-4 py-3 text-base border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-slate-50 resize-none"
+                        className="w-full px-4 py-3 text-base border border-cove-border rounded-xl focus:ring-2 focus:ring-cove-accent focus:border-transparent outline-none bg-[color:var(--buddy-surface-soft)] resize-none"
                     />
                 )}
             </div>
@@ -383,9 +383,9 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
         const draft = episodicDraft[tracker.id];
 
         return (
-            <div className="mt-3 bg-white border border-indigo-200 rounded-2xl p-4 space-y-3">
+            <div className="mt-3 bg-white border border-cove-accent-pale rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-cove-ink flex items-center gap-2">
                         <span className="text-lg">{tracker.emoji}</span>
                         Log {tracker.name.toLowerCase()}
                     </h3>
@@ -395,7 +395,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                             setOpenEpisodic(null);
                             setEpisodicError(null);
                         }}
-                        className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md"
+                        className="p-1 text-cove-faint hover:text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded-xl"
                         aria-label="Close"
                     >
                         <X size={16} />
@@ -427,10 +427,10 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                             }
                             placeholder={tracker.unit ? `e.g. 2 ${tracker.unit}` : 'Enter value...'}
                             autoFocus
-                            className="w-full px-4 py-3 text-base border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50"
+                            className="w-full px-4 py-3 text-base border border-cove-border rounded-xl focus:ring-2 focus:ring-cove-accent outline-none bg-[color:var(--buddy-surface-soft)]"
                         />
                         {tracker.unit && (
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium pointer-events-none">
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-cove-faint font-bold pointer-events-none">
                                 {tracker.unit}
                             </span>
                         )}
@@ -449,9 +449,9 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                                 className={`flex-1 py-2.5 rounded-xl text-sm font-bold border ${
                                     draft === v
                                         ? v === 1
-                                            ? 'bg-emerald-500 text-white border-emerald-600'
-                                            : 'bg-slate-500 text-white border-slate-600'
-                                        : 'bg-slate-50 text-slate-600 border-slate-200'
+                                            ? 'bg-cove-success text-white border-cove-success'
+                                            : 'bg-cove-ink text-white border-cove-border'
+                                        : 'bg-[color:var(--buddy-surface-soft)] text-cove-muted border-cove-border'
                                 }`}
                             >
                                 {v === 1 ? '✓ Yes' : '✕ No'}
@@ -469,11 +469,11 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                         placeholder="Describe..."
                         rows={2}
                         autoFocus
-                        className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 resize-none"
+                        className="w-full px-4 py-2.5 text-sm border border-cove-border rounded-xl focus:ring-2 focus:ring-cove-accent outline-none bg-[color:var(--buddy-surface-soft)] resize-none"
                     />
                 )}
 
-                {episodicError && <p className="text-xs text-rose-600">{episodicError}</p>}
+                {episodicError && <p className="text-xs text-cove-danger-deep">{episodicError}</p>}
 
                 <button
                     type="button"
@@ -481,7 +481,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                     disabled={
                         episodicDraft[tracker.id] === undefined || episodicDraft[tracker.id] === ''
                     }
-                    className="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                    className="w-full py-2.5 bg-cove-accent text-white rounded-xl text-sm font-bold hover:bg-[#3a8dc7] disabled:opacity-40 transition-colors"
                 >
                     Log it
                 </button>
@@ -491,12 +491,12 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
 
     if (trackers.length === 0) {
         return (
-            <div className="p-8 text-center text-slate-500 bg-white rounded-2xl shadow-sm border border-slate-100">
+            <div className="p-8 text-center text-cove-soft bg-white rounded-2xl shadow-cove border border-cove-border">
                 <div className="mb-4">No trackers defined yet.</div>
                 {onManageTrackers && (
                     <button
                         onClick={onManageTrackers}
-                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                        className="bg-cove-accent text-white px-4 py-2 rounded-xl font-bold hover:bg-[#3a8dc7] transition-colors"
                     >
                         Create a Tracker
                     </button>
@@ -508,21 +508,21 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
     return (
         <div className="max-w-2xl mx-auto space-y-5">
             {showDatePicker && onDateChange && (
-                <div className="bg-white rounded-2xl p-5 border border-slate-100 flex items-center justify-between">
+                <div className="bg-white rounded-2xl p-5 border border-cove-border flex items-center justify-between">
                     <div>
-                        <h2 className="text-base font-semibold text-slate-800">Check-in date</h2>
-                        <p className="text-xs text-slate-500">Log entries for a specific day</p>
+                        <h2 className="text-base font-semibold text-cove-ink">Check-in date</h2>
+                        <p className="text-xs text-cove-soft">Log entries for a specific day</p>
                     </div>
                     <div className="relative">
                         <Calendar
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-cove-faint"
                             size={16}
                         />
                         <input
                             type="date"
                             value={format(date, 'yyyy-MM-dd')}
                             onChange={(e) => onDateChange(new Date(e.target.value + 'T12:00:00'))}
-                            className="pl-10 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50"
+                            className="pl-10 pr-4 py-2 rounded-xl border border-cove-border text-sm focus:ring-2 focus:ring-cove-accent outline-none bg-[color:var(--buddy-surface-soft)]"
                             required
                         />
                     </div>
@@ -530,30 +530,30 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
             )}
 
             {showProtocols && activeProtocols.length > 0 && (
-                <div className="bg-white rounded-2xl p-5 border border-slate-100">
-                    <h2 className="text-base font-semibold text-slate-800 flex items-center gap-2 mb-3">
-                        <Pill className="text-indigo-500" size={18} /> Protocols
+                <div className="bg-white rounded-2xl p-5 border border-cove-border">
+                    <h2 className="text-base font-semibold text-cove-ink flex items-center gap-2 mb-3">
+                        <Pill className="text-cove-accent" size={18} /> Protocols
                     </h2>
                     <div className="space-y-2">
                         {activeProtocols.map((p) => (
                             <label
                                 key={p.id}
-                                className="flex items-center justify-between gap-2 p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-indigo-50 transition-colors border border-slate-200"
+                                className="flex items-center justify-between gap-2 p-3 bg-[color:var(--buddy-surface-soft)] rounded-xl cursor-pointer hover:bg-cove-tint-blue transition-colors border border-cove-border"
                             >
                                 <div className="min-w-0 flex-1">
                                     <div
-                                        className="font-medium text-slate-800 truncate"
+                                        className="font-bold text-cove-ink truncate"
                                         title={p.name}
                                     >
                                         {p.name}
                                     </div>
-                                    <div className="text-xs text-slate-500">
+                                    <div className="text-xs text-cove-soft">
                                         {p.doseAmount} {p.doseUnit}
                                     </div>
                                 </div>
                                 <input
                                     type="checkbox"
-                                    className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    className="w-5 h-5 rounded border-cove-border text-cove-accent focus:ring-cove-accent"
                                     checked={!!protocolLogs[p.id]?.taken}
                                     onChange={(e) =>
                                         setProtocolLogs((prev) =>
@@ -572,11 +572,11 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
             <div className="space-y-4">{dailyTrackers.map((tracker) => renderInput(tracker))}</div>
 
             {episodicTrackers.length > 0 && (
-                <div className="bg-white rounded-2xl p-5 border border-slate-100">
-                    <h2 className="text-base font-semibold text-slate-800 mb-1">
+                <div className="bg-white rounded-2xl p-5 border border-cove-border">
+                    <h2 className="text-base font-semibold text-cove-ink mb-1">
                         Anything occasional?
                     </h2>
-                    <p className="text-xs text-slate-500 mb-3">
+                    <p className="text-xs text-cove-soft mb-3">
                         Only log these when they actually happened.
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -588,12 +588,12 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                                     key={tracker.id}
                                     type="button"
                                     onClick={() => setOpenEpisodic(isOpen ? null : tracker.id)}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${
                                         logged
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                            ? 'bg-cove-tint-green text-cove-success-deep border-cove-success'
                                             : isOpen
-                                              ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
-                                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300'
+                                              ? 'bg-cove-tint-blue text-cove-ink border-cove-accent'
+                                              : 'bg-[color:var(--buddy-surface-soft)] text-cove-muted border-cove-border hover:border-cove-accent'
                                     }`}
                                 >
                                     <span>{tracker.emoji}</span>
@@ -614,7 +614,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
             {onManageTrackers && (
                 <button
                     onClick={onManageTrackers}
-                    className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 font-medium hover:bg-slate-50 hover:text-slate-700 transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-4 border-2 border-dashed border-cove-border rounded-2xl text-cove-soft font-bold hover:bg-[color:var(--buddy-surface-soft)] hover:text-cove-muted transition-colors flex items-center justify-center gap-2"
                 >
                     <Settings size={18} />
                     Manage trackers
@@ -626,7 +626,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                     type="button"
                     onClick={handleSubmit}
                     disabled={!isFormComplete() || submitStatus !== 'idle'}
-                    className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="w-full bg-cove-accent text-white py-4 rounded-2xl font-bold text-lg shadow-cove disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                     {submitStatus === 'success' ? (
                         <>
@@ -638,8 +638,9 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                     )}
                 </button>
                 {!isFormComplete() && (
-                    <p className="text-center text-slate-400 text-xs mt-3 font-medium">
-                        Fill all <span className="text-rose-400">required</span> fields to complete
+                    <p className="text-center text-cove-faint text-xs mt-3 font-bold">
+                        Fill all <span className="text-cove-danger">required</span> fields to
+                        complete
                     </p>
                 )}
             </div>

@@ -100,28 +100,28 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer,
                 aria-modal="true"
                 aria-labelledby={titleId}
                 tabIndex={-1}
-                className={`relative w-full ${sizeClasses[size]} animate-in fade-in slide-in-from-bottom-4 overflow-hidden rounded-t-2xl border border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_24px_70px_rgba(15,23,42,0.18)] outline-none sm:mx-4 sm:slide-in-from-bottom-0 sm:rounded-xl sm:pb-0`}
+                className={`relative w-full ${sizeClasses[size]} animate-in fade-in slide-in-from-bottom-4 overflow-hidden rounded-t-card-xl border-0 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_24px_70px_rgba(29,58,77,0.28)] outline-none sm:mx-4 sm:slide-in-from-bottom-0 sm:rounded-card-xl sm:pb-0`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-slate-200 py-3 pl-6 pr-3 sm:py-2.5">
-                    <h2 id={titleId} className="text-lg font-semibold text-slate-900">
+                <div className="flex items-center justify-between border-b border-cove-border py-3 pl-5 pr-3 sm:py-2.5">
+                    <h2 id={titleId} className="text-[17px] font-extrabold text-cove-ink">
                         {title}
                     </h2>
                     <button
                         onClick={onClose}
                         aria-label="Close"
-                        className="flex h-11 w-11 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                        className="flex h-11 w-11 items-center justify-center rounded-xl text-cove-soft transition-colors hover:bg-[color:var(--buddy-surface-soft)] hover:text-cove-ink"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Body */}
-                <div className="px-6 py-4 max-h-[70dvh] overflow-y-auto">{children}</div>
+                <div className="max-h-[70dvh] overflow-y-auto px-5 py-4">{children}</div>
 
                 {/* Footer */}
                 {footer && (
-                    <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+                    <div className="flex items-center justify-end gap-3 border-t border-cove-border bg-[color:var(--buddy-surface-soft)] px-5 py-4">
                         {footer}
                     </div>
                 )}

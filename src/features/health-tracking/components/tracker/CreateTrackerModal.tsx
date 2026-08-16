@@ -162,19 +162,19 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
 
     const footer = (
         <div className="w-full">
-            {formError && <p className="text-xs text-red-600 mb-2">{formError}</p>}
+            {formError && <p className="text-xs text-cove-danger-deep mb-2">{formError}</p>}
             <div className="flex justify-between w-full">
                 {step > 1 ? (
                     <button
                         onClick={() => setStep(step - 1)}
-                        className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                        className="px-4 py-2 text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded-xl transition-colors"
                     >
                         Back
                     </button>
                 ) : (
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                        className="px-4 py-2 text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded-xl transition-colors"
                     >
                         Cancel
                     </button>
@@ -189,14 +189,14 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                             setStep(Math.min(next, lastStep));
                         }}
                         disabled={!canAdvance}
-                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-bold text-white bg-cove-accent hover:bg-[#3a8dc7] rounded-xl transition-colors disabled:opacity-50"
                     >
                         Next
                     </button>
                 ) : (
                     <button
                         onClick={handleSave}
-                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
+                        className="px-4 py-2 text-sm font-bold text-white bg-cove-accent hover:bg-[#3a8dc7] rounded-xl transition-colors"
                     >
                         {editingTracker ? 'Save changes' : 'Create tracker'}
                     </button>
@@ -217,7 +217,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                 {step === 1 && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-bold text-cove-muted mb-1">
                                 Name
                             </label>
                             <input
@@ -225,14 +225,14 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                 value={formData.name || ''}
                                 onChange={(e) => updateField('name', e.target.value)}
                                 placeholder="e.g. Sleep, Steps, Mood"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                className="app-input"
                                 autoFocus
                             />
                         </div>
 
                         <div className="flex gap-4">
                             <div className="w-24">
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Emoji
                                 </label>
                                 <input
@@ -240,17 +240,17 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     value={formData.emoji || ''}
                                     onChange={(e) => updateField('emoji', e.target.value)}
                                     placeholder="📊"
-                                    className="w-full text-center px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="w-full text-center px-3 py-2 border border-cove-border rounded-xl focus:ring-2 focus:ring-cove-accent outline-none"
                                 />
                             </div>
                             <div className="flex-1">
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Group
                                 </label>
                                 <select
                                     value={formData.group || 'Health'}
                                     onChange={(e) => updateField('group', e.target.value)}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="app-input"
                                 >
                                     <option value="Sleep">Sleep</option>
                                     <option value="Body">Body</option>
@@ -265,7 +265,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Type
                             </label>
                             <div className="grid grid-cols-2 gap-2">
@@ -274,10 +274,10 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                         <button
                                             key={type}
                                             onClick={() => handleTypeChange(type)}
-                                            className={`px-3 py-2 rounded-lg border text-sm font-medium text-left capitalize transition-all ${
+                                            className={`px-3 py-2 rounded-xl border text-sm font-bold text-left capitalize transition-all ${
                                                 formData.type === type
-                                                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500'
-                                                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                                    ? 'bg-cove-tint-blue border-cove-accent text-cove-ink ring-1 ring-cove-accent'
+                                                    : 'bg-white border-cove-border text-cove-muted hover:border-cove-border'
                                             }`}
                                         >
                                             {type}
@@ -288,7 +288,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Cadence
                             </label>
                             <div className="grid grid-cols-2 gap-2">
@@ -309,16 +309,16 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     <button
                                         key={opt.v}
                                         onClick={() => updateField('cadence', opt.v)}
-                                        className={`px-3 py-2 rounded-lg border text-left transition-all ${
+                                        className={`px-3 py-2 rounded-xl border text-left transition-all ${
                                             cadence === opt.v
-                                                ? 'bg-indigo-50 border-indigo-500 ring-1 ring-indigo-500'
-                                                : 'bg-white border-slate-200 hover:border-slate-300'
+                                                ? 'bg-cove-tint-blue border-cove-accent ring-1 ring-cove-accent'
+                                                : 'bg-white border-cove-border hover:border-cove-border'
                                         }`}
                                     >
-                                        <div className="text-sm font-medium text-slate-800">
+                                        <div className="text-sm font-bold text-cove-ink">
                                             {opt.label}
                                         </div>
-                                        <div className="text-xs text-slate-500 mt-0.5">
+                                        <div className="text-xs text-cove-soft mt-0.5">
                                             {opt.hint}
                                         </div>
                                     </button>
@@ -332,8 +332,8 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                 {step === 2 && usesScale && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                         <div>
-                            <h3 className="text-sm font-medium text-slate-900 mb-1">Scale</h3>
-                            <p className="text-xs text-slate-500">
+                            <h3 className="text-sm font-bold text-cove-ink mb-1">Scale</h3>
+                            <p className="text-xs text-cove-soft">
                                 Make the scale unambiguous — what do the endpoints mean and which
                                 direction is "good"?
                             </p>
@@ -341,7 +341,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
 
                         {formData.type === 'number' && (
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Unit (optional)
                                 </label>
                                 <input
@@ -349,14 +349,14 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     value={formData.unit || ''}
                                     onChange={(e) => updateField('unit', e.target.value)}
                                     placeholder="e.g. hrs, mg, glasses"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="app-input"
                                 />
                             </div>
                         )}
 
                         <div className="grid grid-cols-3 gap-2">
                             <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-1">
+                                <label className="block text-xs font-bold text-cove-muted mb-1">
                                     Min
                                 </label>
                                 <input
@@ -365,11 +365,11 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     onChange={(e) =>
                                         updateScale({ min: parseFloat(e.target.value) })
                                     }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="app-input"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-1">
+                                <label className="block text-xs font-bold text-cove-muted mb-1">
                                     Max
                                 </label>
                                 <input
@@ -378,11 +378,11 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     onChange={(e) =>
                                         updateScale({ max: parseFloat(e.target.value) })
                                     }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="app-input"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-1">
+                                <label className="block text-xs font-bold text-cove-muted mb-1">
                                     Step
                                 </label>
                                 <input
@@ -392,14 +392,14 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     onChange={(e) =>
                                         updateScale({ step: parseFloat(e.target.value) })
                                     }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="app-input"
                                 />
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
                             <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-1">
+                                <label className="block text-xs font-bold text-cove-muted mb-1">
                                     Low end label
                                 </label>
                                 <input
@@ -407,11 +407,11 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     value={formData.scale?.lowLabel ?? ''}
                                     onChange={(e) => updateScale({ lowLabel: e.target.value })}
                                     placeholder="e.g. Drained"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="app-input"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-1">
+                                <label className="block text-xs font-bold text-cove-muted mb-1">
                                     High end label
                                 </label>
                                 <input
@@ -419,13 +419,13 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     value={formData.scale?.highLabel ?? ''}
                                     onChange={(e) => updateScale({ highLabel: e.target.value })}
                                     placeholder="e.g. Energized"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="app-input"
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                            <label className="block text-sm font-bold text-cove-muted mb-2">
                                 Direction
                             </label>
                             <div className="grid grid-cols-3 gap-2">
@@ -439,10 +439,10 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     <button
                                         key={opt.v}
                                         onClick={() => updateScale({ direction: opt.v })}
-                                        className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                                        className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all ${
                                             formData.scale?.direction === opt.v
-                                                ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500'
-                                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                                ? 'bg-cove-tint-blue border-cove-accent text-cove-ink ring-1 ring-cove-accent'
+                                                : 'bg-white border-cove-border text-cove-muted hover:border-cove-border'
                                         }`}
                                     >
                                         {opt.label}
@@ -451,16 +451,16 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                             </div>
                         </div>
 
-                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="p-4 bg-[color:var(--buddy-surface-soft)] rounded-xl border border-cove-border">
                             <div className="flex items-center justify-between mb-2">
-                                <label className="text-sm font-medium text-slate-700">
+                                <label className="text-sm font-bold text-cove-muted">
                                     Set a goal
                                 </label>
                                 <input
                                     type="checkbox"
                                     checked={hasGoal}
                                     onChange={(e) => setHasGoal(e.target.checked)}
-                                    className="h-4 w-4 text-indigo-600 rounded"
+                                    className="h-4 w-4 text-cove-accent rounded"
                                 />
                             </div>
                             {hasGoal && (
@@ -470,7 +470,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                         onChange={(e) =>
                                             setGoalCondition(e.target.value as 'gt' | 'lt' | 'eq')
                                         }
-                                        className="w-1/3 px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                                        className="w-1/3 px-3 py-2 text-sm border border-cove-border rounded-xl"
                                     >
                                         <option value="gt">More than</option>
                                         <option value="lt">Less than</option>
@@ -480,7 +480,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                         type="number"
                                         value={goalTarget}
                                         onChange={(e) => setGoalTarget(parseFloat(e.target.value))}
-                                        className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                                        className="flex-1 px-3 py-2 text-sm border border-cove-border rounded-xl"
                                         placeholder="Target value"
                                     />
                                 </div>
@@ -494,7 +494,7 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                     <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                         {formData.type === 'text' && (
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                <label className="block text-sm font-bold text-cove-muted mb-1">
                                     Unit (optional)
                                 </label>
                                 <input
@@ -502,18 +502,20 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     value={formData.unit || ''}
                                     onChange={(e) => updateField('unit', e.target.value)}
                                     placeholder="e.g. notes"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    className="app-input"
                                 />
                             </div>
                         )}
 
                         <div className="space-y-3">
-                            <h3 className="text-sm font-medium text-slate-900">Check-in</h3>
+                            <h3 className="text-sm font-bold text-cove-ink">Check-in</h3>
 
-                            <label className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
+                            <label className="flex items-center justify-between p-3 border border-cove-border rounded-xl">
                                 <div>
-                                    <span className="text-sm text-slate-700">Show in check-in</span>
-                                    <p className="text-xs text-slate-500">
+                                    <span className="text-sm text-cove-muted">
+                                        Show in check-in
+                                    </span>
+                                    <p className="text-xs text-cove-soft">
                                         {cadence === 'episodic'
                                             ? 'Appears as a chip at the bottom of the daily check-in'
                                             : 'Appears in the daily check-in form'}
@@ -523,17 +525,17 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                     type="checkbox"
                                     checked={formData.checkinConfig?.inCheckin}
                                     onChange={(e) => updateCheckin({ inCheckin: e.target.checked })}
-                                    className="h-4 w-4 text-indigo-600 rounded"
+                                    className="h-4 w-4 text-cove-accent rounded"
                                 />
                             </label>
 
                             {formData.checkinConfig?.inCheckin && cadence !== 'episodic' && (
-                                <label className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
+                                <label className="flex items-center justify-between p-3 border border-cove-border rounded-xl">
                                     <div>
-                                        <span className="text-sm text-slate-700">
+                                        <span className="text-sm text-cove-muted">
                                             Required field
                                         </span>
-                                        <p className="text-xs text-slate-500">
+                                        <p className="text-xs text-cove-soft">
                                             Block save until this is filled
                                         </p>
                                     </div>
@@ -543,20 +545,22 @@ const CreateTrackerModal: React.FC<CreateTrackerModalProps> = ({
                                         onChange={(e) =>
                                             updateCheckin({ isRequired: e.target.checked })
                                         }
-                                        className="h-4 w-4 text-indigo-600 rounded"
+                                        className="h-4 w-4 text-cove-accent rounded"
                                     />
                                 </label>
                             )}
 
-                            <label className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
-                                <span className="text-sm text-slate-700">Show in daily report</span>
+                            <label className="flex items-center justify-between p-3 border border-cove-border rounded-xl">
+                                <span className="text-sm text-cove-muted">
+                                    Show in daily report
+                                </span>
                                 <input
                                     type="checkbox"
                                     checked={formData.checkinConfig?.showInDailyReport}
                                     onChange={(e) =>
                                         updateCheckin({ showInDailyReport: e.target.checked })
                                     }
-                                    className="h-4 w-4 text-indigo-600 rounded"
+                                    className="h-4 w-4 text-cove-accent rounded"
                                 />
                             </label>
                         </div>

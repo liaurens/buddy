@@ -42,6 +42,12 @@
     --cove-overlay: #1d3a4d;
     --cove-overlay-muted: #a8cbde;
     --cove-shadow-nav: 0 -4px 16px rgba(40, 90, 130, 0.08);
+
+    /* Destructive actions. The Cove palette has no red — danger is the deep end of
+       the existing pink family so warnings read as "careful", never as an alarm. */
+    --cove-danger: #d9647a;
+    --cove-danger-deep: #b8455c;
+    --cove-tint-danger: #fbe9ec;
 }
 
 html {
@@ -244,5 +250,100 @@ button {
 
     .app-chip {
         @apply inline-flex items-center gap-1 rounded-full bg-[color:var(--cove-tint-blue)] px-2.5 py-1 text-xs font-extrabold text-[color:var(--cove-muted)];
+    }
+
+    /* ---------------------------------------------------------------------
+       Form controls. Before these existed every component hand-rolled
+       `border-slate-300 rounded-lg`, which is how the pre-Cove palette
+       survived inside Cove pages. Reach for these instead.
+       --------------------------------------------------------------------- */
+
+    .app-input {
+        @apply w-full rounded-[14px] border-2 border-[color:var(--buddy-border)] bg-white px-3.5 py-2.5 text-sm font-bold text-[color:var(--cove-ink)] outline-none transition-colors placeholder:font-semibold placeholder:text-[color:var(--cove-faint)] focus:border-[color:var(--cove-accent)] disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .app-textarea {
+        @apply app-input resize-y leading-relaxed;
+    }
+
+    .app-select {
+        @apply app-input cursor-pointer appearance-none bg-white pr-9;
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235c86a0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+    }
+
+    .app-checkbox {
+        @apply h-[18px] w-[18px] shrink-0 cursor-pointer rounded-[6px] border-2 border-[color:var(--buddy-border)] text-[color:var(--cove-accent)] accent-[color:var(--cove-accent)] focus:ring-2 focus:ring-[color:var(--cove-accent-pale)];
+    }
+
+    .app-field-label {
+        @apply mb-1.5 block text-[12.5px] font-extrabold text-[color:var(--cove-muted)];
+    }
+
+    .app-field-hint {
+        @apply mt-1.5 text-[12px] font-semibold leading-snug text-[color:var(--cove-soft)];
+    }
+
+    .app-field-error {
+        @apply mt-1.5 text-[12px] font-extrabold leading-snug text-[color:var(--cove-danger-deep)];
+    }
+
+    /* ---------------------------------------------------------------------
+       Cards, panels, empty states
+       --------------------------------------------------------------------- */
+
+    .app-card {
+        @apply rounded-card-lg border-0 bg-white p-4 shadow-[0_3px_12px_rgba(40,90,130,0.09)];
+    }
+
+    .app-card-tight {
+        @apply rounded-card border-0 bg-white p-3.5 shadow-[0_3px_12px_rgba(40,90,130,0.09)];
+    }
+
+    .app-empty {
+        @apply rounded-card-lg bg-white/60 p-5 text-center text-[13.5px] font-bold text-[color:var(--cove-muted)];
+    }
+
+    .app-divider {
+        @apply h-px w-full bg-[color:var(--buddy-border)];
+    }
+
+    /* Tinted panels — the Cove way to colour-code a block without introducing
+       a new hue. Pair each with its matching `app-tint-*-text`. */
+    .app-tint-blue {
+        @apply rounded-card-lg bg-[color:var(--cove-tint-blue)] p-4;
+    }
+
+    .app-tint-amber {
+        @apply rounded-card-lg bg-[color:var(--cove-tint-amber)] p-4;
+    }
+
+    .app-tint-green {
+        @apply rounded-card-lg bg-[color:var(--cove-tint-green)] p-4;
+    }
+
+    .app-tint-purple {
+        @apply rounded-card-lg bg-[color:var(--cove-tint-purple)] p-4;
+    }
+
+    .app-tint-pink {
+        @apply rounded-card-lg bg-[color:var(--cove-tint-pink)] p-4;
+    }
+
+    /* ---------------------------------------------------------------------
+       Buttons beyond primary/secondary
+       --------------------------------------------------------------------- */
+
+    .app-danger-button {
+        @apply inline-flex items-center justify-center gap-2 rounded-[14px] bg-[color:var(--cove-danger)] px-4 py-2 text-sm font-extrabold text-white shadow-[0_6px_18px_rgba(184,69,92,0.2)] transition-colors hover:bg-[color:var(--cove-danger-deep)] disabled:cursor-not-allowed disabled:opacity-45;
+    }
+
+    .app-ghost-button {
+        @apply inline-flex items-center justify-center gap-2 rounded-[14px] px-4 py-2 text-sm font-extrabold text-[color:var(--cove-muted)] transition-colors hover:bg-[color:var(--buddy-surface-soft)] hover:text-[color:var(--cove-ink)] disabled:cursor-not-allowed disabled:opacity-45;
+    }
+
+    .app-dark-button {
+        @apply inline-flex items-center justify-center gap-2 rounded-card-lg bg-[color:var(--cove-ink)] px-4 py-3.5 text-base font-extrabold text-white shadow-[0_6px_18px_rgba(29,58,77,0.25)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45;
     }
 }

@@ -9,12 +9,12 @@ interface ExperimentPhaseTimelineProps {
 }
 
 const PHASE_COLORS = [
-    'bg-indigo-500',
-    'bg-emerald-500',
-    'bg-amber-500',
-    'bg-rose-500',
-    'bg-cyan-500',
-    'bg-violet-500',
+    'bg-cove-accent',
+    'bg-cove-success',
+    'bg-cove-streak',
+    'bg-cove-danger',
+    'bg-cove-accent',
+    'bg-cove-accent',
 ];
 
 const ExperimentPhaseTimeline: React.FC<ExperimentPhaseTimelineProps> = ({
@@ -46,7 +46,7 @@ const ExperimentPhaseTimeline: React.FC<ExperimentPhaseTimelineProps> = ({
     return (
         <div className={`space-y-2 ${className}`}>
             {/* Phase bar */}
-            <div className="flex rounded-full overflow-hidden h-3 bg-slate-100">
+            <div className="flex rounded-full overflow-hidden h-3 bg-[color:var(--buddy-surface-soft)]">
                 {sortedPhases.map((phase, i) => {
                     const phaseStart = parseISO(phase.startDate);
                     const phaseEnd = phase.endDate ? parseISO(phase.endDate) : lastEnd;
@@ -57,7 +57,7 @@ const ExperimentPhaseTimeline: React.FC<ExperimentPhaseTimelineProps> = ({
                     return (
                         <div
                             key={phase.id}
-                            className={`${PHASE_COLORS[i % PHASE_COLORS.length]} ${isCurrent ? 'ring-2 ring-offset-1 ring-indigo-400' : 'opacity-60'} relative transition-all`}
+                            className={`${PHASE_COLORS[i % PHASE_COLORS.length]} ${isCurrent ? 'ring-2 ring-offset-1 ring-cove-accent' : 'opacity-60'} relative transition-all`}
                             style={{ width: `${widthPercent}%` }}
                             title={`${phase.name}: ${format(phaseStart, 'MMM d')} - ${phase.endDate ? format(phaseEnd, 'MMM d') : 'ongoing'}`}
                         />
@@ -75,12 +75,12 @@ const ExperimentPhaseTimeline: React.FC<ExperimentPhaseTimelineProps> = ({
                                 className={`w-2.5 h-2.5 rounded-full ${PHASE_COLORS[i % PHASE_COLORS.length]} ${isCurrent ? '' : 'opacity-50'}`}
                             />
                             <span
-                                className={`text-xs ${isCurrent ? 'font-semibold text-slate-800' : 'text-slate-500'}`}
+                                className={`text-xs ${isCurrent ? 'font-semibold text-cove-ink' : 'text-cove-soft'}`}
                             >
                                 {phase.name}
                             </span>
                             {isCurrent && (
-                                <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full font-medium">
+                                <span className="text-[10px] bg-cove-tint-blue text-cove-ink px-1.5 py-0.5 rounded-full font-bold">
                                     Current
                                 </span>
                             )}

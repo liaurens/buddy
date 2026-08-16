@@ -14,35 +14,37 @@ const AssistantChatBubble: React.FC<AssistantChatBubbleProps> = ({ message, onNa
 
     if (isUser) {
         return (
-            <div className="flex justify-end gap-2 items-end">
+            <div className="flex items-end justify-end gap-2">
                 <div className="max-w-[80%]">
-                    <div className="bg-indigo-600 text-white rounded-2xl rounded-br-sm px-4 py-2.5 text-sm shadow-sm">
+                    <div className="rounded-[18px] rounded-br-[4px] bg-cove-accent px-4 py-2.5 text-sm font-bold leading-snug text-white shadow-cove">
                         {message.content}
                     </div>
-                    <p className="text-right text-[10px] text-slate-400 mt-1 mr-1">{timeStr}</p>
+                    <p className="mr-1 mt-1 text-right text-[10px] font-bold text-cove-faint">
+                        {timeStr}
+                    </p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex justify-start gap-2 items-start">
-            <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-1">
-                <span className="text-xs font-bold text-indigo-600">B</span>
+        <div className="flex items-start justify-start gap-2">
+            <div className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-cove-tint-blue">
+                <span className="text-xs font-extrabold text-cove-accent">B</span>
             </div>
             <div className="max-w-[85%] space-y-1">
                 {message.response?.data?.isConversational ? (
-                    <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm text-slate-700 shadow-sm whitespace-pre-wrap">
+                    <div className="whitespace-pre-wrap rounded-bubble border-0 bg-white px-4 py-2.5 text-sm font-semibold leading-relaxed text-cove-ink shadow-cove">
                         {message.response.action_taken || message.content}
                     </div>
                 ) : message.response ? (
                     <AssistantResponseCard response={message.response} onNavigate={onNavigate} />
                 ) : (
-                    <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm text-slate-700 shadow-sm">
+                    <div className="rounded-bubble border-0 bg-white px-4 py-2.5 text-sm font-semibold leading-relaxed text-cove-ink shadow-cove">
                         {message.content}
                     </div>
                 )}
-                <p className="text-[10px] text-slate-400 ml-1">{timeStr}</p>
+                <p className="ml-1 text-[10px] font-bold text-cove-faint">{timeStr}</p>
             </div>
         </div>
     );

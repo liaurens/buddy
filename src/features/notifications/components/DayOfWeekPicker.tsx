@@ -56,15 +56,15 @@ const DayOfWeekPicker: React.FC<Props> = ({ value, onChange, disabled = false })
                         aria-pressed={selected.has(day)}
                         className={`h-7 w-7 rounded-full text-xs font-semibold transition-colors disabled:opacity-40 ${
                             selected.has(day)
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                ? 'bg-cove-accent text-white'
+                                : 'bg-[color:var(--buddy-surface-soft)] text-cove-soft hover:bg-cove-track'
                         }`}
                     >
                         {label}
                     </button>
                 ))}
             </div>
-            <span className="text-xs text-slate-400">{describeDays(value)}</span>
+            <span className="text-xs text-cove-faint">{describeDays(value)}</span>
         </div>
     );
 };

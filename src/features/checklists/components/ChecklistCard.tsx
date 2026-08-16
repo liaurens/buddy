@@ -20,11 +20,11 @@ export const ChecklistCard: React.FC<ChecklistCardProps> = ({ checklist, onClick
                 <div className="flex items-center gap-3">
                     <span className="text-4xl">{checklist.emoji || '📝'}</span>
                     <div>
-                        <h3 className="text-lg font-semibold text-slate-900 transition-colors group-hover:text-indigo-700">
+                        <h3 className="text-lg font-semibold text-cove-ink transition-colors group-hover:text-cove-ink">
                             {checklist.name}
                         </h3>
                         {checklist.description && (
-                            <p className="mt-1 line-clamp-1 text-sm text-slate-500">
+                            <p className="mt-1 line-clamp-1 text-sm text-cove-soft">
                                 {checklist.description}
                             </p>
                         )}
@@ -33,22 +33,22 @@ export const ChecklistCard: React.FC<ChecklistCardProps> = ({ checklist, onClick
             </div>
 
             <div className="space-y-2">
-                <div className="flex justify-between text-sm text-slate-500">
+                <div className="flex justify-between text-sm text-cove-soft">
                     <span>Progress</span>
                     <span>
                         {checkedItems}/{totalItems}
                     </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-2 overflow-hidden rounded-full bg-[color:var(--buddy-surface-soft)]">
                     <div
-                        className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                        className="h-full rounded-full bg-cove-accent transition-all duration-500"
                         style={{ width: `${percent}%` }}
                     />
                 </div>
             </div>
 
             {checklist.isPinned && (
-                <div className="absolute top-4 right-4 text-yellow-500">
+                <div className="absolute top-4 right-4 text-cove-streak-deep">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5"

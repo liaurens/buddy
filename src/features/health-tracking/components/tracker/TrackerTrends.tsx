@@ -33,12 +33,12 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
     if (trackers.length === 0) return null;
 
     return (
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-6">
+        <div className="bg-white p-5 rounded-xl shadow-cove border border-cove-border mb-6">
             <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                <div className="p-2 bg-cove-tint-blue text-cove-accent rounded-xl">
                     <Activity size={18} />
                 </div>
-                <h3 className="font-semibold text-slate-800">Weekly Snapshot</h3>
+                <h3 className="font-semibold text-cove-ink">Weekly Snapshot</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -57,12 +57,12 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                     return (
                         <div
                             key={tracker.id}
-                            className="group p-3 bg-slate-50/50 rounded-lg border border-slate-100 hover:border-slate-200 transition-all relative"
+                            className="group p-3 bg-[color:var(--buddy-surface-soft)]/50 rounded-xl border border-cove-border hover:border-cove-border transition-all relative"
                         >
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                     <span className="text-xl">{tracker.emoji}</span>
-                                    <span className="text-sm font-medium text-slate-700 truncate max-w-[100px]">
+                                    <span className="text-sm font-bold text-cove-muted truncate max-w-[100px]">
                                         {tracker.name}
                                     </span>
                                 </div>
@@ -70,13 +70,13 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                                     {onEditTracker && (
                                         <button
                                             onClick={() => onEditTracker(tracker)}
-                                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-indigo-600 transition-all"
+                                            className="opacity-0 group-hover:opacity-100 p-1 text-cove-faint hover:text-cove-accent transition-all"
                                             title="Edit tracker"
                                         >
                                             <Edit2 size={12} />
                                         </button>
                                     )}
-                                    <span className="text-xs text-slate-400 font-mono">7d</span>
+                                    <span className="text-xs text-cove-faint font-mono">7d</span>
                                 </div>
                             </div>
 
@@ -114,7 +114,7 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                                             : `${Math.min((val / maxVal) * 100, 100)}%`;
 
                                     // Goal status coloring
-                                    let colorClass = 'bg-slate-200';
+                                    let colorClass = 'bg-cove-track';
                                     if (hasEntry) {
                                         if (tracker.goal) {
                                             if (
@@ -125,12 +125,12 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                                                 (tracker.goal.condition === 'eq' &&
                                                     val === tracker.goal.target)
                                             ) {
-                                                colorClass = 'bg-emerald-400';
+                                                colorClass = 'bg-cove-success';
                                             } else {
-                                                colorClass = 'bg-amber-300';
+                                                colorClass = 'bg-cove-streak';
                                             }
                                         } else {
-                                            colorClass = 'bg-indigo-400';
+                                            colorClass = 'bg-cove-accent';
                                         }
                                     }
 
@@ -148,7 +148,7 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                                             />
                                             {/* Tooltip */}
                                             {hasEntry && (
-                                                <div className="absolute bottom-full mb-1 opacity-0 group-hover/bar:opacity-100 bg-slate-800 text-white text-[10px] py-1 px-2 rounded pointer-events-none whitespace-nowrap z-10">
+                                                <div className="absolute bottom-full mb-1 opacity-0 group-hover/bar:opacity-100 bg-cove-ink text-white text-[10px] py-1 px-2 rounded pointer-events-none whitespace-nowrap z-10">
                                                     {val.toFixed(1)} {tracker.unit}
                                                 </div>
                                             )}
@@ -160,7 +160,7 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                                 {last7Days.map((d) => (
                                     <span
                                         key={d.label}
-                                        className="text-[9px] text-slate-300 font-medium"
+                                        className="text-[9px] text-cove-faint font-bold"
                                     >
                                         {d.label.charAt(0)}
                                     </span>

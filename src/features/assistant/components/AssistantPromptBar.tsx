@@ -50,7 +50,7 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
             <section className={`app-surface ${compact ? 'p-2.5' : 'p-3 sm:p-4'}`}>
                 <div className="flex items-end gap-3">
                     <div
-                        className={`mb-1 flex flex-shrink-0 items-center justify-center rounded-lg text-slate-600 ${compact ? 'h-9 w-9' : 'h-10 w-10'}`}
+                        className={`mb-1 flex flex-shrink-0 items-center justify-center rounded-xl text-cove-muted ${compact ? 'h-9 w-9' : 'h-10 w-10'}`}
                     >
                         <PencilLine size={compact ? 18 : 21} />
                     </div>
@@ -70,7 +70,7 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
                     </div>
                 </div>
                 <div
-                    className={`flex flex-wrap items-center gap-2 pl-1 text-[11px] text-slate-500 ${compact ? 'mt-2' : 'mt-3'}`}
+                    className={`flex flex-wrap items-center gap-2 pl-1 text-[11px] text-cove-soft ${compact ? 'mt-2' : 'mt-3'}`}
                 >
                     <PendingSyncBadge />
                     {!compact && <span>Examples:</span>}
@@ -81,7 +81,7 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
                                 type="button"
                                 // eslint-disable-next-line react-hooks/refs -- calling the CaptureInput imperative handle from a click handler is intended
                                 onClick={() => captureInputRef.current?.fill(example)}
-                                className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-medium text-slate-500 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-700"
+                                className="rounded-xl border border-cove-border bg-[color:var(--buddy-surface-soft)] px-2.5 py-1 font-bold text-cove-soft transition-colors hover:border-cove-border hover:bg-white hover:text-cove-muted"
                             >
                                 {example}
                             </button>
@@ -95,7 +95,7 @@ const AssistantPromptBar: React.FC<AssistantPromptBarProps> = ({
                     onNavigate={onNavigate as (route: string) => void}
                 />
             )}
-            {error && !lastResponse && <p className="text-xs text-red-500 px-1">{error}</p>}
+            {error && !lastResponse && <p className="text-xs text-cove-danger px-1">{error}</p>}
         </div>
     );
 };

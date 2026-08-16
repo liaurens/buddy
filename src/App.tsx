@@ -1,10 +1,10 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { MessageSquare } from 'lucide-react';
 import { ToastProvider } from './components/ui/Toast';
 import MainLayout from './layouts/MainLayout';
 // Feature imports
 import NowPage from './features/cove/now/NowPage';
+import { Whale } from './features/cove/components';
 import CheckInGate from './features/cove/gate/CheckInGate';
 import { useCheckinStatus } from './features/cove/gate/useCheckinStatus';
 import { isGateNeeded } from './features/cove/gate/gateState';
@@ -50,7 +50,9 @@ const DevPortal = lazy(() =>
 );
 
 const PageFallback = () => (
-    <div className="flex min-h-48 items-center justify-center text-sm text-slate-400">Loading…</div>
+    <div className="flex min-h-48 items-center justify-center text-sm font-bold text-cove-faint">
+        Loading…
+    </div>
 );
 
 function initialNavigation(): { route: AppRoute; params: Record<string, unknown> | null } {
@@ -222,10 +224,12 @@ const App: React.FC = () => {
     // Show error if Supabase not configured
     if (!isSupabaseConfigured) {
         return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-                <div className="bg-red-900/50 border border-red-500 rounded-xl p-6 max-w-md text-center">
-                    <h1 className="text-red-400 text-xl font-bold mb-2">Configuration Error</h1>
-                    <p className="text-red-200">
+            <div className="flex min-h-dvh items-center justify-center bg-[color:var(--buddy-backdrop)] p-4">
+                <div className="max-w-md rounded-card-xl bg-cove-tint-danger p-6 text-center shadow-cove">
+                    <h1 className="mb-2 text-xl font-black text-cove-danger-deep">
+                        Configuration error
+                    </h1>
+                    <p className="text-sm font-semibold leading-relaxed text-cove-danger-deep">
                         Supabase environment variables are not configured. Please set
                         VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
                     </p>
@@ -237,19 +241,17 @@ const App: React.FC = () => {
     // Show loading state with timeout
     if (isLoading) {
         return (
-            <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#f7f8fb]">
-                <div className="flex h-14 w-14 animate-pulse items-center justify-center rounded-2xl bg-indigo-700 text-white shadow-[0_14px_34px_rgba(37,50,155,0.24)]">
-                    <MessageSquare size={26} />
-                </div>
-                <div className="text-sm font-medium text-slate-500">Loading Buddy…</div>
+            <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[color:var(--buddy-backdrop)]">
+                <Whale size="hero" />
+                <div className="text-sm font-extrabold text-cove-muted">Loading Buddy…</div>
                 {loadingTimeout && (
-                    <div className="max-w-xs text-center text-sm text-slate-500">
+                    <div className="max-w-xs text-center text-[13px] font-semibold leading-relaxed text-cove-soft">
                         Taking longer than expected. Check browser console for errors.
                         <button
                             onClick={() => window.location.reload()}
-                            className="mx-auto mt-3 block rounded-lg bg-indigo-700 px-4 py-2 text-sm text-white hover:bg-indigo-800"
+                            className="app-primary-button mx-auto mt-3"
                         >
-                            Reload Page
+                            Reload page
                         </button>
                     </div>
                 )}

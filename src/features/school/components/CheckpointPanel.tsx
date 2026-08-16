@@ -43,16 +43,16 @@ export const CheckpointPanel: React.FC<CheckpointPanelProps> = ({
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4">
             <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
                 {/* Header */}
-                <div className="flex items-start justify-between p-5 border-b border-slate-100">
+                <div className="flex items-start justify-between p-5 border-b border-cove-border">
                     <div>
-                        <h2 className="text-lg font-semibold text-slate-900">{assignment.title}</h2>
-                        <p className="text-sm text-slate-500 mt-0.5">
+                        <h2 className="text-lg font-semibold text-cove-ink">{assignment.title}</h2>
+                        <p className="text-sm text-cove-soft mt-0.5">
                             {doneCount}/{items.length} checkpoints klaar
                         </p>
                         {/* Progress bar */}
-                        <div className="mt-2 h-1.5 w-48 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="mt-2 h-1.5 w-48 bg-[color:var(--buddy-surface-soft)] rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-indigo-500 rounded-full transition-all"
+                                className="h-full bg-cove-accent rounded-full transition-all"
                                 style={{
                                     width:
                                         items.length > 0
@@ -64,7 +64,7 @@ export const CheckpointPanel: React.FC<CheckpointPanelProps> = ({
                     </div>
                     <button
                         onClick={onClose}
-                        className="text-slate-400 hover:text-slate-600 mt-0.5"
+                        className="text-cove-faint hover:text-cove-muted mt-0.5"
                     >
                         <X size={20} />
                     </button>
@@ -77,7 +77,7 @@ export const CheckpointPanel: React.FC<CheckpointPanelProps> = ({
                         return (
                             <div
                                 key={item.id}
-                                className={`rounded-xl border transition-colors ${item.done ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200 bg-white'}`}
+                                className={`rounded-xl border transition-colors ${item.done ? 'border-cove-success bg-cove-tint-green/50' : 'border-cove-border bg-white'}`}
                             >
                                 {/* Checkpoint header */}
                                 <div className="flex items-center gap-3 px-4 py-3">
@@ -85,8 +85,8 @@ export const CheckpointPanel: React.FC<CheckpointPanelProps> = ({
                                         onClick={() => toggleDone(item.id)}
                                         className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
                                             item.done
-                                                ? 'border-emerald-500 bg-emerald-500'
-                                                : 'border-slate-300 hover:border-emerald-400'
+                                                ? 'border-cove-success bg-cove-success'
+                                                : 'border-cove-border hover:border-cove-success'
                                         }`}
                                     >
                                         {item.done && <Check size={12} className="text-white" />}
@@ -97,17 +97,17 @@ export const CheckpointPanel: React.FC<CheckpointPanelProps> = ({
                                     >
                                         <div className="flex-1">
                                             <p
-                                                className={`text-sm font-medium ${item.done ? 'text-slate-400 line-through' : 'text-slate-800'}`}
+                                                className={`text-sm font-bold ${item.done ? 'text-cove-faint line-through' : 'text-cove-ink'}`}
                                             >
                                                 {item.title}
                                             </p>
                                             {item.subitems.length > 0 && (
-                                                <p className="text-xs text-slate-400 mt-0.5">
+                                                <p className="text-xs text-cove-faint mt-0.5">
                                                     {item.subitems.join(', ')}
                                                 </p>
                                             )}
                                             {!expanded && item.notes && (
-                                                <p className="text-xs text-slate-500 mt-1 italic truncate">
+                                                <p className="text-xs text-cove-soft mt-1 italic truncate">
                                                     {item.notes}
                                                 </p>
                                             )}
@@ -115,12 +115,12 @@ export const CheckpointPanel: React.FC<CheckpointPanelProps> = ({
                                         {expanded ? (
                                             <ChevronDown
                                                 size={16}
-                                                className="text-slate-400 flex-shrink-0"
+                                                className="text-cove-faint flex-shrink-0"
                                             />
                                         ) : (
                                             <ChevronRight
                                                 size={16}
-                                                className="text-slate-400 flex-shrink-0"
+                                                className="text-cove-faint flex-shrink-0"
                                             />
                                         )}
                                     </button>
@@ -128,9 +128,9 @@ export const CheckpointPanel: React.FC<CheckpointPanelProps> = ({
 
                                 {/* Notes area */}
                                 {expanded && (
-                                    <div className="px-4 pb-3 pt-1 border-t border-slate-100">
+                                    <div className="px-4 pb-3 pt-1 border-t border-cove-border">
                                         <label className="block">
-                                            <span className="text-xs font-medium text-slate-500">
+                                            <span className="text-xs font-bold text-cove-soft">
                                                 Notities
                                             </span>
                                             <textarea
@@ -140,7 +140,7 @@ export const CheckpointPanel: React.FC<CheckpointPanelProps> = ({
                                                 }
                                                 rows={4}
                                                 placeholder="Schrijf hier je notities voor dit checkpoint..."
-                                                className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                                className="mt-1 w-full px-3 py-2 border border-cove-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cove-accent"
                                             />
                                         </label>
                                     </div>
@@ -151,17 +151,17 @@ export const CheckpointPanel: React.FC<CheckpointPanelProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="flex gap-2 p-4 border-t border-slate-100">
+                <div className="flex gap-2 p-4 border-t border-cove-border">
                     <button
                         onClick={onClose}
-                        className="flex-1 px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100"
+                        className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)]"
                     >
                         Annuleren
                     </button>
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                        className="flex-1 px-4 py-2 rounded-xl text-sm font-bold bg-cove-accent text-white hover:bg-[#3a8dc7] disabled:opacity-50"
                     >
                         {saving ? 'Opslaan...' : 'Opslaan'}
                     </button>

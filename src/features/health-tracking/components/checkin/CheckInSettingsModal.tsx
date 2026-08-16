@@ -128,21 +128,21 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
         <>
             <button
                 onClick={handleReset}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                className="px-4 py-2 text-sm font-bold text-cove-muted hover:text-cove-ink transition-colors"
                 disabled={saving}
             >
                 Reset to Defaults
             </button>
             <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                className="px-4 py-2 text-sm font-bold text-cove-muted hover:bg-[color:var(--buddy-surface-soft)] rounded-xl transition-colors"
                 disabled={saving}
             >
                 Cancel
             </button>
             <button
                 onClick={handleSave}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-bold text-white bg-cove-accent hover:bg-[#3a8dc7] rounded-xl transition-colors disabled:opacity-50"
                 disabled={saving || loading}
             >
                 {saving ? 'Saving...' : 'Save Changes'}
@@ -154,7 +154,7 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
         return (
             <Modal isOpen={isOpen} onClose={onClose} title="Check-In Settings">
                 <div className="flex items-center justify-center py-8">
-                    <div className="text-slate-500">Loading settings...</div>
+                    <div className="text-cove-soft">Loading settings...</div>
                 </div>
             </Modal>
         );
@@ -182,23 +182,23 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
             size="lg"
         >
             {/* Tab Navigation */}
-            <div className="flex gap-2 mb-6 border-b border-slate-200">
+            <div className="flex gap-2 mb-6 border-b border-cove-border">
                 <button
                     onClick={() => setActiveTab('general')}
-                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`px-4 py-2 text-sm font-bold transition-colors ${
                         activeTab === 'general'
-                            ? 'text-indigo-600 border-b-2 border-indigo-600'
-                            : 'text-slate-600 hover:text-slate-900'
+                            ? 'text-cove-accent border-b-2 border-cove-accent'
+                            : 'text-cove-muted hover:text-cove-ink'
                     }`}
                 >
                     General
                 </button>
                 <button
                     onClick={() => setActiveTab('trackers')}
-                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`px-4 py-2 text-sm font-bold transition-colors ${
                         activeTab === 'trackers'
-                            ? 'text-indigo-600 border-b-2 border-indigo-600'
-                            : 'text-slate-600 hover:text-slate-900'
+                            ? 'text-cove-accent border-b-2 border-cove-accent'
+                            : 'text-cove-muted hover:text-cove-ink'
                     }`}
                 >
                     Manage Trackers
@@ -209,11 +209,11 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                 <div className="space-y-6">
                     {/* Reminder Settings */}
                     <div>
-                        <h3 className="text-lg font-medium text-slate-900 mb-4">Reminders</h3>
+                        <h3 className="text-lg font-bold text-cove-ink mb-4">Reminders</h3>
                         <div className="space-y-4">
                             {/* Daily Reminder Time */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                <label className="block text-sm font-bold text-cove-muted mb-2">
                                     Daily Reminder Time
                                 </label>
                                 <input
@@ -222,17 +222,17 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                                     onChange={(e) =>
                                         updateSetting('dailyReminderTime', e.target.value)
                                     }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="app-input"
                                 />
                             </div>
 
                             {/* Enable Daily Reminder */}
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <label className="text-sm font-medium text-slate-700">
+                                    <label className="text-sm font-bold text-cove-muted">
                                         Enable Daily Reminder
                                     </label>
-                                    <p className="text-xs text-slate-500">
+                                    <p className="text-xs text-cove-soft">
                                         Send daily notification for check-in
                                     </p>
                                 </div>
@@ -242,7 +242,7 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                                     onChange={(e) =>
                                         updateSetting('enableDailyReminder', e.target.checked)
                                     }
-                                    className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                    className="h-4 w-4 text-cove-accent rounded border-cove-border focus:ring-cove-accent"
                                 />
                             </div>
                         </div>
@@ -250,11 +250,11 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
 
                     {/* Display Settings */}
                     <div>
-                        <h3 className="text-lg font-medium text-slate-900 mb-4">Display</h3>
+                        <h3 className="text-lg font-bold text-cove-ink mb-4">Display</h3>
                         <div className="space-y-4">
                             {/* Show Recent Check-Ins */}
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                <label className="block text-sm font-bold text-cove-muted mb-2">
                                     Show Recent Check-Ins (count)
                                 </label>
                                 <input
@@ -268,9 +268,9 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                                     }
                                     min="1"
                                     max="30"
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="app-input"
                                 />
-                                <p className="text-xs text-slate-500 mt-1">
+                                <p className="text-xs text-cove-soft mt-1">
                                     Number of recent check-ins to display
                                 </p>
                             </div>
@@ -278,10 +278,10 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                             {/* Completion Celebration */}
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <label className="text-sm font-medium text-slate-700">
+                                    <label className="text-sm font-bold text-cove-muted">
                                         Completion Celebration
                                     </label>
-                                    <p className="text-xs text-slate-500">
+                                    <p className="text-xs text-cove-soft">
                                         Show celebration when check-in is complete
                                     </p>
                                 </div>
@@ -291,7 +291,7 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                                     onChange={(e) =>
                                         updateSetting('completionCelebration', e.target.checked)
                                     }
-                                    className="h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                                    className="h-4 w-4 text-cove-accent rounded border-cove-border focus:ring-cove-accent"
                                 />
                             </div>
                         </div>
@@ -299,8 +299,8 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                 </div>
             ) : (
                 <div className="space-y-6">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <p className="text-sm text-blue-900">
+                    <div className="bg-cove-tint-blue border border-cove-accent-pale rounded-xl p-4 mb-4">
+                        <p className="text-sm text-cove-ink">
                             <strong>Tip:</strong> Toggle which trackers appear in your daily
                             check-in, mark them as required, or show them in your daily report.
                         </p>
@@ -308,7 +308,7 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
 
                     {Object.entries(groupedTrackers).map(([group, groupTrackers]) => (
                         <div key={group} className="space-y-3">
-                            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                            <h3 className="text-sm font-bold text-cove-soft uppercase tracking-wider">
                                 {group}
                             </h3>
                             <div className="space-y-2">
@@ -321,10 +321,10 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                                     return (
                                         <div
                                             key={tracker.id}
-                                            className={`p-4 rounded-lg border transition-all ${
+                                            className={`p-4 rounded-xl border transition-all ${
                                                 inCheckIn
-                                                    ? 'bg-indigo-50/50 border-indigo-200'
-                                                    : 'bg-slate-50 border-slate-200'
+                                                    ? 'bg-cove-tint-blue/50 border-cove-accent-pale'
+                                                    : 'bg-[color:var(--buddy-surface-soft)] border-cove-border'
                                             }`}
                                         >
                                             <div className="flex items-start gap-3">
@@ -332,12 +332,12 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                                                     onClick={() =>
                                                         toggleTrackerInCheckIn(tracker.id)
                                                     }
-                                                    className="mt-0.5 text-slate-400 hover:text-indigo-600 transition-colors"
+                                                    className="mt-0.5 text-cove-faint hover:text-cove-accent transition-colors"
                                                 >
                                                     {inCheckIn ? (
                                                         <CheckSquare
                                                             size={20}
-                                                            className="text-indigo-600"
+                                                            className="text-cove-accent"
                                                         />
                                                     ) : (
                                                         <Square size={20} />
@@ -349,11 +349,11 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                                                         <span className="text-lg">
                                                             {tracker.emoji}
                                                         </span>
-                                                        <span className="font-medium text-slate-900">
+                                                        <span className="font-bold text-cove-ink">
                                                             {tracker.name}
                                                         </span>
                                                         {tracker.unit && (
-                                                            <span className="text-xs text-slate-500">
+                                                            <span className="text-xs text-cove-soft">
                                                                 ({tracker.unit})
                                                             </span>
                                                         )}
@@ -370,9 +370,9 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                                                                             tracker.id,
                                                                         )
                                                                     }
-                                                                    className="h-4 w-4 text-indigo-600 rounded border-slate-300"
+                                                                    className="h-4 w-4 text-cove-accent rounded border-cove-border"
                                                                 />
-                                                                <span className="text-slate-700">
+                                                                <span className="text-cove-muted">
                                                                     Required
                                                                 </span>
                                                             </label>
@@ -386,9 +386,9 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
                                                                             tracker.id,
                                                                         )
                                                                     }
-                                                                    className="h-4 w-4 text-indigo-600 rounded border-slate-300"
+                                                                    className="h-4 w-4 text-cove-accent rounded border-cove-border"
                                                                 />
-                                                                <span className="text-slate-700">
+                                                                <span className="text-cove-muted">
                                                                     Show in Report
                                                                 </span>
                                                             </label>
@@ -405,8 +405,8 @@ const CheckInSettingsModal: React.FC<CheckInSettingsModalProps> = ({ isOpen, onC
 
                     {trackers.length === 0 && (
                         <div className="text-center py-12">
-                            <p className="text-slate-500 mb-4">No trackers yet</p>
-                            <p className="text-sm text-slate-400">
+                            <p className="text-cove-soft mb-4">No trackers yet</p>
+                            <p className="text-sm text-cove-faint">
                                 Create trackers in the Health Tracking section first
                             </p>
                         </div>

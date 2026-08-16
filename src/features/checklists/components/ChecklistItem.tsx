@@ -9,7 +9,7 @@ interface ChecklistItemProps {
 
 export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, onDelete }) => {
     return (
-        <div className="group flex items-center gap-3 rounded-lg bg-slate-50 p-3">
+        <div className="group flex items-center gap-3 rounded-xl bg-[color:var(--buddy-surface-soft)] p-3">
             <button
                 onClick={(e) => {
                     e.stopPropagation();
@@ -19,8 +19,8 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, on
                     w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors
                     ${
                         item.isChecked
-                            ? 'bg-emerald-500 border-emerald-500 text-white'
-                            : 'border-slate-300 hover:border-emerald-500'
+                            ? 'bg-cove-success border-cove-success text-white'
+                            : 'border-cove-border hover:border-cove-success'
                     }
                 `}
             >
@@ -41,7 +41,7 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, on
             </button>
 
             <span
-                className={`flex-1 text-slate-900 transition-all ${item.isChecked ? 'text-slate-400 line-through' : ''}`}
+                className={`flex-1 text-cove-ink transition-all ${item.isChecked ? 'text-cove-faint line-through' : ''}`}
             >
                 {item.text}
             </span>
@@ -51,7 +51,7 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({ item, onToggle, on
                     e.stopPropagation();
                     onDelete();
                 }}
-                className="p-2 text-slate-400 opacity-0 transition-all hover:text-rose-500 group-hover:opacity-100"
+                className="p-2 text-cove-faint opacity-0 transition-all hover:text-cove-danger group-hover:opacity-100"
                 title="Delete Item"
             >
                 <svg

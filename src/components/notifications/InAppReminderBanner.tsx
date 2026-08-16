@@ -95,7 +95,10 @@ const InAppReminderBanner: React.FC<Props> = ({ onNavigate }) => {
     };
 
     return (
-        <div className="fixed bottom-28 left-4 right-4 z-40 sm:left-auto sm:right-6 sm:max-w-sm">
+        <div
+            className="fixed left-4 right-4 z-40 sm:left-auto sm:right-6 sm:max-w-sm"
+            style={{ bottom: 'calc(7rem + env(safe-area-inset-bottom))' }}
+        >
             <div className="flex items-start gap-3 rounded-card-lg bg-white p-4 shadow-cove-strong animate-in slide-in-from-bottom-4">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-cove-tint-blue">
                     <Bell size={18} className="text-cove-accent" />
@@ -107,7 +110,7 @@ const InAppReminderBanner: React.FC<Props> = ({ onNavigate }) => {
                         {route && onNavigate && (
                             <button
                                 onClick={handleGo}
-                                className="flex items-center gap-1 rounded-lg bg-cove-accent px-3 py-1 text-xs font-extrabold text-white hover:bg-[#3a8dc7]"
+                                className="flex items-center gap-1 rounded-xl bg-cove-accent px-3 py-1 text-xs font-extrabold text-white hover:bg-[#3a8dc7]"
                             >
                                 Go <ArrowRight size={12} />
                             </button>

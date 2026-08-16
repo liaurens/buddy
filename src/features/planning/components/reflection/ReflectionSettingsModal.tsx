@@ -140,7 +140,7 @@ const ReflectionSettingsModal: React.FC<ReflectionSettingsModalProps> = ({ isOpe
                                         parseInt(e.target.value) as 30 | 60 | 90,
                                     )
                                 }
-                                className="w-full px-3 py-2 border border-cove-border rounded-[11px] font-semibold text-cove-ink focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
+                                className="app-input"
                             >
                                 <option value="30">30 days (1 month)</option>
                                 <option value="60">60 days (2 months)</option>
@@ -173,7 +173,7 @@ const ReflectionSettingsModal: React.FC<ReflectionSettingsModalProps> = ({ isOpe
                                 onChange={(e) =>
                                     updateSetting('accuracyThreshold', parseInt(e.target.value))
                                 }
-                                className="w-full px-3 py-2 border border-cove-border rounded-[11px] font-semibold text-cove-ink focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
+                                className="app-input"
                             />
                             <p className="text-xs font-semibold text-cove-muted mt-1">
                                 Consider tasks accurate within this percentage of estimated time
@@ -202,7 +202,7 @@ const ReflectionSettingsModal: React.FC<ReflectionSettingsModalProps> = ({ isOpe
                                 onChange={(e) =>
                                     updateSetting('minCompletedBlocks', parseInt(e.target.value))
                                 }
-                                className="w-full px-3 py-2 border border-cove-border rounded-[11px] font-semibold text-cove-ink focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
+                                className="app-input"
                             />
                             <p className="text-xs font-semibold text-cove-muted mt-1">
                                 Minimum completed blocks required to show patterns

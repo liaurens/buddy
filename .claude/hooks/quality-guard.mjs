@@ -85,6 +85,37 @@ if (inSrc && /\.toLocaleDateString\s*\(|\.toLocaleString\s*\(/.test(text)) {
     warnings.push('Raw locale date formatting detected — use date-fns `format()` instead.');
 }
 
+// Buddy Cove palette drift (see CLAUDE.md "Buddy Cove UI").
+//
+// The redesign landed on the page shells but the leaves kept hand-rolling
+// `border-slate-300 rounded-lg`, which is how ~1,500 pre-Cove utilities survived
+// inside Cove pages. Catch new ones at the point of writing.
+if (inSrc && /\.(tsx|jsx)$/.test(filePath)) {
+    const DEFAULT_PALETTE =
+        /(?:^|[\s"'`])(?:[a-z-]+:)*(?:bg|text|border|ring|divide|from|to|via|placeholder:text|fill|stroke|shadow|outline|accent)-(?:gray|slate|zinc|neutral|stone|blue|indigo|violet|purple|fuchsia|pink|rose|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky)-\d{2,3}\b/;
+    if (DEFAULT_PALETTE.test(text)) {
+        warnings.push(
+            'Default Tailwind palette class in a component — this app uses the Buddy Cove tokens. ' +
+                'Use `cove-*` colours (cove-ink/muted/soft/faint, cove-accent, cove-success, cove-streak, ' +
+                'cove-danger, cove-tint-*) or an `app-*` primitive from src/index.css (app-input, app-card, ' +
+                'app-primary-button, app-tint-blue, …).',
+        );
+    }
+    if (/\bfont-(?:medium|normal|light|thin)\b/.test(text)) {
+        warnings.push(
+            'Cove typography uses semibold/bold/extrabold/black only — `font-medium`/`font-normal` is pre-Cove.',
+        );
+    }
+    if (/\bmin-h-screen\b|\bh-screen\b|100vh/.test(text)) {
+        warnings.push(
+            '`vh` units overflow the visible area on iOS (viewport-fit=cover) — use `min-h-dvh`/`dvh`.',
+        );
+    }
+    if (/\bbg-gradient-to-/.test(text)) {
+        warnings.push('Buddy Cove has no gradients — use a flat `cove-tint-*` panel instead.');
+    }
+}
+
 // Tasks-feature invariants (see CLAUDE.md "Tasks feature invariants").
 if (inSrc && /new Date\(\s*['"]\d{4}-/.test(text)) {
     warnings.push(
