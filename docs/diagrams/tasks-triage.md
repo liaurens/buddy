@@ -1,60 +1,81 @@
 # Tasks capture-triage — flow diagram
 
-How a captured task moves from the inbox to its destination, through the single
-write path shared by every routing route. See [../tasks.md](../tasks.md).
+How a captured task gets a flag and reaches the database, through the two write
+paths every route shares. See [../tasks.md](../tasks.md) and the canonical
+[`src/features/tasks/README.md`](../../src/features/tasks/README.md).
 
 ```mermaid
 flowchart TD
-  Capture["Capture task<br/>(QuickCapture / phone)"]
-  ExplicitKind{"Explicit kind?"}
-  Inbox["Inbox<br/>todos.triaged_at = NULL"]
-  SkipInbox["Skip inbox<br/>stamp triaged_at +<br/>triage_destination (kindToDestination)"]
+  subgraph capture["1 · Capture"]
+    App["Capture tab<br/>parseQuickCapture"]
+    Edge["iPhone Shortcut / assistant<br/>tasks.tool.ts::createTask"]
+    School["School assignment<br/>buildAssignmentTodo"]
+    Recur["Recurrence spawn<br/>on completing a routine"]
+  end
 
-  Capture --> ExplicitKind
-  ExplicitKind -->|yes| SkipInbox
-  ExplicitKind -->|no| Inbox
+  Flagged{"Explicit #flag?"}
+  App --> Flagged
+  Edge --> Flagged
 
-  Eager{"Online + AI configured?"}
-  Inbox --> Eager
-  Eager -->|yes| AIInfer["eagerTriage → ai.triageTasks()<br/>infers destination + profile<br/>(hardness, energy, estimate, task type)"]
-  Eager -->|no| Morning
+  Inbox["Capture inbox<br/>todos.triaged_at = NULL"]
+  Sorted["Already sorted<br/>flag + triaged_at stamped"]
 
-  Conf{"High confidence?"}
-  AIInfer --> Conf
-  Conf -->|yes| Auto["Auto-apply route<br/>auto_triaged = true"]
-  Conf -->|no| Morning["Morning 'Sort inbox' step<br/>/ TodoPage banner + TriageInbox"]
+  Flagged -->|no| Inbox
+  Flagged -->|yes| Sorted
+  School --> Sorted
+  Recur --> Sorted
 
-  Auto -->|write fails| Morning
-  Auto --> Review["'I sorted these' review"]
-  Review -->|confirm| WritePath
-  Review -->|correct| Learn["clear auto_triaged<br/>append settings.triage_learnings"]
-  Morning -->|accept / edit| WritePath
-  Morning -->|edit a suggestion| Learn
-  Learn --> WritePath
+  subgraph triage["2 · Triage"]
+    Eager{"Online + AI configured?"}
+    Inbox --> Eager
+    Eager -->|yes| Infer["eagerTriage → task.ai.triage<br/>flag + confidence + reason<br/>+ profile (energy, estimate, type)"]
+    Eager -->|no| Review
 
-  WritePath["ONE write path<br/>applyTriagePatch (routeTaskPatch ∘ kindSignalPatch,<br/>profile fills gaps only)<br/>→ persistTaskUpdate (columns + reminders + Google)"]
-  WritePath --> Routed
+    Conf{"Confidence ≥ 0.8?"}
+    Infer --> Conf
+    Conf -->|yes| Auto["Auto-apply<br/>auto_triaged = true"]
+    Conf -->|no| Review["TriageCard<br/>one at a time, 7 destinations"]
+    Auto -->|write fails| Review
+  end
 
-  Routed{"triage_destination"}
-  Routed -->|urgent| Urgent["UrgentInboxCard → UrgentScheduleModal<br/>→ Google Calendar (not live in prod)"]
-  Routed -->|today| Today["dueDate = today → day plan /<br/>morning pick / TodayFocusCard"]
-  Routed -->|someday| Someday["kind=backlog → one-a-day card<br/>(ages upward in score over weeks)"]
-  Routed -->|school| School["assignmentId set → derives kind 'school';<br/>loose school (no assignment)<br/>→ SchoolPlanningPicker"]
-  Routed -->|routine| Routine["recurrence (default daily) → routine kind"]
+  Patch["applyTriagePatch<br/>services/applyTriage.ts"]
+  Auto --> Patch
+  Review --> Patch
+  Sorted --> Contract
 
-  School -.->|mirror| Assignments["assignments table<br/>completion syncs both ways"]
-  Learn -.->|sharpens next run| AIInfer
+  subgraph write["3 · Write"]
+    Contract["applyFlagContract → applyTaskFlag<br/>the flag's full field contract"]
+    Patch --> Contract
+    Contract --> Persist["insertTask / insertTasks (new)<br/>persistTaskUpdate (existing)"]
+    Persist --> DB[("todos")]
+    Persist --> Rem["scheduled_notifications"]
+    Persist --> GCal["Google Calendar mirror"]
+  end
+
+  subgraph learn["4 · Review & learn"]
+    Auto --> Fold["'Buddy sorted N today'<br/>Tasks + Capture"]
+    Fold -->|looks right| Done["leave it"]
+    Fold -->|wrong| Fix["CorrectionSheet<br/>right flag + why (chips / note)"]
+    Fix --> Doc["settings.triage_learnings<br/>capped at 40 lines"]
+    Doc -.->|worked examples in the next prompt| Infer
+    Fix --> Patch
+  end
+
+  subgraph surface["5 · Surface"]
+    DB --> Board["buildTaskBoard<br/>utils/taskBoard.ts"]
+    Board --> Now["Needs you now<br/>urgent + today + overdue/due, capped at 5"]
+    Board --> Sections["One folded section per flag<br/>counts always visible"]
+  end
 ```
 
-## Ordering & stuck signals (all list surfaces)
+## Why it is shaped this way
 
-```mermaid
-flowchart LR
-  Score["getRankedTasks score<br/>priority (urgent=120) + due bumps<br/>+ stale +15 + backlog aging"]
-  Sort["sortTasksCanonical<br/>score desc → dueDate asc → createdAt → id"]
-  Views["Type / Schedule / Kind views<br/>morning pick (small-task bias)<br/>Next Up"]
-  Stuck["snooze_count ≥ 2 or untouched ≥ 2d past due<br/>→ isStale → 'Split this?' chip"]
-
-  Score --> Sort --> Views
-  Stuck -.->|+15 resurfaces| Score
-```
+- **One patch builder.** Auto-applied and hand-routed tasks both go through
+  `applyTriagePatch`, so an AI decision and a human decision produce byte-identical rows.
+- **One contract.** `applyTaskFlag` is the only place that knows what a flag implies.
+  It runs on every write, including inserts that never went through triage.
+- **Two write paths, not four.** Before August 2026 the recurrence spawn and the
+  routine runner each hand-rolled an insert; neither scheduled reminders, so every
+  recurring task went silent after its first occurrence.
+- **The correction loop closes.** A correction is only useful if it carries the
+  reason, and only reachable if the auto-sorted tasks are actually shown.

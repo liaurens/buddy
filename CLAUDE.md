@@ -30,6 +30,13 @@ The app UI is the "Buddy Cove" redesign (spec: `design_handoff_buddy_cove/README
 - **Check-in gate**: the whole app renders `CheckInGate` until today's check-in is done or skipped — persisted on `daily_plans.checked_in_at`/`checkin_skipped`/`intention` with localStorage mirror `cove_checkin_<date>`. Finishing also calls `markRoutineDone('morning')`.
 - **Streak is derived, never stored**: `computeCloseStreak`/`getCloseStreak` in `closeDay.service.ts` over `daily_plans.closed_at`. Copy around it must celebrate only, never shame a miss.
 - **Mood/energy**: UI taps (5 moods / 3 energies) must map through `src/features/cove/services/moodScale.ts` to the 1–10 CHECK on `daily_plans.mood_at_plan_time`/`energy_at_plan_time` — never write raw indices.
+- **Safe areas**: `index.html` sets `viewport-fit=cover`, so the viewport spans the whole
+  screen and every shell edge must add `env(safe-area-inset-*)` itself. `MainLayout` owns
+  this for the app shell (top/left/right gutters + nav clearance); any full-screen surface
+  outside it (`LoginScreen`, `CloseDayOverlay`, `CheckinModal`) adds its own. Use
+  `min-h-dvh`, never `min-h-screen`/`100vh` — `vh` overflows past the visible area on iOS.
+  The iOS status bar style is `default`, not `black-translucent`: the app background is
+  light, and translucent draws unreadable white glyphs over it.
 - **Nav**: 5 tabs (Now `home`, Tasks, Capture `capture`, Browse, Me) — **never any badge or count on nav**. Assistant chat stays routed at `assistant` (reachable via Me → Account & advanced only). `today` deep-links land on Now; DayPage/HomePage/CaptureFAB were deleted (voice capture currently has no home).
 
 ### Feature Modules (`src/features/`)
@@ -65,13 +72,13 @@ The `client.ts` exports the Supabase client and an `isSupabaseConfigured` flag.
 ### Supabase Edge Functions (`supabase/functions/`)
 
 Serverless functions:
-- `assistant` — main AI assistant (tool registry under `assistant/tools/`)
+- `assistant` — main AI assistant (tool registry under `assistant/tools/`). Also the **only** quick-capture endpoint: the iPhone Shortcut POSTs `{input, api_key, source}` here (see `docs/help/iphone_shortcut_setup.md`).
 - `calendar-proxy` — external calendar sync
+- `google-calendar-auth`, `google-calendar-write` — Google OAuth exchange + event writes
 - `hr-agent`, `trainer-agent` — assistant supervisors (learnings, findings, rules)
-- `correlations-agent` — computes tracker correlations
 - `experiment-agent` — experiment analysis
 - `off-track-scanner` — periodic scan for off-track tasks/goals (runs on a Postgres cron)
-- `quick-note` — fast note ingestion
+- `school-import` — bulk import of classes/assignments
 - `schedule-notifications`, `send-notification` — push notification delivery
 
 ### AI Integration
@@ -102,7 +109,7 @@ All tables live in the `public` schema with RLS enabled. Edge functions use the 
 
 | Table | Feature | Notes |
 | --- | --- | --- |
-| `todos` | Tasks | NOT called `tasks`. Has `recurrence` + `recurrence_config`, per-task reminder columns (`reminder_enabled`, `reminder_offset_minutes`, `reminder_at`, `reminder_cadence`, `last_reminded_at`), `task_type_id` FK, triage columns `triaged_at` (NULL = still in the capture inbox), `hardness` (`fixed`/`flexible`/NULL), `auto_triaged` (AI routed without confirmation), `triage_destination` (`urgent`/`today`/`someday`/`school`/`routine`), school linkage `assignment_id` FK (every assignment mirrors onto a todo; completion syncs both ways), and stuck signals `snooze_count` + `last_touched_at`. |
+| `todos` | Tasks | NOT called `tasks`. **`flag` is the classification** (`urgent`/`today`/`deadline`/`waiting`/`school`/`routine`/`someday`, NOT NULL). Has `recurrence` + `recurrence_config`, per-task reminder columns (`reminder_enabled`, `reminder_offset_minutes`, `reminder_at`, `reminder_cadence`, `last_reminded_at`), `task_type_id` FK, triage columns `triaged_at` (NULL = still in the capture inbox), `triage_source`/`triage_confidence`/`triage_reason`, `hardness` (`fixed`/`flexible`/NULL), `auto_triaged` (AI routed without confirmation), school linkage `assignment_id` FK (every assignment mirrors onto a todo; completion syncs both ways), and stuck signals `snooze_count` + `last_touched_at`. `kind`, `triage_destination`, `labels`, `project_id` and `historical_minutes` were dropped 2026-08-16. |
 | `task_types` | User-defined task type taxonomy | Referenced by `todos.task_type_id`. |
 | `task_routines` | Recurring task routine definitions | Owns `task_routine_items`. |
 | `task_routine_items` | Items in a task routine | FK to `task_routines`. |
@@ -122,7 +129,9 @@ All tables live in the `public` schema with RLS enabled. Edge functions use the 
 | `experiment_logs` | Experiment daily journals | — |
 | `checklists` | Reusable routine checklists | — |
 | `strategies` | Personal strategy library | — |
-| `settings` | Per-user key/value store | AI keys (`ai_aiProvider`, `ai_aiApiKey`, `ai_aiModel`), preferences, and `triage_learnings` (single growing text doc, capped ~40 lines, fed back into the triage AI prompt as worked examples). |
+| `settings` | Per-user key/value store | Preferences and `triage_learnings` (single growing text doc, capped ~40 lines, fed back into the triage AI prompt as worked examples). AI keys and the capture token used to live here — they were moved out by the 20260714 migrations, so `ai_aiApiKey`/`ai_aiProvider`/`ai_aiModel`/`quick_note_api_key` no longer exist. |
+| `ai_credentials` | Server-side AI provider credentials | One row per user. **No client policies by design** — `REVOKE ALL FROM anon, authenticated`; only edge functions (service role) touch it. Frontend reads/writes it via the assistant actions `ai.config.status/save/test`. |
+| `capture_tokens` | iPhone Shortcut capture tokens | One row per user, `token_hash` is SHA-256 of the plaintext — the server cannot recover the token, so rotation is the only recovery path. Same REVOKE pattern as `ai_credentials`. |
 | `assistant_logs` | AI assistant interaction log | Columns: `detection_method` (`rule/ai/command/legacy`), `domain`, `tool_id`, `routing_method`, `ai_calls`, `processing_steps`. |
 | `assistant_learnings` | Assistant learned patterns | Type: `new_rule/correction/behavior/note`. |
 | `assistant_findings` | Assistant anomaly findings | Used by HR agent. |
@@ -150,11 +159,73 @@ All tables live in the `public` schema with RLS enabled. Edge functions use the 
 
 ### Tasks feature invariants
 
+**Read `src/features/tasks/README.md` before changing anything in this feature** — it
+documents the four stages (capture → triage → write → surface), the flag contract, and the
+three features deliberately left undesigned. The invariants below are the short version.
+
+- **`flag` is the single classification.** Seven values, `NOT NULL` with a CHECK. `kind` and
+  `triage_destination` were dropped in `20260816000001_collapse_task_vocabulary` — the same
+  seven concepts had been modelled three times with three meta tables and three inconsistent
+  orderings. Presentation (label, plural, emoji, colour, description, required input) lives
+  only in `TASK_FLAG_META`; display order and the sort tie-break only in `TASK_FLAG_ORDER`
+  (`utils/taskFlags.ts`). Adding a second table of flag labels is that mistake repeating.
+- **The flag decides urgency, not `priority`.** `scoreTask` weights `deriveTaskFlag(task)`;
+  `priority` only grades high/medium/low within a flag.
+- **Two write paths, no others**: `insertTask`/`insertTasks` for new rows,
+  `persistTaskUpdate` for existing ones (all in `services/taskWrites.ts`). Each applies the
+  flag contract, writes through `todoToDb`, schedules reminders and mirrors to Google.
+  Triage (manual, auto-apply, eager) builds its task via `applyTriagePatch`
+  (`services/applyTriage.ts`). Don't hand-write todo columns — a raw insert in the
+  recurrence spawn is why every occurrence after the first used to have no reminder.
+- **The assistant edge function captures, it does not classify.** `createTask` records
+  title + an obvious date + an explicit `#flag`; anything else lands untriaged so the AI
+  sorts it and the correction feeds `triage_learnings`. Don't reintroduce flag inference
+  there — that was a fourth divergent copy of the contract.
 - **Due-date parsing**: all due-date math goes through `src/features/tasks/utils/dueDates.ts` (`parseDueDate` anchors plain dates at local noon). `new Date('YYYY-MM-DD')` parses as UTC midnight and shifts the calendar day — never use it on a due date.
-- **One write path**: full task updates persist via `persistTaskUpdate` (`src/features/tasks/services/taskWrites.ts`); triage routing (manual, auto-apply, eager) builds the final task via `applyTriagePatch` (`services/applyTriage.ts`). Don't hand-write todo columns.
-- **`school` TaskKind is derived-only** (from `assignment_id` / `triage_destination='school'`): never written to `todos.kind` — the DB CHECK rejects it and `todoToDb` nulls it. Kind pickers use `PICKABLE_TASK_KINDS`.
-- **One canonical order**: every task list sorts with `sortTasksCanonical` (`utils/taskOrdering.ts`) over `getRankedTasks` scores — score desc, dueDate asc (undated last), createdAt, id.
+- **One canonical order**: every task list sorts with `sortTasksCanonical` (`utils/taskOrdering.ts`) over `getRankedTasks` scores — score desc, plannedFor asc, flag rank, dueDate asc (undated last), createdAt, id.
+- **The Tasks screen is built by `buildTaskBoard`** (`utils/taskBoard.ts`), not by the page.
+  Every active task appears exactly once across now / overflow / sections.
 - Completed tasks older than 30 days are filtered out of the `useTasks` query (rows stay in the DB).
+- **Dead code check**: `npm run check:reach` walks imports from `src/main.tsx` and reports
+  anything the bundle can't reach (also advisory in the Stop hook). The Cove redesign
+  orphaned ~35 components for months because barrel files made them look imported.
+
+### Edge function auth (`verify_jwt`)
+
+`assistant`, `school-import`, `schedule-notifications`, `google-calendar-auth`, and
+`google-calendar-write` are deployed with **`verify_jwt = true`**. Any non-browser caller
+(iPhone Shortcut, curl, a cron job) must send `Authorization: Bearer <anon or publishable
+key>` or the Supabase gateway returns `{"code":"UNAUTHORIZED_NO_AUTH_HEADER"}` **before**
+the function's own `auth.ts` runs. Both the legacy `eyJ…` anon key and the modern
+`sb_publishable_…` key satisfy the gateway. Don't confuse the two 401s: gateway rejection
+returns `{"code":…}`, the function's own rejection returns `{"success":false,…}`.
+
+**`supabase/config.toml` pins `verify_jwt` per function — keep it in sync when adding
+one.** `supabase functions deploy` defaults to `verify_jwt = true` for any function not
+declared there, and that default silently killed push notifications for six weeks: a
+2026-07-04 redeploy flipped `schedule-notifications` to `true`, while the pg_cron job was
+building its header from `current_setting('app.settings.service_role_key', true)` — a GUC
+that was never set — so it sent a literal `Bearer ` and got
+`401 UNAUTHORIZED_INVALID_JWT_FORMAT` every minute. Both cron jobs now send the **public
+publishable key** (`sb_publishable_…`, safe to hardcode in a migration); never reach for
+the service role key there. When a cron-invoked function seems dead, check
+`net._http_response` first — it stores the gateway's reply, which pg_cron itself ignores
+(`cron.job_run_details` says `succeeded` for a 401, because the POST was sent fine).
+
+### Notification delivery invariants
+
+- `schedule-notifications` **expires** anything more than `MAX_STALENESS_MINUTES` (120)
+  past its `scheduled_for` instead of delivering it. A late nudge is noise, and this
+  keeps an outage from flooding the user on recovery. Deferred rows get a fresh
+  `scheduled_for`, so quiet-hours/rate-limit holds are never counted stale.
+- **Routine anchors (`notification_type = 'routine_reminder'`) ignore quiet hours** — the
+  user picked those times deliberately. Without this, a night anchor at 22:00 against a
+  quiet-hours start of 22:00 is suppressed every single night.
+- Expired/undelivered anchors still call `rescheduleRoutineForTomorrow`, so the daily
+  rhythm survives any single miss.
+- `send-notification` deletes a subscription on 404, 410, **and** 400
+  `VapidPkHashMismatch` (subscription created against a rotated VAPID key — it can never
+  be delivered to; the device re-subscribes on next app open).
 
 ### Edge function table access
 
@@ -162,7 +233,9 @@ Edge functions (`supabase/functions/`) use the **service role key** — they byp
 
 ### Migrations
 
-Numbered migrations live in `supabase/migrations/`. Two unnumbered legacy files (`smart_notes_migration.sql`, `daily_planning_migration.sql`) were applied manually and are NOT tracked by the CLI. `20260716000001_checkin_gate.sql` was applied to the live DB via the Supabase MCP (remote history name `checkin_gate`) — reconcile with `supabase migration repair` if the CLI complains. Use `supabase migration repair` if the CLI history gets out of sync (see memory for the full repair pattern).
+Numbered migrations live in `supabase/migrations/`. Two unnumbered legacy files (`smart_notes_migration.sql`, `daily_planning_migration.sql`) were applied manually and are NOT tracked by the CLI. `20260716000001_checkin_gate.sql` was applied to the live DB via the Supabase MCP (remote history name `checkin_gate`) — reconcile with `supabase migration repair` if the CLI complains. `20260714000000_secure_ai_credentials` and `20260714000002_secure_capture_tokens` were likewise applied via the MCP on 2026-08-14, with their original version numbers inserted into `supabase_migrations.schema_migrations` by hand so the CLI history matches the filenames.
+
+**A migration existing in `supabase/migrations/` does not mean it ran.** Those two sat unapplied for a month while the frontend and the deployed `assistant` function already depended on their tables — the visible symptom was a permanently-401ing iPhone Shortcut. Before debugging any "table/feature is broken", diff the local filenames against the remote history (`supabase migration list`, or the MCP `list_migrations`). Use `supabase migration repair` if the CLI history gets out of sync (see memory for the full repair pattern).
 
 Some migrations also schedule Postgres cron jobs (e.g. `20260130000000_setup_notification_cron.sql`, `20260501000001_off_track_scanner_cron.sql`) that invoke edge functions over HTTP — keep these in mind when renaming or removing functions.
 
