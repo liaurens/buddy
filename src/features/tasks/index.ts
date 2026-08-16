@@ -1,21 +1,12 @@
-// Barrel exports for tasks feature
+// Barrel exports for tasks feature.
+//
+// Keep this list to what other features actually consume. Re-exporting a
+// component nobody renders makes it look alive to any "is it imported?" check —
+// that is exactly how the 2026-08 audit's dead tree stayed hidden.
 export * from './types';
 
 // Pages
-export { default as TodoPage } from './pages/TodoPage';
 export { default as NotesPage } from './pages/NotesPage';
-
-// Components
-export { default as AITaskSplitter } from './components/AITaskSplitter';
-export { default as AIOrganizeModal } from './components/AIOrganizeModal';
-export { default as UrgentScheduleModal } from './components/UrgentScheduleModal';
-export { default as TriageInbox } from './components/TriageInbox';
-
-// Utils — task kind classification
-export { deriveTaskKind, TASK_KIND_META, TASK_KIND_ORDER } from './utils/taskKind';
-
-// Utils — triage routing
-export { TRIAGE_DESTINATION_META, TRIAGE_DESTINATION_ORDER } from './utils/triageRouting';
 
 // Hooks
 export { useTaskRecommendation } from './hooks/useTaskRecommendation';

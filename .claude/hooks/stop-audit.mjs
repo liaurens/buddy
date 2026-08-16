@@ -65,6 +65,17 @@ if (hits.length) {
     notes.push('⚠️ Stop audit — changed src files still contain:\n' + hits.join('\n'));
 }
 
+// Dead-code guard: anything under src/ the shipped bundle can't reach.
+// Only worth running when src/ actually changed this session.
+if (files.length > 0) {
+    const reach = spawnSync('node', ['scripts/check-reachability.mjs', '--quiet'], {
+        encoding: 'utf8',
+        shell: process.platform === 'win32',
+    });
+    const report = (reach.stderr || '').trim();
+    if (report) notes.push(report);
+}
+
 // Edge functions edited this session but (probably) not deployed yet.
 const fnNames = new Set(
     allChanged

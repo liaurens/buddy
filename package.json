@@ -14,6 +14,7 @@
         "test": "vitest",
         "test:run": "vitest run",
         "test:coverage": "vitest run --coverage",
+        "check:reach": "node scripts/check-reachability.mjs",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "prepare": "husky"
