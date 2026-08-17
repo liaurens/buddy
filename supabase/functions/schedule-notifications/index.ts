@@ -31,6 +31,24 @@ interface DeliveryPrefs {
 const DEFAULT_TIMEZONE = 'Europe/Amsterdam';
 const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+/**
+ * A reminder this far past its moment is noise, not a nudge — "check the plan"
+ * three hours late only teaches the user to ignore the badge. Stale rows are
+ * expired instead of delivered, which also means an outage (the cron was
+ * 401-ing from 2026-07-04) drains quietly rather than flooding on recovery.
+ * Deferred rows get a fresh `scheduled_for`, so they are never counted stale.
+ */
+const MAX_STALENESS_MINUTES = 120;
+
+/** Anchors are user-chosen moments, so they follow different rules than nudges. */
+function isAnchor(notification: ScheduledNotification): boolean {
+    return notification.notification_type === 'routine_reminder';
+}
+
+function minutesLate(notification: ScheduledNotification): number {
+    return (Date.now() - new Date(notification.scheduled_for).getTime()) / 60_000;
+}
+
 function parseHHMM(s: string | undefined, fallback: [number, number]): [number, number] {
     if (!s) return fallback;
     const [h, m] = s.split(':').map(Number);
@@ -194,6 +212,24 @@ async function sentInLastHour(
         .eq('status', 'sent')
         .gte('sent_at', since);
     return count || 0;
+}
+
+/** Retire a row that is too late to be worth delivering. */
+async function expireNotification(
+    supabase: ReturnType<typeof createClient>,
+    notificationId: string,
+    minutesBehind: number,
+): Promise<void> {
+    const { error } = await supabase
+        .from('scheduled_notifications')
+        .update({
+            status: 'cancelled',
+            error_message: `Expired: ${Math.round(minutesBehind)} min past its scheduled time`,
+        })
+        .eq('id', notificationId);
+    if (error) {
+        console.error('Failed to expire notification:', error);
+    }
 }
 
 /** Push a pending row's fire time into the future without sending it. */
@@ -428,15 +464,31 @@ serve(async (req) => {
         let failedCount = 0;
 
         let deferredCount = 0;
+        let expiredCount = 0;
 
         // Process each user's notifications
-        for (const [userId, userNotifications] of Object.entries(notificationsByUser)) {
+        for (const [userId, batch] of Object.entries(notificationsByUser)) {
             const prefs = await loadDeliveryPrefs(supabase, userId);
+            let queue: ScheduledNotification[] = batch;
 
-            // Quiet hours: hold everything until the window ends instead of waking
-            // the user. Routine anchors keep their original scheduled_for (their
-            // self-reschedule derives tomorrow's time from it, so changing it would
-            // drift the anchor); they simply stay pending and fire at quiet end.
+            // Expire anything that has slipped far past its moment. Anchors expire
+            // too — a "close the day" nudge at breakfast is worse than none — but
+            // they re-enqueue for tomorrow so the daily rhythm survives.
+            const stale = queue.filter((n) => minutesLate(n) > MAX_STALENESS_MINUTES);
+            for (const notification of stale) {
+                await expireNotification(supabase, notification.id, minutesLate(notification));
+                if (isAnchor(notification)) {
+                    await rescheduleRoutineForTomorrow(supabase, notification, prefs.timezone);
+                }
+            }
+            expiredCount += stale.length;
+            queue = queue.filter((n) => minutesLate(n) <= MAX_STALENESS_MINUTES);
+            if (queue.length === 0) continue;
+
+            // Quiet hours: hold nudges until the window ends instead of waking the
+            // user. Anchors are exempt — the user picked those times deliberately,
+            // and a night anchor set at the quiet-hours boundary (22:00 vs 22:00)
+            // would otherwise be suppressed every single night.
             const localMins = localMinutesNow(prefs.timezone);
             if (
                 prefs.quietHoursEnabled &&
@@ -445,34 +497,29 @@ serve(async (req) => {
                 const quietEnd = new Date(
                     Date.now() + minutesUntilQuietEnd(localMins, prefs.quietHoursEnd) * 60_000,
                 );
-                for (const notification of userNotifications) {
-                    if (notification.notification_type !== 'routine_reminder') {
-                        await deferNotification(supabase, notification.id, quietEnd);
-                    }
+                const held = queue.filter((n) => !isAnchor(n));
+                for (const notification of held) {
+                    await deferNotification(supabase, notification.id, quietEnd);
                 }
-                deferredCount += userNotifications.length;
-                continue;
+                deferredCount += held.length;
+                queue = queue.filter(isAnchor);
+                if (queue.length === 0) continue;
             }
 
             // Survival day: only the anchor rhythm reaches the user — every other
             // notification is pushed 24h out (tomorrow is a new day, new capacity).
             if (await isSurvivalDay(supabase, userId, prefs.timezone)) {
                 const tomorrow = new Date(Date.now() + 24 * 60 * 60_000);
-                let deferredForSurvival = 0;
-                for (const notification of userNotifications) {
-                    if (notification.notification_type !== 'routine_reminder') {
-                        await deferNotification(supabase, notification.id, tomorrow);
-                        deferredForSurvival++;
-                    }
+                const held = queue.filter((n) => !isAnchor(n));
+                for (const notification of held) {
+                    await deferNotification(supabase, notification.id, tomorrow);
                 }
-                deferredCount += deferredForSurvival;
-                const remaining = userNotifications.filter(
-                    (n) => n.notification_type === 'routine_reminder',
-                );
-                if (remaining.length === 0) continue;
-                userNotifications.length = 0;
-                userNotifications.push(...remaining);
+                deferredCount += held.length;
+                queue = queue.filter(isAnchor);
+                if (queue.length === 0) continue;
             }
+
+            const userNotifications = queue;
 
             // Get subscriptions for this user (all rows are active; invalid ones get deleted)
             const { data: subscriptions } = await supabase
@@ -494,7 +541,7 @@ serve(async (req) => {
 
                     // Keep daily anchors alive even while no device is subscribed,
                     // so they start firing the moment the user re-enables push.
-                    if (notification.notification_type === 'routine_reminder') {
+                    if (isAnchor(notification)) {
                         await rescheduleRoutineForTomorrow(supabase, notification, prefs.timezone);
                     }
                 }
@@ -509,8 +556,7 @@ serve(async (req) => {
             for (const notification of userNotifications) {
                 // Routine anchors are exempt from the cap (max 3/day) — it exists to
                 // stop task/off-track floods, not the daily rhythm.
-                const isAnchor = notification.notification_type === 'routine_reminder';
-                if (!isAnchor && sentThisHour >= prefs.maxRemindersPerHour) {
+                if (!isAnchor(notification) && sentThisHour >= prefs.maxRemindersPerHour) {
                     // Over the cap — push the rest 30 minutes out and try again then.
                     await deferNotification(
                         supabase,
@@ -552,7 +598,7 @@ serve(async (req) => {
                     .eq('id', notification.id);
 
                 // Daily anchors re-enqueue themselves for tomorrow.
-                if (notification.notification_type === 'routine_reminder') {
+                if (isAnchor(notification)) {
                     await rescheduleRoutineForTomorrow(supabase, notification, prefs.timezone);
                 }
 
@@ -571,6 +617,7 @@ serve(async (req) => {
                 sent: sentCount,
                 failed: failedCount,
                 deferred: deferredCount,
+                expired: expiredCount,
                 timestamp: new Date().toISOString(),
             }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },

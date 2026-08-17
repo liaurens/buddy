@@ -17,7 +17,11 @@
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <!-- `default` keeps the status bar opaque with dark glyphs. `black-translucent`
+             draws white glyphs over our light (#e9f4f9) background — unreadable on a
+             notch/Dynamic Island device. Safe-area insets are still applied in
+             MainLayout for landscape and Android gesture nav. -->
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Buddy" />
     </head>
 

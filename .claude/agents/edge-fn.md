@@ -10,7 +10,7 @@ You build and edit Supabase **edge functions** (Deno runtime) for the Buddy app.
 ## Layout & references — read first
 - `supabase/functions/<name>/index.ts` — one folder per function; `index.ts` is the entry (`Deno.serve`).
 - `supabase/functions/_shared/` — shared helpers imported across functions (e.g. `googleCalendar.ts`). Put reusable code here.
-- `supabase/functions/quick-note/index.ts` — a small, readable reference function.
+- `supabase/functions/calendar-proxy/index.ts` — a small, readable reference function.
 - `supabase/functions/assistant/` — the large one (tool registry under `tools/`, core under `core/`).
 
 ## Conventions

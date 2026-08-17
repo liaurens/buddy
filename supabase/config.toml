@@ -1,0 +1,51 @@
+# Supabase CLI config.
+#
+# This file exists for ONE reason: to pin `verify_jwt` per edge function.
+#
+# `supabase functions deploy <name>` defaults to `verify_jwt = true` when the
+# function is not declared here. That default is what silently broke push
+# notifications on 2026-07-04: `schedule-notifications` was redeployed, flipped
+# from false to true, and the pg_cron job — which was sending an empty bearer
+# token — started getting 401'd by the gateway once a minute for six weeks.
+# Declaring every function here makes a redeploy idempotent.
+#
+# Everything else intentionally uses CLI defaults.
+
+project_id = "kdwgznfszbrysepsltua"
+
+# --- Called by pg_cron over HTTP (see 20260814000002_fix_notification_cron_auth.sql).
+# Both crons send the public publishable key, so verify_jwt can stay on.
+[functions.schedule-notifications]
+verify_jwt = true
+
+[functions.off-track-scanner]
+verify_jwt = false
+
+# --- Called with a user JWT from the browser.
+[functions.assistant]
+verify_jwt = true
+
+[functions.school-import]
+verify_jwt = true
+
+[functions.google-calendar-auth]
+verify_jwt = true
+
+[functions.google-calendar-write]
+verify_jwt = true
+
+# --- Called server-to-server (service role) or as open helpers.
+[functions.send-notification]
+verify_jwt = false
+
+[functions.calendar-proxy]
+verify_jwt = false
+
+[functions.hr-agent]
+verify_jwt = false
+
+[functions.trainer-agent]
+verify_jwt = false
+
+[functions.experiment-agent]
+verify_jwt = false

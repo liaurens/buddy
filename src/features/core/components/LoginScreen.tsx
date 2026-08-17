@@ -46,7 +46,13 @@ const LoginScreen: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#e9f4f9] flex items-center justify-center p-4">
+        <div
+            className="min-h-dvh bg-[#e9f4f9] flex items-center justify-center p-4"
+            style={{
+                paddingTop: 'calc(1rem + env(safe-area-inset-top))',
+                paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))',
+            }}
+        >
             <div className="bg-white rounded-[22px] shadow-cove max-w-md w-full p-8">
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-cove-tint-blue rounded-full mb-4">

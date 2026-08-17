@@ -118,8 +118,14 @@ serve(async (req) => {
             const errMessage =
                 pushError instanceof Error ? pushError.message : 'Unknown push error';
 
-            // 404 Not Found / 410 Gone → subscription is permanently invalid; remove it.
-            if (statusCode === 404 || statusCode === 410) {
+            // 404 Not Found / 410 Gone → subscription is permanently invalid.
+            // 400 VapidPkHashMismatch → the subscription was created against a
+            // different VAPID public key (keys were rotated, or it predates the
+            // current pair). It can never be delivered to and only ever produces
+            // a "failed" leg on every send, so retire it too — the device
+            // re-subscribes with the current key on its next app open.
+            const vapidMismatch = statusCode === 400 && /VapidPkHashMismatch/i.test(errMessage);
+            if (statusCode === 404 || statusCode === 410 || vapidMismatch) {
                 await supabase.from('notification_subscriptions').delete().eq('id', subscriptionId);
             }
 

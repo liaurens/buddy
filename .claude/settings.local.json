@@ -147,7 +147,8 @@
       "Bash(mv .claude/progress/20260621-tasks.md .claude/progress/done/20260621-tasks.md)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/ --max-time 3)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5174/ --max-time 3)",
-      "Bash(npm i *)"
+      "Bash(npm i *)",
+      "mcp__claude_ai_Supabase__query_logs"
     ]
   },
   "enabledMcpjsonServers": [

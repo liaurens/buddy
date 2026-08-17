@@ -1361,7 +1361,6 @@ Important Edge Functions include:
 - `schedule-notifications`: schedules or flushes notifications, and re-enqueues
   the next occurrence of routine anchor reminders after each fire.
 - `send-notification`: sends Web Push notifications.
-- `quick-note`: fast note capture.
 - `calendar-proxy`: calendar integration helper.
 - `google-calendar-auth`: Google OAuth token exchange (PKCE), connection status.
 - `google-calendar-write`: creates/updates/deletes Google Calendar events.

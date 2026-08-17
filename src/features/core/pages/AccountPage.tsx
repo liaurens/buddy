@@ -35,6 +35,11 @@ interface AccountPageProps {
     embedded?: boolean;
 }
 
+// The assistant function is deployed with verify_jwt=true, so the Shortcut must send the
+// publishable anon key as a bearer token or the gateway rejects it before our auth runs.
+const CAPTURE_ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL ?? ''}/functions/v1/assistant`;
+const CAPTURE_AUTH_HEADER = `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''}`;
+
 const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
     const { user, signOut } = useAuth();
     const { exportData, importData } = useTrackers();
@@ -236,6 +241,11 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
         }
     };
 
+    const copyValue = (value: string, label: string) => {
+        navigator.clipboard.writeText(value);
+        toast.success(`${label} copied`);
+    };
+
     // Test Notification Functions
     const handleTestNotificationNow = async () => {
         try {
@@ -332,7 +342,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                                         aiProvider: e.target.value as AISettings['aiProvider'],
                                     })
                                 }
-                                className="w-full rounded-[12px] border border-cove-border px-3 py-2 text-sm font-semibold text-cove-ink focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
+                                className="app-input"
                             >
                                 <option value="openai">OpenAI</option>
                                 <option value="anthropic">Anthropic</option>
@@ -358,7 +368,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                                         aiApiKey: e.target.value || null,
                                     })
                                 }
-                                className="w-full rounded-[12px] border border-cove-border px-3 py-2 text-sm font-semibold text-cove-ink focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
+                                className="app-input"
                             />
                             <p className="text-xs font-semibold text-cove-soft mt-1">
                                 The saved key is only available to the server and is never returned
@@ -380,7 +390,7 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                                         aiModel: e.target.value || null,
                                     })
                                 }
-                                className="w-full rounded-[12px] border border-cove-border px-3 py-2 text-sm font-semibold text-cove-ink focus:outline-none focus:ring-2 focus:ring-cove-accent-pale"
+                                className="app-input"
                             />
                         </div>
 
@@ -489,9 +499,39 @@ const AccountPage: React.FC<AccountPageProps> = ({ embedded = false }) => {
                             Rotate Key
                         </button>
                         <div className="mt-4 p-3 bg-cove-tint-blue rounded-[12px] space-y-2">
-                            <p className="text-xs font-semibold text-cove-ink">
-                                <strong>Endpoint:</strong>{' '}
-                                <code>{`<supabase-url>/functions/v1/assistant`}</code> (POST)
+                            <div className="flex items-start gap-2">
+                                <p className="flex-1 text-xs font-semibold text-cove-ink break-all">
+                                    <strong>Endpoint (POST):</strong>{' '}
+                                    <code>{CAPTURE_ENDPOINT}</code>
+                                </p>
+                                <button
+                                    onClick={() => copyValue(CAPTURE_ENDPOINT, 'Endpoint')}
+                                    className="shrink-0 p-1.5 rounded-[8px] hover:bg-cove-track"
+                                    title="Copy endpoint"
+                                >
+                                    <Copy size={14} className="text-cove-muted" />
+                                </button>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <p className="flex-1 text-xs font-semibold text-cove-ink break-all">
+                                    <strong>Header — required:</strong>{' '}
+                                    <code>Authorization: {CAPTURE_AUTH_HEADER}</code>
+                                </p>
+                                <button
+                                    onClick={() =>
+                                        copyValue(CAPTURE_AUTH_HEADER, 'Authorization value')
+                                    }
+                                    className="shrink-0 p-1.5 rounded-[8px] hover:bg-cove-track"
+                                    title="Copy Authorization value"
+                                >
+                                    <Copy size={14} className="text-cove-muted" />
+                                </button>
+                            </div>
+                            <p className="text-[11px] font-semibold text-cove-soft">
+                                Without that header the Supabase gateway answers{' '}
+                                <code>401 Missing authorization header</code> before the request
+                                reaches Buddy. The value is the public publishable key — safe to
+                                paste into Shortcuts.
                             </p>
                             <p className="text-xs font-semibold text-cove-ink">
                                 <strong>Body:</strong>{' '}
