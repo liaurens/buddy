@@ -138,10 +138,10 @@ const ToolboxPage: React.FC = () => {
     });
 
     return (
-        <div className="app-page flex h-[calc(100dvh-7rem)] gap-6 lg:h-[calc(100dvh-4rem)]">
+        <div className="app-page flex h-[calc(100dvh-7rem)] gap-6">
             {/* Left Panel: List */}
             <div
-                className={`flex-1 flex flex-col space-y-4 ${selectedStrategy ? 'hidden md:flex' : 'flex'}`}
+                className={`flex-1 flex flex-col space-y-4 ${selectedStrategy ? 'hidden' : 'flex'}`}
             >
                 <header className="flex items-center justify-between">
                     <h1 className="flex items-center gap-3 px-1 text-[22px] font-black text-cove-ink">
@@ -238,9 +238,9 @@ const ToolboxPage: React.FC = () => {
 
             {/* Right Panel: Details (or Modal on Mobile) */}
             {selectedStrategy && (
-                <div className="fixed inset-0 z-50 md:static md:z-0 md:flex-[1.5] bg-cove-bg md:bg-transparent flex flex-col md:h-full">
+                <div className="fixed inset-0 z-50 bg-cove-bg flex flex-col">
                     {/* Mobile Back Button */}
-                    <div className="md:hidden p-4 bg-white shadow-cove flex items-center gap-2">
+                    <div className="p-4 bg-white shadow-cove flex items-center gap-2">
                         <button
                             onClick={() => setSelectedStrategy(null)}
                             className="p-2 hover:bg-cove-track/60 rounded-xl text-cove-muted"
@@ -250,8 +250,8 @@ const ToolboxPage: React.FC = () => {
                         <h2 className="font-extrabold text-lg text-cove-ink">Details</h2>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 md:p-0">
-                        <div className="app-surface flex flex-col p-6 md:h-full">
+                    <div className="flex-1 overflow-y-auto p-4">
+                        <div className="app-surface flex flex-col p-6">
                             <div className="flex items-start justify-between mb-6">
                                 <div>
                                     <div className="flex flex-wrap gap-2 mb-3">

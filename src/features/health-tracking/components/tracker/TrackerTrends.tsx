@@ -41,7 +41,7 @@ const TrackerTrends: React.FC<TrackerTrendsProps> = ({ onEditTracker }) => {
                 <h3 className="font-semibold text-cove-ink">Weekly Snapshot</h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
                 {activeTrackers.map((tracker) => {
                     // Get data for this tracker for last 7 days
                     const trackerEntries = entries.filter((e) => e.trackerId === tracker.id);

@@ -54,6 +54,43 @@ function asString(value: unknown): string | null {
     return typeof value === 'string' && value.trim() !== '' ? value : null;
 }
 
+/** Conversational openers models prepend before getting to the point. */
+const PREAMBLE_RE =
+    /^\s*(?:sure|okay|ok|alright|right|of course|certainly|got it|understood|yes|yep|prima|zeker|oké|ok[ée]e)\b[\s!,.:;—–-]*/i;
+
+/** How much reason text a row can show before it stops being scannable. */
+const MAX_REASON = 90;
+
+/**
+ * Tidy the model's justification into something a task row can display.
+ *
+ * Two problems, both visible in the UI: the model's chatty opener survived into
+ * the card ("sure — Task has no specific urgency…"), and the row then cut the
+ * sentence off mid-word with an ellipsis. Strip the opener, keep the first
+ * sentence, and if it's still too long trim on a word boundary so the row ends
+ * somewhere deliberate.
+ */
+export function cleanTriageReason(raw: unknown): string {
+    const text = asString(raw);
+    if (!text) return '';
+
+    let out = text.trim().replace(PREAMBLE_RE, '');
+
+    // Keep the first sentence — the rest is elaboration the row has no room for.
+    const sentenceEnd = out.search(/[.!?](?:\s|$)/);
+    if (sentenceEnd > 0) out = out.slice(0, sentenceEnd + 1);
+
+    out = out.trim();
+    if (out.length > MAX_REASON) {
+        const cut = out.slice(0, MAX_REASON);
+        const lastSpace = cut.lastIndexOf(' ');
+        out = `${(lastSpace > 40 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:—–-]+$/, '')}…`;
+    }
+
+    // Re-capitalise when stripping the opener left a lowercase start.
+    return out.charAt(0).toUpperCase() + out.slice(1);
+}
+
 function asEnum<T extends string>(value: unknown, allowed: T[]): T | null {
     const s = asString(value);
     return s && (allowed as string[]).includes(s) ? (s as T) : null;
@@ -163,7 +200,7 @@ export function sanitizeTriageSuggestions(
             estimatedMinutes: asMinutes(entry?.estimatedMinutes),
             taskTypeId:
                 typeIdByName.get(asString(entry?.taskTypeName)?.trim().toLowerCase() ?? '') ?? null,
-            reason: asString(entry?.reason) ?? '',
+            reason: cleanTriageReason(entry?.reason),
         });
     }
 

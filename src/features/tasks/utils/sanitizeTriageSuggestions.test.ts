@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { cleanTriageReason } from './sanitizeTriageSuggestions';
 import { sanitizeTriageSuggestions } from './sanitizeTriageSuggestions';
 
 const inbox = ['t1', 't2', 't3'];
@@ -22,7 +23,9 @@ describe('sanitizeTriageSuggestions', () => {
         expect(s.destination).toBe('today');
         expect(s.confidence).toBe(1);
         expect(s.dueTime).toBe('14:30');
-        expect(s.reason).toBe('do it');
+        // Reasons are shown as sentences in the triage rows, so they come back
+        // sentence-cased — see the cleanTriageReason suite below.
+        expect(s.reason).toBe('Do it');
     });
 
     it('accepts a bare array payload', () => {
@@ -203,5 +206,43 @@ describe('taskTypeName resolution', () => {
             assignments,
         );
         expect(s.taskTypeId).toBeNull();
+    });
+});
+
+describe('cleanTriageReason', () => {
+    it('strips a conversational opener', () => {
+        expect(cleanTriageReason('sure — Task has no specific urgency or date.')).toBe(
+            'Task has no specific urgency or date.',
+        );
+    });
+
+    it('strips other openers and punctuation', () => {
+        expect(cleanTriageReason('Okay, this is a someday item.')).toBe('This is a someday item.');
+        expect(cleanTriageReason('Of course! No deadline given.')).toBe('No deadline given.');
+    });
+
+    it('keeps only the first sentence', () => {
+        expect(cleanTriageReason('No date given. It could wait until later this month.')).toBe(
+            'No date given.',
+        );
+    });
+
+    it('trims a long reason on a word boundary, not mid-word', () => {
+        const long =
+            'This task has no specific urgency or date attached to it and is already flagged as a someday item by the user';
+        const out = cleanTriageReason(long);
+        expect(out.endsWith('…')).toBe(true);
+        expect(out.length).toBeLessThanOrEqual(91);
+        expect(out).not.toMatch(/\s…$/);
+    });
+
+    it('leaves a good short reason untouched', () => {
+        expect(cleanTriageReason('Due tomorrow.')).toBe('Due tomorrow.');
+    });
+
+    it('returns an empty string for blank or missing input', () => {
+        expect(cleanTriageReason('')).toBe('');
+        expect(cleanTriageReason(undefined)).toBe('');
+        expect(cleanTriageReason('   ')).toBe('');
     });
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { addDays, format } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
@@ -76,12 +76,11 @@ const CloseDayOverlay: React.FC<CloseDayOverlayProps> = ({
     const [journalLine, setJournalLine] = useState('');
     const [streakAfterClose, setStreakAfterClose] = useState<number | null>(null);
 
-    // Leftovers resolve one by one; when the list drains, move on to reflection.
-    useEffect(() => {
-        if (phase === 'leftovers' && leftovers.length === 0) {
-            setPhase('reflect');
-        }
-    }, [phase, leftovers.length]);
+    // Leftovers resolve one by one; when the list drains, reflection takes over.
+    // Derived rather than set from an effect so the drained frame never renders
+    // an empty leftovers step first.
+    const activePhase: ClosePhase =
+        phase === 'leftovers' && leftovers.length === 0 ? 'reflect' : phase;
 
     const resolve = async (task: Task, action: LeftoverAction, text?: string) => {
         const resolution = buildLeftoverResolution(task.id, action, text);
@@ -200,19 +199,23 @@ const CloseDayOverlay: React.FC<CloseDayOverlayProps> = ({
     return (
         <div className="cove-overlayin fixed inset-0 z-50 flex justify-center bg-cove-overlay/60">
             <div
-                className="flex min-h-full w-full max-w-[520px] flex-col items-center gap-3.5 overflow-y-auto bg-cove-overlay px-7 pb-8 pt-10 text-center text-white"
-                style={{ justifyContent: 'safe center' }}
+                className="flex min-h-full w-full max-w-[520px] flex-col items-center gap-3.5 overflow-y-auto bg-cove-overlay px-7 text-center text-white"
+                style={{
+                    justifyContent: 'safe center',
+                    paddingTop: 'calc(2.5rem + env(safe-area-inset-top))',
+                    paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))',
+                }}
                 role="dialog"
                 aria-modal="true"
                 aria-label="Close the day"
             >
-                {phase === 'celebrate' && !reducedMotion ? (
+                {activePhase === 'celebrate' && !reducedMotion ? (
                     <Confetti variant="big" className="left-1/2 top-1/3" />
                 ) : null}
 
                 <Whale size="overlay" color="#7cc3e8" />
 
-                {phase === 'leftovers' ? (
+                {activePhase === 'leftovers' ? (
                     <>
                         <div className="text-[22px] font-black leading-tight">Before we close…</div>
                         <div className="max-w-[300px] text-[13.5px] font-bold leading-normal text-cove-overlay-muted">
@@ -353,7 +356,7 @@ const CloseDayOverlay: React.FC<CloseDayOverlayProps> = ({
                     </>
                 ) : null}
 
-                {phase === 'reflect' ? (
+                {activePhase === 'reflect' ? (
                     <>
                         <div className="text-2xl font-black leading-tight">Closing the day</div>
                         <div className="text-sm font-bold leading-normal text-cove-overlay-muted">
@@ -405,7 +408,7 @@ const CloseDayOverlay: React.FC<CloseDayOverlayProps> = ({
                     </>
                 ) : null}
 
-                {phase === 'celebrate' ? (
+                {activePhase === 'celebrate' ? (
                     <>
                         <div className="cove-fadeslide text-[26px] font-black leading-tight">
                             Day closed. You did it.

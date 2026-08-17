@@ -7,47 +7,10 @@ import type {
 
 // ─── Internal Logic ─────────────────────────────────────────────────────────
 
-interface CheckinValues {
-    [metric: string]: number;
-}
-
-const metricAliases: Record<string, string> = {
-    mood: 'mood',
-    stemming: 'mood',
-    gevoel: 'mood',
-    energy: 'energy',
-    energie: 'energy',
-    sleep: 'sleep',
-    slaap: 'sleep',
-    focus: 'focus',
-    concentratie: 'focus',
-    stress: 'stress',
-    pain: 'pain',
-    pijn: 'pain',
-    exercise: 'exercise',
-    sport: 'exercise',
-    caffeine: 'caffeine',
-    koffie: 'caffeine',
-    alcohol: 'alcohol',
-    water: 'water',
-    steps: 'steps',
-    stappen: 'steps',
-};
-
-export function parseCheckinValues(input: string): CheckinValues {
-    const values: CheckinValues = {};
-    const pattern = /(\w+)\s*[:=]?\s*(\d+(?:\.\d+)?)/g;
-    let match;
-    while ((match = pattern.exec(input.toLowerCase())) !== null) {
-        const rawMetric = match[1];
-        const value = parseFloat(match[2]);
-        const canonical = metricAliases[rawMetric];
-        if (canonical) {
-            values[canonical] = value;
-        }
-    }
-    return values;
-}
+// The free-text parser lives in its own Deno-import-free module so the app's
+// tsc build and the Vitest suite can both compile it directly.
+export { parseCheckinValues, metricAliases } from './checkin-parser.ts';
+import type { CheckinValues } from './checkin-parser.ts';
 
 // ─── Action Handlers ────────────────────────────────────────────────────────
 

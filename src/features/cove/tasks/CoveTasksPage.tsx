@@ -208,10 +208,21 @@ const CoveTasksPage: React.FC = () => {
             {editing ? (
                 <TaskDetailSheet
                     task={editing}
-                    onSave={(t) => updateTask(t)}
+                    onSave={async (t) => {
+                        // Saving used to be silent: the sheet closed and the row
+                        // quietly re-sorted, which reads as "nothing happened".
+                        try {
+                            await updateTask(t);
+                            toast.success('Task updated.');
+                        } catch (err) {
+                            console.error('Failed to update task:', err);
+                            toast.error('Could not save that — try again.');
+                        }
+                    }}
                     onDelete={(id) => {
                         void deleteTask(id);
                         setEditingId(null);
+                        toast.success('Task deleted.');
                     }}
                     onClose={() => setEditingId(null)}
                 />

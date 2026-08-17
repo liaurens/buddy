@@ -165,9 +165,22 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
 
             <div className="flex flex-col gap-2.5">
                 {visiblePicks.length === 0 ? (
-                    <div className="rounded-card-lg bg-white/60 p-4 text-[13.5px] font-bold text-cove-muted">
-                        No picks yet — the morning check-in sets them up, or grab something from
-                        Tasks.
+                    /*
+                     * Skipping the morning check-in used to leave this screen with
+                     * nothing but a sentence, all day, even when Tasks was full.
+                     * The home screen should always offer the next move.
+                     */
+                    <div className="rounded-card-lg bg-white/60 p-4">
+                        <p className="text-[13.5px] font-bold text-cove-muted">
+                            No picks yet — the morning check-in sets them up.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => onNavigate('tasks')}
+                            className="mt-3 w-full rounded-xl bg-cove-ink py-[11px] text-[13px] font-extrabold text-white"
+                        >
+                            Pick from Tasks
+                        </button>
                     </div>
                 ) : (
                     visiblePicks.map((task) => (
@@ -205,7 +218,12 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
                 className="mt-3.5 flex w-full items-center gap-2.5 rounded-full bg-white px-[18px] py-3.5 text-left text-sm font-bold text-cove-soft shadow-cove"
             >
                 <span className="text-lg font-extrabold leading-none text-cove-accent">+</span>
-                Tell Buddy anything…
+                {/*
+                 * Named for where it actually goes. "Tell Buddy anything…" opened
+                 * the Capture box, which only ever makes tasks — so telling Buddy
+                 * "slept badly" filed it as a to-do instead of a log.
+                 */}
+                Capture a thought…
             </button>
 
             <MoreFold dateKey={dateKey} streak={streak} />

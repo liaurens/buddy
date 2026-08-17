@@ -319,7 +319,14 @@ const SchoolPage: React.FC = () => {
                 ))}
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
+            {/*
+             * Single column. The `lg:` two-column split keyed off the viewport,
+             * not this page's container: inside MainLayout's 520px shell the
+             * 21rem aside left the deadline list about 100px wide, with its own
+             * horizontal scrollbar. The shell never exceeds 520px, so the stacked
+             * layout is the only one that fits.
+             */}
+            <div className="grid gap-6">
                 <section className="min-w-0">
                     {tab === 'deadlines' && (
                         <DeadlineList
@@ -379,7 +386,7 @@ const SchoolPage: React.FC = () => {
                     )}
                 </section>
 
-                <div className="lg:sticky lg:top-8">
+                <div>
                     <SchoolFocusRail
                         assignments={assignments}
                         classes={classes}

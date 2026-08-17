@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { parseDueDate } from '../../tasks/utils/dueDates';
+import { eventOccursOn, eventTimeLabel } from '../utils/calendarEventDays';
 import { useClasses } from '../../school/hooks/useClasses';
 import { useClassSessions } from '../../school/hooks/useClassSessions';
 import { useAssignments } from '../../school/hooks/useAssignments';
@@ -84,7 +85,7 @@ const CalendarPage: React.FC = () => {
     };
 
     const getCalendarEventsForDay = (date: Date) => {
-        return calendarEvents.filter((e) => isSameDay(new Date(e.startTime), date));
+        return calendarEvents.filter((e) => eventOccursOn(e, date));
     };
 
     const getClassSessionsForDay = (date: Date) => {
@@ -130,7 +131,7 @@ const CalendarPage: React.FC = () => {
             </header>
 
             <div className="app-surface overflow-hidden">
-                <div className="grid grid-cols-7 bg-[#eef6fa]">
+                <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] bg-[#eef6fa]">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
                         <div
                             key={d}
@@ -140,11 +141,11 @@ const CalendarPage: React.FC = () => {
                         </div>
                     ))}
                 </div>
-                <div className="grid grid-cols-7 text-sm">
+                <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] text-sm">
                     {startPadding.map((_, i) => (
                         <div
                             key={`pad-${i}`}
-                            className="h-24 border-b border-r border-cove-border/30 bg-[#eef6fa]/60 lg:h-32"
+                            className="h-24 border-b border-r border-cove-border/30 bg-[#eef6fa]/60"
                         />
                     ))}
 
@@ -174,7 +175,7 @@ const CalendarPage: React.FC = () => {
                             <div
                                 key={day.toISOString()}
                                 onClick={() => setSelectedDay(day)}
-                                className={`relative h-24 cursor-pointer border-b border-r border-cove-border/30 p-1 transition-colors lg:h-32 ${
+                                className={`relative h-24 cursor-pointer border-b border-r border-cove-border/30 min-w-0 p-1 transition-colors ${
                                     isSelected
                                         ? 'bg-cove-tint-blue ring-inset ring-2 ring-cove-accent'
                                         : 'hover:bg-[#eef6fa]'
@@ -237,8 +238,9 @@ const CalendarPage: React.FC = () => {
                                             className="text-[10px] truncate px-1 rounded flex items-center gap-1 bg-cove-tint-purple text-cove-purple"
                                         >
                                             <div className="w-1 h-1 rounded-full bg-cove-purple" />
-                                            {format(new Date(event.startTime), 'HH:mm')}{' '}
-                                            {event.title}
+                                            {[eventTimeLabel(event), event.title]
+                                                .filter(Boolean)
+                                                .join(' ')}
                                         </div>
                                     ))}
                                     {todoChips.map((todo) => (
@@ -389,12 +391,21 @@ const CalendarPage: React.FC = () => {
                                                         {event.title}
                                                     </div>
                                                     <div className="text-xs font-semibold text-cove-muted mt-1">
-                                                        {format(
-                                                            new Date(event.startTime),
-                                                            'h:mm a',
-                                                        )}{' '}
-                                                        -{' '}
-                                                        {format(new Date(event.endTime), 'h:mm a')}
+                                                        {event.isAllDay ? (
+                                                            'All day'
+                                                        ) : (
+                                                            <>
+                                                                {format(
+                                                                    new Date(event.startTime),
+                                                                    'h:mm a',
+                                                                )}{' '}
+                                                                -{' '}
+                                                                {format(
+                                                                    new Date(event.endTime),
+                                                                    'h:mm a',
+                                                                )}
+                                                            </>
+                                                        )}
                                                     </div>
                                                     {event.location && (
                                                         <div className="text-xs text-cove-soft mt-1 flex items-center gap-1">

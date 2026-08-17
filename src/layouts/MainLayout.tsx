@@ -11,6 +11,22 @@ interface MainLayoutProps {
 
 type TabKey = 'home' | 'tasks' | 'capture' | 'browse' | 'me';
 
+/**
+ * Safe-area geometry. `viewport-fit=cover` (index.html) means the viewport spans
+ * the whole screen, so every edge of the shell has to add the device inset itself
+ * or content lands under the notch / Dynamic Island / home indicator. The insets
+ * resolve to 0 on devices without them, so these are safe everywhere.
+ */
+const GUTTER_PX = 18;
+/** Nav intrinsic height (12 top pad + glyph/label stack + 26 bottom pad) plus breathing room. */
+const NAV_CLEARANCE_PX = 110;
+
+const safeArea = {
+    top: `calc(${GUTTER_PX}px + env(safe-area-inset-top))`,
+    left: `calc(${GUTTER_PX}px + env(safe-area-inset-left))`,
+    right: `calc(${GUTTER_PX}px + env(safe-area-inset-right))`,
+} as const;
+
 const TABS: Array<{ key: TabKey; label: string }> = [
     { key: 'home', label: 'Now' },
     { key: 'tasks', label: 'Tasks' },
@@ -71,18 +87,38 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     return (
         <div className="flex min-h-dvh justify-center bg-cove-backdrop">
             <div className="relative flex min-h-dvh w-full max-w-[520px] flex-col bg-cove-bg text-cove-ink shadow-[0_0_40px_rgba(40,90,130,0.12)]">
+                {/*
+                 * No `overflow-y-auto` here. The shell is `min-h-dvh`, so this
+                 * `flex-1` main grows to the full content height and can never
+                 * scroll itself — but declaring it a scroll container still made
+                 * Chrome swallow every wheel event over the app instead of
+                 * chaining to the document. The result was that nothing below the
+                 * fold was reachable (the Health check-in Save button, most of
+                 * all). The document is the scroller; the fixed nav is cleared by
+                 * the bottom padding below.
+                 */}
                 <main
-                    className={`flex flex-1 flex-col overflow-y-auto px-[18px] pt-[18px] ${
-                        navHidden ? 'pb-[26px]' : 'pb-[110px]'
-                    }`}
+                    className="flex flex-1 flex-col"
+                    style={{
+                        paddingTop: safeArea.top,
+                        paddingLeft: safeArea.left,
+                        paddingRight: safeArea.right,
+                        paddingBottom: `calc(${
+                            navHidden ? 26 : NAV_CLEARANCE_PX
+                        }px + env(safe-area-inset-bottom))`,
+                    }}
                 >
                     {children}
                 </main>
 
                 {navHidden ? null : (
                     <nav
-                        className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[520px] -translate-x-1/2 items-center justify-around rounded-t-[26px] bg-white px-2 pt-3 shadow-cove-nav"
-                        style={{ paddingBottom: 'calc(26px + env(safe-area-inset-bottom))' }}
+                        className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[520px] -translate-x-1/2 items-center justify-around rounded-t-[26px] bg-white pt-3 shadow-cove-nav"
+                        style={{
+                            paddingBottom: 'calc(26px + env(safe-area-inset-bottom))',
+                            paddingLeft: 'calc(0.5rem + env(safe-area-inset-left))',
+                            paddingRight: 'calc(0.5rem + env(safe-area-inset-right))',
+                        }}
                     >
                         {TABS.map(({ key, label }) => {
                             const active = isActiveTab(key);

@@ -195,7 +195,7 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                     Correlation Analysis
                 </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label className="block text-xs font-bold text-cove-soft mb-1">
                             Input (Cause?) - X Axis
@@ -304,7 +304,7 @@ const Analysis: React.FC<AnalysisProps> = ({ initialX, initialY }) => {
                     <h2 className="text-lg font-semibold mb-4 text-cove-ink">Analysis Result</h2>
 
                     {currentCorrelation !== null ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             {/* Correlation Score */}
                             <div className="text-center">
                                 <p

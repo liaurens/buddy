@@ -63,7 +63,7 @@ export const ChecklistDetail: React.FC<ChecklistDetailProps> = ({ checklist, onB
             </button>
 
             <div className="app-surface p-5">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex flex-col justify-between gap-4 mb-8">
                     <div className="flex items-center gap-4">
                         <span className="text-5xl">{checklist.emoji}</span>
                         <div>

@@ -56,7 +56,14 @@ export function useAutoSortReview() {
                     </span>
                     {task.triageReason || word ? (
                         <span className="block truncate pt-0.5 text-[11.5px] font-semibold text-cove-faint">
-                            {word ? `${word} — ` : ''}
+                            {/*
+                             * Capitalised, so the row opens on a word rather than
+                             * the sentence fragment "sure — Task has no specific…".
+                             * The sheet gives the confidence word its subject
+                             * ("Buddy was sure:"); the row has no space for that,
+                             * so it at least has to start like a sentence.
+                             */}
+                            {word ? `${word.charAt(0).toUpperCase()}${word.slice(1)} — ` : ''}
                             {task.triageReason ?? 'sorted for you'}
                         </span>
                     ) : null}

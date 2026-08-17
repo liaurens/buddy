@@ -4,6 +4,8 @@ import { useProtocols } from '../../hooks/useProtocols';
 import { CheckCircle, Pill, Calendar, Settings, Plus, Check, X } from 'lucide-react';
 import type { TrackerDefinition, TrackerScale, ScaleDirection, Entry, Dose } from '../../types';
 import { format } from 'date-fns';
+import { firstInvalidValue } from '../../utils/trackerValue';
+import { useToast } from '../../../../components/ui/Toast';
 
 interface CheckinFormProps {
     date: Date;
@@ -118,6 +120,7 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
 }) => {
     const { trackers, addEntry, updateEntry } = useTrackers();
     const { protocols, logDose } = useProtocols();
+    const toast = useToast();
 
     const [trackerValues, setTrackerValues] = useState<Record<string, number | string>>({});
     const [protocolLogs, setProtocolLogs] = useState<Record<string, { taken: boolean }>>({});
@@ -128,6 +131,9 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
     const [episodicDraft, setEpisodicDraft] = useState<Record<string, number | string>>({});
     const [episodicLogged, setEpisodicLogged] = useState<Set<string>>(new Set());
     const [episodicError, setEpisodicError] = useState<string | null>(null);
+    const [valueError, setValueError] = useState<{ trackerId: string; message: string } | null>(
+        null,
+    );
 
     const existingEntryMap = useMemo(() => {
         const map: Record<string, Entry> = {};
@@ -187,9 +193,38 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
 
     const handleTrackerChange = (trackerId: string, value: number | string) => {
         setTrackerValues((prev) => ({ ...prev, [trackerId]: value }));
+        // Clear the complaint as soon as the field it belongs to is touched.
+        setValueError((prev) => (prev?.trackerId === trackerId ? null : prev));
+    };
+
+    /** Scroll to the first required field still empty, and flag it. */
+    const jumpToFirstMissing = () => {
+        const missing = dailyTrackers.find((t) => {
+            if (!t.checkinConfig?.isRequired) return false;
+            const v = trackerValues[t.id];
+            return v === undefined || v === null || v === '';
+        });
+        if (!missing) return;
+        setValueError({ trackerId: missing.id, message: `${missing.name} is still needed.` });
+        document
+            .getElementById(`tracker-${missing.id}`)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
     const handleSubmit = async () => {
+        // Range-check before anything is written. A single bad number quietly
+        // skews every average and correlation built on top of these rows, and
+        // it's invisible once stored — so refuse it at the boundary and say why.
+        const invalid = firstInvalidValue([...dailyTrackers, ...episodicTrackers], trackerValues);
+        if (invalid) {
+            setValueError(invalid);
+            document
+                .getElementById(`tracker-${invalid.trackerId}`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        setValueError(null);
+
         try {
             const targetDate = new Date(date);
             targetDate.setHours(12, 0, 0, 0);
@@ -235,13 +270,15 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
 
             await Promise.all(promises);
             setSubmitStatus('success');
+            toast.success('Check-in saved.');
             setTimeout(() => {
                 setSubmitStatus('idle');
                 if (onComplete) onComplete();
             }, 1000);
         } catch (e) {
-            console.error(e);
+            console.error('Failed to save check-in:', e);
             setSubmitStatus('error');
+            toast.error("Couldn't save your check-in — try again.");
         }
     };
 
@@ -282,8 +319,11 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
         return (
             <div
                 key={tracker.id}
+                id={`tracker-${tracker.id}`}
                 className={`bg-white rounded-2xl p-5 border transition-colors ${
-                    isRequired && !hasValue ? 'border-cove-danger' : 'border-cove-border'
+                    (isRequired && !hasValue) || valueError?.trackerId === tracker.id
+                        ? 'border-cove-danger'
+                        : 'border-cove-border'
                 }`}
             >
                 <h2 className="text-base font-semibold text-cove-ink flex items-center gap-2 mb-3">
@@ -291,6 +331,9 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
                     <span>{tracker.name}</span>
                     {isRequired && <span className="text-cove-danger text-sm">*</span>}
                 </h2>
+                {valueError?.trackerId === tracker.id && (
+                    <p className="mb-3 text-sm font-bold text-cove-danger">{valueError.message}</p>
+                )}
 
                 {tracker.type === 'rating' && (
                     <RatingScale
@@ -622,11 +665,20 @@ const CheckinForm: React.FC<CheckinFormProps> = ({
             )}
 
             <div className="pt-2 pb-8">
+                {/*
+                 * Never truly disabled. A greyed-out button at the foot of a very
+                 * long form tells you that you missed something but not what or
+                 * where — so when the form is incomplete the button stays
+                 * clickable and scrolls you to the first field still waiting.
+                 */}
                 <button
                     type="button"
-                    onClick={handleSubmit}
-                    disabled={!isFormComplete() || submitStatus !== 'idle'}
-                    className="w-full bg-cove-accent text-white py-4 rounded-2xl font-bold text-lg shadow-cove disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    onClick={isFormComplete() ? handleSubmit : jumpToFirstMissing}
+                    aria-disabled={!isFormComplete()}
+                    disabled={submitStatus !== 'idle'}
+                    className={`w-full bg-cove-accent text-white py-4 rounded-2xl font-bold text-lg shadow-cove transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:cursor-not-allowed ${
+                        isFormComplete() ? '' : 'opacity-50'
+                    }`}
                 >
                     {submitStatus === 'success' ? (
                         <>

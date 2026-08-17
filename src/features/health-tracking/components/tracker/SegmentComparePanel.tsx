@@ -101,7 +101,7 @@ const SegmentComparePanel: React.FC = () => {
                 <h3 className="font-semibold text-cove-ink">Compare segments</h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3">
                 <div>
                     <label className="block text-xs font-bold text-cove-soft mb-1">Outcome</label>
                     <select

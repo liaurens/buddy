@@ -710,7 +710,7 @@ const ReflectionPage: React.FC = () => {
                                     </div>
                                 ) : (
                                     <>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 gap-4">
                                             <div className="rounded-[16px] bg-[#eef6fa] p-5">
                                                 <div className="flex items-center gap-3 mb-3">
                                                     <CheckCircle
@@ -774,7 +774,7 @@ const ReflectionPage: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 gap-4">
                                             <div className="rounded-[16px] bg-[#eef6fa] p-5">
                                                 <div className="flex items-center gap-2 mb-4">
                                                     <TrendingUp

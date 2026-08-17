@@ -113,9 +113,16 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
                 />
             )}
 
-            {/* Conversations Sidebar */}
+            {/*
+             * Conversations drawer — always a drawer, never a permanent column.
+             * Tailwind's `lg:` keys off the viewport, but this page renders inside
+             * MainLayout's 520px shell, so on a desktop browser `lg:` matched and
+             * pinned a 256px sidebar beside a ~180px chat column: replies wrapped
+             * to two or three words a line. No viewport breakpoint can describe
+             * the shell, so the narrow layout is the only layout.
+             */}
             <div
-                className={`absolute z-50 flex h-full w-64 flex-col border-r border-cove-border bg-[color:var(--buddy-surface-soft)]/85 transition-transform duration-300 ease-in-out lg:relative ${showSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 hidden lg:flex'}`}
+                className={`absolute z-50 flex h-full w-64 flex-col border-r border-cove-border bg-[color:var(--buddy-surface-soft)]/85 transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : 'hidden -translate-x-full'}`}
             >
                 <div className="p-4 border-b border-cove-border flex items-center justify-between">
                     <h2 className="font-semibold text-cove-muted">Chats</h2>
@@ -205,7 +212,8 @@ const AssistantChat: React.FC<AssistantChatProps> = ({ onNavigate }) => {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setShowSidebar(!showSidebar)}
-                            className="lg:hidden p-1.5 text-cove-soft hover:bg-[color:var(--buddy-surface-soft)] rounded-xl transition-colors"
+                            aria-label="Show chats"
+                            className="p-1.5 text-cove-soft hover:bg-[color:var(--buddy-surface-soft)] rounded-xl transition-colors"
                         >
                             <Menu size={18} />
                         </button>

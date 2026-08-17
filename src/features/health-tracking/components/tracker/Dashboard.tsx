@@ -10,6 +10,9 @@ interface DashboardProps {
     onEditTracker?: (tracker: TrackerDefinition) => void;
 }
 
+/** History entries rendered at a time. */
+const ITEMS_PER_PAGE = 20;
+
 const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
     const { entries, deleteEntry, updateEntry, trackers } = useTrackers();
     const { doses, protocols, deleteDose } = useProtocols();
@@ -19,6 +22,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
     const [editValue, setEditValue] = useState<string>('');
     const [editNotes, setEditNotes] = useState<string>('');
     const [mountedAt] = useState(() => new Date());
+    /*
+     * The history used to render every entry ever recorded, inline. On a
+     * well-used account that made the Health page nearly 12,000px tall — a
+     * check-in form buried at the top of an endless scroll. Show a few days and
+     * let the user ask for more.
+     */
+    const [visibleItems, setVisibleItems] = useState(ITEMS_PER_PAGE);
 
     const startEditing = (entry: Entry) => {
         setEditingId(entry.id);
@@ -85,9 +95,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
         return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
     }, [entries, doses, trackers, protocols]);
 
-    // Group by Date
-    const groupedItems = useMemo(() => {
-        return historyItems.reduce(
+    /*
+     * Group by date, but only the slice being shown. Paging by *day* wasn't
+     * enough on its own: with fifteen trackers, four days of history still ran
+     * to 8,000px. Bounding the entry count bounds the page.
+     */
+    const sortedDays = useMemo(() => {
+        const grouped = historyItems.slice(0, visibleItems).reduce(
             (acc, item) => {
                 const dateKey = format(item.timestamp, 'yyyy-MM-dd');
                 if (!acc[dateKey]) acc[dateKey] = [];
@@ -96,7 +110,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
             },
             {} as Record<string, HistoryItem[]>,
         );
-    }, [historyItems]);
+        return Object.entries(grouped).sort((a, b) => b[0].localeCompare(a[0]));
+    }, [historyItems, visibleItems]);
 
     const checkGoal = (value: number, goal: { target: number; condition: 'gt' | 'lt' | 'eq' }) => {
         if (goal.condition === 'gt') return value >= goal.target;
@@ -118,246 +133,248 @@ const Dashboard: React.FC<DashboardProps> = ({ onEditTracker }) => {
                     </p>
                 </div>
             ) : (
-                Object.entries(groupedItems)
-                    .sort((a, b) => b[0].localeCompare(a[0]))
-                    .map(([date, dayItems]) => {
-                        const isToday = date === format(mountedAt, 'yyyy-MM-dd');
-                        const isYesterday =
-                            date === format(new Date(mountedAt.getTime() - 86400000), 'yyyy-MM-dd');
-                        const displayDate = isToday
-                            ? 'Today'
-                            : isYesterday
-                              ? 'Yesterday'
-                              : format(new Date(date), 'MMMM d, yyyy');
+                sortedDays.map(([date, dayItems]) => {
+                    const isToday = date === format(mountedAt, 'yyyy-MM-dd');
+                    const isYesterday =
+                        date === format(new Date(mountedAt.getTime() - 86400000), 'yyyy-MM-dd');
+                    const displayDate = isToday
+                        ? 'Today'
+                        : isYesterday
+                          ? 'Yesterday'
+                          : format(new Date(date), 'MMMM d, yyyy');
 
-                        return (
-                            <div
-                                key={date}
-                                className="animate-in fade-in slide-in-from-bottom-2 duration-500"
-                            >
-                                <h3 className="text-xs font-bold text-cove-faint uppercase tracking-widest mb-3 px-1 sticky top-0 bg-[color:var(--buddy-surface-soft)]/80 backdrop-blur-sm py-2 z-10 w-fit rounded-xl">
-                                    {displayDate}
-                                </h3>
-                                <div className="bg-white rounded-xl shadow-cove border border-cove-border overflow-hidden divide-y divide-cove-border">
-                                    {dayItems.map((item) => {
-                                        // ------------------ TRACKER ENTRY ------------------
-                                        if (item.type === 'entry') {
-                                            const entry = item.data;
-                                            const tracker = trackers.find(
-                                                (t) => t.id === entry.trackerId,
-                                            );
-                                            if (!tracker) return null;
+                    return (
+                        <div
+                            key={date}
+                            className="animate-in fade-in slide-in-from-bottom-2 duration-500"
+                        >
+                            <h3 className="text-xs font-bold text-cove-faint uppercase tracking-widest mb-3 px-1 sticky top-0 bg-[color:var(--buddy-surface-soft)]/80 backdrop-blur-sm py-2 z-10 w-fit rounded-xl">
+                                {displayDate}
+                            </h3>
+                            <div className="bg-white rounded-xl shadow-cove border border-cove-border overflow-hidden divide-y divide-cove-border">
+                                {dayItems.map((item) => {
+                                    // ------------------ TRACKER ENTRY ------------------
+                                    if (item.type === 'entry') {
+                                        const entry = item.data;
+                                        const tracker = trackers.find(
+                                            (t) => t.id === entry.trackerId,
+                                        );
+                                        if (!tracker) return null;
 
-                                            const isEditing = editingId === entry.id;
-                                            const goalMet = tracker.goal
-                                                ? checkGoal(entry.value, tracker.goal)
-                                                : null;
+                                        const isEditing = editingId === entry.id;
+                                        const goalMet = tracker.goal
+                                            ? checkGoal(entry.value, tracker.goal)
+                                            : null;
 
-                                            return (
-                                                <div
-                                                    key={entry.id}
-                                                    className="group p-4 hover:bg-[color:var(--buddy-surface-soft)] transition-all relative"
-                                                >
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="text-2xl mt-0.5">
-                                                            {tracker.emoji}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="font-semibold text-cove-muted truncate">
-                                                                    {tracker.name}
-                                                                </span>
-                                                                {goalMet !== null && (
-                                                                    <span
-                                                                        title={
-                                                                            goalMet
-                                                                                ? 'Goal Met!'
-                                                                                : 'Goal Missed'
-                                                                        }
-                                                                        className={
-                                                                            goalMet
-                                                                                ? 'text-cove-streak-deep'
-                                                                                : 'text-cove-faint'
-                                                                        }
-                                                                    >
-                                                                        <Trophy size={14} />
-                                                                    </span>
-                                                                )}
-                                                                <span className="text-[10px] text-cove-faint font-mono ml-auto">
-                                                                    {format(
-                                                                        new Date(entry.timestamp),
-                                                                        'h:mm a',
-                                                                    )}
-                                                                </span>
-                                                            </div>
-
-                                                            {isEditing ? (
-                                                                <div className="flex gap-2 items-center mt-2 animate-in zoom-in-95 origin-left">
-                                                                    <input
-                                                                        type="number"
-                                                                        value={editValue}
-                                                                        onChange={(e) =>
-                                                                            setEditValue(
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                        className="w-24 px-2 py-1.5 text-sm border border-cove-border rounded-xl shadow-cove focus:ring-2 focus:ring-cove-accent outline-none"
-                                                                        autoFocus
-                                                                    />
-                                                                    <input
-                                                                        type="text"
-                                                                        value={editNotes}
-                                                                        onChange={(e) =>
-                                                                            setEditNotes(
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                        className="flex-1 px-2 py-1.5 text-sm border border-cove-border rounded-xl shadow-cove focus:ring-2 focus:ring-cove-accent outline-none"
-                                                                        placeholder="Add notes..."
-                                                                    />
-                                                                    <div className="flex gap-1 ml-2">
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                saveEdit(entry)
-                                                                            }
-                                                                            className="p-1.5 bg-cove-tint-green text-cove-success-deep rounded-xl hover:bg-cove-success transition-colors"
-                                                                        >
-                                                                            <Check size={14} />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={cancelEditing}
-                                                                            className="p-1.5 bg-[color:var(--buddy-surface-soft)] text-cove-soft rounded-xl hover:bg-cove-track transition-colors"
-                                                                        >
-                                                                            <X size={14} />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="flex justify-between items-end">
-                                                                    <div>
-                                                                        <p className="text-base font-bold text-cove-ink">
-                                                                            {tracker.type ===
-                                                                            'boolean' ? (
-                                                                                entry.value ===
-                                                                                1 ? (
-                                                                                    'Yes'
-                                                                                ) : (
-                                                                                    'No'
-                                                                                )
-                                                                            ) : (
-                                                                                <>
-                                                                                    {entry.value}{' '}
-                                                                                    <span className="text-xs text-cove-faint font-semibold">
-                                                                                        {
-                                                                                            tracker.unit
-                                                                                        }
-                                                                                    </span>
-                                                                                </>
-                                                                            )}
-                                                                        </p>
-                                                                        {entry.notes && (
-                                                                            <p className="text-xs text-cove-soft mt-1 italic">
-                                                                                "{entry.notes}"
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-
-                                                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 bg-white/50 backdrop-blur-sm rounded-xl p-1">
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                startEditing(entry)
-                                                                            }
-                                                                            className="text-cove-faint hover:text-cove-accent transition-colors"
-                                                                            title="Edit"
-                                                                        >
-                                                                            <Edit2 size={14} />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={async () =>
-                                                                                await deleteEntry(
-                                                                                    entry.id,
-                                                                                )
-                                                                            }
-                                                                            className="text-cove-faint hover:text-cove-danger transition-colors"
-                                                                            title="Delete"
-                                                                        >
-                                                                            <Trash2 size={14} />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                        return (
+                                            <div
+                                                key={entry.id}
+                                                className="group p-4 hover:bg-[color:var(--buddy-surface-soft)] transition-all relative"
+                                            >
+                                                <div className="flex items-start gap-4">
+                                                    <div className="text-2xl mt-0.5">
+                                                        {tracker.emoji}
                                                     </div>
-                                                </div>
-                                            );
-                                        }
-
-                                        // ------------------ PROTOCOL DOSE ------------------
-                                        else {
-                                            const dose = item.data;
-                                            return (
-                                                <div
-                                                    key={dose.id}
-                                                    className="group p-4 hover:bg-[color:var(--buddy-surface-soft)] transition-all relative"
-                                                >
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="text-2xl mt-0.5 text-cove-accent">
-                                                            <Pill size={24} />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="font-semibold text-cove-muted truncate">
+                                                                {tracker.name}
+                                                            </span>
+                                                            {goalMet !== null && (
+                                                                <span
+                                                                    title={
+                                                                        goalMet
+                                                                            ? 'Goal Met!'
+                                                                            : 'Goal Missed'
+                                                                    }
+                                                                    className={
+                                                                        goalMet
+                                                                            ? 'text-cove-streak-deep'
+                                                                            : 'text-cove-faint'
+                                                                    }
+                                                                >
+                                                                    <Trophy size={14} />
+                                                                </span>
+                                                            )}
+                                                            <span className="text-[10px] text-cove-faint font-mono ml-auto">
+                                                                {format(
+                                                                    new Date(entry.timestamp),
+                                                                    'h:mm a',
+                                                                )}
+                                                            </span>
                                                         </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="font-semibold text-cove-muted truncate">
-                                                                    {item.protocolName}
-                                                                </span>
-                                                                <span className="text-[10px] text-cove-accent bg-cove-tint-blue px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                                                                    Protocol
-                                                                </span>
-                                                                <span className="text-[10px] text-cove-faint font-mono ml-auto">
-                                                                    {format(
-                                                                        item.timestamp,
-                                                                        'h:mm a',
-                                                                    )}
-                                                                </span>
-                                                            </div>
 
+                                                        {isEditing ? (
+                                                            <div className="flex gap-2 items-center mt-2 animate-in zoom-in-95 origin-left">
+                                                                <input
+                                                                    type="number"
+                                                                    value={editValue}
+                                                                    onChange={(e) =>
+                                                                        setEditValue(e.target.value)
+                                                                    }
+                                                                    className="w-24 px-2 py-1.5 text-sm border border-cove-border rounded-xl shadow-cove focus:ring-2 focus:ring-cove-accent outline-none"
+                                                                    autoFocus
+                                                                />
+                                                                <input
+                                                                    type="text"
+                                                                    value={editNotes}
+                                                                    onChange={(e) =>
+                                                                        setEditNotes(e.target.value)
+                                                                    }
+                                                                    className="flex-1 px-2 py-1.5 text-sm border border-cove-border rounded-xl shadow-cove focus:ring-2 focus:ring-cove-accent outline-none"
+                                                                    placeholder="Add notes..."
+                                                                />
+                                                                <div className="flex gap-1 ml-2">
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            saveEdit(entry)
+                                                                        }
+                                                                        className="p-1.5 bg-cove-tint-green text-cove-success-deep rounded-xl hover:bg-cove-success transition-colors"
+                                                                    >
+                                                                        <Check size={14} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={cancelEditing}
+                                                                        className="p-1.5 bg-[color:var(--buddy-surface-soft)] text-cove-soft rounded-xl hover:bg-cove-track transition-colors"
+                                                                    >
+                                                                        <X size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
                                                             <div className="flex justify-between items-end">
                                                                 <div>
                                                                     <p className="text-base font-bold text-cove-ink">
-                                                                        {item.doseInfo}
+                                                                        {tracker.type ===
+                                                                        'boolean' ? (
+                                                                            entry.value === 1 ? (
+                                                                                'Yes'
+                                                                            ) : (
+                                                                                'No'
+                                                                            )
+                                                                        ) : (
+                                                                            <>
+                                                                                {entry.value}{' '}
+                                                                                <span className="text-xs text-cove-faint font-semibold">
+                                                                                    {tracker.unit}
+                                                                                </span>
+                                                                            </>
+                                                                        )}
                                                                     </p>
-                                                                    {/* Notes for doses not widely used yet, can add later */}
+                                                                    {entry.notes && (
+                                                                        <p className="text-xs text-cove-soft mt-1 italic">
+                                                                            "{entry.notes}"
+                                                                        </p>
+                                                                    )}
                                                                 </div>
 
                                                                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 bg-white/50 backdrop-blur-sm rounded-xl p-1">
                                                                     <button
-                                                                        onClick={async () => {
-                                                                            if (
-                                                                                window.confirm(
-                                                                                    'Remove this dose entry?',
-                                                                                )
-                                                                            ) {
-                                                                                await deleteDose(
-                                                                                    dose.id,
-                                                                                );
-                                                                            }
-                                                                        }}
+                                                                        onClick={() =>
+                                                                            startEditing(entry)
+                                                                        }
+                                                                        className="text-cove-faint hover:text-cove-accent transition-colors"
+                                                                        title="Edit"
+                                                                    >
+                                                                        <Edit2 size={14} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={async () =>
+                                                                            await deleteEntry(
+                                                                                entry.id,
+                                                                            )
+                                                                        }
                                                                         className="text-cove-faint hover:text-cove-danger transition-colors"
-                                                                        title="Delete Dose"
+                                                                        title="Delete"
                                                                     >
                                                                         <Trash2 size={14} />
                                                                     </button>
                                                                 </div>
                                                             </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    // ------------------ PROTOCOL DOSE ------------------
+                                    else {
+                                        const dose = item.data;
+                                        return (
+                                            <div
+                                                key={dose.id}
+                                                className="group p-4 hover:bg-[color:var(--buddy-surface-soft)] transition-all relative"
+                                            >
+                                                <div className="flex items-start gap-4">
+                                                    <div className="text-2xl mt-0.5 text-cove-accent">
+                                                        <Pill size={24} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="font-semibold text-cove-muted truncate">
+                                                                {item.protocolName}
+                                                            </span>
+                                                            <span className="text-[10px] text-cove-accent bg-cove-tint-blue px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
+                                                                Protocol
+                                                            </span>
+                                                            <span className="text-[10px] text-cove-faint font-mono ml-auto">
+                                                                {format(item.timestamp, 'h:mm a')}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="flex justify-between items-end">
+                                                            <div>
+                                                                <p className="text-base font-bold text-cove-ink">
+                                                                    {item.doseInfo}
+                                                                </p>
+                                                                {/* Notes for doses not widely used yet, can add later */}
+                                                            </div>
+
+                                                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 bg-white/50 backdrop-blur-sm rounded-xl p-1">
+                                                                <button
+                                                                    onClick={async () => {
+                                                                        if (
+                                                                            window.confirm(
+                                                                                'Remove this dose entry?',
+                                                                            )
+                                                                        ) {
+                                                                            await deleteDose(
+                                                                                dose.id,
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                    className="text-cove-faint hover:text-cove-danger transition-colors"
+                                                                    title="Delete Dose"
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            );
-                                        }
-                                    })}
-                                </div>
+                                            </div>
+                                        );
+                                    }
+                                })}
                             </div>
-                        );
-                    })
+                        </div>
+                    );
+                })
+            )}
+
+            {historyItems.length > visibleItems && (
+                <button
+                    type="button"
+                    onClick={() => setVisibleItems((n) => n + ITEMS_PER_PAGE)}
+                    className="w-full rounded-xl border-2 border-dashed border-cove-border py-3 text-sm font-bold text-cove-muted transition-colors hover:bg-white"
+                >
+                    Show more
+                    <span className="text-cove-faint">
+                        {' '}
+                        · {historyItems.length - visibleItems} earlier entries
+                    </span>
+                </button>
             )}
         </div>
     );

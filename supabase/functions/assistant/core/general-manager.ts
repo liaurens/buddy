@@ -65,10 +65,22 @@ function buildAgentResponse(
         };
     }
 
+    // Judge the turn by where each action *ended up*, not by every attempt it
+    // took to get there. A model that calls tracker.checkin with bad arguments,
+    // reads the error and immediately retries correctly has succeeded — but
+    // `every(success)` scored that as a failed turn, so the card rendered red
+    // under the words "OK, I logged 7 hours of sleep for you." Retries are the
+    // agent loop working as designed; only an action whose *final* attempt
+    // failed should fail the turn. `data.anyFailed` still reports the stumble,
+    // and every attempt stays visible in `steps`.
+    const finalResultByAction = new Map<string, boolean>();
+    for (const step of loop.steps) {
+        finalResultByAction.set(step.action, step.result.success);
+    }
     const overallSuccess =
         loop.steps.length === 0
             ? loop.finalText.length > 0
-            : loop.steps.every((s) => s.result.success);
+            : [...finalResultByAction.values()].every(Boolean);
 
     const firstStep = loop.steps[0];
     const intent: string = firstStep?.action ?? 'general.question';

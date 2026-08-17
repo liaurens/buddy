@@ -44,8 +44,8 @@ const ExperimentsPage: React.FC<ExperimentsPageProps> = ({ onNavigate }) => {
 
     return (
         <div className="app-page">
-            <div className="flex items-center justify-end lg:justify-between">
-                <div className="hidden lg:block">
+            <div className="flex items-center justify-between">
+                <div>
                     <h1 className="app-title flex items-center gap-2">
                         <FlaskConical className="text-cove-accent" />
                         Experiments
