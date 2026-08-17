@@ -27,6 +27,31 @@ The app UI is the "Buddy Cove" redesign (spec: `design_handoff_buddy_cove/README
 
 - **Tokens**: CSS vars (`--cove-*`) + retherned `.app-*` classes in `src/index.css`; Tailwind colors under `cove.*` in `tailwind.config.js`. Font is self-hosted Nunito (`@fontsource/nunito`, imported in `main.tsx`). New-surface components live in `src/features/cove/` (shared primitives: Whale, SpeechBubble, Fold, Confetti, PickCircle, MoodRow, EnergyRow, TagChip).
 - **Motion**: use the `.cove-bob/.cove-spout/.cove-checkpop/.cove-fadeslide/.cove-overlayin` classes — they self-disable under `prefers-reduced-motion`; confetti must never render under reduced motion (gate it through `useCelebration`/`usePrefersReducedMotion`).
+- **Use the `app-*` primitive layer — don't hand-roll classes.** `src/index.css`
+  `@layer components` carries title/subtitle/label/surface/row, the button set
+  (primary/secondary/danger/ghost/dark/icon), the form set
+  (input/textarea/select/checkbox/field-label/field-hint/field-error), card/empty/divider and
+  `app-tint-{blue,amber,green,purple,pink}`. Hand-rolling `border-slate-300 rounded-lg` is how
+  ~1,500 pre-Cove utilities survived *inside* Cove pages until 2026-08-17. `src/**` is now at
+  **zero** default-palette hits; `quality-guard.mjs` warns (advisory) on default-palette
+  classes, `font-medium`, `vh` units and gradients.
+- **Cove has no red and no gradients.** Destructive actions use `--cove-danger` /
+  `--cove-danger-deep` / `--cove-tint-danger` — the deep end of the pink family, so a warning
+  reads as "careful", never as an alarm. Typography is semibold/bold/extrabold/black only;
+  `font-medium` and `font-normal` are pre-Cove tells.
+- **Never use a viewport breakpoint (`sm:`/`md:`/`lg:`) for layout inside the app shell.**
+  `MainLayout` caps content at `max-w-[520px]`, but Tailwind's breakpoints key off the
+  *viewport*, so on a desktop browser (`innerWidth: 1920`) every `lg:` desktop layout activated
+  inside a 520px column: Assistant chat pinned a 256px sidebar beside a ~180px chat, School's
+  deadline list collapsed to ~100px, tile grids squeezed to 150px columns. No viewport
+  breakpoint can describe a fixed-width shell — pick the one layout that fits 520px (two
+  columns for small tiles, one for wide inputs). Breakpoints are still fine in surfaces that
+  render *outside* the shell (Modal, Toast, LoginScreen, CheckInGate, CloseDayOverlay).
+- **The document is the scroller, not `main`.** `MainLayout`'s `main` is `flex-1` inside a
+  `min-h-dvh` column, so it grows to full content height and can never scroll itself — but
+  declaring it `overflow-y-auto` still made Chrome swallow every wheel event over the app
+  instead of chaining to the document, so nothing below the fold was reachable with a mouse.
+  Don't re-add `overflow-*` there; the fixed nav is cleared by `main`'s bottom padding.
 - **Check-in gate**: the whole app renders `CheckInGate` until today's check-in is done or skipped — persisted on `daily_plans.checked_in_at`/`checkin_skipped`/`intention` with localStorage mirror `cove_checkin_<date>`. Finishing also calls `markRoutineDone('morning')`.
 - **Streak is derived, never stored**: `computeCloseStreak`/`getCloseStreak` in `closeDay.service.ts` over `daily_plans.closed_at`. Copy around it must celebrate only, never shame a miss.
 - **Mood/energy**: UI taps (5 moods / 3 energies) must map through `src/features/cove/services/moodScale.ts` to the 1–10 CHECK on `daily_plans.mood_at_plan_time`/`energy_at_plan_time` — never write raw indices.
@@ -37,7 +62,7 @@ The app UI is the "Buddy Cove" redesign (spec: `design_handoff_buddy_cove/README
   `min-h-dvh`, never `min-h-screen`/`100vh` — `vh` overflows past the visible area on iOS.
   The iOS status bar style is `default`, not `black-translucent`: the app background is
   light, and translucent draws unreadable white glyphs over it.
-- **Nav**: 5 tabs (Now `home`, Tasks, Capture `capture`, Browse, Me) — **never any badge or count on nav**. Assistant chat stays routed at `assistant` (reachable via Me → Account & advanced only). `today` deep-links land on Now; DayPage/HomePage/CaptureFAB were deleted (voice capture currently has no home).
+- **Nav**: 5 tabs (Now `home`, Tasks, Capture `capture`, Browse, Me) — **never any badge or count on nav**. Assistant chat stays routed at `assistant` (reachable via Me → Account & advanced only). `today` deep-links land on Now; DayPage/HomePage/CaptureFAB were deleted (voice capture currently has no home). The `notes` route and NotesPage were deleted 2026-08-17 — **Capture is the only inbox**; don't add a second capture surface.
 
 ### Feature Modules (`src/features/`)
 
@@ -115,8 +140,8 @@ All tables live in the `public` schema with RLS enabled. Edge functions use the 
 | `task_routine_items` | Items in a task routine | FK to `task_routines`. |
 | `entries` | Health tracking check-ins | NOT `tracker_entries`. Stores numeric/text values per tracker. |
 | `trackers` | Health tracker definitions | Name, type, unit, goal config, scale/cadence fields. |
-| `smart_notes` | Quick notes | Has `category_id` FK to `note_categories`. |
-| `note_categories` | Note category definitions | Flag-based routing (e.g. `shop`, `boodschap`). |
+| `smart_notes` | **Retired surface** — read by nothing | The Notes UI was removed 2026-08-17 (0 writes in 90 days); Capture is the single inbox. 20 categorised rows are kept as archive, the 3 inbox rows were migrated to `todos`. Converters and `Db*` types still exist, so reviving or migrating the rest is a data question, not a recovery job. |
+| `note_categories` | Retired with `smart_notes` | 7 rows kept. Its `shop`/`boodschap` routing backed the assistant's `note.create.shopping`, which went when `notes.tool.ts` was deleted — if a shopping list matters again it wants a home in Capture, not a revived Notes page. |
 | `daily_plans` | Daily plan rows | One row per user per date. `user_context` JSONB holds context inputs (hours, feel, meds, focus_rating, mode). |
 | `time_blocks` | Planning time blocks | FK to `daily_plans`. Status: `pending/active/completed/skipped`. |
 | `activity_templates` | Recurring activity templates | Used to schedule recurring activities. |

@@ -73,3 +73,39 @@ See [diagrams/cove.md](diagrams/cove.md) for the daily-loop sequence.
   "Explore my data" on Health. Experiments UI is parked (route still resolves).
 - Deleted: HomePage, DayPage, CaptureFAB (voice capture has no home right now).
   Several `src/features/day/` components are orphaned — cleanup candidates.
+
+## Shell invariants (learned 2026-08-17)
+
+Diagram: [diagrams/app-shell.md](diagrams/app-shell.md).
+
+Two rules about `MainLayout` that are invisible until they break:
+
+1. **The document is the scroller — `main` carries no `overflow-*`.** `main` is `flex-1` inside a
+   `min-h-dvh` column, so it always grows to full content height and can never scroll itself.
+   Declaring it `overflow-y-auto` anyway made Chrome swallow every wheel event over the app
+   instead of chaining to the document, so nothing below the fold was reachable with a mouse —
+   including Health's "Save check-in". The fixed nav is cleared by `main`'s bottom padding
+   (`NAV_CLEARANCE_PX` + `env(safe-area-inset-bottom)`), not by a scroll container.
+
+2. **No viewport breakpoints for layout inside the shell.** The shell is capped at
+   `max-w-[520px]`, but `sm:`/`md:`/`lg:` key off the viewport — so on desktop every `lg:`
+   desktop layout activated in a phone-width column (a 256px chat sidebar beside a ~180px chat,
+   School's deadline list at ~100px, tile grids at 150px). Pick the single layout that fits
+   520px: two columns for small tiles, one for wide inputs. Breakpoints stay valid in surfaces
+   that render outside the shell (`Modal`, `Toast`, `LoginScreen`, `CheckInGate`,
+   `CloseDayOverlay`), which genuinely are viewport-sized.
+
+## Capture is the only inbox (2026-08-17)
+
+The Notes surface was retired: no note had been written in 90 days, and two inboxes with
+different sorting rules meant loose input landed in whichever one the user happened to open.
+`NotesPage`, its five components, `useNotes`, the Browse tile, the Me settings entry and the
+`notes` route are gone, along with the assistant's `notes.tool.ts` — leaving that registered
+would have meant `note.create` writing rows with no surface to read them. Note-shaped input now
+falls through to `tasksTool`.
+
+`smart_notes` and `note_categories` remain in the database with their converters and `Db*`
+types: the 3 inbox notes were migrated into `todos` (untriaged, so they surface in Capture), and
+the 20 categorised rows are kept as archive. Reviving them later is a data question, not a
+recovery job. Note that `note.create.shopping` went with the tool — a shopping list wants a home
+in Capture, not a revived Notes page.
