@@ -29,7 +29,7 @@ const RoutineEditor: React.FC = () => {
 
     return (
         <div className="space-y-3">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-cove-soft">
                 Routines are reusable batches. Run "Morning emails" or "Sunday reset" to drop a
                 checklist of tasks onto today.
             </p>
@@ -41,8 +41,8 @@ const RoutineEditor: React.FC = () => {
                         onClick={() => setSelectedId(r.id)}
                         className={`px-3 py-1.5 rounded-full text-sm border ${
                             r.id === selectedId
-                                ? 'bg-indigo-600 text-white border-indigo-600'
-                                : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                                ? 'bg-cove-accent text-white border-cove-accent'
+                                : 'bg-white text-cove-muted border-cove-border hover:border-cove-border'
                         }`}
                     >
                         {r.emoji || '🔁'} {r.name}{' '}
@@ -52,13 +52,13 @@ const RoutineEditor: React.FC = () => {
                 <button
                     onClick={createNew}
                     disabled={creating}
-                    className="px-3 py-1.5 rounded-full text-sm border border-dashed border-slate-300 text-slate-500 hover:border-indigo-400 hover:text-indigo-600 flex items-center gap-1 disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-full text-sm border border-dashed border-cove-border text-cove-soft hover:border-cove-accent hover:text-cove-accent flex items-center gap-1 disabled:opacity-50"
                 >
                     <Plus size={14} /> {creating ? 'Creating…' : 'New routine'}
                 </button>
             </div>
             {createError && (
-                <p className="text-sm text-rose-600 bg-rose-50 px-3 py-2 rounded-lg">
+                <p className="text-sm text-cove-danger bg-cove-tint-danger px-3 py-2 rounded-lg">
                     {createError}
                 </p>
             )}
@@ -132,21 +132,21 @@ const RoutineForm: React.FC<RoutineFormProps> = ({ routine, onDeleted }) => {
     };
 
     return (
-        <div className="border-t border-slate-200 pt-3 space-y-3">
+        <div className="border-t border-cove-border pt-3 space-y-3">
             <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
                 <input
                     type="text"
                     value={emoji}
                     onChange={(e) => setEmoji(e.target.value)}
                     placeholder="🔁"
-                    className="w-14 text-center rounded-md border border-slate-300 px-1 py-2"
+                    className="w-14 text-center rounded-md border border-cove-border px-1 py-2"
                 />
                 <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Routine name"
-                    className="rounded-md border border-slate-300 px-3 py-2 font-medium"
+                    className="rounded-md border border-cove-border px-3 py-2 font-medium"
                 />
             </div>
             <input
@@ -154,25 +154,28 @@ const RoutineForm: React.FC<RoutineFormProps> = ({ routine, onDeleted }) => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Short description (optional)"
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-cove-border px-3 py-2 text-sm"
             />
 
             <div className="space-y-1.5">
                 {items.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 bg-slate-50 rounded-md p-2">
-                        <span className="text-xs font-mono text-slate-400 w-5">{idx + 1}</span>
+                    <div
+                        key={idx}
+                        className="flex items-center gap-2 bg-[color:var(--buddy-surface-soft)] rounded-md p-2"
+                    >
+                        <span className="text-xs font-mono text-cove-faint w-5">{idx + 1}</span>
                         <input
                             type="text"
                             value={item.title}
                             onChange={(e) => updateItem(idx, { title: e.target.value })}
-                            className="flex-1 bg-white rounded border border-slate-200 px-2 py-1 text-sm"
+                            className="flex-1 bg-white rounded border border-cove-border px-2 py-1 text-sm"
                         />
                         <select
                             value={item.taskTypeId || ''}
                             onChange={(e) =>
                                 updateItem(idx, { taskTypeId: e.target.value || undefined })
                             }
-                            className="bg-white rounded border border-slate-200 px-2 py-1 text-xs"
+                            className="bg-white rounded border border-cove-border px-2 py-1 text-xs"
                         >
                             <option value="">— type —</option>
                             {taskTypes.map((t) => (
@@ -188,7 +191,7 @@ const RoutineForm: React.FC<RoutineFormProps> = ({ routine, onDeleted }) => {
                                     energy: (e.target.value || undefined) as TaskEnergy | undefined,
                                 })
                             }
-                            className="bg-white rounded border border-slate-200 px-2 py-1 text-xs"
+                            className="bg-white rounded border border-cove-border px-2 py-1 text-xs"
                         >
                             <option value="">— energy —</option>
                             <option value="low">low</option>
@@ -206,11 +209,11 @@ const RoutineForm: React.FC<RoutineFormProps> = ({ routine, onDeleted }) => {
                                 })
                             }
                             placeholder="min"
-                            className="w-14 bg-white rounded border border-slate-200 px-2 py-1 text-xs"
+                            className="w-14 bg-white rounded border border-cove-border px-2 py-1 text-xs"
                         />
                         <button
                             onClick={() => removeItem(idx)}
-                            className="text-slate-400 hover:text-rose-500 p-1"
+                            className="text-cove-faint hover:text-cove-danger p-1"
                         >
                             <X size={14} />
                         </button>
@@ -225,27 +228,27 @@ const RoutineForm: React.FC<RoutineFormProps> = ({ routine, onDeleted }) => {
                     onChange={(e) => setNewItemTitle(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addItem())}
                     placeholder="Add step (e.g. Check inbox)"
-                    className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+                    className="flex-1 rounded-md border border-cove-border px-3 py-2 text-sm"
                 />
                 <button
                     onClick={addItem}
                     disabled={!newItemTitle.trim()}
-                    className="bg-indigo-600 text-white rounded-md px-3 py-2 hover:bg-indigo-700 disabled:opacity-40 flex items-center gap-1"
+                    className="bg-cove-accent text-white rounded-md px-3 py-2 hover:bg-[#3a8dc7] disabled:opacity-40 flex items-center gap-1"
                 >
                     <Plus size={14} /> Add
                 </button>
             </div>
 
-            <div className="flex justify-between items-center border-t border-slate-200 pt-3">
+            <div className="flex justify-between items-center border-t border-cove-border pt-3">
                 <button
                     onClick={handleDelete}
-                    className="text-sm text-rose-500 hover:text-rose-600 flex items-center gap-1"
+                    className="text-sm text-cove-danger hover:text-cove-danger flex items-center gap-1"
                 >
                     <Trash2 size={14} /> Delete routine
                 </button>
                 <button
                     onClick={handleSave}
-                    className="bg-indigo-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-indigo-700"
+                    className="bg-cove-accent text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-[#3a8dc7]"
                 >
                     Save
                 </button>

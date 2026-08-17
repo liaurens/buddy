@@ -22,8 +22,8 @@ const HomeDaysPicker: React.FC<{
                     }
                     className={`h-7 w-7 rounded-md text-xs font-semibold ${
                         selected
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-white text-slate-500 hover:bg-slate-100'
+                            ? 'bg-cove-accent text-white'
+                            : 'bg-white text-cove-soft hover:bg-cove-track'
                     }`}
                     title={
                         [
@@ -75,7 +75,7 @@ const TaskTypeManager: React.FC = () => {
 
     return (
         <div className="space-y-3">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-cove-soft">
                 Categories help organize your tasks. Presets are seeded for you; add your own or
                 rename anything.
             </p>
@@ -99,7 +99,7 @@ const TaskTypeManager: React.FC = () => {
                                             setEditDraft({ ...editDraft, emoji: e.target.value })
                                         }
                                         placeholder="😀"
-                                        className="w-12 text-center rounded border border-slate-200 px-1 py-1"
+                                        className="w-12 text-center rounded border border-cove-border px-1 py-1"
                                     />
                                     <input
                                         type="text"
@@ -107,14 +107,14 @@ const TaskTypeManager: React.FC = () => {
                                         onChange={(e) =>
                                             setEditDraft({ ...editDraft, name: e.target.value })
                                         }
-                                        className="flex-1 rounded border border-slate-200 px-2 py-1"
+                                        className="flex-1 rounded border border-cove-border px-2 py-1"
                                     />
                                     <select
                                         value={editDraft.color || ''}
                                         onChange={(e) =>
                                             setEditDraft({ ...editDraft, color: e.target.value })
                                         }
-                                        className="rounded border border-slate-200 px-2 py-1 text-sm"
+                                        className="rounded border border-cove-border px-2 py-1 text-sm"
                                     >
                                         {AVAILABLE_TYPE_COLORS.map((c) => (
                                             <option key={c} value={c}>
@@ -130,7 +130,7 @@ const TaskTypeManager: React.FC = () => {
                                     />
                                     <button
                                         onClick={handleSaveEdit}
-                                        className="text-sm font-medium text-indigo-600 px-2 py-1"
+                                        className="text-sm font-medium text-cove-accent px-2 py-1"
                                     >
                                         Save
                                     </button>
@@ -139,7 +139,7 @@ const TaskTypeManager: React.FC = () => {
                                             setEditing(null);
                                             setEditDraft(null);
                                         }}
-                                        className="text-sm text-slate-400 px-2 py-1"
+                                        className="text-sm text-cove-faint px-2 py-1"
                                     >
                                         Cancel
                                     </button>
@@ -155,7 +155,7 @@ const TaskTypeManager: React.FC = () => {
                                         title={type.color || ''}
                                     />
                                     {type.homeDays && type.homeDays.length > 0 && (
-                                        <span className="text-xs text-slate-500">
+                                        <span className="text-xs text-cove-soft">
                                             {type.homeDays.map((day) => WEEKDAYS[day]).join('')}
                                         </span>
                                     )}
@@ -164,13 +164,13 @@ const TaskTypeManager: React.FC = () => {
                                             setEditing(type.id);
                                             setEditDraft(type);
                                         }}
-                                        className="text-xs text-slate-600 hover:text-indigo-600 px-2 py-1"
+                                        className="text-xs text-cove-muted hover:text-cove-accent px-2 py-1"
                                     >
                                         Edit
                                     </button>
                                     <button
                                         onClick={() => handleDelete(type.id)}
-                                        className="text-slate-400 hover:text-rose-500 p-1"
+                                        className="text-cove-faint hover:text-cove-danger p-1"
                                         title="Delete"
                                     >
                                         <Trash2 size={14} />
@@ -183,8 +183,8 @@ const TaskTypeManager: React.FC = () => {
             </div>
 
             {/* Add new */}
-            <div className="border-t border-slate-200 pt-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            <div className="border-t border-cove-border pt-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-cove-soft mb-2">
                     Add new
                 </p>
                 <div className="flex gap-2">
@@ -193,7 +193,7 @@ const TaskTypeManager: React.FC = () => {
                         value={newEmoji}
                         onChange={(e) => setNewEmoji(e.target.value)}
                         placeholder="😀"
-                        className="w-12 text-center rounded-md border border-slate-300 px-1 py-2"
+                        className="w-12 text-center rounded-md border border-cove-border px-1 py-2"
                     />
                     <input
                         type="text"
@@ -201,12 +201,12 @@ const TaskTypeManager: React.FC = () => {
                         onChange={(e) => setNewName(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAdd())}
                         placeholder="Name (e.g. Errands, Side project)"
-                        className="flex-1 rounded-md border border-slate-300 px-3 py-2"
+                        className="flex-1 rounded-md border border-cove-border px-3 py-2"
                     />
                     <select
                         value={newColor}
                         onChange={(e) => setNewColor(e.target.value)}
-                        className="rounded-md border border-slate-300 px-2 py-2 text-sm"
+                        className="rounded-md border border-cove-border px-2 py-2 text-sm"
                     >
                         {AVAILABLE_TYPE_COLORS.map((c) => (
                             <option key={c} value={c}>
@@ -217,7 +217,7 @@ const TaskTypeManager: React.FC = () => {
                     <button
                         onClick={handleAdd}
                         disabled={!newName.trim()}
-                        className="bg-indigo-600 text-white rounded-md px-3 py-2 hover:bg-indigo-700 disabled:opacity-40 flex items-center gap-1"
+                        className="bg-cove-accent text-white rounded-md px-3 py-2 hover:bg-[#3a8dc7] disabled:opacity-40 flex items-center gap-1"
                     >
                         <Plus size={16} /> Add
                     </button>

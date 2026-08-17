@@ -9,7 +9,6 @@ import {
     Heart,
     ListChecks,
     Pill,
-    StickyNote,
     Timer,
     TrendingUp,
     Wrench,
@@ -23,7 +22,6 @@ import TrackerSettingsModal from '../../health-tracking/components/tracker/Track
 import ProtocolSettingsModal from '../../health-tracking/components/protocols/ProtocolSettingsModal';
 import ExperimentSettingsModal from '../../health-tracking/components/experiments/ExperimentSettingsModal';
 import CheckInSettingsModal from '../../health-tracking/components/checkin/CheckInSettingsModal';
-import NoteSettingsModal from '../../tasks/components/notes/NoteSettingsModal';
 import CalendarSettingsModal from '../../planning/components/calendar/CalendarSettingsModal';
 import ReflectionSettingsModal from '../../planning/components/reflection/ReflectionSettingsModal';
 import TaskSettingsModal from '../../tasks/components/TaskSettingsModal';
@@ -37,7 +35,6 @@ type SettingsKey =
     | 'protocols'
     | 'experiments'
     | 'check-in'
-    | 'notes'
     | 'calendar'
     | 'reflection'
     | 'tasks'
@@ -54,7 +51,6 @@ const SETTINGS_REGISTRY: Array<{
     Modal: React.ComponentType<ModalProps>;
 }> = [
     { key: 'tasks', label: 'Tasks', Icon: CheckSquare, Modal: TaskSettingsModal },
-    { key: 'notes', label: 'Notes', Icon: StickyNote, Modal: NoteSettingsModal },
     { key: 'checklists', label: 'Checklists', Icon: ListChecks, Modal: ChecklistSettingsModal },
     { key: 'health', label: 'Health Trackers', Icon: Activity, Modal: TrackerSettingsModal },
     { key: 'check-in', label: 'Check-in', Icon: Heart, Modal: CheckInSettingsModal },

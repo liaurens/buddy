@@ -6,7 +6,6 @@
 export * from './types';
 
 // Pages
-export { default as NotesPage } from './pages/NotesPage';
 
 // Hooks
 export { useTaskRecommendation } from './hooks/useTaskRecommendation';

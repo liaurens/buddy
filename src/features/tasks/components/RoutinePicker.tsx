@@ -28,7 +28,7 @@ const RoutinePicker: React.FC<RoutinePickerProps> = ({ isOpen, onClose, onRan })
         <Modal isOpen={isOpen} onClose={onClose} title="Run a routine">
             <div className="space-y-2">
                 {routines.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400 text-sm">
+                    <div className="text-center py-8 text-cove-faint text-sm">
                         No routines yet. Open settings to define one.
                     </div>
                 ) : (
@@ -37,22 +37,22 @@ const RoutinePicker: React.FC<RoutinePickerProps> = ({ isOpen, onClose, onRan })
                             key={r.id}
                             onClick={() => handleRun(r.id)}
                             disabled={running === r.id || r.items.length === 0}
-                            className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full text-left p-3 rounded-xl border border-cove-border hover:border-cove-accent-pale hover:bg-cove-tint-blue/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <div className="flex items-center gap-3">
                                 <span className="text-2xl">{r.emoji || '🔁'}</span>
                                 <div className="flex-1">
-                                    <div className="font-medium text-slate-800">{r.name}</div>
+                                    <div className="font-medium text-cove-ink">{r.name}</div>
                                     {r.description && (
-                                        <div className="text-xs text-slate-500">
+                                        <div className="text-xs text-cove-soft">
                                             {r.description}
                                         </div>
                                     )}
-                                    <div className="text-xs text-slate-400 mt-1">
+                                    <div className="text-xs text-cove-faint mt-1">
                                         {r.items.length} {r.items.length === 1 ? 'step' : 'steps'}
                                     </div>
                                 </div>
-                                <Play size={16} className="text-indigo-500" />
+                                <Play size={16} className="text-cove-accent" />
                             </div>
                         </button>
                     ))

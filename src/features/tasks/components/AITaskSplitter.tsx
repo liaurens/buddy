@@ -170,25 +170,25 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
     // Initial state - show generate button
     if (!suggestions && !loading && !error) {
         return (
-            <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+            <div className="bg-cove-tint-blue rounded-xl p-4 border border-cove-accent-pale">
                 <div className="flex items-center gap-2 mb-2">
-                    <Sparkles size={16} className="text-indigo-500" />
-                    <span className="text-sm font-semibold text-indigo-700">AI Task Splitter</span>
+                    <Sparkles size={16} className="text-cove-accent" />
+                    <span className="text-sm font-semibold text-cove-ink">AI Task Splitter</span>
                 </div>
-                <p className="text-xs text-indigo-600 mb-3">
+                <p className="text-xs text-cove-accent mb-3">
                     Break "{task.title}" into smaller, actionable subtasks using AI.
                 </p>
                 <div className="flex gap-2">
                     <button
                         onClick={handleGenerate}
-                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-4 py-2 text-sm font-medium text-white bg-cove-accent hover:bg-[#3a8dc7] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         <Sparkles size={14} />
                         Generate Subtasks
                     </button>
                     <button
                         onClick={onCancel}
-                        className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="px-4 py-2 text-sm font-medium text-cove-muted hover:bg-cove-track rounded-lg transition-colors"
                     >
                         Cancel
                     </button>
@@ -200,9 +200,9 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
     // Loading state
     if (loading) {
         return (
-            <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100 text-center">
-                <Loader2 size={20} className="animate-spin text-indigo-500 mx-auto mb-2" />
-                <p className="text-sm text-indigo-600">Breaking down task...</p>
+            <div className="bg-cove-tint-blue rounded-xl p-4 border border-cove-accent-pale text-center">
+                <Loader2 size={20} className="animate-spin text-cove-accent mx-auto mb-2" />
+                <p className="text-sm text-cove-accent">Breaking down task...</p>
             </div>
         );
     }
@@ -210,22 +210,22 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
     // Error state
     if (error) {
         return (
-            <div className="bg-rose-50 rounded-xl p-4 border border-rose-100">
+            <div className="bg-cove-tint-danger rounded-xl p-4 border border-cove-danger">
                 <div className="flex items-center gap-2 mb-2">
-                    <AlertCircle size={16} className="text-rose-500" />
-                    <span className="text-sm font-semibold text-rose-700">Failed</span>
+                    <AlertCircle size={16} className="text-cove-danger" />
+                    <span className="text-sm font-semibold text-cove-danger-deep">Failed</span>
                 </div>
-                <p className="text-xs text-rose-600 mb-3">{error}</p>
+                <p className="text-xs text-cove-danger mb-3">{error}</p>
                 <div className="flex gap-2">
                     <button
                         onClick={handleGenerate}
-                        className="px-3 py-1.5 text-xs font-medium text-rose-700 bg-rose-100 hover:bg-rose-200 rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-xs font-medium text-cove-danger-deep bg-cove-tint-danger hover:bg-cove-tint-danger rounded-lg transition-colors"
                     >
                         Retry
                     </button>
                     <button
                         onClick={onCancel}
-                        className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-xs font-medium text-cove-muted hover:bg-cove-track rounded-lg transition-colors"
                     >
                         Cancel
                     </button>
@@ -237,25 +237,28 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
     // Suggestions state
     if (suggestions) {
         return (
-            <div className="bg-white rounded-xl border border-indigo-200 shadow-sm overflow-hidden">
-                <div className="px-4 py-3 bg-indigo-50 border-b border-indigo-100">
+            <div className="bg-white rounded-xl border border-cove-accent-pale shadow-sm overflow-hidden">
+                <div className="px-4 py-3 bg-cove-tint-blue border-b border-cove-accent-pale">
                     <div className="flex items-center gap-2">
-                        <Sparkles size={16} className="text-indigo-500" />
-                        <span className="text-sm font-semibold text-indigo-700">
+                        <Sparkles size={16} className="text-cove-accent" />
+                        <span className="text-sm font-semibold text-cove-ink">
                             Suggested Subtasks
                         </span>
                     </div>
                 </div>
                 <div className="p-3 space-y-2">
                     {suggestions.map((s, i) => (
-                        <div key={i} className="flex items-start gap-2 p-2 bg-slate-50 rounded-lg">
-                            <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div
+                            key={i}
+                            className="flex items-start gap-2 p-2 bg-[color:var(--buddy-surface-soft)] rounded-lg"
+                        >
+                            <span className="w-5 h-5 rounded-full bg-cove-accent-pale text-cove-accent text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
                                 {i + 1}
                             </span>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-slate-700">{s.title}</p>
+                                <p className="text-sm font-medium text-cove-muted">{s.title}</p>
                                 {s.estimatedMinutes > 0 && (
-                                    <p className="text-xs text-slate-400 mt-0.5">
+                                    <p className="text-xs text-cove-faint mt-0.5">
                                         ~{s.estimatedMinutes} min
                                     </p>
                                 )}
@@ -263,23 +266,23 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
                         </div>
                     ))}
                 </div>
-                <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex gap-2 justify-end">
+                <div className="px-4 py-3 bg-[color:var(--buddy-surface-soft)] border-t border-cove-border flex gap-2 justify-end">
                     <button
                         onClick={handleReject}
-                        className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1"
+                        className="px-3 py-1.5 text-sm font-medium text-cove-muted hover:bg-cove-track rounded-lg transition-colors flex items-center gap-1"
                     >
                         <X size={14} />
                         Discard
                     </button>
                     <button
                         onClick={handleGenerate}
-                        className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-sm font-medium text-cove-accent hover:bg-cove-accent-pale rounded-lg transition-colors"
                     >
                         Regenerate
                     </button>
                     <button
                         onClick={handleAccept}
-                        className="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors flex items-center gap-1"
+                        className="px-3 py-1.5 text-sm font-medium text-white bg-cove-success hover:bg-cove-success-deep rounded-lg transition-colors flex items-center gap-1"
                     >
                         <Check size={14} />
                         Use These

@@ -104,14 +104,14 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
             <button
                 onClick={onClose}
                 disabled={saving}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
+                className="px-4 py-2 text-sm font-medium text-cove-muted hover:bg-cove-track rounded-md transition-colors"
             >
                 Cancel
             </button>
             <button
                 onClick={handleSave}
                 disabled={saving || !date}
-                className="px-4 py-2 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 rounded-md transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-cove-danger hover:bg-cove-danger-deep rounded-md transition-colors disabled:opacity-50"
             >
                 {saving ? 'Scheduling…' : 'Schedule it'}
             </button>
@@ -127,13 +127,13 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
             size="lg"
         >
             <div className="space-y-5">
-                <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2">
-                    <p className="text-sm font-semibold text-rose-900">🔥 {task.title}</p>
+                <div className="rounded-lg border border-cove-danger bg-cove-tint-danger px-3 py-2">
+                    <p className="text-sm font-semibold text-cove-danger-deep">🔥 {task.title}</p>
                 </div>
 
                 {/* When */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-cove-muted mb-2">
                         When will you do it?
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -141,13 +141,13 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
                             type="date"
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
-                            className="px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                            className="px-3 py-2 border border-cove-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-cove-danger"
                         />
                         <input
                             type="time"
                             value={time}
                             onChange={(e) => setTime(e.target.value)}
-                            className="px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                            className="px-3 py-2 border border-cove-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-cove-danger"
                         />
                         <div className="flex items-center gap-1">
                             <input
@@ -156,19 +156,19 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
                                 value={estimate}
                                 onChange={(e) => setEstimate(e.target.value)}
                                 placeholder="min"
-                                className="w-20 px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                className="w-20 px-3 py-2 border border-cove-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-cove-danger"
                             />
-                            <span className="text-xs text-slate-500">min</span>
+                            <span className="text-xs text-cove-soft">min</span>
                         </div>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-cove-soft mt-1">
                         It'll appear in your day on this date and sync to Google Calendar.
                     </p>
                 </div>
 
                 {/* Prep */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-cove-muted mb-2">
                         Prep to do on earlier days (optional)
                     </label>
                     <ul className="space-y-2">
@@ -179,7 +179,7 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
                                     value={p.title}
                                     onChange={(e) => updatePrep(p.id, { title: e.target.value })}
                                     placeholder="e.g. Draft outline"
-                                    className="flex-1 min-w-0 px-3 py-1.5 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                    className="flex-1 min-w-0 px-3 py-1.5 border border-cove-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-cove-danger"
                                 />
                                 <input
                                     type="number"
@@ -188,14 +188,14 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
                                     onChange={(e) =>
                                         updatePrep(p.id, { daysBefore: Number(e.target.value) })
                                     }
-                                    className="w-16 px-2 py-1.5 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                    className="w-16 px-2 py-1.5 border border-cove-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-cove-danger"
                                 />
-                                <span className="text-xs text-slate-500 whitespace-nowrap">
+                                <span className="text-xs text-cove-soft whitespace-nowrap">
                                     days before
                                 </span>
                                 <button
                                     onClick={() => removePrep(p.id)}
-                                    className="p-1 text-slate-400 hover:text-rose-600"
+                                    className="p-1 text-cove-faint hover:text-cove-danger"
                                     aria-label="Remove prep"
                                 >
                                     <Trash2 size={14} />
@@ -205,7 +205,7 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
                     </ul>
                     <button
                         onClick={addPrep}
-                        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-rose-700 hover:underline"
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-cove-danger-deep hover:underline"
                     >
                         <Plus size={14} /> Add prep step
                     </button>
@@ -213,7 +213,7 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
 
                 {/* Notes */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-cove-muted mb-2">
                         Important info (optional)
                     </label>
                     <textarea
@@ -221,12 +221,12 @@ const UrgentScheduleModal: React.FC<UrgentScheduleModalProps> = ({
                         onChange={(e) => setNotes(e.target.value)}
                         rows={3}
                         placeholder="Anything you need to remember about this…"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                        className="w-full px-3 py-2 border border-cove-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-cove-danger"
                     />
                 </div>
 
                 {error && (
-                    <p className="flex items-center gap-1 text-sm text-rose-600">
+                    <p className="flex items-center gap-1 text-sm text-cove-danger">
                         <X size={14} /> {error}
                     </p>
                 )}

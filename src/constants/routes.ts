@@ -10,7 +10,6 @@ export type AppRoute =
     | 'calendar'
     | 'reflection'
     | 'tasks'
-    | 'notes'
     | 'checklists'
     | 'toolbox'
     | 'focus'

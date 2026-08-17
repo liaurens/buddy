@@ -25,8 +25,10 @@ import { notificationsTool } from './notifications.tool.ts';
 // Health domain
 import { trackerTool } from './tracker.tool.ts';
 
-// Content domain
-import { notesTool } from './notes.tool.ts';
+// Content domain — retired 2026-08-17. The Notes surface was removed (no note
+// written in 90 days) and Capture is the single inbox, so `note.create` would
+// have written rows nobody could read. Note-shaped input now falls through to
+// tasksTool, which is where the user goes looking for it.
 
 // Extra / System domain
 import { systemTool } from './system.tool.ts';
@@ -45,9 +47,6 @@ export const ALL_TOOLS: ToolDefinition[] = [
 
     // Health
     trackerTool,
-
-    // Content
-    notesTool,
 
     // School
     schoolTool,

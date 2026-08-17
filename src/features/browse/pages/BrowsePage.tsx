@@ -4,7 +4,6 @@ import {
     CheckSquare,
     GraduationCap,
     Heart,
-    StickyNote,
     Timer,
     TrendingUp,
     Wrench,
@@ -46,14 +45,6 @@ const ITEMS: Array<{
         Icon: Heart,
         tileBg: '#fbe9ec',
         iconColor: '#e8899a',
-    },
-    {
-        tab: 'notes',
-        label: 'Notes',
-        desc: 'Quick & smart notes',
-        Icon: StickyNote,
-        tileBg: '#efe9f8',
-        iconColor: '#9c8ad0',
     },
     {
         tab: 'focus',

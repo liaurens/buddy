@@ -29,7 +29,6 @@ const CalendarPage = lazy(() => import('./features/planning/pages/CalendarPage')
 const ReflectionPage = lazy(() => import('./features/planning/pages/ReflectionPage'));
 const CoveTasksPage = lazy(() => import('./features/cove/tasks/CoveTasksPage'));
 const CoveCapturePage = lazy(() => import('./features/cove/capture/CoveCapturePage'));
-const NotesPage = lazy(() => import('./features/tasks/pages/NotesPage'));
 const ChecklistsPage = lazy(() =>
     import('./features/checklists/pages/ChecklistsPage').then((module) => ({
         default: module.ChecklistsPage,
@@ -184,8 +183,6 @@ const App: React.FC = () => {
                 return <AccountPage />;
             case 'experiments':
                 return <ExperimentsPage onNavigate={handleNavigate} />;
-            case 'notes':
-                return <NotesPage />;
             case 'focus':
                 return <PomodoroTimer />;
             case 'reflection':
