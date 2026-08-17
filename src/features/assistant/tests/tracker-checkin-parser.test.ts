@@ -10,7 +10,10 @@
  * red even after the retry stored the entry.
  */
 import { describe, it, expect } from 'vitest';
-import { parseCheckinValues } from '../../../../supabase/functions/assistant/tools/checkin-parser.ts';
+import {
+    coerceMetrics,
+    parseCheckinValues,
+} from '../../../../supabase/functions/assistant/tools/checkin-parser.ts';
 
 describe('parseCheckinValues', () => {
     describe('metric-first phrasing', () => {
@@ -74,5 +77,42 @@ describe('parseCheckinValues', () => {
         it('does not treat a bare verb as a metric', () => {
             expect(parseCheckinValues('log 5')).toEqual({});
         });
+    });
+});
+
+describe('coerceMetrics', () => {
+    it('takes clean numbers', () => {
+        expect(coerceMetrics({ sleep: 7.5, energy: 4 })).toEqual({ sleep: 7.5, energy: 4 });
+    });
+
+    it('reads a number out of a unit string — the retry cause', () => {
+        expect(coerceMetrics({ sleep: '7 hours' })).toEqual({ sleep: 7 });
+        expect(coerceMetrics({ caffeine: '80 mg' })).toEqual({ caffeine: 80 });
+    });
+
+    it('accepts comma decimals and stray prefixes', () => {
+        expect(coerceMetrics({ sleep: '7,5' })).toEqual({ sleep: 7.5 });
+        expect(coerceMetrics({ sleep: '~8' })).toEqual({ sleep: 8 });
+    });
+
+    it('normalises compound and cased keys', () => {
+        expect(coerceMetrics({ sleep_hours: 7 })).toEqual({ sleep: 7 });
+        expect(coerceMetrics({ 'Sleep Hours': 7 })).toEqual({ sleep: 7 });
+    });
+
+    it('maps Dutch keys onto canonical names', () => {
+        expect(coerceMetrics({ slaap: 7, energie: 3 })).toEqual({ sleep: 7, energy: 3 });
+    });
+
+    it('keeps unknown metric names rather than dropping them', () => {
+        expect(coerceMetrics({ 'nose blocked': 4 })).toEqual({ 'nose blocked': 4 });
+    });
+
+    it('drops values with no number in them', () => {
+        expect(coerceMetrics({ sleep: 'good', energy: null })).toEqual({});
+    });
+
+    it('handles an empty object', () => {
+        expect(coerceMetrics({})).toEqual({});
     });
 });

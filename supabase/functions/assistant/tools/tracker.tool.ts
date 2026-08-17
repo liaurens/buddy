@@ -9,7 +9,8 @@ import type {
 
 // The free-text parser lives in its own Deno-import-free module so the app's
 // tsc build and the Vitest suite can both compile it directly.
-export { parseCheckinValues, metricAliases } from './checkin-parser.ts';
+export { parseCheckinValues, metricAliases, coerceMetrics } from './checkin-parser.ts';
+import { parseCheckinValues, coerceMetrics } from './checkin-parser.ts';
 import type { CheckinValues } from './checkin-parser.ts';
 
 // ─── Action Handlers ────────────────────────────────────────────────────────
@@ -151,19 +152,21 @@ async function handleCheckin(
     params: Record<string, unknown>,
     context: AgentContext,
 ): Promise<ToolResult> {
-    // Structured-params path
-    if (params.metrics && typeof params.metrics === 'object' && !Array.isArray(params.metrics)) {
-        const metrics = params.metrics as Record<string, unknown>;
-        const values: Record<string, number> = {};
-        for (const [k, v] of Object.entries(metrics)) {
-            const num = typeof v === 'number' ? v : Number(v);
-            if (Number.isFinite(num)) values[k.toLowerCase()] = num;
-        }
-        return logCheckin(values, context.userId, context.supabase);
-    }
     const content = (params.content as string) || '';
-    const values = parseCheckinValues(content);
-    return logCheckin(values, context.userId, context.supabase);
+
+    // Structured-params path.
+    if (params.metrics && typeof params.metrics === 'object' && !Array.isArray(params.metrics)) {
+        const values = coerceMetrics(params.metrics as Record<string, unknown>);
+        // Fall back to the free text rather than failing outright. A metrics
+        // object that coerces to nothing used to return "No valid metrics
+        // found", and the model would retry the same call with a slightly
+        // different shape — up to three wasted round trips before one stuck.
+        if (Object.keys(values).length > 0 || !content) {
+            return logCheckin(values, context.userId, context.supabase);
+        }
+    }
+
+    return logCheckin(parseCheckinValues(content), context.userId, context.supabase);
 }
 
 async function handleQuery(
