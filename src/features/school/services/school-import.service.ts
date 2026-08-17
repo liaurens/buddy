@@ -28,6 +28,12 @@ export interface CourseImportSession {
     endTime: string;
     location?: string;
     include?: boolean;
+    /**
+     * The importer inferred a dropped PM and shifted this session by 12 hours
+     * (a PDF's "1:30 – 4:00" read as 01:30–04:00 becomes 13:30–16:00). The
+     * preview flags it so the correction is approved, not applied silently.
+     */
+    timeRepaired?: boolean;
 }
 
 export interface CourseImportPayload {

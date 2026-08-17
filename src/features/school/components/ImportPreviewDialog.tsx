@@ -558,6 +558,20 @@ export const ImportPreviewDialog: React.FC<ImportPreviewDialogProps> = ({
                                     >
                                         <Trash2 size={14} />
                                     </button>
+                                    {/*
+                                     * Timetable PDFs are often 12-hour, and the
+                                     * extractor has read "1:30 - 4:00" as
+                                     * 01:30-04:00 before. The importer corrects
+                                     * that, but says so here — a silent rewrite
+                                     * of your timetable would be worse than the
+                                     * bug it fixes.
+                                     */}
+                                    {session.timeRepaired && (
+                                        <p className="col-span-2 sm:col-span-5 text-[11px] font-semibold text-cove-streak-text">
+                                            Read as a morning time in the document — corrected to
+                                            the afternoon. Check it.
+                                        </p>
+                                    )}
                                 </div>
                             ))
                         )}

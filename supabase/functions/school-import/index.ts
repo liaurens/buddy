@@ -33,12 +33,21 @@ interface CourseImportAssignment {
     include?: boolean;
 }
 
+import { repairSessionTimes, type RepairedSession } from './sessionTimes.ts';
+
 interface CourseImportSession {
     dayOfWeek: number;
     startTime: string;
     endTime: string;
     location?: string;
     include?: boolean;
+    /**
+     * Set when a dropped PM was inferred and corrected (e.g. a PDF's "1:30 – 4:00"
+     * extracted as 01:30–04:00 and repaired to 13:30–16:00). Surfaced in the
+     * import preview so the user approves the correction rather than discovering
+     * a 01:30 class weeks later.
+     */
+    timeRepaired?: boolean;
 }
 
 interface CourseImportPayload {
@@ -110,7 +119,11 @@ const COURSE_IMPORT_TOOL: AIToolDef = {
                     required: ['dayOfWeek', 'startTime', 'endTime'],
                     properties: {
                         dayOfWeek: { type: 'integer', description: '0=Sunday through 6=Saturday.' },
-                        startTime: { type: 'string', description: 'HH:mm 24-hour local time.' },
+                        startTime: {
+                            type: 'string',
+                            description:
+                                'HH:mm 24-hour local time. Convert 12-hour timetables first — an afternoon class is 13:30, never 01:30.',
+                        },
                         endTime: { type: 'string', description: 'HH:mm 24-hour local time.' },
                         location: { type: 'string' },
                     },
@@ -414,18 +427,25 @@ async function handleCommit(
 
         const includedSessions = payload.sessions.filter((s) => s.include !== false);
         if (includedSessions.length > 0) {
+            // Re-run the repair on the way in. This payload is the *client's*
+            // reviewed copy, so it can carry anything; `class_sessions.start_time`
+            // is a naive `time`, and a bad value here is invisible once stored.
             const rows = includedSessions
                 .filter(
                     (s) => Number.isInteger(s.dayOfWeek) && s.dayOfWeek >= 0 && s.dayOfWeek <= 6,
                 )
-                .filter((s) => isTimeString(s.startTime) && isTimeString(s.endTime))
-                .map((s) => ({
+                .map((s) => ({ session: s, times: repairSessionTimes(s.startTime, s.endTime) }))
+                .filter(
+                    (row): row is { session: CourseImportSession; times: RepairedSession } =>
+                        row.times !== null,
+                )
+                .map(({ session, times }) => ({
                     user_id: userId,
                     class_id: body.classId,
-                    day_of_week: s.dayOfWeek,
-                    start_time: s.startTime,
-                    end_time: s.endTime,
-                    location: s.location || null,
+                    day_of_week: session.dayOfWeek,
+                    start_time: times.startTime,
+                    end_time: times.endTime,
+                    location: session.location || null,
                 }));
 
             if (rows.length > 0) {
@@ -533,6 +553,7 @@ Return only data that is explicit in the documents:
 - recurring weekly class sessions
 
 Use ISO 8601 datetimes for deadlines. Use 24-hour HH:mm for class sessions. dayOfWeek is 0=Sunday through 6=Saturday.
+Timetables are often printed in 12-hour form ("1:30 - 4:00"). Convert to 24-hour before answering: an afternoon class is 13:30, not 01:30. Only emit a start time before 06:00 if the document explicitly says the class runs at night.
 Keep the preview compact: at most 20 assignments, at most 8 checkpoints per assignment, and at most 6 subitems per checkpoint. Prefer concise titles and short notes over long copied passages.
 You must call the submit_course_import tool. If your provider cannot call tools, return only valid JSON matching that tool schema with no markdown fences.
 ${extraInstructions?.trim() ? `\nExtra context from the user:\n${extraInstructions.trim()}` : ''}`;
@@ -617,10 +638,21 @@ function normalizeCheckpoint(input: Record<string, unknown>): CourseImportCheckp
 function normalizeSession(input: Record<string, unknown>): CourseImportSession | null {
     if (typeof input.dayOfWeek !== 'number') return null;
     if (typeof input.startTime !== 'string' || typeof input.endTime !== 'string') return null;
+
+    // Course PDFs are often laid out in 12-hour form, and the extractor has read
+    // "1:30 – 4:00" literally as 01:30–04:00 before now. `01:30` is a valid HH:mm
+    // string, so nothing downstream objected and a class sat at half past one in
+    // the morning for weeks. Repair here, before the preview, so the user
+    // approves the corrected time; drop the pair entirely when it can't be made
+    // coherent, matching this importer's "omit rather than guess" contract.
+    const times = repairSessionTimes(input.startTime, input.endTime);
+    if (!times) return null;
+
     return {
         dayOfWeek: input.dayOfWeek,
-        startTime: input.startTime,
-        endTime: input.endTime,
+        startTime: times.startTime,
+        endTime: times.endTime,
+        timeRepaired: times.repaired || undefined,
         location: typeof input.location === 'string' ? input.location.trim() : undefined,
         include: typeof input.include === 'boolean' ? input.include : true,
     };
@@ -635,10 +667,6 @@ function toCheckpointItems(checkpoints: CourseImportCheckpoint[]) {
         notes: checkpoint.notes ?? '',
         done: false,
     }));
-}
-
-function isTimeString(value: string): boolean {
-    return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
