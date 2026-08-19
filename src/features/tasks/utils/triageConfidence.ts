@@ -4,7 +4,7 @@
  */
 
 import type { TaskTriageSuggestion } from '../../assistant/services/ai-actions.service';
-import type { TriageDetail } from './triageRouting';
+import type { TriageDestination, TriageDetail } from './triageRouting';
 
 /** High-confidence suggestions are safe to apply silently; the rest need a human. */
 export function splitByConfidence(suggestions: TaskTriageSuggestion[]): {
@@ -32,5 +32,30 @@ export function suggestionToDetail(s: TaskTriageSuggestion): TriageDetail {
     if (s.energy) detail.energy = s.energy;
     if (s.estimatedMinutes != null) detail.estimatedMinutes = s.estimatedMinutes;
     if (s.taskTypeId) detail.taskTypeId = s.taskTypeId;
+    return detail;
+}
+
+/**
+ * The AI detail a tap should carry to its destination.
+ *
+ * Agreeing with the suggestion keeps everything. Routing somewhere else keeps
+ * only the destination-independent profile (estimate, energy, type, context,
+ * location, hardness) and drops destination-specific fields (dates, waitingOn,
+ * recurrence, assignment). Before this, a mismatched tap dropped the whole
+ * profile — racing the AI silently threw its work away.
+ */
+export function mergeProfileDetail(
+    aiDetail: TriageDetail,
+    tapped: TriageDestination,
+    suggested: TriageDestination | undefined,
+): TriageDetail {
+    if (suggested === tapped) return { ...aiDetail };
+    const detail: TriageDetail = {};
+    if (aiDetail.estimatedMinutes != null) detail.estimatedMinutes = aiDetail.estimatedMinutes;
+    if (aiDetail.energy) detail.energy = aiDetail.energy;
+    if (aiDetail.taskTypeId) detail.taskTypeId = aiDetail.taskTypeId;
+    if (aiDetail.context) detail.context = aiDetail.context;
+    if (aiDetail.location) detail.location = aiDetail.location;
+    if (aiDetail.hardness) detail.hardness = aiDetail.hardness;
     return detail;
 }

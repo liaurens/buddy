@@ -8,15 +8,22 @@ import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
+/** One tappable follow-up on a toast (e.g. Undo). Tapping it closes the toast. */
+interface ToastAction {
+    label: string;
+    onClick: () => void;
+}
+
 interface Toast {
     id: string;
     type: ToastType;
     message: string;
     duration?: number;
+    action?: ToastAction;
 }
 
 interface ToastContextValue {
-    success: (message: string, duration?: number) => void;
+    success: (message: string, duration?: number, action?: ToastAction) => void;
     error: (message: string, duration?: number) => void;
     warning: (message: string, duration?: number) => void;
     info: (message: string, duration?: number) => void;
@@ -40,9 +47,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, []);
 
     const addToast = useCallback(
-        (type: ToastType, message: string, duration: number = 4000) => {
+        (type: ToastType, message: string, duration: number = 4000, action?: ToastAction) => {
             const id = Math.random().toString(36).substring(7);
-            const toast: Toast = { id, type, message, duration };
+            const toast: Toast = { id, type, message, duration, action };
 
             setToasts((prev) => [...prev, toast]);
 
@@ -56,8 +63,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
 
     const success = useCallback(
-        (message: string, duration?: number) => {
-            addToast('success', message, duration);
+        (message: string, duration?: number, action?: ToastAction) => {
+            // An action needs time to be seen and tapped — default to longer.
+            addToast('success', message, duration ?? (action ? 6000 : undefined), action);
         },
         [addToast],
     );
@@ -178,6 +186,17 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
         >
             <div className={getIconColor()}>{getIcon()}</div>
             <p className="flex-1 text-[13.5px] font-extrabold leading-snug">{toast.message}</p>
+            {toast.action ? (
+                <button
+                    onClick={() => {
+                        toast.action?.onClick();
+                        handleClose();
+                    }}
+                    className="shrink-0 bg-transparent p-0 text-[13px] font-extrabold text-current underline underline-offset-2"
+                >
+                    {toast.action.label}
+                </button>
+            ) : null}
             <button
                 onClick={handleClose}
                 className="text-current opacity-50 transition-opacity hover:opacity-100"

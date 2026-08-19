@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isInInbox, countInbox } from './inbox';
+import { isInInbox, countInbox, rotateQueue } from './inbox';
 import type { Task } from '../types';
 
 function makeTask(over: Partial<Task>): Task {
@@ -36,5 +36,27 @@ describe('countInbox', () => {
     });
     it('returns 0 for an empty list', () => {
         expect(countInbox([])).toBe(0);
+    });
+});
+
+describe('rotateQueue', () => {
+    const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+
+    it('returns the list untouched with nothing deferred', () => {
+        expect(rotateQueue(items, [])).toEqual(items);
+    });
+
+    it('moves deferred items to the back, keeping deferral order', () => {
+        expect(rotateQueue(items, ['a']).map((t) => t.id)).toEqual(['b', 'c', 'a']);
+        expect(rotateQueue(items, ['b', 'a']).map((t) => t.id)).toEqual(['c', 'b', 'a']);
+    });
+
+    it('wraps around when everything is deferred', () => {
+        expect(rotateQueue(items, ['a', 'b', 'c']).map((t) => t.id)).toEqual(['a', 'b', 'c']);
+        expect(rotateQueue(items, ['c', 'a', 'b']).map((t) => t.id)).toEqual(['c', 'a', 'b']);
+    });
+
+    it('ignores deferred ids that are no longer in the queue', () => {
+        expect(rotateQueue(items, ['gone', 'b']).map((t) => t.id)).toEqual(['a', 'c', 'b']);
     });
 });

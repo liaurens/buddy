@@ -21,6 +21,8 @@ export interface TaskFlagMeta {
     color: 'rose' | 'indigo' | 'amber' | 'violet' | 'slate' | 'emerald';
     /** Extra input the flag needs before it can be applied. */
     needs?: 'dueDate' | 'waitingOn' | 'cadence';
+    /** Friendlier label for tight quick-action contexts (triage buttons). */
+    shortLabel?: string;
 }
 
 /**
@@ -83,6 +85,10 @@ export const TASK_FLAG_META: Record<TaskFlag, TaskFlagMeta> = {
         emoji: '🗂️',
         color: 'slate',
         description: 'Keep without scheduling pressure',
+        // Triage's quick button says "Later" — softer to tap on a fresh
+        // capture than filing it under "Someday". Presentation lives HERE,
+        // not in the component (it used to be an inline override).
+        shortLabel: 'Later',
     },
 };
 

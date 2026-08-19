@@ -5,6 +5,7 @@ import { useTaskTriage } from '../../tasks/hooks/useTaskTriage';
 import { useTaskRecommendation } from '../../tasks/hooks/useTaskRecommendation';
 import { useRoutines } from '../../tasks/hooks/useRoutines';
 import { buildTaskBoard } from '../../tasks/utils/taskBoard';
+import { rotateQueue } from '../../tasks/utils/inbox';
 import { TASK_FLAG_META } from '../../tasks/utils/taskFlags';
 import type { TriageDestination, TriageDetail } from '../../tasks/utils/triageRouting';
 import { useToast } from '../../../components/ui/Toast';
@@ -29,7 +30,8 @@ const CoveTasksPage: React.FC = () => {
     const toast = useToast();
     const today = format(new Date(), 'yyyy-MM-dd');
     const { tasks, toggleTask, updateTask, deleteTask } = useTasks();
-    const { reviewInbox, suggestions, applyRoutes, isFetching } = useTaskTriage();
+    const { ready, reviewInbox, suggestions, applyRoutes, undoLastBatch, canUndo, isFetching } =
+        useTaskTriage();
     const [routing, setRouting] = useState(false);
     const [showOverflow, setShowOverflow] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -37,11 +39,36 @@ const CoveTasksPage: React.FC = () => {
     const { routines } = useRoutines();
     const autoSort = useAutoSortReview();
 
-    const current = reviewInbox[0];
+    // "Not now" rotates the current item to the back — client-side order only,
+    // nothing is written (skipping is not a classification).
+    const [deferredIds, setDeferredIds] = useState<string[]>([]);
+    const orderedInbox = useMemo(
+        () => rotateQueue(reviewInbox, deferredIds),
+        [reviewInbox, deferredIds],
+    );
+    const current = orderedInbox[0];
     const currentSuggestion = useMemo(
         () => (current ? suggestions?.find((s) => s.id === current.id) : undefined),
         [current, suggestions],
     );
+    const skipCurrent = () => {
+        if (!current) return;
+        setDeferredIds((prev) => [...prev.filter((id) => id !== current.id), current.id]);
+    };
+
+    const undo = async () => {
+        try {
+            const restored = await undoLastBatch();
+            if (restored > 0) {
+                toast.success(
+                    `Brought ${restored} ${restored === 1 ? 'task' : 'tasks'} back to the inbox.`,
+                );
+            }
+        } catch (err) {
+            console.error('Undo failed:', err);
+            toast.error('Could not undo that — check the sections below.');
+        }
+    };
 
     // Ranked with the real context (home days, free calendar minutes) so the
     // board order and the "next up" reasons come from the same scoring pass.
@@ -55,7 +82,7 @@ const CoveTasksPage: React.FC = () => {
         if (!current || routing) return;
         setRouting(true);
         try {
-            await applyRoutes([
+            const applied = await applyRoutes([
                 {
                     taskId: current.id,
                     destination,
@@ -63,6 +90,12 @@ const CoveTasksPage: React.FC = () => {
                     aiDestination: currentSuggestion?.destination ?? destination,
                 },
             ]);
+            if (applied > 0) {
+                toast.success(`Sorted to ${TASK_FLAG_META[destination].label} ✓`, undefined, {
+                    label: 'Undo',
+                    onClick: () => void undo(),
+                });
+            }
         } catch (err) {
             console.error('Failed to sort task:', err);
             toast.error('Could not sort that — try again.');
@@ -91,8 +124,10 @@ const CoveTasksPage: React.FC = () => {
                     remaining={reviewInbox.length}
                     suggestion={currentSuggestion}
                     thinking={isFetching}
+                    aiOff={!ready}
                     busy={routing}
                     onRoute={(d, detail) => void route(d, detail)}
+                    onSkip={reviewInbox.length > 1 ? skipCurrent : undefined}
                 />
             ) : (
                 <div className="cove-fadeslide mb-3.5 rounded-card-lg bg-cove-tint-green p-4 text-sm font-extrabold text-cove-success-deep">
@@ -106,7 +141,18 @@ const CoveTasksPage: React.FC = () => {
                     openLabel={`✨ Buddy sorted ${autoSort.count} today`}
                     className="mb-2"
                 >
-                    <div className="flex flex-col gap-2 pb-2">{autoSort.rows}</div>
+                    <div className="flex flex-col gap-2 pb-2">
+                        {autoSort.rows}
+                        {canUndo ? (
+                            <button
+                                type="button"
+                                onClick={() => void undo()}
+                                className="bg-transparent p-1.5 text-left text-[12.5px] font-extrabold text-cove-faint transition-colors hover:text-cove-muted"
+                            >
+                                ↩ Undo the last sort
+                            </button>
+                        ) : null}
+                    </div>
                 </Fold>
             ) : null}
 

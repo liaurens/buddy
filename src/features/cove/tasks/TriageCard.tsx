@@ -7,7 +7,7 @@ import {
     type TriageDetail,
 } from '../../tasks/utils/triageRouting';
 import type { TaskTriageSuggestion } from '../../assistant/services/ai-actions.service';
-import { suggestionToDetail } from '../../tasks/utils/triageConfidence';
+import { mergeProfileDetail, suggestionToDetail } from '../../tasks/utils/triageConfidence';
 
 /** The three destinations that cover most captures — one tap, no detail needed. */
 const QUICK: TriageDestination[] = ['today', 'someday', 'school'];
@@ -27,8 +27,12 @@ interface TriageCardProps {
     suggestion?: TaskTriageSuggestion;
     /** True while the AI is still thinking about this batch. */
     thinking?: boolean;
+    /** True when no AI provider is configured — sorting is manual-only. */
+    aiOff?: boolean;
     busy?: boolean;
     onRoute: (destination: TriageDestination, detail: TriageDetail) => void;
+    /** Rotate this task to the back of the queue — no write, just not now. */
+    onSkip?: () => void;
 }
 
 /**
@@ -44,8 +48,10 @@ const TriageCard: React.FC<TriageCardProps> = ({
     remaining,
     suggestion,
     thinking,
+    aiOff,
     busy,
     onRoute,
+    onSkip,
 }) => {
     const [expanded, setExpanded] = useState<TriageDestination | null>(null);
     const [detail, setDetail] = useState<TriageDetail>({});
@@ -58,14 +64,16 @@ const TriageCard: React.FC<TriageCardProps> = ({
         [suggestion],
     );
 
+    // mergeProfileDetail keeps the AI's destination-independent work (estimate,
+    // energy, type…) even when the tap disagrees with the suggestion — a fast
+    // tap racing the AI no longer silently throws its profile away.
     const quickRoute = (destination: TriageDestination) => {
         if (busy) return;
-        const base = suggestion?.destination === destination ? aiDetail : {};
-        onRoute(destination, base);
+        onRoute(destination, mergeProfileDetail(aiDetail, destination, suggestion?.destination));
     };
 
     const openDetail = (destination: TriageDestination) => {
-        const seed: TriageDetail = suggestion?.destination === destination ? { ...aiDetail } : {};
+        const seed = mergeProfileDetail(aiDetail, destination, suggestion?.destination);
         if (destination === 'routine') seed.recurrence = seed.recurrence ?? 'daily';
         setDetail(seed);
         setExpanded(destination);
@@ -87,6 +95,11 @@ const TriageCard: React.FC<TriageCardProps> = ({
                 {remaining} to sort — one at a time
                 {thinking ? ' (Buddy is thinking…)' : ''}
             </div>
+            {aiOff ? (
+                <div className="-mt-1.5 mb-2.5 text-[12px] font-semibold text-cove-muted">
+                    Buddy’s AI is off — sort by hand, or set it up in Me → AI settings.
+                </div>
+            ) : null}
 
             <div className="rounded-[14px] bg-white p-3.5">
                 <div className="text-[14.5px] font-extrabold leading-[1.35] text-cove-ink">
@@ -204,7 +217,7 @@ const TriageCard: React.FC<TriageCardProps> = ({
                                         : 'bg-white text-cove-ink'
                                 }`}
                             >
-                                {d === 'someday' ? 'Later' : TASK_FLAG_META[d].label}
+                                {TASK_FLAG_META[d].shortLabel ?? TASK_FLAG_META[d].label}
                             </button>
                         ))}
                     </div>
@@ -237,13 +250,24 @@ const TriageCard: React.FC<TriageCardProps> = ({
                         </div>
                     ) : null}
 
-                    <button
-                        type="button"
-                        onClick={() => setShowMore((v) => !v)}
-                        className="mt-1.5 w-full bg-transparent p-1 text-[12.5px] font-extrabold text-cove-faint transition-colors hover:text-cove-muted"
-                    >
-                        {showMore ? 'Fewer options ⌃' : 'More options ⌄'}
-                    </button>
+                    <div className="mt-1.5 flex items-center">
+                        <button
+                            type="button"
+                            onClick={() => setShowMore((v) => !v)}
+                            className="flex-1 bg-transparent p-1 text-left text-[12.5px] font-extrabold text-cove-faint transition-colors hover:text-cove-muted"
+                        >
+                            {showMore ? 'Fewer options ⌃' : 'More options ⌄'}
+                        </button>
+                        {onSkip ? (
+                            <button
+                                type="button"
+                                onClick={onSkip}
+                                className="bg-transparent p-1 text-[12.5px] font-extrabold text-cove-faint transition-colors hover:text-cove-muted"
+                            >
+                                Not now →
+                            </button>
+                        ) : null}
+                    </div>
                 </>
             )}
         </div>

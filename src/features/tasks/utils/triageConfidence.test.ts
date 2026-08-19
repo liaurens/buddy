@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { splitByConfidence, suggestionToDetail } from './triageConfidence';
+import { mergeProfileDetail, splitByConfidence, suggestionToDetail } from './triageConfidence';
 import type { TaskTriageSuggestion } from '../../assistant/services/ai-actions.service';
 
 function sug(p: Partial<TaskTriageSuggestion>): TaskTriageSuggestion {
@@ -69,5 +69,40 @@ describe('suggestionToDetail', () => {
         expect(
             suggestionToDetail(sug({ destination: 'routine', recurrence: 'weekly' })).recurrence,
         ).toBe('weekly');
+    });
+});
+
+describe('mergeProfileDetail', () => {
+    const aiDetail = {
+        dueDate: '2026-09-01',
+        plannedFor: '2026-08-20',
+        waitingOn: 'Alex',
+        recurrence: 'daily' as const,
+        estimatedMinutes: 30,
+        energy: 'low' as const,
+        taskTypeId: 'type-1',
+        context: 'home',
+        location: 'desk',
+        hardness: 'flexible' as const,
+    };
+
+    it('keeps everything when the tap agrees with the suggestion', () => {
+        expect(mergeProfileDetail(aiDetail, 'deadline', 'deadline')).toEqual(aiDetail);
+    });
+
+    it('keeps only the profile when routing somewhere else', () => {
+        expect(mergeProfileDetail(aiDetail, 'someday', 'deadline')).toEqual({
+            estimatedMinutes: 30,
+            energy: 'low',
+            taskTypeId: 'type-1',
+            context: 'home',
+            location: 'desk',
+            hardness: 'flexible',
+        });
+    });
+
+    it('keeps the profile when there was no suggestion at all', () => {
+        expect(mergeProfileDetail(aiDetail, 'today', undefined)).not.toHaveProperty('dueDate');
+        expect(mergeProfileDetail({}, 'today', undefined)).toEqual({});
     });
 });
