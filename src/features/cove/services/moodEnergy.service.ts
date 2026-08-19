@@ -15,6 +15,29 @@ export interface MoodEnergyPatch {
     energy?: number;
 }
 
+export interface MoodEnergyValues {
+    /** Stored 1–10 value, or null when the day has none. */
+    mood: number | null;
+    energy: number | null;
+}
+
+/** Read one day's stored mood/energy — the gate prefills yesterday from this. */
+export async function fetchMoodEnergy(userId: string, date: string): Promise<MoodEnergyValues> {
+    const { data, error } = await supabase
+        .from('daily_plans')
+        .select('mood_at_plan_time, energy_at_plan_time')
+        .eq('user_id', userId)
+        .eq('date', date)
+        .maybeSingle();
+    if (error) {
+        throw new Error(`Failed to load mood/energy: ${error.message}`);
+    }
+    return {
+        mood: data?.mood_at_plan_time ?? null,
+        energy: data?.energy_at_plan_time ?? null,
+    };
+}
+
 export async function saveMoodEnergy(
     userId: string,
     date: string,

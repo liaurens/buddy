@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { format, subDays } from 'date-fns';
 import { useAuth } from '../../../hooks/useAuth';
 import { useTasks } from '../../tasks/hooks/useTasks';
@@ -8,8 +9,8 @@ import { useAssignments } from '../../school/hooks/useAssignments';
 import { rankMorningCandidates, suggestMorningPicks } from '../../day/utils/morningPick';
 import { useToast } from '../../../components/ui/Toast';
 import { Whale, type EnergyIndex, type MoodIndex } from '../components';
-import { saveMoodEnergy } from '../services/moodEnergy.service';
-import { energyToScale, moodToScale } from '../services/moodScale';
+import { fetchMoodEnergy, saveMoodEnergy } from '../services/moodEnergy.service';
+import { energyToScale, moodToScale, scaleToEnergy, scaleToMood } from '../services/moodScale';
 import { gateGreeting, gateSubline } from './gateState';
 import { useCheckinStatus } from './useCheckinStatus';
 import StepChips, { type GateStep } from './StepChips';
@@ -36,7 +37,7 @@ const CheckInGate: React.FC<CheckInGateProps> = ({ dateKey }) => {
 
     const { markDone, markSkipped, isSaving } = useCheckinStatus(dateKey);
     const { capacity, setCapacity } = useDayCapacity(dateKey);
-    const { tasks, rescheduleMany } = useTasks();
+    const { tasks, rescheduleMany, updateTask } = useTasks();
     const { picks } = useTodayItems(dateKey, { events: false });
     const { assignments } = useAssignments({ activeOnly: true });
 
@@ -61,6 +62,20 @@ const CheckInGate: React.FC<CheckInGateProps> = ({ dateKey }) => {
 
     const [mood, setMood] = useState<MoodIndex | null>(null);
     const [energy, setEnergy] = useState<EnergyIndex | null>(null);
+    // Prefill from yesterday's saved row — a tap overrides, nothing re-saves
+    // silently. Before this, reopening the gate always showed blank faces even
+    // though yesterday's mood/energy were already written.
+    const savedYesterday = useQuery({
+        queryKey: ['moodEnergy', user?.id, yesterdayKey],
+        enabled: !!user?.id,
+        staleTime: 60_000,
+        queryFn: () => fetchMoodEnergy(user!.id, yesterdayKey),
+    });
+    const moodShown =
+        mood ?? (savedYesterday.data?.mood != null ? scaleToMood(savedYesterday.data.mood) : null);
+    const energyShown =
+        energy ??
+        (savedYesterday.data?.energy != null ? scaleToEnergy(savedYesterday.data.energy) : null);
     const [intention, setIntention] = useState<string>(() => {
         try {
             return sessionStorage.getItem(`cove_intention_${dateKey}`) ?? '';
@@ -94,25 +109,47 @@ const CheckInGate: React.FC<CheckInGateProps> = ({ dateKey }) => {
     };
 
     // Today's plan = picks already planned for today plus deterministic
-    // suggestions to fill the remaining slots (smallest wins first).
+    // suggestions to fill the remaining slots (smallest wins first). Swapped
+    // suggestions go into rejectedIds and the next-best candidate flows in.
+    const [rejectedIds, setRejectedIds] = useState<ReadonlySet<string>>(new Set());
     const existingPicks = useMemo(() => picks.filter((p) => !p.completed), [picks]);
     const suggestions = useMemo(() => {
         const remaining = slots - existingPicks.length;
         if (remaining <= 0) return [];
         const plannedIds = new Set(existingPicks.map((p) => p.id));
         const ranked = rankMorningCandidates(tasks, { today: dateKey }).filter(
-            (c) => !plannedIds.has(c.task.id),
+            (c) => !plannedIds.has(c.task.id) && !rejectedIds.has(c.task.id),
         );
         return suggestMorningPicks(ranked, remaining);
-    }, [tasks, existingPicks, slots, dateKey]);
+    }, [tasks, existingPicks, slots, dateKey, rejectedIds]);
 
     const planPicks = useMemo(
         () => [
             ...existingPicks.slice(0, slots).map((task) => ({ task, suggested: false })),
-            ...suggestions.map((c) => ({ task: c.task, suggested: true })),
+            ...suggestions.map((c) => ({ task: c.task, suggested: true, reason: c.reason })),
         ],
         [existingPicks, suggestions, slots],
     );
+
+    /** Reject a suggested pick — the ranking backfills the slot. */
+    const swapPick = (taskId: string) => {
+        setRejectedIds((prev) => new Set([...prev, taskId]));
+    };
+
+    /**
+     * "Not today" on an already-planned pick: clear its planned day. The id
+     * also joins rejectedIds so the freed slot doesn't immediately re-suggest
+     * the very task the user just waved off.
+     */
+    const removePick = (taskId: string) => {
+        const task = tasks.find((t) => t.id === taskId);
+        if (!task) return;
+        setRejectedIds((prev) => new Set([...prev, taskId]));
+        updateTask({ ...task, plannedFor: undefined }).catch((err) => {
+            console.error('Failed to unplan pick:', err);
+            toast.error('Could not move that — try again.');
+        });
+    };
 
     const upcomingDeadlines = useMemo(
         () => assignments.slice(0, UPCOMING_DEADLINES_SHOWN),
@@ -194,8 +231,8 @@ const CheckInGate: React.FC<CheckInGateProps> = ({ dateKey }) => {
             {step === 0 ? <CommsStep dateKey={dateKey} /> : null}
             {step === 1 ? (
                 <YesterdayStep
-                    mood={mood}
-                    energy={energy}
+                    mood={moodShown}
+                    energy={energyShown}
                     onMood={handleMood}
                     onEnergy={handleEnergy}
                 />
@@ -207,6 +244,8 @@ const CheckInGate: React.FC<CheckInGateProps> = ({ dateKey }) => {
                     onIntention={setIntention}
                     picks={planPicks}
                     deadlines={upcomingDeadlines}
+                    onSwap={swapPick}
+                    onRemove={removePick}
                 />
             ) : null}
 

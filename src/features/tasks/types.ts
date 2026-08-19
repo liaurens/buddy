@@ -164,7 +164,7 @@ export interface TaskState {
     addTaskFull: (partial: Partial<Task> & { title: string }) => Promise<string>;
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
-    updateTask: (task: Task) => void;
+    updateTask: (task: Task) => Promise<void>;
 
     // Time tracking methods for daily planning
     startTask: (id: string) => void;

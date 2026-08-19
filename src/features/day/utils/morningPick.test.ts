@@ -123,6 +123,38 @@ describe('suggestMorningPicks', () => {
     });
 });
 
+describe('swap flow (rejected ids filtered before suggesting)', () => {
+    it('backfills a rejected pick with the next-best and never re-suggests it', () => {
+        const tasks = [
+            task({ id: 'a', priority: 'urgent' }),
+            task({ id: 'b', priority: 'high' }),
+            task({ id: 'c', priority: 'medium' }),
+            task({ id: 'd', priority: 'low' }),
+        ];
+        const rejected = new Set(['a']);
+        const ranked = rank(tasks).filter((c) => !rejected.has(c.task.id));
+        const picks = suggestMorningPicks(ranked, 3).map((c) => c.task.id);
+        expect(picks).toEqual(['b', 'c', 'd']);
+        expect(picks).not.toContain('a');
+    });
+
+    it('keeps the school cap intact after a swap frees a slot', () => {
+        const tasks = [
+            task({ id: 'other', priority: 'urgent' }),
+            task({ id: 's1', assignmentId: 'x', priority: 'high' }),
+            task({ id: 's2', assignmentId: 'y', priority: 'high' }),
+            task({ id: 's3', assignmentId: 'z', priority: 'high' }),
+        ];
+        // Rejecting the non-school pick must not let a third school task in
+        // while other candidates remain… but here only school tasks are left,
+        // so the backfill still fills the slots (cap yields, never starves).
+        const rejected = new Set(['other']);
+        const ranked = rank(tasks).filter((c) => !rejected.has(c.task.id));
+        const picks = suggestMorningPicks(ranked, 3).map((c) => c.task.id);
+        expect(picks).toEqual(['s1', 's2', 's3']);
+    });
+});
+
 describe('nextSwapCandidate', () => {
     it('returns the highest-ranked candidate not excluded', () => {
         const ranked = rank([

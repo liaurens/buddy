@@ -11,8 +11,12 @@ interface PlanStepProps {
     intention: string;
     onIntention: (value: string) => void;
     /** Today's picks: already-planned tasks plus fresh suggestions, in order. */
-    picks: Array<{ task: Task; suggested: boolean }>;
+    picks: Array<{ task: Task; suggested: boolean; reason?: string }>;
     deadlines: Assignment[];
+    /** Reject a suggested pick — the next-best candidate takes the slot. */
+    onSwap: (taskId: string) => void;
+    /** Unplan an already-planned pick ("not today"). */
+    onRemove: (taskId: string) => void;
 }
 
 function formatDeadline(deadline: string, today: Date): string {
@@ -33,6 +37,8 @@ const PlanStep: React.FC<PlanStepProps> = ({
     onIntention,
     picks,
     deadlines,
+    onSwap,
+    onRemove,
 }) => {
     const today = new Date();
     return (
@@ -71,26 +77,42 @@ const PlanStep: React.FC<PlanStepProps> = ({
                     </div>
                 ) : (
                     <div className="flex flex-col gap-2">
-                        {picks.map(({ task }) => (
+                        {picks.map(({ task, suggested, reason }) => (
                             <div
                                 key={task.id}
                                 className="flex items-center gap-[11px] rounded-xl bg-[#eef6fa] px-[13px] py-[11px]"
                             >
                                 <span className="h-2 w-2 flex-none rounded-full bg-cove-accent" />
-                                <span className="flex-1 text-[13.5px] font-extrabold text-cove-ink">
-                                    {task.title}
+                                <span className="min-w-0 flex-1">
+                                    <span className="block text-[13.5px] font-extrabold text-cove-ink">
+                                        {task.title}
+                                    </span>
+                                    {suggested && reason ? (
+                                        <span className="block text-[11px] font-semibold leading-snug text-cove-faint">
+                                            {reason.split(', ').join(' · ')}
+                                        </span>
+                                    ) : null}
                                 </span>
                                 {task.estimatedTime ? (
-                                    <span className="text-[11.5px] font-bold text-cove-faint">
+                                    <span className="flex-none text-[11.5px] font-bold text-cove-faint">
                                         {task.estimatedTime} min
                                     </span>
                                 ) : null}
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        suggested ? onSwap(task.id) : onRemove(task.id)
+                                    }
+                                    className="flex-none bg-transparent p-1 text-[11.5px] font-extrabold text-[#3a7fb0]"
+                                >
+                                    {suggested ? 'swap' : 'not today'}
+                                </button>
                             </div>
                         ))}
                     </div>
                 )}
                 <div className="mt-2 text-[11.5px] font-semibold text-cove-faint">
-                    Picked for you — smallest wins first. Swap them on the Tasks screen.
+                    Picked for you — smallest wins first. Swap anything that doesn’t fit.
                 </div>
             </div>
 

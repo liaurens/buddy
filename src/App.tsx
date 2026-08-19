@@ -77,7 +77,11 @@ const App: React.FC = () => {
     // Morning check-in gate — every route waits behind it once per day.
     const todayKey = format(new Date(), 'yyyy-MM-dd');
     const checkin = useCheckinStatus(todayKey);
-    const gateNeeded = isLoggedIn && isGateNeeded(checkin.state?.status);
+    // Fresh device / cleared storage: no localStorage mirror seeds the query,
+    // so the first paint has no status yet. Show the loading fallback instead
+    // of flashing the gate and swapping it out when the server answers.
+    const checkinUnknown = isLoggedIn && !checkin.state && checkin.isLoading;
+    const gateNeeded = isLoggedIn && !checkinUnknown && isGateNeeded(checkin.state?.status);
 
     // Timeout for loading state
     useEffect(() => {
@@ -273,9 +277,19 @@ const App: React.FC = () => {
 
     return (
         <ToastProvider>
-            <MainLayout activeTab={activeTab} setActiveTab={setActiveTab} navHidden={gateNeeded}>
+            <MainLayout
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                navHidden={gateNeeded || checkinUnknown}
+            >
                 <Suspense fallback={<PageFallback />}>
-                    {gateNeeded ? <CheckInGate dateKey={todayKey} /> : renderContent()}
+                    {checkinUnknown ? (
+                        <PageFallback />
+                    ) : gateNeeded ? (
+                        <CheckInGate dateKey={todayKey} />
+                    ) : (
+                        renderContent()
+                    )}
                 </Suspense>
             </MainLayout>
             <InAppReminderBanner onNavigate={handleNavigate} />
