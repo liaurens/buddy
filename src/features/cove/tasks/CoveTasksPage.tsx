@@ -2,14 +2,15 @@ import React, { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { useTaskTriage } from '../../tasks/hooks/useTaskTriage';
+import { useTaskRecommendation } from '../../tasks/hooks/useTaskRecommendation';
 import { useRoutines } from '../../tasks/hooks/useRoutines';
-import { getRankedTasks } from '../../tasks/utils/taskRecommender';
 import { buildTaskBoard } from '../../tasks/utils/taskBoard';
 import { TASK_FLAG_META } from '../../tasks/utils/taskFlags';
 import type { TriageDestination, TriageDetail } from '../../tasks/utils/triageRouting';
 import { useToast } from '../../../components/ui/Toast';
 import { Fold } from '../components';
 import TaskRow from './TaskRow';
+import NextUpCard from './NextUpCard';
 import TriageCard from './TriageCard';
 import TaskDetailSheet from './TaskDetailSheet';
 import RoutinePicker from '../../tasks/components/RoutinePicker';
@@ -42,11 +43,13 @@ const CoveTasksPage: React.FC = () => {
         [current, suggestions],
     );
 
-    const board = useMemo(() => {
-        const active = tasks.filter((t) => !t.completed);
-        const scoreById = new Map(getRankedTasks(active).map((r) => [r.task.id, r.score] as const));
-        return buildTaskBoard(tasks, scoreById, { today });
-    }, [tasks, today]);
+    // Ranked with the real context (home days, free calendar minutes) so the
+    // board order and the "next up" reasons come from the same scoring pass.
+    const { byId: recById, scoreById } = useTaskRecommendation();
+    const board = useMemo(
+        () => buildTaskBoard(tasks, scoreById, { today }),
+        [tasks, scoreById, today],
+    );
 
     const route = async (destination: TriageDestination, detail: TriageDetail) => {
         if (!current || routing) return;
@@ -116,15 +119,25 @@ const CoveTasksPage: React.FC = () => {
                             : 'Nothing needs you right now — the rest is parked below.'}
                     </div>
                 ) : (
-                    board.now.map((task) => (
-                        <TaskRow
-                            key={task.id}
-                            task={task}
-                            showFlag
-                            onToggle={(t) => void toggleTask(t.id)}
-                            onOpen={openTask}
-                        />
-                    ))
+                    board.now.map((task, index) => {
+                        const rec = index === 0 ? recById.get(task.id) : undefined;
+                        return rec ? (
+                            <NextUpCard
+                                key={task.id}
+                                rec={rec}
+                                onToggle={(t) => void toggleTask(t.id)}
+                                onOpen={openTask}
+                            />
+                        ) : (
+                            <TaskRow
+                                key={task.id}
+                                task={task}
+                                showFlag
+                                onToggle={(t) => void toggleTask(t.id)}
+                                onOpen={openTask}
+                            />
+                        );
+                    })
                 )}
             </div>
 
@@ -153,36 +166,44 @@ const CoveTasksPage: React.FC = () => {
             ) : null}
 
             <div className="mt-[18px] flex flex-col gap-0.5">
-                {board.sections.map((section) => {
-                    const meta = TASK_FLAG_META[section.flag];
-                    const label = `${meta.emoji} ${meta.plural} (${section.tasks.length})`;
-                    if (section.tasks.length === 0) {
-                        // Kept visible on purpose: a count of zero is information.
+                {board.sections.every((s) => s.tasks.length === 0) ? (
+                    // Five separate "(0)" lines read as clutter on a fresh
+                    // account; one sentence carries the same information.
+                    <div className="p-1.5 text-[13px] font-bold text-cove-faint/70">
+                        Nothing parked — deadlines, waiting and someday will show here.
+                    </div>
+                ) : (
+                    board.sections.map((section) => {
+                        const meta = TASK_FLAG_META[section.flag];
+                        const label = `${meta.emoji} ${meta.plural} (${section.tasks.length})`;
+                        if (section.tasks.length === 0) {
+                            // Kept visible on purpose: a count of zero is information.
+                            return (
+                                <div
+                                    key={section.flag}
+                                    className="p-1.5 text-[13px] font-extrabold text-cove-faint/60"
+                                >
+                                    {label}
+                                </div>
+                            );
+                        }
                         return (
-                            <div
-                                key={section.flag}
-                                className="p-1.5 text-[13px] font-extrabold text-cove-faint/60"
-                            >
-                                {label}
-                            </div>
+                            <Fold key={section.flag} label={label} openLabel={label}>
+                                <div className="flex flex-col gap-2 pb-2">
+                                    {section.tasks.map((task) => (
+                                        <TaskRow
+                                            key={task.id}
+                                            task={task}
+                                            quiet={section.flag === 'someday'}
+                                            onToggle={(t) => void toggleTask(t.id)}
+                                            onOpen={openTask}
+                                        />
+                                    ))}
+                                </div>
+                            </Fold>
                         );
-                    }
-                    return (
-                        <Fold key={section.flag} label={label} openLabel={label}>
-                            <div className="flex flex-col gap-2 pb-2">
-                                {section.tasks.map((task) => (
-                                    <TaskRow
-                                        key={task.id}
-                                        task={task}
-                                        quiet={section.flag === 'someday'}
-                                        onToggle={(t) => void toggleTask(t.id)}
-                                        onOpen={openTask}
-                                    />
-                                ))}
-                            </div>
-                        </Fold>
-                    );
-                })}
+                    })
+                )}
             </div>
 
             {routines.length > 0 ? (
@@ -207,6 +228,10 @@ const CoveTasksPage: React.FC = () => {
 
             {editing ? (
                 <TaskDetailSheet
+                    // Keyed by id: a *different* task remounts the sheet with a
+                    // fresh draft, while background refetches of the *same* task
+                    // leave in-progress edits alone.
+                    key={editing.id}
                     task={editing}
                     onSave={async (t) => {
                         // Saving used to be silent: the sheet closed and the row

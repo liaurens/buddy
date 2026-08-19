@@ -2,6 +2,7 @@ import React from 'react';
 import type { Task } from '../../tasks/types';
 import { TASK_FLAG_META, deriveTaskFlag } from '../../tasks/utils/taskFlags';
 import { PickCircle, TagChip, taskTagFor } from '../components';
+import { formatRowMeta } from './rowMeta';
 
 interface TaskRowProps {
     task: Task;
@@ -15,20 +16,13 @@ interface TaskRowProps {
     quiet?: boolean;
 }
 
-/** Right-hand meta: a time beats an estimate beats nothing. */
-function metaFor(task: Task): string | null {
-    if (task.dueTime) return task.dueTime;
-    if (task.estimatedTime) return `${task.estimatedTime} min`;
-    return null;
-}
-
 /**
  * One task, everywhere on the Tasks screen. The circle completes it; the rest
  * of the row opens it — two targets, no menus, both comfortably thumb-sized.
  */
 const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onOpen, showFlag, quiet }) => {
     const tag = taskTagFor(task);
-    const meta = metaFor(task);
+    const meta = formatRowMeta(task, new Date());
     const flagMeta = TASK_FLAG_META[deriveTaskFlag(task)];
 
     return (
@@ -66,7 +60,13 @@ const TaskRow: React.FC<TaskRowProps> = ({ task, onToggle, onOpen, showFlag, qui
                 ) : null}
                 {tag && !quiet ? <TagChip tag={tag} /> : null}
                 {meta ? (
-                    <span className="shrink-0 text-[11.5px] font-bold text-cove-faint">{meta}</span>
+                    <span
+                        className={`shrink-0 text-[11.5px] font-bold ${
+                            meta.tone === 'alert' ? 'text-[#a87a2e]' : 'text-cove-faint'
+                        }`}
+                    >
+                        {meta.text}
+                    </span>
                 ) : null}
             </button>
         </div>

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { addDays, addWeeks, format } from 'date-fns';
 import type { Task, TaskFlag, TaskEnergy, RecurrencePattern } from '../../tasks/types';
 import { TASK_FLAG_META, TASK_FLAG_ORDER, deriveTaskFlag } from '../../tasks/utils/taskFlags';
 import { useTaskTypes } from '../../tasks/hooks/useTaskTypes';
@@ -61,11 +62,12 @@ const chipClass = (active: boolean) =>
  */
 const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({ task, onSave, onDelete, onClose }) => {
     const { taskTypes } = useTaskTypes();
+    // Callers key this sheet by task id, so the draft seeds once per task and
+    // survives background query refetches. Syncing draft←task on every change
+    // used to wipe unsaved edits whenever a refetch landed mid-edit.
     const [draft, setDraft] = useState<Task>(task);
     const [saving, setSaving] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
-
-    useEffect(() => setDraft(task), [task]);
 
     const flag = deriveTaskFlag(draft);
     const blocker = useMemo(() => missingRequirement(draft), [draft]);
@@ -168,6 +170,39 @@ const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({ task, onSave, onDelet
                     ) : null}
 
                     <Label>Do it on</Label>
+                    {/* One tap beats the OS date picker for the three answers
+                        people actually give. The inputs below stay for the rest. */}
+                    <div className="flex flex-wrap gap-1.5 pb-2">
+                        {[
+                            { label: 'Today', value: format(new Date(), 'yyyy-MM-dd') },
+                            {
+                                label: 'Tomorrow',
+                                value: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
+                            },
+                            {
+                                label: 'Next week',
+                                value: format(addWeeks(new Date(), 1), 'yyyy-MM-dd'),
+                            },
+                        ].map((d) => (
+                            <button
+                                key={d.label}
+                                type="button"
+                                onClick={() => patch({ plannedFor: d.value })}
+                                className={chipClass(draft.plannedFor === d.value)}
+                            >
+                                {d.label}
+                            </button>
+                        ))}
+                        {draft.plannedFor ? (
+                            <button
+                                type="button"
+                                onClick={() => patch({ plannedFor: undefined })}
+                                className={chipClass(false)}
+                            >
+                                Clear
+                            </button>
+                        ) : null}
+                    </div>
                     <div className="flex gap-2">
                         <input
                             type="date"

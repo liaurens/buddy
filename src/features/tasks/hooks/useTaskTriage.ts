@@ -39,10 +39,9 @@ import {
 } from '../services/triageLearnings';
 import type { Task } from '../types';
 import { logAppEvent } from '../../../services/app-events';
-import { supabase } from '../../../services/supabase';
-import { getCategorySettings } from '../../../services/settings';
 import { useDayCapacity } from '../../day/hooks/useDayCapacity';
-import { remainingCalendarMinutes, selectUrgentPlannedDate } from '../utils/taskFlags';
+import { useScheduleContext } from './useScheduleContext';
+import { selectUrgentPlannedDate } from '../utils/taskFlags';
 
 /** One resolved routing decision, ready to apply. */
 export interface TriageDecision {
@@ -85,45 +84,8 @@ export function useTaskTriage(): UseTaskTriageReturn {
     const [ready, setReady] = useState(false);
     const todayForCapacity = new Date().toISOString().slice(0, 10);
     const { capacity: dayCapacity } = useDayCapacity(todayForCapacity);
-    const scheduleContextQuery = useQuery({
-        queryKey: ['urgent-schedule-context', userId, todayForCapacity],
-        enabled: !!userId,
-        staleTime: 60_000,
-        queryFn: async () => {
-            const now = new Date();
-            const endOfDay = new Date(`${todayForCapacity}T23:59:59`);
-            const [settings, eventsResult] = await Promise.all([
-                getCategorySettings(userId!, 'notifications').catch(() => ({
-                    nightTime: '21:00',
-                })),
-                supabase
-                    .from('calendar_events')
-                    .select('start_time, end_time')
-                    .eq('user_id', userId!)
-                    .gte('end_time', now.toISOString())
-                    .lte('start_time', endOfDay.toISOString()),
-            ]);
-
-            if (eventsResult.error) {
-                console.warn(
-                    'Urgent scheduling: calendar availability unavailable:',
-                    eventsResult.error.message,
-                );
-            }
-            const blocks = (eventsResult.data ?? []).map((event) => ({
-                start: event.start_time,
-                end: event.end_time,
-            }));
-            return {
-                nightTime: settings.nightTime,
-                freeMinutes: eventsResult.error
-                    ? undefined
-                    : remainingCalendarMinutes(blocks, now, settings.nightTime),
-            };
-        },
-    });
-    const nightTime = scheduleContextQuery.data?.nightTime ?? '21:00';
-    const freeMinutes = scheduleContextQuery.data?.freeMinutes;
+    // Shared with the task recommender — same queryKey, so React Query dedupes.
+    const { nightTime, freeMinutes } = useScheduleContext();
     const undoBatchRef = useRef<Map<string, Task>>(new Map());
     const [canUndo, setCanUndo] = useState(false);
 
