@@ -98,6 +98,9 @@ self.addEventListener('notificationclick', (event) => {
         // Anchor notifications carry a step (morning/midday/night) so the app can
         // land directly on the right part of the day flow.
         if (data.step) urlToOpen += `&step=${encodeURIComponent(data.step)}`;
+        // The night anchor carries intent=closeday — forwarded so the app opens
+        // the close-day overlay the notification promised.
+        if (data.intent) urlToOpen += `&intent=${encodeURIComponent(data.intent)}`;
     }
 
     // For task action buttons, route to the todo page with intent params so the

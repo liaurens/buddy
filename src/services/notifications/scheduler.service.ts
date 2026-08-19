@@ -321,6 +321,40 @@ export async function cancelTaskReminders(userId: string, taskId: string): Promi
 }
 
 /**
+ * "Snooze 15m" from a notification action: replace whatever escalation was
+ * pending with a single nudge N minutes out. Cancelling first is the point —
+ * a snooze that still lets the aggressive-cadence +30/+60 rows fire is not a
+ * snooze. The new row keeps sourceType 'task' so the service worker attaches
+ * the done/snooze buttons again when it fires.
+ */
+export async function snoozeTaskReminder(
+    userId: string,
+    task: { id: string; title: string },
+    minutes = 15,
+): Promise<ScheduledNotification | null> {
+    await cancelTaskReminders(userId, task.id);
+    return scheduleNotificationWithSource(
+        userId,
+        'tasks',
+        'task_reminder',
+        new Date(Date.now() + minutes * 60_000),
+        'Snoozed reminder',
+        `"${task.title}" — you asked me to come back.`,
+        {
+            data: {
+                taskId: task.id,
+                taskTitle: task.title,
+                fireType: 'snooze',
+                route: 'tasks',
+                sourceType: 'task',
+            },
+            sourceType: 'task',
+            sourceId: task.id,
+        },
+    );
+}
+
+/**
  * Compute the firing times for a task reminder based on cadence + due/absolute.
  */
 export function computeTaskReminderFireTimes(

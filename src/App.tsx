@@ -11,6 +11,8 @@ import { isGateNeeded } from './features/cove/gate/gateState';
 import LoginScreen from './features/core/components/LoginScreen';
 import { ensureAnchorSchedule } from './features/notifications/services/notifications-schedule.service';
 import InAppReminderBanner from './components/notifications/InAppReminderBanner';
+import NotificationIntentHandler from './components/notifications/NotificationIntentHandler';
+import { parseNavIntent } from './utils/navIntent';
 import { syncCalendarIfStale } from './features/planning/services/calendar-sync.service';
 import { flushGoogleCalendarOutbox } from './features/planning/services/google-calendar.service';
 import { flushPendingCaptures } from './features/assistant/services/assistant.service';
@@ -56,13 +58,36 @@ const PageFallback = () => (
 
 function initialNavigation(): { route: AppRoute; params: Record<string, unknown> | null } {
     const search = new URLSearchParams(window.location.search);
-    const route = (search.get('route') as AppRoute | null) ?? 'home';
-    const intent = search.get('intent');
-    const taskId = search.get('taskId');
-    const step = search.get('step');
-    if (intent && taskId) return { route, params: { intent, taskId } };
-    if (step) return { route, params: { step } };
-    return { route, params: null };
+    const explicitRoute = search.get('route') as AppRoute | null;
+
+    // A Web Share Target hit (?title/&text/&url, no route) seeds the capture
+    // draft and lands on Capture. Before this, the draft sat invisibly in
+    // sessionStorage while the user landed on Now — lost unless they happened
+    // to open the Capture tab in the same session.
+    const sharedText = [search.get('title'), search.get('text'), search.get('url')]
+        .filter(Boolean)
+        .join('\n')
+        .trim();
+    if (!explicitRoute && sharedText) {
+        try {
+            sessionStorage.setItem(CAPTURE_DRAFT_KEY, sharedText);
+        } catch {
+            // sessionStorage unavailable (private mode) — share is lost, but don't crash.
+        }
+        return { route: 'capture', params: null };
+    }
+
+    // Keep every recognised param: `intent=closeday` arrives without a taskId,
+    // and the old intent-AND-taskId guard silently dropped it.
+    const params: Record<string, unknown> = {};
+    for (const key of ['intent', 'taskId', 'step'] as const) {
+        const value = search.get(key);
+        if (value) params[key] = value;
+    }
+    return {
+        route: explicitRoute ?? 'home',
+        params: Object.keys(params).length > 0 ? params : null,
+    };
 }
 
 const App: React.FC = () => {
@@ -112,16 +137,9 @@ const App: React.FC = () => {
             .join('\n')
             .trim();
 
-        if (route) {
-            // Route and intent were used as the initial state above.
-        } else if (sharedText) {
-            // Seed the capture input with the shared content; the user confirms before submit.
-            try {
-                sessionStorage.setItem(CAPTURE_DRAFT_KEY, sharedText);
-            } catch {
-                // sessionStorage unavailable (private mode) — share is lost, but don't crash.
-            }
-        }
+        // Route/intent and Web Share Target handling live in initialNavigation
+        // (the share also seeds CAPTURE_DRAFT_KEY there and lands on Capture);
+        // this effect only logs the open and cleans the URL.
 
         void logAppEvent('app_open', {
             source: route ? 'notification' : sharedText ? 'share' : 'direct',
@@ -167,10 +185,14 @@ const App: React.FC = () => {
         setNavParams(params ?? null);
     };
 
+    // Task intents ("Mark done" / "Snooze 15m" from a lock-screen notification)
+    // run through a headless handler mounted below, outside the routed content.
+    const taskIntent = parseNavIntent(navParams);
+
     const renderContent = () => {
         switch (activeTab) {
             case 'home':
-                return <NowPage onNavigate={handleNavigate} />;
+                return <NowPage onNavigate={handleNavigate} initialParams={navParams} />;
             case 'health':
                 return <TrackerPage initialParams={navParams} />;
             case 'protocols':
@@ -212,13 +234,13 @@ const App: React.FC = () => {
             // The old DayPage routines are folded into the gate (morning), the
             // Now midday card, and the close-day overlay — old deep-links land on Now.
             case 'today':
-                return <NowPage onNavigate={handleNavigate} />;
+                return <NowPage onNavigate={handleNavigate} initialParams={navParams} />;
             case 'goals':
                 return <ReflectionPage />;
             case 'notifications':
                 return <NotificationsPage />;
             default:
-                return <NowPage onNavigate={handleNavigate} />;
+                return <NowPage onNavigate={handleNavigate} initialParams={navParams} />;
         }
     };
 
@@ -292,6 +314,13 @@ const App: React.FC = () => {
                     )}
                 </Suspense>
             </MainLayout>
+            {taskIntent && taskIntent.kind !== 'closeday' ? (
+                <NotificationIntentHandler
+                    kind={taskIntent.kind}
+                    taskId={taskIntent.taskId}
+                    onConsumed={() => setNavParams(null)}
+                />
+            ) : null}
             <InAppReminderBanner onNavigate={handleNavigate} />
             {import.meta.env.DEV && (
                 <Suspense fallback={null}>

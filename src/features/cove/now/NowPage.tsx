@@ -17,11 +17,14 @@ import CloseDayOverlay from '../closeday/CloseDayOverlay';
 import { whaleCopy, displayNameFromEmail } from './whaleCopy';
 import { dismissMidday, isMiddayDismissed, middayLine, shouldShowMidday } from './middayVisibility';
 import { markRoutineDone } from '../../day/services/routine-progress';
+import { parseNavIntent } from '../../../utils/navIntent';
 import MoreFold from './MoreFold';
 import PickSheet from './PickSheet';
 
 interface NowPageProps {
     onNavigate: (tab: AppRoute, params?: Record<string, unknown>) => void;
+    /** Deep-link params — the 21:00 anchor arrives as intent=closeday. */
+    initialParams?: Record<string, unknown> | null;
 }
 
 const PickCard: React.FC<{
@@ -60,7 +63,7 @@ const PickCard: React.FC<{
     );
 };
 
-const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
+const NowPage: React.FC<NowPageProps> = ({ onNavigate, initialParams }) => {
     const { user } = useAuth();
     const dateKey = format(new Date(), 'yyyy-MM-dd');
     const hour = new Date().getHours();
@@ -125,7 +128,11 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
         markRoutineDone('midday', dateKey);
     };
 
-    const [closeOpen, setCloseOpen] = useState(false);
+    // The night anchor's tap lands here as intent=closeday — open the overlay
+    // it promised instead of just showing Now. Lazy init: once per mount.
+    const [closeOpen, setCloseOpen] = useState(
+        () => parseNavIntent(initialParams)?.kind === 'closeday',
+    );
     const openCloseDay = () => setCloseOpen(true);
 
     return (

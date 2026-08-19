@@ -84,7 +84,9 @@ export async function reapplyNotificationSchedule(
             s.nightTime,
             'Close the day',
             '90 seconds: what got done, one line for tomorrow.',
-            { route: 'reflection', step: 'night', daysOfWeek: s.nightDays },
+            // intent=closeday opens the CloseDayOverlay on Now — the flow the
+            // copy describes. It used to route to the long ReflectionPage.
+            { route: 'home', step: 'night', intent: 'closeday', daysOfWeek: s.nightDays },
             s.nightDays,
         );
     }

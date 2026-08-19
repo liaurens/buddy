@@ -49,7 +49,8 @@ const ITEMS: Array<{
     {
         tab: 'focus',
         label: 'Focus timer',
-        desc: 'Pomodoro for one task',
+        // Honest copy: the timer has no task link (deliberately deferred).
+        desc: 'Pomodoro focus timer',
         Icon: Timer,
         tileBg: '#fdeeda',
         iconColor: '#f2a541',

@@ -162,7 +162,7 @@ export interface TaskState {
         dueTime?: string,
     ) => Promise<string>;
     addTaskFull: (partial: Partial<Task> & { title: string }) => Promise<string>;
-    toggleTask: (id: string) => void;
+    toggleTask: (id: string) => Promise<void>;
     deleteTask: (id: string) => void;
     updateTask: (task: Task) => Promise<void>;
 
