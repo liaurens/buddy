@@ -40,9 +40,13 @@ function sortKeyForHHMM(hhmm: string): number {
  * Returns today's calendar events + picks (todos planned today), merged into a
  * single time-sorted timeline. Untimed picks are returned separately so the
  * caller can render them in an "Anytime" group.
+ *
+ * Callers that only need `picks`/`completedCount` (Now, the gate) pass
+ * `{ events: false }` so the calendar query never fires for data they discard.
  */
-export function useTodayItems(dateKey?: string): UseTodayItems {
+export function useTodayItems(dateKey?: string, opts?: { events?: boolean }): UseTodayItems {
     const { user } = useAuth();
+    const wantEvents = opts?.events !== false;
     const today = useMemo(() => dateKey ?? format(new Date(), 'yyyy-MM-dd'), [dateKey]);
     const { tasks, isLoading: tasksLoading } = useTasks();
 
@@ -63,7 +67,7 @@ export function useTodayItems(dateKey?: string): UseTodayItems {
             if (error) throw error;
             return ((data ?? []) as DbCalendarEvent[]).map(dbToCalendarEvent);
         },
-        enabled: !!user?.id,
+        enabled: !!user?.id && wantEvents,
         staleTime: 60_000,
     });
 
@@ -115,7 +119,7 @@ export function useTodayItems(dateKey?: string): UseTodayItems {
         completedCount,
         totalCount: picks.length,
         estimatedTotalMinutes,
-        isLoading: tasksLoading || eventsQuery.isLoading,
+        isLoading: tasksLoading || (wantEvents && eventsQuery.isLoading),
         refetchEvents,
     };
 }

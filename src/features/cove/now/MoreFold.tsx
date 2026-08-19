@@ -5,6 +5,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { useTasks } from '../../tasks/hooks/useTasks';
 import { getRoutineProgress, ROUTINE_PROGRESS_EVENT } from '../../day/services/routine-progress';
 import { getClosedDatesThisWeek } from '../../planning/services/closeDay.service';
+import { useCheckinStatus } from '../gate/useCheckinStatus';
 import Fold from '../components/Fold';
 
 interface MoreFoldProps {
@@ -52,6 +53,9 @@ const MoreFold: React.FC<MoreFoldProps> = ({ dateKey, streak }) => {
     const { user } = useAuth();
     const { tasks } = useTasks();
     const routine = useRoutineSnapshot(dateKey);
+    // Skipping the gate is a legitimate choice — the row says so instead of
+    // reading "open" all day (no fake done marker, no shame copy).
+    const checkinSkipped = useCheckinStatus(dateKey).state?.status === 'skipped';
     const hour = new Date().getHours();
 
     const closedThisWeek = useQuery({
@@ -90,7 +94,9 @@ const MoreFold: React.FC<MoreFoldProps> = ({ dateKey, streak }) => {
                         <RoutineRow
                             label="Morning check-in"
                             done={routine.morning}
-                            hint={routine.morning ? 'done' : 'open'}
+                            hint={
+                                routine.morning ? 'done' : checkinSkipped ? 'skipped today' : 'open'
+                            }
                         />
                         <RoutineRow
                             label="Midday reset"

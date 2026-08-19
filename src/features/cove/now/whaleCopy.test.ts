@@ -1,4 +1,25 @@
-import { whaleCopy, whaleGreeting, whaleStatus } from './whaleCopy';
+import { displayNameFromEmail, whaleCopy, whaleGreeting, whaleStatus } from './whaleCopy';
+
+describe('displayNameFromEmail', () => {
+    it('takes the first segment of the local part, capitalised', () => {
+        expect(displayNameFromEmail('sam.jones@example.com')).toBe('Sam');
+        expect(displayNameFromEmail('LOEK@example.com')).toBe('Loek');
+        expect(displayNameFromEmail('mia_v@example.com')).toBe('Mia');
+    });
+
+    it('strips trailing digits', () => {
+        expect(displayNameFromEmail('sam99@example.com')).toBe('Sam');
+    });
+
+    it('falls back to nameless when the guess would read badly', () => {
+        expect(displayNameFromEmail(undefined)).toBeUndefined();
+        expect(displayNameFromEmail('')).toBeUndefined();
+        // Too long — a mashed-together full name is not a greeting.
+        expect(displayNameFromEmail('laureensdekkers44@example.com')).toBeUndefined();
+        // Digits in the middle — not a plain name.
+        expect(displayNameFromEmail('x1y2z@example.com')).toBeUndefined();
+    });
+});
 
 describe('whaleGreeting', () => {
     it('greets by time of day', () => {

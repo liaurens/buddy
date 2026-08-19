@@ -37,7 +37,7 @@ const CheckInGate: React.FC<CheckInGateProps> = ({ dateKey }) => {
     const { markDone, markSkipped, isSaving } = useCheckinStatus(dateKey);
     const { capacity, setCapacity } = useDayCapacity(dateKey);
     const { tasks, rescheduleMany } = useTasks();
-    const { picks } = useTodayItems(dateKey);
+    const { picks } = useTodayItems(dateKey, { events: false });
     const { assignments } = useAssignments({ activeOnly: true });
 
     const survival = capacity === 'survival';

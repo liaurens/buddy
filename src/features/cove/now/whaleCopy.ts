@@ -8,6 +8,23 @@ export interface WhaleCopy {
     status: string;
 }
 
+/** Longest email-derived name that still reads as a name, not an address. */
+const MAX_NAME_LENGTH = 12;
+
+/**
+ * A first name guessed from an email, or undefined when the guess would read
+ * badly. "sam.jones@…" → "Sam"; "laureensdekkers44@…" is too long → nameless
+ * greeting. The app stores no profile name, so a careful guess with a graceful
+ * fallback beats greeting people with their full inbox handle.
+ */
+export function displayNameFromEmail(email?: string | null): string | undefined {
+    if (!email) return undefined;
+    const local = email.split('@')[0] ?? '';
+    const first = (local.split(/[._+-]/)[0] ?? '').replace(/\d+$/, '');
+    if (!/^[a-zA-Z]+$/.test(first) || first.length > MAX_NAME_LENGTH) return undefined;
+    return first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
+}
+
 export function whaleGreeting(hour: number, name?: string): string {
     const suffix = name ? `, ${name}` : '';
     if (hour < 11) return `Morning${suffix}!`;

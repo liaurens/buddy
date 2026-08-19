@@ -14,9 +14,11 @@ import { Whale, SpeechBubble, Confetti, PickCircle, TagChip, taskTagFor } from '
 import { useCelebration } from '../hooks/useCelebration';
 import { useCheckinStatus } from '../gate/useCheckinStatus';
 import CloseDayOverlay from '../closeday/CloseDayOverlay';
-import { whaleCopy } from './whaleCopy';
+import { whaleCopy, displayNameFromEmail } from './whaleCopy';
 import { dismissMidday, isMiddayDismissed, middayLine, shouldShowMidday } from './middayVisibility';
+import { markRoutineDone } from '../../day/services/routine-progress';
 import MoreFold from './MoreFold';
+import PickSheet from './PickSheet';
 
 interface NowPageProps {
     onNavigate: (tab: AppRoute, params?: Record<string, unknown>) => void;
@@ -25,8 +27,10 @@ interface NowPageProps {
 const PickCard: React.FC<{
     task: Task;
     bursting: boolean;
+    /** The next incomplete subtask's title, when the recommender knows one. */
+    nextStep?: string;
     onToggle: (task: Task) => void;
-}> = ({ task, bursting, onToggle }) => {
+}> = ({ task, bursting, nextStep, onToggle }) => {
     const tag = taskTagFor(task);
     return (
         <div className="relative">
@@ -44,6 +48,11 @@ const PickCard: React.FC<{
                     >
                         {task.title}
                     </span>
+                    {nextStep && !task.completed ? (
+                        <span className="mt-[3px] block truncate text-[12px] font-bold text-[#3a7fb0]">
+                            next: {nextStep}
+                        </span>
+                    ) : null}
                     {tag ? <TagChip tag={tag} className="mt-[5px]" /> : null}
                 </span>
             </button>
@@ -56,18 +65,23 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
     const dateKey = format(new Date(), 'yyyy-MM-dd');
     const hour = new Date().getHours();
 
-    const { picks, completedCount } = useTodayItems(dateKey);
+    const { picks, completedCount } = useTodayItems(dateKey, { events: false });
     const { capacity } = useDayCapacity(dateKey);
-    const { toggleTask } = useTasks();
+    const { tasks, toggleTask, rescheduleMany } = useTasks();
     const { burstId, celebrate } = useCelebration();
     const [middayDismissed, setMiddayDismissed] = useState(() => isMiddayDismissed(dateKey));
+    const [pickOpen, setPickOpen] = useState(false);
 
     const survival = capacity === 'survival';
 
-    const visiblePicks = useMemo(() => {
-        const scoreById = new Map(getRankedTasks(picks).map((r) => [r.task.id, r.score] as const));
+    const { visiblePicks, nextStepById } = useMemo(() => {
+        const ranked = getRankedTasks(picks);
+        const scoreById = new Map(ranked.map((r) => [r.task.id, r.score] as const));
+        const nextStepById = new Map(
+            ranked.filter((r) => r.subtask).map((r) => [r.task.id, r.subtask!.title] as const),
+        );
         const sorted = sortTasksCanonical(picks, scoreById);
-        return survival ? sorted.slice(0, 1) : sorted;
+        return { visiblePicks: survival ? sorted.slice(0, 1) : sorted, nextStepById };
     }, [picks, survival]);
 
     const visibleDone = visiblePicks.filter((p) => p.completed).length;
@@ -75,7 +89,13 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
     // close-day button stays reachable on a day with nothing planned.
     const allDone = visibleDone === visiblePicks.length;
 
-    const copy = whaleCopy(visibleDone, visiblePicks.length, hour, survival);
+    const copy = whaleCopy(
+        visibleDone,
+        visiblePicks.length,
+        hour,
+        survival,
+        displayNameFromEmail(user?.email),
+    );
 
     const streakQuery = useQuery({
         queryKey: ['closeStreak', user?.id],
@@ -100,6 +120,9 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
     const handleDismissMidday = () => {
         dismissMidday(dateKey);
         setMiddayDismissed(true);
+        // Engaging with the midday card IS the midday reset — without this,
+        // MoreFold's "Midday reset" row could never read done.
+        markRoutineDone('midday', dateKey);
     };
 
     const [closeOpen, setCloseOpen] = useState(false);
@@ -160,7 +183,11 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
             ) : null}
 
             <div className="app-label px-1 pb-2.5 pt-5">
-                {survival ? 'Just one today' : 'Today’s three'}
+                {survival
+                    ? 'Just one today'
+                    : visiblePicks.length > 3
+                      ? 'Today’s picks'
+                      : 'Today’s three'}
             </div>
 
             <div className="flex flex-col gap-2.5">
@@ -168,18 +195,20 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
                     /*
                      * Skipping the morning check-in used to leave this screen with
                      * nothing but a sentence, all day, even when Tasks was full.
-                     * The home screen should always offer the next move.
+                     * The home screen should always offer the next move — and
+                     * "Pick something small" actually picks, instead of dropping
+                     * the user on the Tasks tab with no pick affordance.
                      */
                     <div className="rounded-card-lg bg-white/60 p-4">
                         <p className="text-[13.5px] font-bold text-cove-muted">
-                            No picks yet — the morning check-in sets them up.
+                            No picks yet — grab something small to start the day.
                         </p>
                         <button
                             type="button"
-                            onClick={() => onNavigate('tasks')}
+                            onClick={() => setPickOpen(true)}
                             className="mt-3 w-full rounded-xl bg-cove-ink py-[11px] text-[13px] font-extrabold text-white"
                         >
-                            Pick from Tasks
+                            Pick something small
                         </button>
                     </div>
                 ) : (
@@ -188,11 +217,22 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
                             key={task.id}
                             task={task}
                             bursting={burstId === task.id}
+                            nextStep={nextStepById.get(task.id)}
                             onToggle={handleToggle}
                         />
                     ))
                 )}
             </div>
+
+            {!survival && visiblePicks.length > 0 && visiblePicks.length < 3 ? (
+                <button
+                    type="button"
+                    onClick={() => setPickOpen(true)}
+                    className="mt-1.5 bg-transparent p-1.5 text-left text-[13px] font-extrabold text-cove-faint transition-colors hover:text-cove-muted"
+                >
+                    + add a pick
+                </button>
+            ) : null}
 
             {allDone ? (
                 <button
@@ -227,6 +267,15 @@ const NowPage: React.FC<NowPageProps> = ({ onNavigate }) => {
             </button>
 
             <MoreFold dateKey={dateKey} streak={streak} />
+
+            {pickOpen ? (
+                <PickSheet
+                    tasks={tasks}
+                    today={dateKey}
+                    onPick={(id) => void rescheduleMany([id], dateKey)}
+                    onClose={() => setPickOpen(false)}
+                />
+            ) : null}
 
             {closeOpen ? (
                 <CloseDayOverlay
