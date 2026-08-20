@@ -1,8 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { addDays, addWeeks, format } from 'date-fns';
-import type { Task, TaskFlag, TaskEnergy, RecurrencePattern } from '../../tasks/types';
+import type { Task, TaskFlag, TaskEnergy, RecurrencePattern, Subtask } from '../../tasks/types';
 import { TASK_FLAG_META, TASK_FLAG_ORDER, deriveTaskFlag } from '../../tasks/utils/taskFlags';
 import { useTaskTypes } from '../../tasks/hooks/useTaskTypes';
+import { subtaskProgress } from '../../tasks/utils/subtasks';
+import { Fold } from '../components';
+import SheetWhenSection from './SheetWhenSection';
+import SheetStepsSection from './SheetStepsSection';
+import { chipClass, inputClass, labelClass } from './sheetStyles';
 
 const ENERGIES: Array<{ value: TaskEnergy; label: string }> = [
     { value: 'low', label: 'Low' },
@@ -19,11 +23,16 @@ const CADENCES: Array<{ value: RecurrencePattern; label: string }> = [
 
 const ESTIMATES = [5, 15, 30, 60, 120];
 
+/** Which fold opens first. `'steps'` also expands the splitter. */
+export type SheetSection = 'when' | 'steps';
+
 interface TaskDetailSheetProps {
     task: Task;
     onSave: (task: Task) => void | Promise<void>;
     onDelete: (id: string) => void | Promise<void>;
     onClose: () => void;
+    /** Where the caller wants attention — "Feeling stuck? Split it" passes `'steps'`. */
+    focusSection?: SheetSection;
 }
 
 /** The one missing input for a flag, if any. Mirrors applyTaskFlag's contract. */
@@ -38,29 +47,30 @@ function missingRequirement(draft: Task): string | null {
     return null;
 }
 
-const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="pb-1.5 pt-3.5 text-[11px] font-extrabold uppercase tracking-[0.08em] text-cove-faint">
-        {children}
-    </div>
-);
-
-const inputClass =
-    'w-full rounded-xl border border-cove-border bg-white px-3 py-2.5 text-[14.5px] font-bold text-cove-ink outline-none placeholder:text-cove-faint focus:border-cove-accent';
-
-const chipClass = (active: boolean) =>
-    `rounded-full px-3 py-1.5 text-[12.5px] font-extrabold transition-colors ${
-        active ? 'bg-cove-ink text-white' : 'bg-cove-tint-blue text-cove-muted'
-    }`;
+/** The fold label for "When", so the section says what it holds while closed. */
+function whenSummary(draft: Task): string {
+    const parts = [
+        draft.plannedFor ? `do ${draft.plannedFor}` : null,
+        draft.dueDate ? `due ${draft.dueDate}` : null,
+    ].filter(Boolean);
+    return parts.length ? `When — ${parts.join(', ')}` : 'When — no date yet';
+}
 
 /**
  * The task editor — a bottom sheet, reachable from every task row.
  *
- * Everything a task can be is here: what kind of thing it is, when it happens,
- * how big it is, whether it nags. Saving goes through useTasks.updateTask →
- * persistTaskUpdate, so the flag contract, reminders and the calendar mirror
- * stay consistent with every other write path.
+ * Everything a task can be is here, but folded: only "what is this" is open on
+ * arrival, because a flat nine-field form is the thing nobody scrolls. Saving
+ * goes through useTasks.updateTask → persistTaskUpdate, so the flag contract,
+ * reminders and the calendar mirror stay consistent with every other write path.
  */
-const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({ task, onSave, onDelete, onClose }) => {
+const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({
+    task,
+    onSave,
+    onDelete,
+    onClose,
+    focusSection,
+}) => {
     const { taskTypes } = useTaskTypes();
     // Callers key this sheet by task id, so the draft seeds once per task and
     // survives background query refetches. Syncing draft←task on every change
@@ -72,6 +82,10 @@ const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({ task, onSave, onDelet
     const flag = deriveTaskFlag(draft);
     const blocker = useMemo(() => missingRequirement(draft), [draft]);
     const patch = (p: Partial<Task>) => setDraft((d) => ({ ...d, ...p }));
+    const setSubtasks = (subtasks: Subtask[]) => patch({ subtasks });
+
+    const steps = subtaskProgress(draft.subtasks);
+    const stepsLabel = steps ? `Steps — ${steps.done}/${steps.total}` : 'Steps';
 
     const save = async () => {
         if (saving || blocker || !draft.title.trim()) return;
@@ -114,15 +128,16 @@ const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({ task, onSave, onDelet
                     className="flex-1 overflow-y-auto px-5 pt-1"
                     style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}
                 >
-                    <Label>Task</Label>
+                    <div className={labelClass}>Task</div>
                     <input
                         value={draft.title}
                         onChange={(e) => patch({ title: e.target.value })}
                         className={inputClass}
                         placeholder="What is it?"
+                        aria-label="Task"
                     />
 
-                    <Label>What kind of thing is this?</Label>
+                    <div className={labelClass}>What kind of thing is this?</div>
                     <div className="flex flex-wrap gap-1.5">
                         {TASK_FLAG_ORDER.map((f) => (
                             <button
@@ -139,21 +154,24 @@ const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({ task, onSave, onDelet
                         {TASK_FLAG_META[flag].description}
                     </div>
 
+                    {/* The flag's own required input stays out of the folds —
+                        it's the one field Save refuses to go without. */}
                     {flag === 'waiting' ? (
                         <>
-                            <Label>Waiting on</Label>
+                            <div className={labelClass}>Waiting on</div>
                             <input
                                 value={draft.waitingOn ?? ''}
                                 onChange={(e) => patch({ waitingOn: e.target.value })}
                                 className={inputClass}
                                 placeholder="e.g. Alex, the insurer"
+                                aria-label="Waiting on"
                             />
                         </>
                     ) : null}
 
                     {flag === 'routine' ? (
                         <>
-                            <Label>Repeats</Label>
+                            <div className={labelClass}>Repeats</div>
                             <div className="flex flex-wrap gap-1.5">
                                 {CADENCES.map((c) => (
                                     <button
@@ -169,150 +187,133 @@ const TaskDetailSheet: React.FC<TaskDetailSheetProps> = ({ task, onSave, onDelet
                         </>
                     ) : null}
 
-                    <Label>Do it on</Label>
-                    {/* One tap beats the OS date picker for the three answers
-                        people actually give. The inputs below stay for the rest. */}
-                    <div className="flex flex-wrap gap-1.5 pb-2">
-                        {[
-                            { label: 'Today', value: format(new Date(), 'yyyy-MM-dd') },
-                            {
-                                label: 'Tomorrow',
-                                value: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
-                            },
-                            {
-                                label: 'Next week',
-                                value: format(addWeeks(new Date(), 1), 'yyyy-MM-dd'),
-                            },
-                        ].map((d) => (
-                            <button
-                                key={d.label}
-                                type="button"
-                                onClick={() => patch({ plannedFor: d.value })}
-                                className={chipClass(draft.plannedFor === d.value)}
-                            >
-                                {d.label}
-                            </button>
-                        ))}
-                        {draft.plannedFor ? (
-                            <button
-                                type="button"
-                                onClick={() => patch({ plannedFor: undefined })}
-                                className={chipClass(false)}
-                            >
-                                Clear
-                            </button>
-                        ) : null}
-                    </div>
-                    <div className="flex gap-2">
-                        <input
-                            type="date"
-                            value={draft.plannedFor ?? ''}
-                            onChange={(e) => patch({ plannedFor: e.target.value || undefined })}
-                            className={inputClass}
-                        />
-                        <input
-                            type="time"
-                            value={draft.dueTime ?? ''}
-                            onChange={(e) => patch({ dueTime: e.target.value || undefined })}
-                            className={`${inputClass} max-w-[8rem]`}
-                        />
-                    </div>
+                    <div className="mt-4 flex flex-col gap-0.5 border-t border-cove-border/60 pt-2">
+                        <Fold
+                            label={whenSummary(draft)}
+                            openLabel="When"
+                            defaultOpen={focusSection !== 'steps'}
+                        >
+                            <SheetWhenSection draft={draft} flag={flag} patch={patch} />
+                        </Fold>
 
-                    <Label>Actually due {flag === 'deadline' ? '(required)' : '(optional)'}</Label>
-                    <input
-                        type="date"
-                        value={draft.dueDate ?? ''}
-                        onChange={(e) => patch({ dueDate: e.target.value || undefined })}
-                        className={inputClass}
-                    />
+                        <Fold label={stepsLabel} defaultOpen={focusSection === 'steps'}>
+                            <SheetStepsSection
+                                draft={draft}
+                                onChange={setSubtasks}
+                                autoSplit={focusSection === 'steps'}
+                            />
+                        </Fold>
 
-                    {taskTypes.length > 0 ? (
-                        <>
-                            <Label>Type</Label>
+                        <Fold label="Details">
+                            {taskTypes.length > 0 ? (
+                                <>
+                                    <div className={labelClass}>Type</div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => patch({ taskTypeId: undefined })}
+                                            className={chipClass(!draft.taskTypeId)}
+                                        >
+                                            None
+                                        </button>
+                                        {taskTypes.map((t) => (
+                                            <button
+                                                key={t.id}
+                                                type="button"
+                                                onClick={() => patch({ taskTypeId: t.id })}
+                                                className={chipClass(draft.taskTypeId === t.id)}
+                                            >
+                                                {t.emoji ? `${t.emoji} ` : ''}
+                                                {t.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : null}
+
+                            <div className={labelClass}>How long?</div>
                             <div className="flex flex-wrap gap-1.5">
-                                <button
-                                    type="button"
-                                    onClick={() => patch({ taskTypeId: undefined })}
-                                    className={chipClass(!draft.taskTypeId)}
-                                >
-                                    None
-                                </button>
-                                {taskTypes.map((t) => (
+                                {ESTIMATES.map((m) => (
                                     <button
-                                        key={t.id}
+                                        key={m}
                                         type="button"
-                                        onClick={() => patch({ taskTypeId: t.id })}
-                                        className={chipClass(draft.taskTypeId === t.id)}
+                                        onClick={() =>
+                                            patch({
+                                                estimatedTime:
+                                                    draft.estimatedTime === m ? undefined : m,
+                                            })
+                                        }
+                                        className={chipClass(draft.estimatedTime === m)}
                                     >
-                                        {t.emoji ? `${t.emoji} ` : ''}
-                                        {t.name}
+                                        {m} min
                                     </button>
                                 ))}
                             </div>
-                        </>
-                    ) : null}
 
-                    <Label>How long?</Label>
-                    <div className="flex flex-wrap gap-1.5">
-                        {ESTIMATES.map((m) => (
-                            <button
-                                key={m}
-                                type="button"
-                                onClick={() =>
-                                    patch({
-                                        estimatedTime: draft.estimatedTime === m ? undefined : m,
-                                    })
-                                }
-                                className={chipClass(draft.estimatedTime === m)}
-                            >
-                                {m} min
-                            </button>
-                        ))}
-                    </div>
+                            <div className={labelClass}>Energy</div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {ENERGIES.map((e) => (
+                                    <button
+                                        key={e.value}
+                                        type="button"
+                                        onClick={() =>
+                                            patch({
+                                                energy:
+                                                    draft.energy === e.value ? undefined : e.value,
+                                            })
+                                        }
+                                        className={chipClass(draft.energy === e.value)}
+                                    >
+                                        {e.label}
+                                    </button>
+                                ))}
+                            </div>
 
-                    <Label>Energy</Label>
-                    <div className="flex flex-wrap gap-1.5">
-                        {ENERGIES.map((e) => (
-                            <button
-                                key={e.value}
-                                type="button"
-                                onClick={() =>
-                                    patch({
-                                        energy: draft.energy === e.value ? undefined : e.value,
-                                    })
-                                }
-                                className={chipClass(draft.energy === e.value)}
-                            >
-                                {e.label}
-                            </button>
-                        ))}
-                    </div>
+                            {/* Notes were stored and never shown — captured detail
+                                that only existed in the database until now. */}
+                            <div className={labelClass}>Notes</div>
+                            <textarea
+                                value={draft.notes ?? ''}
+                                onChange={(e) => patch({ notes: e.target.value || undefined })}
+                                rows={3}
+                                placeholder="Anything you'd forget otherwise"
+                                aria-label="Notes"
+                                className={`${inputClass} resize-none`}
+                            />
+                        </Fold>
 
-                    <Label>Reminders</Label>
-                    <div className="flex flex-wrap gap-1.5">
-                        <button
-                            type="button"
-                            onClick={() => patch({ reminderEnabled: !draft.reminderEnabled })}
-                            className={chipClass(!!draft.reminderEnabled)}
+                        <Fold
+                            label={draft.reminderEnabled ? 'Reminders — on' : 'Reminders — off'}
+                            openLabel="Reminders"
                         >
-                            {draft.reminderEnabled ? 'Remind me' : 'Stay quiet'}
-                        </button>
-                        {draft.reminderEnabled
-                            ? (['single', 'smart', 'aggressive'] as const).map((c) => (
-                                  <button
-                                      key={c}
-                                      type="button"
-                                      onClick={() => patch({ reminderCadence: c })}
-                                      className={chipClass(draft.reminderCadence === c)}
-                                  >
-                                      {c === 'single'
-                                          ? 'Once'
-                                          : c === 'smart'
-                                            ? 'As it nears'
-                                            : 'Keep at me'}
-                                  </button>
-                              ))
-                            : null}
+                            <div className="flex flex-wrap gap-1.5 pt-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        patch({ reminderEnabled: !draft.reminderEnabled })
+                                    }
+                                    className={chipClass(!!draft.reminderEnabled)}
+                                >
+                                    {draft.reminderEnabled ? 'Remind me' : 'Stay quiet'}
+                                </button>
+                                {draft.reminderEnabled
+                                    ? (['single', 'smart', 'aggressive'] as const).map((c) => (
+                                          <button
+                                              key={c}
+                                              type="button"
+                                              onClick={() => patch({ reminderCadence: c })}
+                                              className={chipClass(draft.reminderCadence === c)}
+                                          >
+                                              {c === 'single'
+                                                  ? 'Once'
+                                                  : c === 'smart'
+                                                    ? 'As it nears'
+                                                    : 'Keep at me'}
+                                          </button>
+                                      ))
+                                    : null}
+                            </div>
+                        </Fold>
                     </div>
 
                     {blocker ? (

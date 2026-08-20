@@ -2,6 +2,7 @@ import React from 'react';
 import type { Task } from '../../tasks/types';
 import type { TaskRecommendation } from '../../tasks/utils/taskRecommender';
 import { TASK_FLAG_META, deriveTaskFlag } from '../../tasks/utils/taskFlags';
+import { isStale } from '../../tasks/utils/staleness';
 import { PickCircle, TagChip, taskTagFor } from '../components';
 import { formatRowMeta } from './rowMeta';
 
@@ -9,6 +10,8 @@ interface NextUpCardProps {
     rec: TaskRecommendation;
     onToggle: (task: Task) => void;
     onOpen: (task: Task) => void;
+    /** Open the sheet on its Steps section, splitter expanded. */
+    onSplit: (task: Task) => void;
 }
 
 /**
@@ -17,11 +20,17 @@ interface NextUpCardProps {
  * *why* a task ranks first ("overdue by 3 days, keeps slipping") and this is
  * where that finally reaches the user. Same two targets as TaskRow: the
  * circle completes, the rest opens the sheet.
+ *
+ * When the pick is stale - pushed twice, or sitting untouched past its day -
+ * it offers a split instead of a third guilt pass. That is the moment a
+ * breakdown is worth anything: at the point of avoidance, not at planning time.
  */
-const NextUpCard: React.FC<NextUpCardProps> = ({ rec, onToggle, onOpen }) => {
+const NextUpCard: React.FC<NextUpCardProps> = ({ rec, onToggle, onOpen, onSplit }) => {
     const { task, subtask } = rec;
     const tag = taskTagFor(task);
-    const meta = formatRowMeta(task, new Date());
+    const now = new Date();
+    const meta = formatRowMeta(task, now);
+    const stuck = isStale(task, now);
     const flagMeta = TASK_FLAG_META[deriveTaskFlag(task)];
     const reason = rec.reason ? rec.reason.split(', ').join(' · ') : '';
 
@@ -78,6 +87,18 @@ const NextUpCard: React.FC<NextUpCardProps> = ({ rec, onToggle, onOpen }) => {
                     </span>
                 ) : null}
             </button>
+
+            {/* Sits outside the open-the-sheet button - nesting buttons is
+                invalid HTML and the inner click never fires. */}
+            {stuck && !subtask ? (
+                <button
+                    type="button"
+                    onClick={() => onSplit(task)}
+                    className="mt-6 shrink-0 self-start rounded-full bg-cove-tint-purple px-3 py-1.5 text-[11.5px] font-extrabold text-cove-muted"
+                >
+                    Feeling stuck? Split it &rarr;
+                </button>
+            ) : null}
         </div>
     );
 };

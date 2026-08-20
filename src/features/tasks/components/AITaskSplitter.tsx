@@ -1,12 +1,14 @@
 /**
- * AITaskSplitter - AI-powered task breakdown component
+ * AITaskSplitter — "this is too big to start, break it up for me".
  *
- * Uses the existing AI service to split a large task into subtasks.
- * Stores learning preferences in localStorage for adaptation over time.
+ * Rendered inside TaskDetailSheet's Steps section. Calls the assistant's
+ * `planning / task.ai.split` action and hands the accepted steps back to the
+ * sheet's draft; nothing here writes to the database. Accepted and discarded
+ * splits are remembered in localStorage and fed back as worked examples — the
+ * same shape of learning loop triage uses.
  */
 
 import React, { useState } from 'react';
-import { Sparkles, Loader2, Check, X, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { splitTask } from '../../assistant/services/ai-actions.service';
 import type { Task, Subtask } from '../types';
@@ -167,30 +169,27 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
         onCancel();
     };
 
-    // Initial state - show generate button
+    // Initial state — offer the split
     if (!suggestions && !loading && !error) {
         return (
-            <div className="bg-cove-tint-blue rounded-xl p-4 border border-cove-accent-pale">
-                <div className="flex items-center gap-2 mb-2">
-                    <Sparkles size={16} className="text-cove-accent" />
-                    <span className="text-sm font-semibold text-cove-ink">AI Task Splitter</span>
+            <div className="rounded-xl bg-cove-tint-purple p-3.5">
+                <div className="pb-2.5 text-[12.5px] font-bold leading-snug text-cove-muted">
+                    Buddy can break this into a few steps you could actually start.
                 </div>
-                <p className="text-xs text-cove-accent mb-3">
-                    Break "{task.title}" into smaller, actionable subtasks using AI.
-                </p>
                 <div className="flex gap-2">
                     <button
-                        onClick={handleGenerate}
-                        className="px-4 py-2 text-sm font-medium text-white bg-cove-accent hover:bg-[#3a8dc7] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        type="button"
+                        onClick={() => void handleGenerate()}
+                        className="rounded-full bg-cove-ink px-3.5 py-1.5 text-[12.5px] font-extrabold text-white"
                     >
-                        <Sparkles size={14} />
-                        Generate Subtasks
+                        ✨ Break it up
                     </button>
                     <button
+                        type="button"
                         onClick={onCancel}
-                        className="px-4 py-2 text-sm font-medium text-cove-muted hover:bg-cove-track rounded-lg transition-colors"
+                        className="rounded-full bg-transparent px-3 py-1.5 text-[12.5px] font-extrabold text-cove-faint"
                     >
-                        Cancel
+                        Not now
                     </button>
                 </div>
             </div>
@@ -200,34 +199,33 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
     // Loading state
     if (loading) {
         return (
-            <div className="bg-cove-tint-blue rounded-xl p-4 border border-cove-accent-pale text-center">
-                <Loader2 size={20} className="animate-spin text-cove-accent mx-auto mb-2" />
-                <p className="text-sm text-cove-accent">Breaking down task...</p>
+            <div className="rounded-xl bg-cove-tint-purple p-3.5 text-[12.5px] font-extrabold text-cove-muted">
+                Thinking about the steps…
             </div>
         );
     }
 
-    // Error state
+    // Error state — never a dead end; adding steps by hand still works
     if (error) {
         return (
-            <div className="bg-cove-tint-danger rounded-xl p-4 border border-cove-danger">
-                <div className="flex items-center gap-2 mb-2">
-                    <AlertCircle size={16} className="text-cove-danger" />
-                    <span className="text-sm font-semibold text-cove-danger-deep">Failed</span>
+            <div className="rounded-xl bg-cove-tint-danger p-3.5">
+                <div className="pb-2.5 text-[12.5px] font-bold leading-snug text-cove-danger-deep">
+                    Buddy couldn’t split that — {error}. Adding steps by hand works too.
                 </div>
-                <p className="text-xs text-cove-danger mb-3">{error}</p>
                 <div className="flex gap-2">
                     <button
-                        onClick={handleGenerate}
-                        className="px-3 py-1.5 text-xs font-medium text-cove-danger-deep bg-cove-tint-danger hover:bg-cove-tint-danger rounded-lg transition-colors"
+                        type="button"
+                        onClick={() => void handleGenerate()}
+                        className="rounded-full bg-cove-ink px-3.5 py-1.5 text-[12.5px] font-extrabold text-white"
                     >
-                        Retry
+                        Try again
                     </button>
                     <button
+                        type="button"
                         onClick={onCancel}
-                        className="px-3 py-1.5 text-xs font-medium text-cove-muted hover:bg-cove-track rounded-lg transition-colors"
+                        className="rounded-full bg-transparent px-3 py-1.5 text-[12.5px] font-extrabold text-cove-faint"
                     >
-                        Cancel
+                        Not now
                     </button>
                 </div>
             </div>
@@ -237,55 +235,53 @@ const AITaskSplitter: React.FC<AITaskSplitterProps> = ({ task, onSplit, onCancel
     // Suggestions state
     if (suggestions) {
         return (
-            <div className="bg-white rounded-xl border border-cove-accent-pale shadow-sm overflow-hidden">
-                <div className="px-4 py-3 bg-cove-tint-blue border-b border-cove-accent-pale">
-                    <div className="flex items-center gap-2">
-                        <Sparkles size={16} className="text-cove-accent" />
-                        <span className="text-sm font-semibold text-cove-ink">
-                            Suggested Subtasks
-                        </span>
-                    </div>
+            <div className="cove-fadeslide rounded-xl bg-cove-tint-purple p-3.5">
+                <div className="pb-2 text-[11px] font-extrabold uppercase tracking-[0.08em] text-cove-faint">
+                    Buddy suggests
                 </div>
-                <div className="p-3 space-y-2">
+                <div className="flex flex-col gap-1.5 pb-3">
                     {suggestions.map((s, i) => (
                         <div
                             key={i}
-                            className="flex items-start gap-2 p-2 bg-[color:var(--buddy-surface-soft)] rounded-lg"
+                            className="flex items-start gap-2.5 rounded-xl bg-white px-3 py-2"
                         >
-                            <span className="w-5 h-5 rounded-full bg-cove-accent-pale text-cove-accent text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span className="shrink-0 pt-px text-[12.5px] font-extrabold text-cove-faint">
                                 {i + 1}
                             </span>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-cove-muted">{s.title}</p>
-                                {s.estimatedMinutes > 0 && (
-                                    <p className="text-xs text-cove-faint mt-0.5">
+                            <span className="min-w-0 flex-1">
+                                <span className="block text-[13.5px] font-bold leading-snug text-cove-ink">
+                                    {s.title}
+                                </span>
+                                {s.estimatedMinutes > 0 ? (
+                                    <span className="block pt-0.5 text-[11.5px] font-semibold text-cove-faint">
                                         ~{s.estimatedMinutes} min
-                                    </p>
-                                )}
-                            </div>
+                                    </span>
+                                ) : null}
+                            </span>
                         </div>
                     ))}
                 </div>
-                <div className="px-4 py-3 bg-[color:var(--buddy-surface-soft)] border-t border-cove-border flex gap-2 justify-end">
+                <div className="flex flex-wrap gap-2">
                     <button
-                        onClick={handleReject}
-                        className="px-3 py-1.5 text-sm font-medium text-cove-muted hover:bg-cove-track rounded-lg transition-colors flex items-center gap-1"
-                    >
-                        <X size={14} />
-                        Discard
-                    </button>
-                    <button
-                        onClick={handleGenerate}
-                        className="px-3 py-1.5 text-sm font-medium text-cove-accent hover:bg-cove-accent-pale rounded-lg transition-colors"
-                    >
-                        Regenerate
-                    </button>
-                    <button
+                        type="button"
                         onClick={handleAccept}
-                        className="px-3 py-1.5 text-sm font-medium text-white bg-cove-success hover:bg-cove-success-deep rounded-lg transition-colors flex items-center gap-1"
+                        className="rounded-full bg-cove-ink px-3.5 py-1.5 text-[12.5px] font-extrabold text-white"
                     >
-                        <Check size={14} />
-                        Use These
+                        Use these steps
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => void handleGenerate()}
+                        className="rounded-full bg-white px-3.5 py-1.5 text-[12.5px] font-extrabold text-cove-muted"
+                    >
+                        Try again
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleReject}
+                        className="rounded-full bg-transparent px-3 py-1.5 text-[12.5px] font-extrabold text-cove-faint"
+                    >
+                        Discard
                     </button>
                 </div>
             </div>

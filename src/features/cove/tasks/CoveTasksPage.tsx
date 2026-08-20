@@ -13,7 +13,7 @@ import { Fold } from '../components';
 import TaskRow from './TaskRow';
 import NextUpCard from './NextUpCard';
 import TriageCard from './TriageCard';
-import TaskDetailSheet from './TaskDetailSheet';
+import TaskDetailSheet, { type SheetSection } from './TaskDetailSheet';
 import RoutinePicker from '../../tasks/components/RoutinePicker';
 import { useAutoSortReview } from './useAutoSortReview';
 import type { Task } from '../../tasks/types';
@@ -35,6 +35,7 @@ const CoveTasksPage: React.FC = () => {
     const [routing, setRouting] = useState(false);
     const [showOverflow, setShowOverflow] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [focusSection, setFocusSection] = useState<SheetSection | undefined>(undefined);
     const [showRoutines, setShowRoutines] = useState(false);
     const { routines } = useRoutines();
     const autoSort = useAutoSortReview();
@@ -109,7 +110,15 @@ const CoveTasksPage: React.FC = () => {
         () => (editingId ? (tasks.find((t) => t.id === editingId) ?? null) : null),
         [editingId, tasks],
     );
-    const openTask = (task: Task) => setEditingId(task.id);
+    const openTask = (task: Task) => {
+        setFocusSection(undefined);
+        setEditingId(task.id);
+    };
+    // "Feeling stuck? Split it" lands on Steps with the splitter already open.
+    const openSteps = (task: Task) => {
+        setFocusSection('steps');
+        setEditingId(task.id);
+    };
 
     return (
         <div className="cove-fadeslide flex flex-col">
@@ -173,6 +182,7 @@ const CoveTasksPage: React.FC = () => {
                                 rec={rec}
                                 onToggle={(t) => void toggleTask(t.id)}
                                 onOpen={openTask}
+                                onSplit={openSteps}
                             />
                         ) : (
                             <TaskRow
@@ -279,6 +289,7 @@ const CoveTasksPage: React.FC = () => {
                     // leave in-progress edits alone.
                     key={editing.id}
                     task={editing}
+                    focusSection={focusSection}
                     onSave={async (t) => {
                         // Saving used to be silent: the sheet closed and the row
                         // quietly re-sorted, which reads as "nothing happened".

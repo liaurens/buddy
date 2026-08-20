@@ -64,6 +64,37 @@ describe('formatRowMeta', () => {
         });
     });
 
+    it('flags a deadline whose start day has passed untouched', () => {
+        const task = makeTask({
+            flag: 'deadline',
+            startDate: iso(subDays(today, 2)),
+            dueDate: iso(addDays(today, 3)),
+            createdAt: subDays(today, 9).toISOString(),
+        });
+        expect(formatRowMeta(task, today)).toEqual({ text: 'start slipped', tone: 'alert' });
+    });
+
+    it('lets overdue outrank a slipped start', () => {
+        const task = makeTask({
+            flag: 'deadline',
+            startDate: iso(subDays(today, 5)),
+            dueDate: iso(subDays(today, 1)),
+            createdAt: subDays(today, 9).toISOString(),
+        });
+        expect(formatRowMeta(task, today)).toEqual({ text: 'overdue 1d', tone: 'alert' });
+    });
+
+    it('does not flag a slipped start once the task has been touched', () => {
+        const task = makeTask({
+            flag: 'deadline',
+            startDate: iso(subDays(today, 2)),
+            dueDate: iso(addDays(today, 3)),
+            createdAt: subDays(today, 9).toISOString(),
+            lastTouchedAt: today.toISOString(),
+        });
+        expect(formatRowMeta(task, today)).toEqual({ text: 'due Sat', tone: 'default' });
+    });
+
     it('falls back to a due time, then the estimate, for undated tasks', () => {
         expect(formatRowMeta(makeTask({ dueTime: '09:30' }), today)).toEqual({
             text: '09:30',

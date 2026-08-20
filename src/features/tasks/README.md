@@ -201,22 +201,35 @@ teach less than one phrasing repeated ten times.
 - Empty sections keep their header — a count of `(0)` is information.
 
 Tapping the circle completes a task; tapping the rest of the row opens
-`TaskDetailSheet`, which edits every field a task has.
+`TaskDetailSheet`, which edits every field a task has. The sheet is **folded**:
+only "what is this" is open on arrival, with When / Steps / Details / Reminders
+behind `Fold`s. It is **keyed, not synced** — the draft seeds once from `task`,
+so every call site must render it with `key={task.id}`.
+
+`focusSection` decides which fold opens: `'steps'` also expands the AI splitter,
+which is how NextUpCard's "Feeling stuck? Split it" lands you straight on the
+breakdown rather than on a form.
 
 ---
 
 ## Deferred by design
 
-Three features are wanted but not designed yet. Their columns are kept, and two
-components are deliberately preserved even though nothing renders them (they are
+One feature is wanted but not designed yet. Its columns are kept, and one
+component is deliberately preserved even though nothing renders it (it is
 allowlisted in `scripts/check-reachability.mjs` — **if you remove this section,
-remove those entries too**):
+remove that entry too**):
 
 | Feature | Columns | Component held | What it needs |
 | --- | --- | --- | --- |
-| Subtasks | `subtasks` | `components/AITaskSplitter.tsx` | A place to show and tick subtasks — probably inside `TaskDetailSheet`. `staleness.ts` already reads subtask progress and the recommender surfaces "next subtask". |
-| Deadline start dates | `start_date` | — | Nothing writes it. `isDeadlineParked` / `isDeadlineStartSlipped` already read it, so this is a UI gap, not a logic one. |
-| Google Calendar | `google_event_id`, `google_calendar_id`, `google_synced_at`, plus `parent_todo_id` / `notes` | `components/UrgentScheduleModal.tsx` | The push currently fires only for `flag: urgent` + a planned day + a `dueTime` — narrow enough that it has never fired. Decide which tasks belong on the calendar, then rebuild the scheduling flow. |
+| Google Calendar | `google_event_id`, `google_calendar_id`, `google_synced_at`, plus `parent_todo_id` | `components/UrgentScheduleModal.tsx` | The push currently fires only for `flag: urgent` + a planned day + a `dueTime` — narrow enough that it has never fired. Decide which tasks belong on the calendar, then rebuild the scheduling flow. |
+
+**No longer deferred** (2026-08-20, part `20260819-mvp-polish`): subtasks and
+deadline start dates both have UI. Steps are edited in the sheet's Steps fold
+(`utils/subtasks.ts` holds the pure helpers) and `AITaskSplitter` is rendered
+there, so its allowlist entry is gone. `startDate` is written from the sheet's
+"Start by" field, with a one-tap chip from `suggestedDeadlineStart`; a deadline
+whose start day passed untouched now reads "start slipped" on its row.
+`notes` — stored but never shown — is a textarea in the Details fold.
 
 ---
 
