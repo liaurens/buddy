@@ -45,7 +45,7 @@ Key conventions live in `CLAUDE.md` (naming gotchas, 3-layer data pattern, edge-
 - **assistant** — AI chat with slash commands, tool registry, rule engine, HR/trainer agents.
 - **checklists / toolbox / focus / notifications / browse / me / core** — supporting modules.
 - **Cove consistency** — every live surface reads from the Cove tokens; `src/**` is at zero default-palette hits and the `app-*` primitive layer is the sanctioned class set. Notes retired: **Capture is the single inbox**.
-- **notifications** — push subscriptions, per-day scheduling, quiet hours, rate limiting.
+- **notifications** — push subscriptions, per-day scheduling, quiet hours, rate limiting, staleness expiry, self-healing daily anchors, an off-track scanner, and **action buttons that do what they say** (Mark done / Snooze 15m / close-day, executed even while the check-in gate holds the app). See [notifications.md](notifications.md).
 - **Google Calendar** — auth + write (recent).
 - **Buddy Cove redesign** — full UI replacement: whale mascot, once-per-day morning check-in gate, Now (max-3 picks + midday reset + folded stats), one-at-a-time triage Tasks page, Capture dump box, close-day overlay with leftover resolution + derived streak, Browse grid, Me page; all legacy pages retherned (Nunito + cove tokens). See [cove.md](cove.md).
 
@@ -84,6 +84,36 @@ Key conventions live in `CLAUDE.md` (naming gotchas, 3-layer data pattern, edge-
 ## Changelog
 
 <!-- newest first; one dated entry per finished part -->
+- 2026-08-20 — **mvp-polish** part: an eight-phase pass to make two minutes of use genuinely
+  helpful, then to stop the app quietly lying. **Picking got a floor.** The recommender was
+  built and never rendered; `NextUpCard` now leads "Needs you now" with its actual reason
+  ("overdue by 3 days, keeps slipping"), rows carry dates, and Now grew a `PickSheet` so a
+  pick can be *added*, not just accepted. The morning gate's picks became **swappable** —
+  "swap" and "not today" per pick, with the reason shown — and the gate stopped flashing on
+  fresh devices (`checkinUnknown` renders a fallback instead). **Every notification button
+  now does what it says.** "Mark done" and "Snooze 15m" had been parsed and handed to
+  nothing; one parser (`parseNavIntent`) plus a headless `NotificationIntentHandler` execute
+  them through the real pipelines, working even while the gate holds the app, and the night
+  anchor opens the close-day overlay it describes instead of a long reflection page.
+  **Capture and triage became trustworthy**: a success toast, a "Capture anyway" that saves
+  raw text untriaged instead of dead-ending on a syntax error, tappable captured rows, a
+  "Not now" skip, and Undo finally reachable from a toast action. **Depth landed**:
+  `TaskDetailSheet` is folded rather than a nine-field wall, subtasks are tickable, the AI
+  splitter is rendered again (Cove-restyled, allowlist entry removed), deadlines got start
+  dates with a "start slipped" warning, `notes` stopped being invisible data, and a stale
+  task offers **"Feeling stuck? Split it"** at the point of avoidance — the UX
+  `staleness.ts` was written for. **Integrity**: mirrored school todos finally get reminder
+  rows (`insertTask` instead of a raw insert) and deletes gained a canonical path, so
+  deleting a class no longer orphans one `scheduled_notifications` row per assignment;
+  `recurrence.ts` was rewritten TDD after tests-first caught **four real DST bugs** (every
+  cadence crossing the spring change lost a day); `school-import` now computes `planned_for`
+  with a shared port of `suggestDeadlineWorkday` so an imported assignment lands where a
+  typed-in one would; and `off-track-scanner` stopped filtering on `priority`, which had
+  excluded overdue deadlines and school work entirely. Both edge functions redeployed.
+  **Cleanup**: 4 orphans deleted (`check:reach` clean at 254/254), and the Tasks "Default
+  Sort Order" select removed — nothing read it. 34 new tests; 602 passing. Deferred by
+  decision and recorded above: Google Calendar scheduling (**must finish; rotate the OAuth
+  secret first**), focus-timer↔task linking, energy-aware ranking.
 - 2026-08-17 — **audit + cove-consistency** part: a live pass over every tab, driving the real app against the live database, then fixing what it found. **The app could not be scrolled**: `main` declared itself a scroll container while sitting `flex-1` in a `min-h-dvh` column, so it grew to full content height, never scrolled, and Chrome swallowed every wheel event instead of chaining to the document — measured 0px of movement over the app vs 500px over the backdrop beside it. That put Health's "Save check-in" permanently out of reach. **Viewport breakpoints inside the 520px shell** were one root cause behind four separate "broken layout" reports (Assistant, School, Calendar, Toolbox, tile grids): Tailwind's `md:`/`lg:` key off the viewport, so desktop layouts activated in a phone-width column. **The assistant scored recovered retries as failures** (`steps.every(success)`), rendering "OK, I logged 7 hours of sleep for you" in a red error card over a write that had succeeded; and the check-in tool refused the model's own arguments (`Number("7 hours")` is `NaN`), costing up to four tool calls per log — now one. Also: all-day calendar events no longer render a fake "00:00" or collapse to a single day; tracker values are range-checked at the boundary (77 hours of sleep had been stored silently); Health history is paged (12,224px → 6,383px); task and check-in saves confirm; the disabled Save jumps to the first missing field. Finished the **Cove palette sweep** (167 swaps, `src/**` now at zero legacy-palette hits) and **retired the Notes surface** — 0 writes in 90 days, so Capture becomes the single inbox; the 3 inbox notes migrated to `todos`, the 20 categorised rows kept as archive, and `notes.tool.ts` deleted rather than left writing rows nothing could read. Deferred by decision: the class-session `01:30` question (real data or a UTC-into-naive-`time` import bug) needs the user's answer. 45 new tests; 529 passing.
 - 2026-08-16 — **task-system-collapse** part: acted on a full audit of the task feature. **Deleted ~48 unreachable modules** — the Cove redesign had orphaned every `core/` home card and the whole `day/` morning+midday system, and the legacy `TodoPage` tree went once its contents were harvested; added `npm run check:reach` (advisory in the Stop hook) so it cannot recur. **Collapsed three vocabularies into one**: `kind` and `triage_destination` dropped (migration `20260816000001`, along with never-used `labels`/`project_id`/`historical_minutes`), `flag` now NOT NULL with a single `TASK_FLAG_META`/`TASK_FLAG_ORDER`; urgency derives from the flag, not `priority`. **Two write paths** (`insertTask`/`insertTasks` + `persistTaskUpdate`) replace four hand-rolled inserts — fixing recurring tasks going silent after their first occurrence. The **assistant edge function stops classifying**, so iPhone Shortcut captures finally enter triage. New **two-tier Tasks screen** (`buildTaskBoard`: ranked "Needs you now" + a folded section per flag, every task appearing exactly once), a **mobile task editor** (`TaskDetailSheet`), all 7 triage destinations reachable, and a **correction loop that records why** (reason chips → `triage_learnings`). Canonical reference is now [`src/features/tasks/README.md`](../src/features/tasks/README.md). Deferred by decision: subtasks, `start_date`, Google Calendar. See [tasks.md](tasks.md).
 - 2026-07-16 — **buddy-cove-redesign** part: complete UI replacement per the `design_handoff_buddy_cove/` handoff (branch `redesign/buddy-cove`). New `src/features/cove/` module: morning check-in gate blocking every route once per day (`daily_plans.checked_in_at/checkin_skipped/intention`, migration `20260716000001_checkin_gate`, first writer for `mood_at_plan_time`/`energy_at_plan_time` via a tested 1–10 `moodScale`), Now page (whale + speech bubble, streak/done/intention chips, midday reset card, confetti pick cards, folded routine/week/stats), close-day overlay (explicit leftover resolution → reflection → celebration; streak **derived** from consecutive `closed_at` days), one-at-a-time triage Tasks page (legacy TodoPage behind "⋯ tools"), Capture dump box (new `capture` route; assistant chat demoted to Me → advanced). 520px phone-first shell + 5-tab badge-free nav (no sidebar/FAB — voice capture retired); self-hosted Nunito; cove tokens retheme all legacy pages, Health leads with check-in+trends and folds analysis behind "Explore my data". HomePage/DayPage/CaptureFAB deleted; `today` deep-links land on Now. See [cove.md](cove.md).
@@ -96,4 +126,5 @@ Key conventions live in `CLAUDE.md` (naming gotchas, 3-layer data pattern, edge-
 
 <!-- per-feature deep-dive pages generated by /finish-part for significant parts -->
 - [tasks.md](tasks.md) — Tasks map. **Canonical reference: [src/features/tasks/README.md](../src/features/tasks/README.md)** (flags, write paths, learning loop, deferred features). Diagram: [diagrams/tasks-triage.md](diagrams/tasks-triage.md).
+- [notifications.md](notifications.md) — the full nudge lifecycle: who writes reminder rows, how they are flushed and delivered, and how a lock-screen tap turns back into an action. Diagrams: [diagrams/notifications.md](diagrams/notifications.md).
 - [cove.md](cove.md) — Buddy Cove UI (daily loop: gate → Now → close-day; tokens; screen map; state; **shell scroll + breakpoint invariants**; Capture as the only inbox). Diagrams: [diagrams/cove.md](diagrams/cove.md), [diagrams/app-shell.md](diagrams/app-shell.md).

@@ -1,11 +1,14 @@
 # MVP Final Polish — working plan & handoff
 
+> **CLOSED 2026-08-20 — all eight phases shipped.** Kept as the record of what this
+> pass set out to do and why. The durable outcomes live in
+> [DESIGN.md](DESIGN.md) (Changelog + Planned), [notifications.md](notifications.md),
+> [../src/features/tasks/README.md](../src/features/tasks/README.md) and `CLAUDE.md`;
+> read those, not this, for current behaviour.
+>
 > The tasks-first polish pass: an incredibly low floor (2 minutes of use is helpful)
 > plus depth for people who want more, and the silent trust-breaking bugs fixed.
 > Original approved plan: `~/.claude/plans/the-project-is-nearing-async-chipmunk.md`.
-> This doc supersedes it — it tracks what actually landed and exactly what's left.
-> Work is journaled as part `20260819-mvp-polish` (`.claude/progress/`); run
-> `/finish-part` only after Phase 8.
 
 **Scope decisions (user-set, binding):**
 - IN: subtasks / AITaskSplitter revival, deadline start dates, UX polish + integrity fixes.
@@ -27,13 +30,23 @@
 | 2 — Now-page picking floor | ✅ done | `d504a2a` |
 | 3 — Morning gate swap + flash + prefill | ✅ done | `729f9e1` |
 | 4 — Notification intents, anchors, share | ✅ done | `c496127` |
-| 5 — Capture & triage trust | 🟡 **half done** — triage side landed (`8965e7c`); capture side NOT started | `8965e7c` |
-| 6 — Subtasks + start dates | ⬜ not started | — |
-| 7 — Integrity (school mirror, recurrence, scanner) | ⬜ not started | — |
-| 8 — Cleanup, docs, Google-Calendar record | ⬜ not started | — |
+| 5 — Capture & triage trust | ✅ done | `8965e7c` + `c9a0d29` |
+| 6 — Subtasks + start dates | ✅ done | `59adcf5` |
+| 7 — Integrity (school mirror, recurrence, scanner) | ✅ done | `2a03815` |
+| 8 — Cleanup, docs, Google-Calendar record | ✅ done | `6a30f9b` |
 
-Suite at last commit: **568 tests green**, `tsc -b` clean, `check:reach` shows only the 4
-pre-existing orphans that Phase 8 deletes.
+Final state: **602 tests green**, `tsc -b` clean, `check:reach` clean at 254/254 with the
+shorter allowlist, and both `school-import` and `off-track-scanner` redeployed and
+boot-checked.
+
+**Deviations worth knowing** (the plan below is the intent, not the record):
+- Phase 4's gate `initialStep` wiring was skipped — the gate persists its own step, so
+  `step=morning|midday` adds nothing beyond routing.
+- Phase 8's plan claimed deleting `AssistantPromptBar` takes the last `consumeVoiceDraft`
+  call site with it. It does not — `AssistantChat` still passes that prop, so
+  `CaptureInput` keeps it.
+- Phase 8 removed the whole Tasks "Default Sort Order" setting, not just its `label`
+  option: nothing read any of it, so the control silently did nothing.
 
 ---
 

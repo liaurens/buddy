@@ -196,17 +196,21 @@ three features deliberately left undesigned. The invariants below are the short 
   (`utils/taskFlags.ts`). Adding a second table of flag labels is that mistake repeating.
 - **The flag decides urgency, not `priority`.** `scoreTask` weights `deriveTaskFlag(task)`;
   `priority` only grades high/medium/low within a flag.
-- **Two write paths, no others**: `insertTask`/`insertTasks` for new rows,
-  `persistTaskUpdate` for existing ones (all in `services/taskWrites.ts`). Each applies the
-  flag contract, writes through `todoToDb`, schedules reminders and mirrors to Google.
-  Triage (manual, auto-apply, eager) builds its task via `applyTriagePatch`
-  (`services/applyTriage.ts`). Don't hand-write todo columns — a raw insert in the
-  recurrence spawn is why every occurrence after the first used to have no reminder.
+- **Two write paths and one delete path, no others**: `insertTask`/`insertTasks` for new
+  rows, `persistTaskUpdate` for existing ones, and `deleteTaskFully`/`deleteTasksFully`
+  (plus `deleteTasksForAssignments` for the school cascade) to remove them — all in
+  `services/taskWrites.ts`. Each applies the flag contract, writes through `todoToDb`,
+  schedules or cancels reminders and mirrors to Google. Triage (manual, auto-apply,
+  eager) builds its task via `applyTriagePatch` (`services/applyTriage.ts`). Don't
+  hand-write todo columns — a raw insert in the recurrence spawn is why every occurrence
+  after the first used to have no reminder, and a raw `.delete()` is why deleting a
+  school class left one orphaned `scheduled_notifications` row per assignment behind.
 - **The assistant edge function captures, it does not classify.** `createTask` records
   title + an obvious date + an explicit `#flag`; anything else lands untriaged so the AI
   sorts it and the correction feeds `triage_learnings`. Don't reintroduce flag inference
   there — that was a fourth divergent copy of the contract.
-- **Due-date parsing**: all due-date math goes through `src/features/tasks/utils/dueDates.ts` (`parseDueDate` anchors plain dates at local noon). `new Date('YYYY-MM-DD')` parses as UTC midnight and shifts the calendar day — never use it on a due date.
+- **Due-date parsing**: all due-date math goes through `src/features/tasks/utils/dueDates.ts` (`parseDueDate` anchors plain dates at local noon). `new Date('YYYY-MM-DD')` parses as UTC midnight and shifts the calendar day — never use it on a due date. **This covers recurrence too**: `utils/recurrence.ts` used to parse that way and format back with `.toISOString().split('T')[0]`, so every cadence crossing the spring DST change lost a day. Plain date in via `parseDueDate`, plain date out via `format(d, 'yyyy-MM-dd')`.
+- **`TaskDetailSheet` is keyed, not synced.** Its draft seeds once from `task` via `useState`, so every call site must render it with `key={task.id}` — without the key the sheet shows a stale task when switching rows; with a draft-sync effect (removed) a background refetch wiped mid-edit changes. It is folded (What open; When / Steps / Details / Reminders behind `Fold`s) and takes an optional `focusSection`; `'steps'` also expands the AI splitter, which is how NextUpCard's "Feeling stuck? Split it" works.
 - **One canonical order**: every task list sorts with `sortTasksCanonical` (`utils/taskOrdering.ts`) over `getRankedTasks` scores — score desc, plannedFor asc, flag rank, dueDate asc (undated last), createdAt, id.
 - **The Tasks screen is built by `buildTaskBoard`** (`utils/taskBoard.ts`), not by the page.
   Every active task appears exactly once across now / overflow / sections.
@@ -251,6 +255,31 @@ the service role key there. When a cron-invoked function seems dead, check
 - `send-notification` deletes a subscription on 404, 410, **and** 400
   `VapidPkHashMismatch` (subscription created against a rotated VAPID key — it can never
   be delivered to; the device re-subscribes on next app open).
+- **"The flag decides urgency" applies server-side too.** `off-track-scanner` filtered
+  overdue tasks on `priority IN ('urgent','high')` — pre-collapse vocabulary that silently
+  excluded overdue `deadline` and `school` tasks, the two kinds that reliably *have* a due
+  date. When a vocabulary collapses, grep `supabase/functions/` as well as `src/`.
+- **Deep links are parsed in exactly one place**: `src/utils/navIntent.ts`
+  (`parseNavIntent`), executed by the headless
+  `src/components/notifications/NotificationIntentHandler.tsx`, which mounts outside the
+  routed content so a lock-screen "Mark done" still works while the check-in gate holds
+  the app. `sw.js` only runs in production builds — test intents in dev by opening
+  `/?route=tasks&intent=complete&taskId=<id>` directly. Full map: [docs/notifications.md](docs/notifications.md).
+- **The Supabase CLI has no `functions logs` subcommand.** To confirm a redeployed
+  function still boots without triggering its side effects, send it an `OPTIONS` request:
+  module-level code runs on boot, so a boot crash 500s before the CORS branch replies.
+
+### Edge functions cannot import `src/` — shared rules become copies
+
+A rule that both the app and an edge function must apply gets hand-ported into
+`supabase/functions/_shared/` **with a provenance comment naming its source**, because
+Deno functions cannot reach `src/`. Current example:
+`_shared/deadlineWorkday.ts` mirrors `suggestDeadlineWorkday` from
+`src/features/tasks/utils/taskFlags.ts` — before it existed, `school-import` took a flat
+three UTC days off the deadline, so an imported assignment landed on a different (and
+possibly weekend) day than an identical one typed into the app. Ports do their day math
+at **UTC noon**: UTC has no DST, so whole-day arithmetic can never shift the date. Keep
+the pair in sync by hand.
 
 ### Edge function table access
 
