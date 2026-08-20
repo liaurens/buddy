@@ -1,4 +1,3 @@
-export { default as AssistantPromptBar } from './components/AssistantPromptBar';
 export { default as AssistantChat } from './components/AssistantChat';
 export { default as AssistantResponseCard } from './components/AssistantResponseCard';
 export { useAssistant } from './hooks/useAssistant';

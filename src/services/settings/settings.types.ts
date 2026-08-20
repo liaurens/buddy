@@ -104,7 +104,6 @@ export interface ReflectionSettings {
 
 export interface TaskSettings {
     defaultPriority: 'low' | 'medium' | 'high';
-    defaultSortOrder: 'priority' | 'dueDate' | 'created' | 'label';
     showCompletedCount: number;
     enableNotifications: boolean;
     notificationTiming: 'atDue' | '15min' | '1hour' | '1day';

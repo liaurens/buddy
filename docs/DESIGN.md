@@ -35,8 +35,8 @@ Key conventions live in `CLAUDE.md` (naming gotchas, 3-layer data pattern, edge-
 ## Status
 
 ### ✅ Done
-- **tasks** — todos with one canonical deterministic ordering, task types/routines, per-task reminders, task kinds (incl. derived-only `school`), a capture-triage pipeline (self-sorting captured tasks → urgent/today/someday/school/routine with AI auto-routing, confidence split, learning doc, AI-inferred task type/energy/estimate), stuck-signal detection (snooze counting + staleness → on-card split), quick-wins filter, and 30-day completed fade. See [tasks.md](tasks.md).
-- **three-touch day** — deterministic morning pick (2–3 small tasks, soft cap, no AI dependency), reduced Now page (picks + capture + evening close-day CTA), school assignments auto-mirroring onto linked todos with bidirectional completion, survival-day mode (1 pick, non-anchor notifications deferred), non-imperative anchor copy + `step` deep link.
+- **tasks** — todos with one canonical deterministic ordering, task types/routines, per-task reminders, the seven-value `flag` classification, a capture-triage pipeline (self-sorting captured tasks with AI auto-routing, confidence split, learning doc, skip/undo, AI-inferred task type/energy/estimate), a recommender that shows its reasons on the top pick, stuck-signal detection (snooze counting + staleness) surfacing a **one-tap split at the point of avoidance**, subtasks with an AI splitter, deadline start dates with a slipped-start warning, quick-wins filter, and 30-day completed fade. See [tasks.md](tasks.md).
+- **three-touch day** — deterministic morning pick (2–3 small tasks, soft cap, no AI dependency) that the user can **swap or decline in the gate**, reduced Now page (picks + capture + a pick sheet for adding one + evening close-day CTA), school assignments auto-mirroring onto linked todos with bidirectional completion **and their own reminders**, survival-day mode (1 pick, non-anchor notifications deferred), non-imperative anchor copy, and notification buttons that all do what they say (complete / snooze / close-day deep links).
 - **health-tracking** — custom metric tracking, correlations, protocols, experiments.
 - **planning** — time-blocking calendar + daily reflection.
 - **day** — morning/midday/today daily routine views, close-day flow.
@@ -53,7 +53,33 @@ Key conventions live in `CLAUDE.md` (naming gotchas, 3-layer data pattern, edge-
 - _(none recorded — add via `/start-part`)_
 
 ### 📋 Planned / not done
-- _(track upcoming work here; `/finish-part` moves items to Done)_
+- **Google Calendar task scheduling — unfinished, and it must be finished before
+  this counts as MVP-complete.** The auth and write edge functions exist and are
+  wired into every task write path, but three gates keep the feature dormant and
+  it has never once pushed an event: `VITE_GOOGLE_OAUTH_CLIENT_ID` is not set on
+  Netlify, the `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` edge
+  secrets were never confirmed, and the push predicate (flag `urgent` **and** a
+  planned day **and** a `dueTime`) is narrow enough that no real task has matched
+  it. Deciding *which* tasks belong on the calendar is the design question;
+  `components/UrgentScheduleModal.tsx` is kept unrendered as the only surviving
+  implementation of that flow.
+  > ⚠️ **Rotate the secret first.** The Google OAuth client secret was pasted
+  > into a chat once. Rotate it in the Google Cloud Console and update the edge
+  > secret **before** any production exposure.
+- **Focus-timer ↔ task linking** — deliberately deferred. The dead `startTask` /
+  `completeTaskWithDuration` paths that half-implemented it were removed in the
+  2026-08-20 part (the latter skipped every completion side-effect, so it was a
+  trap rather than a head start). `todos.started_at` / `actual_minutes` remain.
+- **Energy/context ranking bonuses** — the recommender can weight a task against
+  how the user feels, but there is no "today's energy" signal to weight against:
+  the morning gate records *yesterday's* mood and energy.
+- **Someday review + routine decisions** — `utils/taskContracts.ts` implements
+  and tests `isSomedayReviewEligible` / `pickSomedayReview` /
+  `missedRoutineOccurrences` / `needsRoutineDecision`; no UI has been designed
+  for either prompt.
+- **Close-day UI consolidation** — `CloseDayCard` still lives inside
+  `ReflectionPage` alongside the Now-page `CloseDayOverlay`. The night-anchor
+  path into the card was removed, so the duplication is now cosmetic.
 
 ## Changelog
 

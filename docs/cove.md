@@ -68,11 +68,15 @@ See [diagrams/cove.md](diagrams/cove.md) for the daily-loop sequence.
 - `rescheduleMany` silently skips locked tasks — close-day "→ Tomorrow" relies on it.
 - Follow-up tasks created in close-day are intentionally untriaged (they land in
   the capture inbox for Buddy to sort).
-- Legacy power tools live on: full TodoPage behind "⋯ tools" on Tasks, assistant
-  chat at the `assistant` route (Me → Account & advanced), analysis behind
-  "Explore my data" on Health. Experiments UI is parked (route still resolves).
+- Legacy power tools live on: assistant chat at the `assistant` route
+  (Me → Account & advanced) and analysis behind "Explore my data" on Health.
+  Experiments UI is parked (route still resolves). **TodoPage no longer exists**
+  — there is no "⋯ tools" escape hatch on Tasks; `CoveTasksPage` +
+  `TaskDetailSheet` are the whole surface.
 - Deleted: HomePage, DayPage, CaptureFAB (voice capture has no home right now).
-  Several `src/features/day/` components are orphaned — cleanup candidates.
+  `src/features/day/` is **not** orphaned — its routine views are reachable and
+  `npm run check:reach` is clean, so don't delete on the strength of that old
+  note; re-run the script before removing anything.
 
 ## Shell invariants (learned 2026-08-17)
 

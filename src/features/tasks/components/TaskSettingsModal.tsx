@@ -139,28 +139,6 @@ const TaskSettingsModal: React.FC<TaskSettingsModalProps> = ({ isOpen, onClose }
                                 <option value="high">High</option>
                             </select>
                         </div>
-
-                        {/* Default Sort Order */}
-                        <div>
-                            <label className="block text-sm font-medium text-cove-muted mb-2">
-                                Default Sort Order
-                            </label>
-                            <select
-                                value={settings.defaultSortOrder}
-                                onChange={(e) =>
-                                    updateSetting(
-                                        'defaultSortOrder',
-                                        e.target.value as TaskSettings['defaultSortOrder'],
-                                    )
-                                }
-                                className="w-full px-3 py-2 border border-cove-border rounded-md focus:outline-none focus:ring-2 focus:ring-cove-accent"
-                            >
-                                <option value="priority">Priority</option>
-                                <option value="dueDate">Due Date</option>
-                                <option value="created">Created Date</option>
-                                <option value="label">Label</option>
-                            </select>
-                        </div>
                     </div>
                 </div>
 
