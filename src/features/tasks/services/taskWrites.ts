@@ -1,5 +1,5 @@
 /**
- * taskWrites — the one write path for updating an existing todo.
+ * taskWrites — the one write path for creating, updating and deleting a todo.
  *
  * Every full-task update (manual edit, manual triage, AI auto-sort, eager
  * capture sort) funnels through persistTaskUpdate so they all write the same
@@ -9,7 +9,8 @@
  */
 
 import type { Task } from '../types';
-import { supabase, todoToDb } from '../../../services/supabase';
+import { supabase, dbToTodo, todoToDb } from '../../../services/supabase';
+import type { DbTodo } from '../../../services/supabase/types';
 import {
     scheduleTaskReminders,
     cancelTaskReminders,
@@ -169,4 +170,64 @@ export async function persistTaskUpdate(userId: string, task: Task): Promise<Tas
     await syncTaskReminders(userId, finalTask);
     void syncTaskToGoogle(finalTask);
     return finalTask;
+}
+
+/**
+ * Delete tasks and everything hanging off them: pending reminder rows first,
+ * then the Google mirror, then the rows. The delete twin of insertTask.
+ *
+ * School was the reason this exists. Deleting an assignment (or a whole class)
+ * removed the mirrored todo with a raw `.delete()`, leaving its
+ * `scheduled_notifications` rows behind to fire at a task that no longer
+ * existed. Reminders are cancelled per id, so a partial failure still deletes.
+ */
+export async function deleteTasksFully(userId: string, taskIds: string[]): Promise<void> {
+    if (taskIds.length === 0) return;
+
+    // Read first: the Google mirror needs the event id, which the delete takes
+    // with it. Non-fatal — a read failure must not block the delete.
+    let tasks: Task[] = [];
+    try {
+        const { data } = await supabase
+            .from('todos')
+            .select('*')
+            .eq('user_id', userId)
+            .in('id', taskIds);
+        tasks = ((data ?? []) as DbTodo[]).map(dbToTodo);
+    } catch (e) {
+        console.error('Failed to read tasks before delete:', e);
+    }
+
+    await Promise.all(taskIds.map((id) => cancelTaskReminders(userId, id)));
+
+    const { error } = await supabase.from('todos').delete().eq('user_id', userId).in('id', taskIds);
+    if (error) throw error;
+
+    tasks.filter((t) => t.googleEventId).forEach((t) => void removeTaskFromGoogle(t));
+}
+
+/** Single-task convenience wrapper around deleteTasksFully. */
+export async function deleteTaskFully(userId: string, taskId: string): Promise<void> {
+    await deleteTasksFully(userId, [taskId]);
+}
+
+/**
+ * Delete the todos mirroring these assignments — the school cascade's entry
+ * point, so deleting an assignment or a class cleans up reminders too.
+ */
+export async function deleteTasksForAssignments(
+    userId: string,
+    assignmentIds: string[],
+): Promise<void> {
+    if (assignmentIds.length === 0) return;
+    const { data, error } = await supabase
+        .from('todos')
+        .select('id')
+        .eq('user_id', userId)
+        .in('assignment_id', assignmentIds);
+    if (error) throw error;
+    await deleteTasksFully(
+        userId,
+        (data ?? []).map((row) => (row as { id: string }).id),
+    );
 }

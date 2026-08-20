@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase } from '../../../services/supabase';
+import { deleteTasksForAssignments } from '../../tasks/services/taskWrites';
 import {
     dbToClass,
     classToDb,
@@ -87,15 +88,13 @@ export function useClasses(includeArchived = false) {
                 .eq('user_id', userId);
             if (assignmentReadError) throw assignmentReadError;
 
-            const assignmentIds = (assignmentRows ?? []).map((row) => row.id as string);
-            if (assignmentIds.length > 0) {
-                const { error: todoError } = await supabase
-                    .from('todos')
-                    .delete()
-                    .eq('user_id', userId)
-                    .in('assignment_id', assignmentIds);
-                if (todoError) throw todoError;
-            }
+            // Canonical delete: the mirrored todos' pending reminder rows are
+            // cancelled first. Deleting a class used to leave one
+            // scheduled_notifications row per assignment behind.
+            await deleteTasksForAssignments(
+                userId,
+                (assignmentRows ?? []).map((row) => row.id as string),
+            );
 
             const { data: documentRows, error: documentReadError } = await supabase
                 .from('class_documents')

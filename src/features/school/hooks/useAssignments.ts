@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../../../hooks/useAuth';
-import { supabase } from '../../../services/supabase';
+import { supabase, dbToTodo } from '../../../services/supabase';
 import {
     dbToAssignment,
     assignmentToDb,
@@ -11,7 +11,13 @@ import {
     type AssignmentStatus,
 } from '../../../services/supabase/converters/school';
 import type { DbAssignment } from '../../../services/supabase/types/school-types';
-import { todoToDb } from '../../../services/supabase/converters/todo';
+import type { DbTodo } from '../../../services/supabase/types';
+import {
+    insertTask,
+    persistTaskUpdate,
+    deleteTasksForAssignments,
+} from '../../tasks/services/taskWrites';
+import { parseDueDate } from '../../tasks/utils/dueDates';
 import { buildAssignmentTodo } from '../utils/assignmentTodo';
 
 const EMPTY: Assignment[] = [];
@@ -77,6 +83,10 @@ export function useAssignments(options: UseAssignmentsOptions = {}) {
 
             // Mirror the deadline onto a linked todo so it shows on the one
             // trusted task surface. Non-fatal: the assignment stands either way.
+            //
+            // Through insertTask, not a raw insert: school is the one category
+            // that reliably HAS a due date, and the raw insert meant mirrored
+            // assignments were the only tasks that never got a reminder row.
             try {
                 const todo = buildAssignmentTodo(
                     {
@@ -87,10 +97,7 @@ export function useAssignments(options: UseAssignmentsOptions = {}) {
                     },
                     new Date(),
                 );
-                const { error: todoError } = await supabase
-                    .from('todos')
-                    .insert(todoToDb({ ...todo, id: uuidv4() }, userId));
-                if (todoError) throw todoError;
+                await insertTask(userId, { ...todo, id: uuidv4() });
             } catch (todoErr) {
                 console.error('Failed to create linked todo for assignment:', todoErr);
             }
@@ -125,33 +132,53 @@ export function useAssignments(options: UseAssignmentsOptions = {}) {
             if (error) throw error;
 
             // Keep the linked todo in sync (non-fatal — assignment update stands).
+            //
+            // Read-then-persistTaskUpdate rather than raw column writes: the
+            // mirrored todo has to re-schedule its reminders when a deadline
+            // moves, and cancel them when the assignment is submitted. Only the
+            // canonical write path does that.
             try {
-                if (patch.deadline !== undefined) {
-                    // Move the todo with the deadline, unless the user already
-                    // pulled it into today (or earlier) on purpose.
+                if (patch.deadline !== undefined || patch.status !== undefined) {
+                    const { data: todoRows, error: readError } = await supabase
+                        .from('todos')
+                        .select('*')
+                        .eq('assignment_id', id)
+                        .eq('user_id', userId);
+                    if (readError) throw readError;
+
                     const todayIso = format(new Date(), 'yyyy-MM-dd');
-                    const { error: dueError } = await supabase
-                        .from('todos')
-                        .update({ due_date: format(new Date(patch.deadline), 'yyyy-MM-dd') })
-                        .eq('assignment_id', id)
-                        .eq('user_id', userId)
-                        .eq('completed', false)
-                        .gt('due_date', todayIso);
-                    if (dueError) throw dueError;
-                }
-                if (patch.status !== undefined) {
                     const finished = patch.status === 'submitted' || patch.status === 'graded';
-                    const { error: statusError } = await supabase
-                        .from('todos')
-                        .update(
-                            finished
-                                ? { completed: true, completed_at: new Date().toISOString() }
-                                : { completed: false, completed_at: null },
-                        )
-                        .eq('assignment_id', id)
-                        .eq('user_id', userId)
-                        .eq('completed', !finished);
-                    if (statusError) throw statusError;
+
+                    for (const row of (todoRows ?? []) as DbTodo[]) {
+                        const todo = dbToTodo(row);
+                        let next = todo;
+
+                        // Move the todo with the deadline, unless the user
+                        // already pulled it into today (or earlier) on purpose.
+                        // parseDueDate, never new Date('YYYY-MM-DD') — the UTC
+                        // parse used here shifted the calendar day.
+                        if (
+                            patch.deadline !== undefined &&
+                            !todo.completed &&
+                            todo.dueDate &&
+                            todo.dueDate > todayIso
+                        ) {
+                            next = {
+                                ...next,
+                                dueDate: format(parseDueDate(patch.deadline), 'yyyy-MM-dd'),
+                            };
+                        }
+
+                        if (patch.status !== undefined && todo.completed !== finished) {
+                            next = {
+                                ...next,
+                                completed: finished,
+                                completedAt: finished ? new Date().toISOString() : undefined,
+                            };
+                        }
+
+                        if (next !== todo) await persistTaskUpdate(userId, next);
+                    }
                 }
             } catch (todoErr) {
                 console.error('Failed to sync linked todo for assignment:', todoErr);
@@ -173,12 +200,9 @@ export function useAssignments(options: UseAssignmentsOptions = {}) {
     const deleteAssignment = useCallback(
         async (id: string) => {
             if (!userId) throw new Error('Not authenticated');
-            const { error: todoError } = await supabase
-                .from('todos')
-                .delete()
-                .eq('assignment_id', id)
-                .eq('user_id', userId);
-            if (todoError) throw todoError;
+            // Canonical delete: cancels the mirrored todo's pending reminder
+            // rows before dropping it. A raw delete orphaned them.
+            await deleteTasksForAssignments(userId, [id]);
             const { error } = await supabase
                 .from('assignments')
                 .delete()

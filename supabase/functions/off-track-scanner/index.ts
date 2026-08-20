@@ -2,7 +2,7 @@
  * Off-Track Scanner Edge Function
  *
  * Runs on cron (every 15 minutes). For each user with off-track nudges enabled:
- * - Detects high-priority overdue tasks → enqueues reminder
+ * - Detects overdue tasks whose flag makes them pressing → enqueues reminder
  * - Detects missed morning/midday/night routine → enqueues reminder
  * - Detects skipped tracker check-in (after 18:00 local) → enqueues reminder
  * - Detects idleness (no app open for hours during the day) → enqueues reminder
@@ -152,15 +152,23 @@ async function scanUser(supabase: SupabaseClient, userId: string): Promise<numbe
     const fireAt = new Date(now.getTime() + 30_000); // ~30s out so the next cron flush picks it up
     let enqueued = 0;
 
-    // 1) Overdue high-priority tasks
+    // 1) Overdue tasks that actually matter
+    //
+    // The flag decides urgency, not `priority` — `priority` only grades
+    // high/medium/low WITHIN a flag. Filtering on priority was pre-collapse
+    // vocabulary and meant overdue deadlines and school work, the two kinds
+    // with a real due date, were never scanned at all. Waiting, routine and
+    // someday stay out on purpose: a missed routine is rule 2's job, and
+    // nagging about a someday is exactly the noise this app must not make.
     if (settings.offTrackOverdueTasks) {
         const { data: overdue } = await supabase
             .from('todos')
-            .select('id, title, due_date, due_time, priority')
+            .select('id, title, due_date, due_time, flag')
             .eq('user_id', userId)
             .eq('completed', false)
-            .in('priority', ['urgent', 'high'])
+            .in('flag', ['urgent', 'deadline', 'school', 'today'])
             .lt('due_date', today)
+            .order('due_date', { ascending: true })
             .limit(5);
 
         for (const t of overdue || []) {
@@ -267,7 +275,8 @@ async function scanUser(supabase: SupabaseClient, userId: string): Promise<numbe
                 scheduledFor: fireAt,
                 title: 'No check-in today',
                 body: "Take 30 seconds to log how you're doing.",
-                data: { route: 'checkin', sourceType: 'skipped_checkin' },
+                // 'checkin' is not an AppRoute; it silently fell through to Now.
+                data: { route: 'home', sourceType: 'skipped_checkin' },
                 sourceType: 'skipped_checkin',
                 sourceId: null,
                 dedupKey: dedup,
@@ -279,8 +288,10 @@ async function scanUser(supabase: SupabaseClient, userId: string): Promise<numbe
     // 4) Idle (9am–9pm window)
     if (settings.offTrackIdle && now.getHours() >= 9 && now.getHours() <= 21) {
         const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60_000).toISOString();
-        // Use any user-write table as a heartbeat. We pick smart_notes + todos + entries as "did the user do anything?".
-        const [{ count: c1 }, { count: c2 }, { count: c3 }] = await Promise.all([
+        // Any user write counts as a heartbeat. `smart_notes` used to be a
+        // third term here; that surface is retired and takes no writes, so it
+        // was a guaranteed zero against a table that no longer has a UI.
+        const [{ count: c1 }, { count: c2 }] = await Promise.all([
             supabase
                 .from('todos')
                 .select('id', { count: 'exact', head: true })
@@ -291,13 +302,8 @@ async function scanUser(supabase: SupabaseClient, userId: string): Promise<numbe
                 .select('id', { count: 'exact', head: true })
                 .eq('user_id', userId)
                 .gte('created_at', sixHoursAgo),
-            supabase
-                .from('smart_notes')
-                .select('id', { count: 'exact', head: true })
-                .eq('user_id', userId)
-                .gte('created_at', sixHoursAgo),
         ]);
-        const totalRecent = (c1 || 0) + (c2 || 0) + (c3 || 0);
+        const totalRecent = (c1 || 0) + (c2 || 0);
 
         if (totalRecent === 0) {
             const dedup = `idle:${today}`;

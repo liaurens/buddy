@@ -16,6 +16,7 @@ import {
     insertTasks,
     persistTaskUpdate,
     syncTaskToGoogle,
+    deleteTaskFully,
 } from '../services/taskWrites';
 import { logAppEvent } from '../../../services/app-events';
 
@@ -196,21 +197,12 @@ export const useTasks = (): TaskState => {
     const deleteTask = useCallback(
         async (id: string) => {
             if (!userId) throw new Error('Not authenticated');
-
-            const task = tasks.find((t) => t.id === id);
-
-            const { error } = await supabase
-                .from('todos')
-                .delete()
-                .eq('id', id)
-                .eq('user_id', userId);
-
-            if (error) throw error;
-            await cancelTaskReminders(userId, id);
-            if (task?.googleEventId) void removeTaskFromGoogle(task);
+            // Deletes get one canonical path, like writes: reminders cancelled,
+            // Google mirror removed, row dropped.
+            await deleteTaskFully(userId, id);
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
         },
-        [userId, tasks, queryClient],
+        [userId, queryClient],
     );
 
     const updateTask = useCallback(
@@ -230,49 +222,6 @@ export const useTasks = (): TaskState => {
                     : (updatedTask.snoozeCount ?? 0),
                 lastTouchedAt: new Date().toISOString(),
             });
-            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-        },
-        [userId, tasks, queryClient],
-    );
-
-    const startTask = useCallback(
-        async (id: string) => {
-            if (!userId) throw new Error('Not authenticated');
-
-            const { error } = await supabase
-                .from('todos')
-                .update({
-                    started_at: new Date().toISOString(),
-                    last_touched_at: new Date().toISOString(),
-                })
-                .eq('id', id)
-                .eq('user_id', userId);
-
-            if (error) throw error;
-            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-        },
-        [userId, queryClient],
-    );
-
-    const completeTaskWithDuration = useCallback(
-        async (id: string, actualMinutes: number) => {
-            if (!userId) throw new Error('Not authenticated');
-
-            const task = tasks.find((t) => t.id === id);
-            if (!task) return;
-
-            const { error } = await supabase
-                .from('todos')
-                .update({
-                    completed: true,
-                    actual_minutes: actualMinutes,
-                    completed_at: new Date().toISOString(),
-                    last_touched_at: new Date().toISOString(),
-                })
-                .eq('id', id)
-                .eq('user_id', userId);
-
-            if (error) throw error;
             queryClient.invalidateQueries({ queryKey: ['todos', userId] });
         },
         [userId, tasks, queryClient],
@@ -379,23 +328,6 @@ export const useTasks = (): TaskState => {
         [userId, tasks, queryClient],
     );
 
-    const deleteMany = useCallback(
-        async (ids: string[]) => {
-            if (!userId || ids.length === 0) return;
-            const toUnsync = tasks.filter((t) => ids.includes(t.id) && t.googleEventId);
-            const { error } = await supabase
-                .from('todos')
-                .delete()
-                .in('id', ids)
-                .eq('user_id', userId);
-            if (error) throw error;
-            await Promise.all(ids.map((id) => cancelTaskReminders(userId, id)));
-            toUnsync.forEach((t) => void removeTaskFromGoogle(t));
-            queryClient.invalidateQueries({ queryKey: ['todos', userId] });
-        },
-        [userId, tasks, queryClient],
-    );
-
     return {
         tasks,
         isLoading,
@@ -404,10 +336,7 @@ export const useTasks = (): TaskState => {
         toggleTask,
         deleteTask,
         updateTask,
-        startTask,
-        completeTaskWithDuration,
         rescheduleMany,
         completeMany,
-        deleteMany,
     };
 };

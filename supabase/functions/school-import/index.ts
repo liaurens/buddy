@@ -34,6 +34,7 @@ interface CourseImportAssignment {
 }
 
 import { repairSessionTimes, type RepairedSession } from './sessionTimes.ts';
+import { suggestDeadlineWorkday } from '../_shared/deadlineWorkday.ts';
 
 interface CourseImportSession {
     dayOfWeek: number;
@@ -401,26 +402,41 @@ async function handleCommit(
             insertedAssignmentIds.push(inserted.id);
             assignmentsCount += 1;
 
-            // Mirror the deadline onto a linked todo (same shape as the client's
-            // buildAssignmentTodo) so imported deadlines land on the task surface.
-            const nowIso = new Date().toISOString();
-            const planned = new Date(deadline);
-            planned.setUTCDate(planned.getUTCDate() - 3);
+            // Mirror the deadline onto a linked todo so imported deadlines land
+            // on the task surface. The column set below is the client's
+            // todoToDb output for buildAssignmentTodo + the 'school' flag
+            // contract — an imported assignment must be indistinguishable from
+            // a typed-in one.
+            //
+            // planned_for used to be a flat three UTC days before the deadline,
+            // which ignored weekends and the estimate and so put imports on a
+            // different day than the client. reminder_enabled/cadence match the
+            // 'school' flag contract; the scheduled_notifications rows
+            // themselves are still written client-side on the next task write.
+            const now = new Date();
+            const nowIso = now.toISOString();
+            const dueDay = deadline.toISOString().slice(0, 10);
             const { error: todoError } = await supabase.from('todos').insert({
                 id: crypto.randomUUID(),
                 user_id: userId,
                 title: assignment.title,
                 completed: false,
                 created_at: nowIso,
-                due_date: deadline.toISOString().slice(0, 10),
-                planned_for: planned.toISOString().slice(0, 10),
+                due_date: dueDay,
+                planned_for: suggestDeadlineWorkday(dueDay, assignment.estimatedMinutes, now),
                 flag: 'school',
                 priority: 'medium',
                 estimated_time: assignment.estimatedMinutes ?? null,
                 assignment_id: inserted.id,
+                subtasks: [],
+                recurrence: 'none',
+                reminder_enabled: true,
+                reminder_cadence: 'smart',
+                auto_triaged: false,
+                snooze_count: 0,
+                // Skip the capture inbox — this task is already routed.
                 triaged_at: nowIso,
                 triage_source: 'ai',
-                recurrence: 'none',
             });
             if (todoError) throw todoError;
         }
